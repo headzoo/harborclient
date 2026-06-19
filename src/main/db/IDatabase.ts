@@ -1,0 +1,122 @@
+import type {
+  Collection,
+  CollectionExport,
+  KeyValue,
+  SaveRequestInput,
+  SavedRequest,
+  Variable
+} from '#/shared/types';
+
+/**
+ * Contract for persistent storage of collections, requests, and app settings.
+ */
+export interface IDatabase {
+  /**
+   * Opens the database for the given user-data directory.
+   *
+   * @param userDataPath - Electron app userData path where the database file is stored.
+   */
+  init(userDataPath: string): void;
+
+  /**
+   * Lists all collections ordered by name.
+   *
+   * @returns All collections in the database.
+   */
+  listCollections(): Collection[];
+
+  /**
+   * Creates a new collection with the given name.
+   *
+   * @param name - Display name for the collection.
+   * @returns The newly created collection.
+   */
+  createCollection(name: string): Collection;
+
+  /**
+   * Updates a collection's name, variables, headers, and scripts.
+   *
+   * @param id - Collection ID to update.
+   * @param name - New display name.
+   * @param variables - Collection-scoped variables.
+   * @param headers - Headers sent with every request in the collection.
+   * @param preRequestScript - Script run before each request in the collection.
+   * @param postRequestScript - Script run after each request in the collection.
+   * @returns The updated collection.
+   */
+  updateCollection(
+    id: number,
+    name: string,
+    variables: Variable[],
+    headers: KeyValue[],
+    preRequestScript: string,
+    postRequestScript: string
+  ): Collection;
+
+  /**
+   * Deletes a collection and all of its requests.
+   *
+   * @param id - Collection ID to delete.
+   */
+  deleteCollection(id: number): void;
+
+  /**
+   * Lists all saved requests in a collection.
+   *
+   * @param collectionId - Collection to query.
+   * @returns Requests ordered by sort_order then name.
+   */
+  listRequests(collectionId: number): SavedRequest[];
+
+  /**
+   * Inserts a new request or updates an existing one.
+   *
+   * @param input - Request fields to persist.
+   * @returns The saved request with ID and timestamps.
+   */
+  saveRequest(input: SaveRequestInput): SavedRequest;
+
+  /**
+   * Deletes a saved request by ID.
+   *
+   * @param id - Request ID to delete.
+   */
+  deleteRequest(id: number): void;
+
+  /**
+   * Builds a portable export payload for a collection and its requests.
+   *
+   * @param id - Collection ID to export.
+   * @returns Collection export data without database IDs.
+   */
+  exportCollectionData(id: number): CollectionExport;
+
+  /**
+   * Imports a collection and its requests from export data.
+   *
+   * @param data - Parsed collection export payload.
+   * @returns The newly created collection.
+   */
+  importCollectionData(data: unknown): Collection;
+
+  /**
+   * Reads a persisted setting by key.
+   *
+   * @param key - Setting key to look up.
+   * @returns The stored value, or undefined when not set.
+   */
+  getSetting(key: string): string | undefined;
+
+  /**
+   * Persists a setting value, replacing any existing entry for the key.
+   *
+   * @param key - Setting key to store.
+   * @param value - Value to persist.
+   */
+  setSetting(key: string, value: string): void;
+
+  /**
+   * Closes the database connection.
+   */
+  close(): void;
+}

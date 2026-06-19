@@ -1,18 +1,6 @@
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from 'electron';
 import { readFile, writeFile } from 'fs/promises';
-import {
-  createCollection,
-  deleteCollection,
-  deleteRequest,
-  exportCollectionData,
-  getSetting,
-  importCollectionData,
-  listCollections,
-  listRequests,
-  saveRequest,
-  setSetting,
-  updateCollection
-} from '#/main/db';
+import type { IDatabase } from '#/main/db/IDatabase';
 import { executeRequest } from '#/main/http';
 import { runScript } from '#/main/scripts';
 import type {
@@ -42,12 +30,12 @@ function parseThemeSource(value: string | undefined): ThemeSource {
 /**
  * Registers IPC handlers that bridge renderer calls to db and HTTP modules.
  */
-export function registerIpcHandlers(): void {
+export function registerIpcHandlers(db: IDatabase): void {
   // Returns all collections, ordered by name.
-  ipcMain.handle('collections:list', () => listCollections());
+  ipcMain.handle('collections:list', () => db.listCollections());
 
   // Creates a new collection with the given display name.
-  ipcMain.handle('collections:create', (_event, name: string) => createCollection(name));
+  ipcMain.handle('collections:create', (_event, name: string) => db.createCollection(name));
 
   // Updates a collection's name, variables, and headers.
   ipcMain.handle(
@@ -60,15 +48,15 @@ export function registerIpcHandlers(): void {
       headers: KeyValue[],
       preRequestScript: string,
       postRequestScript: string
-    ) => updateCollection(id, name, variables, headers, preRequestScript, postRequestScript)
+    ) => db.updateCollection(id, name, variables, headers, preRequestScript, postRequestScript)
   );
 
   // Deletes a collection and all of its saved requests.
-  ipcMain.handle('collections:delete', (_event, id: number) => deleteCollection(id));
+  ipcMain.handle('collections:delete', (_event, id: number) => db.deleteCollection(id));
 
   // Exports a collection to a JSON file via a native save dialog.
   ipcMain.handle('collections:export', async (_event, id: number) => {
-    const data = exportCollectionData(id);
+    const data = db.exportCollectionData(id);
     const win = BrowserWindow.getFocusedWindow();
     const dialogOptions = {
       defaultPath: `${data.name}.json`,
@@ -103,17 +91,17 @@ export function registerIpcHandlers(): void {
 
     const raw = await readFile(filePaths[0], 'utf-8');
     const parsed = JSON.parse(raw) as unknown;
-    return importCollectionData(parsed);
+    return db.importCollectionData(parsed);
   });
 
   // Returns all saved requests in a collection, ordered by sort order then name.
-  ipcMain.handle('requests:list', (_event, collectionId: number) => listRequests(collectionId));
+  ipcMain.handle('requests:list', (_event, collectionId: number) => db.listRequests(collectionId));
 
   // Inserts a new saved request or updates an existing one.
-  ipcMain.handle('requests:save', (_event, req: SaveRequestInput) => saveRequest(req));
+  ipcMain.handle('requests:save', (_event, req: SaveRequestInput) => db.saveRequest(req));
 
   // Deletes a saved request by ID.
-  ipcMain.handle('requests:delete', (_event, id: number) => deleteRequest(id));
+  ipcMain.handle('requests:delete', (_event, id: number) => db.deleteRequest(id));
 
   // Sends an HTTP request and returns the response (status, headers, body, timing).
   ipcMain.handle('http:send', (_event, req: SendRequestInput) => executeRequest(req));
@@ -125,11 +113,11 @@ export function registerIpcHandlers(): void {
   ipcMain.handle('app:getVersion', () => app.getVersion());
 
   // Returns the persisted theme preference.
-  ipcMain.handle('theme:get', () => parseThemeSource(getSetting(THEME_SETTING_KEY)));
+  ipcMain.handle('theme:get', () => parseThemeSource(db.getSetting(THEME_SETTING_KEY)));
 
   // Persists and applies a theme preference.
   ipcMain.handle('theme:set', (_event, theme: ThemeSource) => {
     nativeTheme.themeSource = theme;
-    setSetting(THEME_SETTING_KEY, theme);
+    db.setSetting(THEME_SETTING_KEY, theme);
   });
 }

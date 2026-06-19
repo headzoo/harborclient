@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, Menu, nativeTheme, shell } from 'electron';
 import windowStateKeeper from 'electron-window-state';
 import { join } from 'path';
-import { closeDb, getSetting, initDb } from '#/main/db';
+import { SqliteDatabase } from '#/main/db';
 import { registerIpcHandlers } from '#/main/ipc';
 import { buildMenu } from '#/main/menu';
 import type { ThemeSource } from '#/shared/types';
@@ -9,6 +9,8 @@ import type { ThemeSource } from '#/shared/types';
 const isDev = !app.isPackaged;
 
 const THEME_SETTING_KEY = 'theme';
+
+const db = new SqliteDatabase();
 
 type CloseReason = 'window' | 'app';
 
@@ -21,7 +23,7 @@ let closeReason: CloseReason | null = null;
  * Applies a persisted or default theme to nativeTheme.
  */
 function applyPersistedTheme(): void {
-  const stored = getSetting(THEME_SETTING_KEY);
+  const stored = db.getSetting(THEME_SETTING_KEY);
   const theme: ThemeSource =
     stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
   nativeTheme.themeSource = theme;
@@ -160,9 +162,9 @@ ipcMain.on('app:close-decision', (_event, proceed: boolean) => {
 });
 
 app.whenReady().then(() => {
-  initDb(app.getPath('userData'));
+  db.init(app.getPath('userData'));
   applyPersistedTheme();
-  registerIpcHandlers();
+  registerIpcHandlers(db);
   mainWindow = createWindow();
   Menu.setApplicationMenu(buildMenu(mainWindow));
 
@@ -183,7 +185,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', (event) => {
   if (isQuitting) {
-    closeDb();
+    db.close();
     return;
   }
 
