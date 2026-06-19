@@ -2,7 +2,7 @@ import { useMemo, useState, type JSX } from 'react';
 import type { SendResult } from '#/shared/types';
 import { CodeEditor } from '#/renderer/src/components/CodeEditor';
 import { segment, segmentGroup, statusDotClass } from './classes';
-import { bodyLanguage, formatBody, formatBytes } from './responseFormat';
+import { bodyLanguage, formatBody, formatBytes } from './responseFormatUtils';
 
 interface Props {
   /**
@@ -95,7 +95,7 @@ export function ResponseViewer({ response, sending }: Props): JSX.Element {
                   className={`grid grid-cols-[180px_1fr] gap-3 px-2.5 py-1.5 ${index > 0 ? 'border-t border-separator' : ''}`}
                   key={key}
                 >
-                  <span className="break-words text-[13px] font-medium text-accent">{key}</span>
+                  <span className="break-words text-[13px] font-medium">{key}</span>
                   <span className="break-words font-mono text-[12px] text-text-secondary">
                     {value}
                   </span>

@@ -7,7 +7,8 @@ import {
   type MouseEvent as ReactMouseEvent
 } from 'react';
 import type { ConsoleEntry } from '#/renderer/src/store';
-import { formatBytes, RequestDetails } from './responseFormat';
+import { RequestDetails } from './responseFormat';
+import { formatBytes } from './responseFormatUtils';
 import { METHOD_CLASSES, secondaryButton, statusDotClass } from './classes';
 
 interface Props {

@@ -44,10 +44,11 @@ export function TabBar({ tabs, activeTabId, onSelect, onClose, onNew }: Props): 
         return (
           <div
             key={tab.tabId}
-            className={`group flex max-w-[220px] shrink-0 items-stretch gap-1.5 rounded-t-md border border-b-0 px-4 ${active
-              ? 'border-separator bg-surface text-text'
-              : 'border-transparent bg-transparent text-muted hover:bg-selection/60 hover:text-text'
-              }`}
+            className={`group flex max-w-[220px] shrink-0 items-stretch gap-1.5 rounded-t-md border border-b-0 px-4 ${
+              active
+                ? 'border-separator bg-surface text-text'
+                : 'border-transparent bg-transparent text-muted hover:bg-selection/60 hover:text-text'
+            }`}
           >
             <button
               className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 border-none bg-transparent p-0 py-2 text-inherit app-no-drag"

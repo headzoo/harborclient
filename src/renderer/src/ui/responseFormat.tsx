@@ -1,63 +1,10 @@
 import type { JSX } from 'react';
 import type { SendResult } from '#/shared/types';
 import { CodeEditor } from '#/renderer/src/components/CodeEditor';
+import { bodyLanguage, formatBody } from './responseFormatUtils';
 
 const detailRow =
   'grid grid-cols-[180px_1fr] gap-3 px-2.5 py-1.5 border-t border-separator first:border-t-0';
-
-/**
- * Pretty-prints JSON response bodies when valid; returns raw text otherwise.
- *
- * @param body - Raw response body string.
- * @returns Formatted body for display.
- */
-export function formatBody(body: string): string {
-  if (!body) return '';
-  try {
-    return JSON.stringify(JSON.parse(body), null, 2);
-  } catch {
-    return body;
-  }
-}
-
-/**
- * Returns true when the body is valid JSON.
- *
- * @param body - Raw body string.
- */
-export function isValidJson(body: string): boolean {
-  if (!body.trim()) return false;
-  try {
-    JSON.parse(body);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Chooses a syntax mode from content-type or JSON validity.
- *
- * @param body - Raw body string.
- * @param headers - Response headers map.
- */
-export function bodyLanguage(body: string, headers?: Record<string, string>): 'json' | 'text' {
-  const contentType = headers?.['content-type'] ?? headers?.['Content-Type'] ?? '';
-  if (contentType.includes('json')) return 'json';
-  return isValidJson(body) ? 'json' : 'text';
-}
-
-/**
- * Formats a byte count as B, KB, or MB.
- *
- * @param bytes - Response body size in bytes.
- * @returns Human-readable size string.
- */
-export function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 /**
  * Renders a key-value detail row for inspector-style panels.
@@ -68,7 +15,7 @@ export function formatBytes(bytes: number): string {
 export function DetailRow({ label, value }: { label: string; value: string }): JSX.Element {
   return (
     <div className={detailRow}>
-      <span className="break-words text-[13px] font-medium text-accent">{label}</span>
+      <span className="break-words text-[13px] font-medium">{label}</span>
       <span className="break-words font-mono text-[12px] text-text-secondary">{value}</span>
     </div>
   );
@@ -137,7 +84,7 @@ export function RequestDetails({ result }: RequestDetailsProps): JSX.Element {
                 className={`grid grid-cols-[180px_1fr] gap-3 px-2.5 py-1.5 ${index > 0 ? 'border-t border-separator' : ''}`}
                 key={key}
               >
-                <span className="break-words text-[13px] font-medium text-accent">{key}</span>
+                <span className="break-words text-[13px] font-medium">{key}</span>
                 <span className="break-words font-mono text-[12px] text-text-secondary">
                   {value}
                 </span>
