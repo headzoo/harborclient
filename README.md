@@ -1,6 +1,6 @@
 # Harbor Client
 
-A desktop HTTP client inspired by Postman. Build, send, and inspect HTTP requests with collections, tabs, and local persistence.
+A desktop HTTP client. Build, send, and inspect HTTP requests with collections, tabs, and local persistence.
 
 ## Features
 
