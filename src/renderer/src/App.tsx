@@ -52,7 +52,9 @@ export default function App(): JSX.Element {
       ? (store.requestsByCollection[store.selectedCollectionId] ?? [])
       : [];
   const tabsRef = useRef(store.tabs);
-  tabsRef.current = store.tabs;
+  useEffect(() => {
+    tabsRef.current = store.tabs;
+  });
 
   const activeCollectionId = store.draft.collection_id ?? store.selectedCollectionId;
   const activeCollection =
@@ -433,9 +435,7 @@ export default function App(): JSX.Element {
             <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">Unsaved changes</h2>
             <p className="mb-4 text-[12px] text-muted">
               {quitPrompt.length === 1 ? (
-                <>
-                  &ldquo;{quitPrompt[0]}&rdquo; has unsaved changes. Quit without saving?
-                </>
+                <>&ldquo;{quitPrompt[0]}&rdquo; has unsaved changes. Quit without saving?</>
               ) : (
                 <>{quitPrompt.length} requests have unsaved changes. Quit without saving?</>
               )}

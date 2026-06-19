@@ -14,7 +14,13 @@ import {
   updateCollection
 } from '#/main/db';
 import { executeRequest } from '#/main/http';
-import type { SaveRequestInput, SendRequestInput, ThemeSource, Variable, KeyValue } from '#/shared/types';
+import type {
+  SaveRequestInput,
+  SendRequestInput,
+  ThemeSource,
+  Variable,
+  KeyValue
+} from '#/shared/types';
 
 const THEME_SETTING_KEY = 'theme';
 

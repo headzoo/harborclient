@@ -401,7 +401,13 @@ export type ThemeSource = 'light' | 'dark' | 'system';
 /**
  * Menu action identifiers sent from the main process menu.
  */
-export type MenuActionId = 'new-request' | 'new-collection' | 'import' | 'save' | 'settings' | 'about';
+export type MenuActionId =
+  | 'new-request'
+  | 'new-collection'
+  | 'import'
+  | 'save'
+  | 'settings'
+  | 'about';
 
 /**
  * IPC bridge API exposed to the renderer via contextBridge.
