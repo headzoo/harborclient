@@ -5,7 +5,7 @@ import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
 import { MethodSelect } from '#/renderer/src/components/MethodSelect';
 import { VariableInput } from '#/renderer/src/components/VariableInput';
 import type { RequestDraft } from '#/renderer/src/store/drafts';
-import { field, primaryButton, secondaryButton, segment, segmentGroup } from './classes';
+import { field, primaryButton, segment, segmentGroup } from './classes';
 
 type EditorTab = 'params' | 'headers' | 'body';
 
@@ -26,11 +26,6 @@ interface Props {
    * Called when the user clicks Send.
    */
   onSend: () => void;
-
-  /**
-   * Called when the user clicks Save.
-   */
-  onSave: () => void;
 
   /**
    * Disables Send while a request is in flight.
@@ -54,13 +49,12 @@ interface Props {
 }
 
 /**
- * Request builder: method, URL, params, headers, body, and send/save actions.
+ * Request builder: method, URL, params, headers, body, and send action.
  */
 export function RequestEditor({
   draft,
   onChange,
   onSend,
-  onSave,
   sending,
   variables,
   collectionName,
@@ -90,7 +84,7 @@ export function RequestEditor({
 
   return (
     <div className="border-b border-separator p-3">
-      <div className="mb-2 flex justify-between gap-2">
+      <div className="mb-2">
         {editingName ? (
           <div className="flex min-w-0 max-w-xs items-center gap-1">
             {collectionName && (
@@ -131,9 +125,6 @@ export function RequestEditor({
             {draft.name ? draft.name : <span className="text-muted">Request name</span>}
           </button>
         )}
-        <button className={secondaryButton} onClick={onSave}>
-          Save
-        </button>
       </div>
 
       <div className="flex items-center gap-2">
@@ -214,6 +205,8 @@ export function RequestEditor({
                 onChange={(body) => update({ body })}
                 language={draft.body_type === 'json' ? 'json' : 'text'}
                 placeholder={draft.body_type === 'json' ? '{\n  "key": "value"\n}' : 'Request body'}
+                variables={variables}
+                onEditVariable={onEditVariables}
               />
             )}
           </div>

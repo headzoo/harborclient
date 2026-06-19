@@ -550,13 +550,23 @@ export function useAppStore(): AppStore {
     const resolvedUrl = collection
       ? substituteVariables(currentDraft.url, collection.variables)
       : currentDraft.url;
+    const variables = collection?.variables ?? [];
     const collectionHeaders = collection
       ? (collection.headers ?? []).map((header) => ({
           ...header,
-          value: substituteVariables(header.value, collection.variables)
+          value: substituteVariables(header.value, variables)
         }))
       : [];
-    const headers = [...collectionHeaders, ...currentDraft.headers];
+    const draftHeaders = currentDraft.headers.map((header) => ({
+      ...header,
+      value: substituteVariables(header.value, variables)
+    }));
+    const headers = [...collectionHeaders, ...draftHeaders];
+    const params = currentDraft.params.map((param) => ({
+      ...param,
+      value: substituteVariables(param.value, variables)
+    }));
+    const body = substituteVariables(currentDraft.body, variables);
 
     updateTab(tabId, () => ({ sending: true, response: null }));
     try {
@@ -564,8 +574,8 @@ export function useAppStore(): AppStore {
         method: currentDraft.method,
         url: resolvedUrl,
         headers,
-        params: currentDraft.params,
-        body: currentDraft.body,
+        params,
+        body,
         bodyType: currentDraft.body_type
       });
       updateTab(tabId, () => ({ response: result }));

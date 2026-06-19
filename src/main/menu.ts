@@ -36,6 +36,11 @@ export function buildMenu(window: BrowserWindow): Menu {
           label: 'Import',
           click: () => sendMenuAction(window, 'import')
         },
+        {
+          label: 'Save',
+          accelerator: 'CmdOrCtrl+S',
+          click: () => sendMenuAction(window, 'save')
+        },
         { type: 'separator' },
         {
           label: 'Settings',

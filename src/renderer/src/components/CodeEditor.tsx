@@ -1,9 +1,19 @@
 import { json } from '@codemirror/lang-json';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
-import { EditorView } from '@codemirror/view';
+import {
+  Decoration,
+  EditorView,
+  MatchDecorator,
+  ViewPlugin,
+  hoverTooltip,
+  type DecorationSet,
+  type ViewUpdate
+} from '@codemirror/view';
 import CodeMirror from '@uiw/react-codemirror';
 import { tags } from '@lezer/highlight';
 import { useEffect, useMemo, useState, type JSX } from 'react';
+import type { Variable } from '#/shared/types';
+import { resolveVariable } from '#/renderer/src/store';
 
 export type CodeEditorLanguage = 'json' | 'text';
 
@@ -44,6 +54,16 @@ interface Props {
    * Additional wrapper classes.
    */
   className?: string;
+
+  /**
+   * Collection-scoped variables for {{token}} highlighting and tooltips.
+   */
+  variables?: Variable[];
+
+  /**
+   * Opens collection settings to edit a hovered variable.
+   */
+  onEditVariable?: () => void;
 }
 
 const lightHighlight = HighlightStyle.define([
@@ -107,8 +127,113 @@ const editorTheme = EditorView.theme({
   },
   '.cm-activeLine': {
     backgroundColor: 'color-mix(in srgb, var(--mac-selection) 45%, transparent)'
+  },
+  '.cm-variable-token': {
+    color: '#32D2E2'
+  },
+  '.cm-tooltip.cm-tooltip-hover': {
+    border: '1px solid var(--mac-separator)',
+    backgroundColor: 'var(--mac-surface)',
+    borderRadius: '6px',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+  },
+  '.cm-variable-tooltip': {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    padding: '8px 12px',
+    fontSize: '13px',
+    color: 'var(--mac-text)'
+  },
+  '.cm-variable-tooltip-muted': {
+    color: 'var(--mac-muted)'
+  },
+  '.cm-variable-tooltip-edit': {
+    alignSelf: 'flex-start',
+    background: 'none',
+    border: 'none',
+    padding: '0',
+    cursor: 'pointer',
+    fontSize: '12px',
+    color: 'var(--mac-accent)'
   }
 });
+
+const variableMatcher = new MatchDecorator({
+  regexp: /\{\{\s*([\w.-]+)\s*\}\}/g,
+  decoration: Decoration.mark({ class: 'cm-variable-token' })
+});
+
+const variableHighlighter = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet;
+
+    constructor(view: EditorView) {
+      this.decorations = variableMatcher.createDeco(view);
+    }
+
+    update(update: ViewUpdate): void {
+      this.decorations = variableMatcher.updateDeco(update, this.decorations);
+    }
+  },
+  { decorations: (v) => v.decorations }
+);
+
+/**
+ * Builds a hover tooltip extension for {{variable}} tokens.
+ *
+ * @param variables - Collection-scoped variables for resolution.
+ * @param onEditVariable - Optional callback to open collection settings.
+ */
+function variableTooltip(
+  variables: Variable[],
+  onEditVariable?: () => void
+): ReturnType<typeof hoverTooltip> {
+  return hoverTooltip((view, pos) => {
+    const line = view.state.doc.lineAt(pos);
+    const pattern = /\{\{\s*([\w.-]+)\s*\}\}/g;
+
+    for (const match of line.text.matchAll(pattern)) {
+      const start = line.from + (match.index ?? 0);
+      const end = start + match[0].length;
+      if (pos < start || pos > end) continue;
+
+      const value = resolveVariable(match[1], variables);
+      return {
+        pos: start,
+        end,
+        above: true,
+        create() {
+          const dom = document.createElement('div');
+          dom.className = 'cm-variable-tooltip';
+
+          const valueEl = document.createElement('div');
+          valueEl.textContent = value ?? 'Not defined';
+          if (value === undefined) {
+            valueEl.className = 'cm-variable-tooltip-muted';
+          }
+          dom.appendChild(valueEl);
+
+          if (onEditVariable) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = 'Edit value';
+            btn.className = 'cm-variable-tooltip-edit';
+            btn.addEventListener('mousedown', (e) => {
+              e.preventDefault();
+              onEditVariable();
+            });
+            dom.appendChild(btn);
+          }
+
+          return { dom };
+        }
+      };
+    }
+
+    return null;
+  });
+}
 
 /**
  * CodeMirror wrapper for editable request bodies and read-only response views.
@@ -120,7 +245,9 @@ export function CodeEditor({
   readOnly = false,
   placeholder,
   minHeight = '144px',
-  className = ''
+  className = '',
+  variables,
+  onEditVariable
 }: Props): JSX.Element {
   const [isDark, setIsDark] = useState(
     () => window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -142,8 +269,11 @@ export function CodeEditor({
     if (language === 'json') {
       next.push(json());
     }
+    if (variables) {
+      next.push(variableHighlighter, variableTooltip(variables, onEditVariable));
+    }
     return next;
-  }, [isDark, language]);
+  }, [isDark, language, variables, onEditVariable]);
 
   const wrapperClassName = readOnly
     ? `overflow-hidden rounded-md bg-control shadow-[inset_0_0.5px_1px_rgba(0,0,0,0.06)] app-no-drag ${className}`

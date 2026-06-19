@@ -80,17 +80,6 @@ export default function App(): JSX.Element {
     }
   }, [selectedCollectionId, saveRequest]);
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent): void => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        void handleSave();
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [handleSave]);
-
   /**
    * Creates a collection, optionally saving the current draft into it.
    */
@@ -154,6 +143,9 @@ export default function App(): JSX.Element {
         case 'import':
           void handleImportCollection();
           break;
+        case 'save':
+          void handleSave();
+          break;
         case 'settings':
           setConfiguringCollectionId(null);
           setShowSettings(true);
@@ -164,7 +156,7 @@ export default function App(): JSX.Element {
       }
     });
     return unsubscribe;
-  }, [store, handleImportCollection]);
+  }, [store, handleImportCollection, handleSave]);
 
   useEffect(() => {
     if (!showAbout) return;
@@ -263,7 +255,6 @@ export default function App(): JSX.Element {
                 draft={store.draft}
                 onChange={store.setDraft}
                 onSend={() => void store.sendRequest()}
-                onSave={() => void handleSave()}
                 sending={store.sending}
                 variables={activeVariables}
                 collectionName={activeCollectionName}
