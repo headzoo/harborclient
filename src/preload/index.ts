@@ -6,6 +6,8 @@ import type {
   MenuActionId,
   SaveRequestInput,
   SavedRequest,
+  ScriptRunInput,
+  ScriptRunResult,
   SendRequestInput,
   SendResult,
   ThemeSource,
@@ -45,9 +47,19 @@ function updateCollection(
   id: number,
   name: string,
   variables: Variable[],
-  headers: KeyValue[]
+  headers: KeyValue[],
+  preRequestScript: string,
+  postRequestScript: string
 ): Promise<Collection> {
-  return ipcRenderer.invoke('collections:update', id, name, variables, headers);
+  return ipcRenderer.invoke(
+    'collections:update',
+    id,
+    name,
+    variables,
+    headers,
+    preRequestScript,
+    postRequestScript
+  );
 }
 
 /**
@@ -115,6 +127,16 @@ function deleteRequest(id: number): Promise<void> {
  */
 function sendRequest(req: SendRequestInput): Promise<SendResult> {
   return ipcRenderer.invoke('http:send', req);
+}
+
+/**
+ * Runs a pre/post script via IPC.
+ *
+ * @param input - Script source, phase, request/response context, and variables.
+ * @returns Mutated request, variable sets, tests, and logs from the sandbox.
+ */
+function runScript(input: ScriptRunInput): Promise<ScriptRunResult> {
+  return ipcRenderer.invoke('scripts:run', input);
 }
 
 /**
@@ -188,6 +210,7 @@ const api: Api = {
   saveRequest,
   deleteRequest,
   sendRequest,
+  runScript,
   onMenuAction,
   getAppVersion,
   getTheme,

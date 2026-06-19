@@ -54,6 +54,8 @@ export default function App(): JSX.Element {
     store.selectedCollectionId != null
       ? (store.requestsByCollection[store.selectedCollectionId] ?? [])
       : [];
+
+  /** Ref to store.tabs to avoid unnecessary re-renders. */
   const tabsRef = useRef(store.tabs);
   useEffect(() => {
     tabsRef.current = store.tabs;
@@ -293,9 +295,16 @@ export default function App(): JSX.Element {
             <CollectionSettings
               collection={configuringCollection}
               onDirtyChange={setCollectionSettingsDirty}
-              onSave={async (id, name, variables, headers) => {
+              onSave={async (id, name, variables, headers, preRequestScript, postRequestScript) => {
                 try {
-                  await store.updateCollection(id, name, variables, headers);
+                  await store.updateCollection(
+                    id,
+                    name,
+                    variables,
+                    headers,
+                    preRequestScript,
+                    postRequestScript
+                  );
                   toast.success('Collection updated');
                 } catch (err) {
                   alert(err instanceof Error ? err.message : 'Failed to update collection');
@@ -326,6 +335,7 @@ export default function App(): JSX.Element {
                 key={`response-${store.activeTabId}`}
                 response={store.response}
                 sending={store.sending}
+                testResults={store.testResults}
               />
             </>
           )}

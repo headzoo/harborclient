@@ -4,12 +4,7 @@ sidebar: false
 outline: false
 
 hero:
-  name: HarborClient
-  text: A desktop HTTP client
   tagline: Build, send, and inspect HTTP requests with collections, tabs, and local persistence.
-  image:
-    src: /images/logo-white.png
-    alt: HarborClient
   actions:
     - theme: brand
       text: Download
@@ -23,8 +18,6 @@ features:
     details: Method selector, URL bar, query params, headers, and body (none, JSON, or plain text).
   - title: Collections
     details: Organize saved requests into named collections with create, rename, and delete.
-  - title: Tabs
-    details: Open multiple requests at once; tab state persists across restarts.
-  - title: Local storage
-    details: Collections and requests saved in SQLite in app user data.
+  - title: Scripts and tests
+    details: Pre- and post-request JavaScript at the collection or request level. Use the hc API to set variables, modify requests, and assert on responses with hc.test.
 ---

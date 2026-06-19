@@ -88,6 +88,8 @@ function rowToCollection(row: Record<string, unknown>): Collection {
     name: row.name as string,
     variables: parseJson<Partial<Variable>[]>(row.variables as string, []).map(normalizeVariable),
     headers: parseJson<KeyValue[]>(row.headers as string, []),
+    pre_request_script: (row.pre_request_script as string) ?? '',
+    post_request_script: (row.post_request_script as string) ?? '',
     created_at: row.created_at as string
   };
 }
@@ -109,6 +111,8 @@ function rowToRequest(row: Record<string, unknown>): SavedRequest {
     params: parseJson<KeyValue[]>(row.params as string, []),
     body: (row.body as string) ?? '',
     body_type: row.body_type as BodyType,
+    pre_request_script: (row.pre_request_script as string) ?? '',
+    post_request_script: (row.post_request_script as string) ?? '',
     sort_order: row.sort_order as number,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string
@@ -135,6 +139,8 @@ export function initDb(userDataPath: string): Database.Database {
       name TEXT NOT NULL,
       variables TEXT NOT NULL DEFAULT '[]',
       headers TEXT NOT NULL DEFAULT '[]',
+      pre_request_script TEXT NOT NULL DEFAULT '',
+      post_request_script TEXT NOT NULL DEFAULT '',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -148,6 +154,8 @@ export function initDb(userDataPath: string): Database.Database {
       params TEXT NOT NULL DEFAULT '[]',
       body TEXT NOT NULL DEFAULT '',
       body_type TEXT NOT NULL DEFAULT 'none',
+      pre_request_script TEXT NOT NULL DEFAULT '',
+      post_request_script TEXT NOT NULL DEFAULT '',
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -168,6 +176,24 @@ export function initDb(userDataPath: string): Database.Database {
   const hasHeaders = columns.some((col) => col.name === 'headers');
   if (!hasHeaders) {
     db.exec("ALTER TABLE collections ADD COLUMN headers TEXT NOT NULL DEFAULT '[]'");
+  }
+  const hasCollectionPreScript = columns.some((col) => col.name === 'pre_request_script');
+  if (!hasCollectionPreScript) {
+    db.exec("ALTER TABLE collections ADD COLUMN pre_request_script TEXT NOT NULL DEFAULT ''");
+  }
+  const hasCollectionPostScript = columns.some((col) => col.name === 'post_request_script');
+  if (!hasCollectionPostScript) {
+    db.exec("ALTER TABLE collections ADD COLUMN post_request_script TEXT NOT NULL DEFAULT ''");
+  }
+
+  const requestColumns = db.prepare('PRAGMA table_info(requests)').all() as Array<{ name: string }>;
+  const hasRequestPreScript = requestColumns.some((col) => col.name === 'pre_request_script');
+  if (!hasRequestPreScript) {
+    db.exec("ALTER TABLE requests ADD COLUMN pre_request_script TEXT NOT NULL DEFAULT ''");
+  }
+  const hasRequestPostScript = requestColumns.some((col) => col.name === 'post_request_script');
+  if (!hasRequestPostScript) {
+    db.exec("ALTER TABLE requests ADD COLUMN post_request_script TEXT NOT NULL DEFAULT ''");
   }
 
   return db;
@@ -191,7 +217,9 @@ export function getDb(): Database.Database {
  */
 export function listCollections(): Collection[] {
   const rows = getDb()
-    .prepare('SELECT id, name, variables, headers, created_at FROM collections ORDER BY name ASC')
+    .prepare(
+      'SELECT id, name, variables, headers, pre_request_script, post_request_script, created_at FROM collections ORDER BY name ASC'
+    )
     .all() as Record<string, unknown>[];
 
   return rows.map(rowToCollection);
@@ -207,7 +235,9 @@ export function createCollection(name: string): Collection {
   const result = getDb().prepare('INSERT INTO collections (name) VALUES (?)').run(name.trim());
 
   const row = getDb()
-    .prepare('SELECT id, name, variables, headers, created_at FROM collections WHERE id = ?')
+    .prepare(
+      'SELECT id, name, variables, headers, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?'
+    )
     .get(result.lastInsertRowid) as Record<string, unknown>;
 
   return rowToCollection(row);
@@ -227,14 +257,27 @@ export function updateCollection(
   id: number,
   name: string,
   variables: Variable[],
-  headers: KeyValue[]
+  headers: KeyValue[],
+  preRequestScript: string,
+  postRequestScript: string
 ): Collection {
   getDb()
-    .prepare('UPDATE collections SET name = ?, variables = ?, headers = ? WHERE id = ?')
-    .run(name.trim(), JSON.stringify(variables), JSON.stringify(headers), id);
+    .prepare(
+      'UPDATE collections SET name = ?, variables = ?, headers = ?, pre_request_script = ?, post_request_script = ? WHERE id = ?'
+    )
+    .run(
+      name.trim(),
+      JSON.stringify(variables),
+      JSON.stringify(headers),
+      preRequestScript,
+      postRequestScript,
+      id
+    );
 
   const row = getDb()
-    .prepare('SELECT id, name, variables, headers, created_at FROM collections WHERE id = ?')
+    .prepare(
+      'SELECT id, name, variables, headers, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?'
+    )
     .get(id) as Record<string, unknown> | undefined;
 
   if (!row) throw new Error('Collection not found');
@@ -274,6 +317,8 @@ export function listRequests(collectionId: number): SavedRequest[] {
 export function saveRequest(input: SaveRequestInput): SavedRequest {
   const headers = JSON.stringify(input.headers);
   const params = JSON.stringify(input.params);
+  const preRequestScript = input.pre_request_script ?? '';
+  const postRequestScript = input.post_request_script ?? '';
   const now = new Date().toISOString();
 
   if (input.id) {
@@ -282,6 +327,7 @@ export function saveRequest(input: SaveRequestInput): SavedRequest {
         `UPDATE requests SET
           collection_id = ?, name = ?, method = ?, url = ?,
           headers = ?, params = ?, body = ?, body_type = ?,
+          pre_request_script = ?, post_request_script = ?,
           updated_at = ?
         WHERE id = ?`
       )
@@ -294,6 +340,8 @@ export function saveRequest(input: SaveRequestInput): SavedRequest {
         params,
         input.body,
         input.body_type,
+        preRequestScript,
+        postRequestScript,
         now,
         input.id
       );
@@ -312,8 +360,9 @@ export function saveRequest(input: SaveRequestInput): SavedRequest {
   const result = getDb()
     .prepare(
       `INSERT INTO requests (
-        collection_id, name, method, url, headers, params, body, body_type, sort_order, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        collection_id, name, method, url, headers, params, body, body_type,
+        pre_request_script, post_request_script, sort_order, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       input.collection_id,
@@ -324,6 +373,8 @@ export function saveRequest(input: SaveRequestInput): SavedRequest {
       params,
       input.body,
       input.body_type,
+      preRequestScript,
+      postRequestScript,
       maxOrder.max_order + 1,
       now
     );
@@ -390,6 +441,11 @@ function validateCollectionExport(data: unknown): CollectionExport {
 
   const headers = Array.isArray(record.headers) ? (record.headers as KeyValue[]) : [];
 
+  const preRequestScript =
+    typeof record.pre_request_script === 'string' ? record.pre_request_script : '';
+  const postRequestScript =
+    typeof record.post_request_script === 'string' ? record.post_request_script : '';
+
   const requests = record.requests.map((item, index) => {
     if (!item || typeof item !== 'object') {
       throw new Error(`Invalid collection file: request ${index + 1} is malformed`);
@@ -419,6 +475,9 @@ function validateCollectionExport(data: unknown): CollectionExport {
       params: Array.isArray(req.params) ? (req.params as KeyValue[]) : [],
       body: typeof req.body === 'string' ? req.body : '',
       body_type: bodyType as BodyType,
+      pre_request_script: typeof req.pre_request_script === 'string' ? req.pre_request_script : '',
+      post_request_script:
+        typeof req.post_request_script === 'string' ? req.post_request_script : '',
       sort_order: typeof req.sort_order === 'number' ? req.sort_order : index
     } satisfies ExportedRequest;
   });
@@ -428,6 +487,8 @@ function validateCollectionExport(data: unknown): CollectionExport {
     name,
     variables,
     headers,
+    pre_request_script: preRequestScript,
+    post_request_script: postRequestScript,
     requests
   };
 }
@@ -441,13 +502,23 @@ function validateCollectionExport(data: unknown): CollectionExport {
  */
 export function exportCollectionData(id: number): CollectionExport {
   const row = getDb()
-    .prepare('SELECT name, variables, headers FROM collections WHERE id = ?')
-    .get(id) as { name: string; variables: string; headers: string } | undefined;
+    .prepare(
+      'SELECT name, variables, headers, pre_request_script, post_request_script FROM collections WHERE id = ?'
+    )
+    .get(id) as
+    | {
+        name: string;
+        variables: string;
+        headers: string;
+        pre_request_script: string;
+        post_request_script: string;
+      }
+    | undefined;
 
   if (!row) throw new Error('Collection not found');
 
   const requests = listRequests(id).map(
-    ({ name, method, url, headers, params, body, body_type, sort_order }) => ({
+    ({
       name,
       method,
       url,
@@ -455,6 +526,19 @@ export function exportCollectionData(id: number): CollectionExport {
       params,
       body,
       body_type,
+      pre_request_script,
+      post_request_script,
+      sort_order
+    }) => ({
+      name,
+      method,
+      url,
+      headers,
+      params,
+      body,
+      body_type,
+      pre_request_script,
+      post_request_script,
       sort_order
     })
   );
@@ -472,6 +556,8 @@ export function exportCollectionData(id: number): CollectionExport {
       share: v.share
     })),
     headers,
+    pre_request_script: row.pre_request_script ?? '',
+    post_request_script: row.post_request_script ?? '',
     requests
   };
 }
@@ -490,14 +576,23 @@ export function importCollectionData(data: unknown): Collection {
 
   const importCollection = database.transaction((payload: CollectionExport) => {
     const collectionResult = database
-      .prepare('INSERT INTO collections (name, variables, headers) VALUES (?, ?, ?)')
-      .run(payload.name, JSON.stringify(payload.variables), JSON.stringify(payload.headers));
+      .prepare(
+        'INSERT INTO collections (name, variables, headers, pre_request_script, post_request_script) VALUES (?, ?, ?, ?, ?)'
+      )
+      .run(
+        payload.name,
+        JSON.stringify(payload.variables),
+        JSON.stringify(payload.headers),
+        payload.pre_request_script,
+        payload.post_request_script
+      );
 
     const collectionId = Number(collectionResult.lastInsertRowid);
     const insertRequest = database.prepare(
       `INSERT INTO requests (
-        collection_id, name, method, url, headers, params, body, body_type, sort_order, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        collection_id, name, method, url, headers, params, body, body_type,
+        pre_request_script, post_request_script, sort_order, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
 
     for (const request of payload.requests) {
@@ -510,13 +605,17 @@ export function importCollectionData(data: unknown): Collection {
         JSON.stringify(request.params),
         request.body,
         request.body_type,
+        request.pre_request_script,
+        request.post_request_script,
         request.sort_order,
         now
       );
     }
 
     const row = database
-      .prepare('SELECT id, name, variables, headers, created_at FROM collections WHERE id = ?')
+      .prepare(
+        'SELECT id, name, variables, headers, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?'
+      )
       .get(collectionId) as Record<string, unknown>;
 
     return rowToCollection(row);

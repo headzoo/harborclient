@@ -7,7 +7,7 @@ import { VariableInput } from '#/renderer/src/components/VariableInput';
 import type { RequestDraft } from '#/renderer/src/store/drafts';
 import { field, primaryButton, segment, segmentGroup } from './classes';
 
-type EditorTab = 'params' | 'headers' | 'body';
+type EditorTab = 'params' | 'headers' | 'body' | 'pre' | 'post';
 
 interface Props {
   /**
@@ -161,6 +161,12 @@ export function RequestEditor({
               Body
             </button>
           )}
+          <button className={segment(tab === 'pre')} onClick={() => setTab('pre')}>
+            PreRequest
+          </button>
+          <button className={segment(tab === 'post')} onClick={() => setTab('post')}>
+            PostRequest
+          </button>
         </div>
       </div>
 
@@ -210,6 +216,30 @@ export function RequestEditor({
               />
             )}
           </div>
+        )}
+        {tab === 'pre' && (
+          <CodeEditor
+            value={draft.pre_request_script}
+            onChange={(pre_request_script) => update({ pre_request_script })}
+            language="javascript"
+            placeholder="// hc.request.url = 'https://example.com';\n// hc.variables.set('token', 'abc');"
+            variables={variables}
+            onEditVariable={onEditVariables}
+            minHeight="200px"
+          />
+        )}
+        {tab === 'post' && (
+          <CodeEditor
+            value={draft.post_request_script}
+            onChange={(post_request_script) => update({ post_request_script })}
+            language="javascript"
+            placeholder={
+              '// hc.test("status is 200", () => {\n//   hc.expect(hc.response.code).to.equal(200);\n// });'
+            }
+            variables={variables}
+            onEditVariable={onEditVariables}
+            minHeight="200px"
+          />
         )}
       </div>
     </div>

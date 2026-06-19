@@ -2,9 +2,90 @@
  * Dark theme uses VitePress defaults (appearance: force-dark in config).
  */
 
-.VPHero .image img {
-  max-width: min(480px, 90vw);
+.VPHero .heading {
+  display: flex;
+  flex-direction: column;
+}
+
+.VPHero .home-hero-logo {
+  display: block;
+  width: fit-content;
+  max-width: min(392px, 90vw);
   height: auto;
+  margin: 0 auto;
+}
+
+.VPHero .text {
+  width: fit-content;
+  max-width: 392px;
+  letter-spacing: -0.4px;
+  line-height: 40px;
+  font-size: 32px;
+  font-weight: 700;
+  white-space: pre-wrap;
+  margin: 0 auto;
+}
+
+.VPHero .tagline {
+  padding-top: 8px;
+  max-width: 392px;
+  line-height: 28px;
+  font-size: 18px;
+  font-weight: 500;
+  white-space: pre-wrap;
+  color: var(--vp-c-text-2);
+  margin: 0 auto;
+}
+
+@media (min-width: 640px) {
+  .VPHero .home-hero-logo {
+    max-width: min(576px, 90vw);
+  }
+
+  .VPHero .text {
+    max-width: 576px;
+    line-height: 56px;
+    font-size: 48px;
+  }
+
+  .VPHero .tagline {
+    padding-top: 12px;
+    max-width: 576px;
+    line-height: 32px;
+    font-size: 20px;
+  }
+}
+
+@media (min-width: 960px) {
+  .VPHero .home-hero-logo,
+  .VPHero .text,
+  .VPHero .tagline {
+    margin: 0;
+  }
+
+  .VPHero .text {
+    line-height: 64px;
+    font-size: 56px;
+  }
+
+  .VPHero .tagline {
+    line-height: 36px;
+    font-size: 24px;
+  }
+}
+
+.home-screenshot {
+  max-width: 960px;
+  margin: 0 auto 48px;
+  padding: 0 24px;
+}
+
+.home-screenshot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--vp-c-divider);
 }
 
 /* GitHub-flavored alerts (`> [!NOTE]`, etc.) — gfmAlerts in .vitepress/config.ts */

@@ -9,7 +9,7 @@ import {
 import type { ConsoleEntry } from '#/renderer/src/store';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faXmark } from '#/renderer/src/fontawesome';
-import { RequestDetails } from './responseFormat';
+import { RequestDetails, SectionTitle } from './responseFormat';
 import { formatBytes } from './responseFormatUtils';
 import { METHOD_CLASSES, secondaryButton, statusDotClass } from './classes';
 
@@ -42,6 +42,52 @@ interface ConsoleEntryRowProps {
   entry: ConsoleEntry;
   expanded: boolean;
   onToggle: () => void;
+}
+
+/**
+ * Renders script logs, tests, and errors from a console entry.
+ */
+function ScriptDetails({ entry }: { entry: ConsoleEntry }): JSX.Element | null {
+  const hasScripts =
+    (entry.logs && entry.logs.length > 0) ||
+    (entry.tests && entry.tests.length > 0) ||
+    Boolean(entry.scriptError);
+
+  if (!hasScripts) return null;
+
+  return (
+    <div className="mb-4">
+      <SectionTitle title="Scripts" />
+      {entry.scriptError && (
+        <div className="mb-2 rounded-md bg-danger/10 px-2.5 py-2 text-[13px] text-danger whitespace-pre-wrap">
+          {entry.scriptError}
+        </div>
+      )}
+      {entry.logs && entry.logs.length > 0 && (
+        <pre className="mb-2 overflow-auto rounded-md border border-separator bg-control px-2.5 py-2 font-mono text-[12px] text-text">
+          {entry.logs.join('\n')}
+        </pre>
+      )}
+      {entry.tests && entry.tests.length > 0 && (
+        <div className="overflow-hidden rounded-md border border-separator">
+          {entry.tests.map((test, index) => (
+            <div
+              key={`${test.name}-${index}`}
+              className={`flex items-center gap-2 px-2.5 py-1.5 ${index > 0 ? 'border-t border-separator' : ''}`}
+            >
+              <span
+                className={`inline-block h-2 w-2 shrink-0 rounded-full ${test.passed ? 'bg-success' : 'bg-danger'}`}
+              />
+              <span className="text-[13px] text-text">{test.name}</span>
+              {!test.passed && test.error && (
+                <span className="text-[12px] text-danger">{test.error}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /**
@@ -86,6 +132,7 @@ function ConsoleEntryRow({ entry, expanded, onToggle }: ConsoleEntryRowProps): J
       </button>
       {expanded && (
         <div className="border-t border-separator bg-surface px-3 py-3">
+          <ScriptDetails entry={entry} />
           <RequestDetails result={result} />
         </div>
       )}
@@ -151,16 +198,14 @@ export function ConsolePanel({ entries, open, onClose, onClear }: Props): JSX.El
   };
 
   const effectiveExpandedId = open ? expandedId : null;
+  const panelClassName = [
+    'absolute inset-x-0 bottom-0 z-40 flex flex-col border-t border-separator bg-surface',
+    'shadow-[0_-4px_16px_rgba(0,0,0,0.12)] transition-transform duration-300 ease-out app-no-drag',
+    open ? 'translate-y-0' : 'translate-y-full'
+  ].join(' ');
 
   return (
-    <div
-      ref={containerRef}
-      className={`absolute inset-x-0 bottom-0 z-40 flex flex-col border-t border-separator bg-surface shadow-[0_-4px_16px_rgba(0,0,0,0.12)] transition-transform duration-300 ease-out app-no-drag ${
-        open ? 'translate-y-0' : 'translate-y-full'
-      }`}
-      style={{ height }}
-      aria-hidden={!open}
-    >
+    <div ref={containerRef} className={panelClassName} style={{ height }} aria-hidden={!open}>
       <div
         className="flex h-1.5 shrink-0 cursor-row-resize items-center justify-center border-b border-separator bg-control hover:bg-selection/60"
         onMouseDown={handleResizeStart}
@@ -177,8 +222,6 @@ export function ConsolePanel({ entries, open, onClose, onClear }: Props): JSX.El
           {entries.length > 0 && (
             <span className="text-[12px] font-normal text-muted">({entries.length})</span>
           )}
-        </div>
-        <div className="flex items-center gap-2">
           <button
             type="button"
             className={secondaryButton}
@@ -187,6 +230,8 @@ export function ConsolePanel({ entries, open, onClose, onClear }: Props): JSX.El
           >
             Clear
           </button>
+        </div>
+        <div className="flex items-center gap-2">
           <button
             type="button"
             className="inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-[14px] text-muted hover:bg-selection hover:text-text app-no-drag"

@@ -1,4 +1,11 @@
-import type { BodyType, HttpMethod, KeyValue, SavedRequest, SendResult } from '#/shared/types';
+import type {
+  BodyType,
+  HttpMethod,
+  KeyValue,
+  SavedRequest,
+  ScriptTestResult,
+  SendResult
+} from '#/shared/types';
 
 /** Editable request state in the UI before or during save. */
 export interface RequestDraft {
@@ -11,6 +18,8 @@ export interface RequestDraft {
   params: KeyValue[];
   body: string;
   body_type: BodyType;
+  pre_request_script: string;
+  post_request_script: string;
 }
 
 /** Open request tab with draft, response, and in-flight state. */
@@ -20,6 +29,21 @@ export interface RequestTab {
   savedDraft: RequestDraft;
   response: SendResult | null;
   sending: boolean;
+  testResults: ScriptTestResult[];
+}
+
+/**
+ * Ensures a draft has all required fields, including script defaults for legacy persisted tabs.
+ *
+ * @param draft - Partial or full draft from storage or the database.
+ * @returns Draft with script fields guaranteed to be strings.
+ */
+export function normalizeDraft(draft: RequestDraft): RequestDraft {
+  return {
+    ...draft,
+    pre_request_script: draft.pre_request_script ?? '',
+    post_request_script: draft.post_request_script ?? ''
+  };
 }
 
 /**
@@ -29,10 +53,11 @@ export interface RequestTab {
  * @returns Independent copy safe to use as a saved baseline.
  */
 export function cloneDraft(draft: RequestDraft): RequestDraft {
+  const normalized = normalizeDraft(draft);
   return {
-    ...draft,
-    headers: draft.headers.map((h) => ({ ...h })),
-    params: draft.params.map((p) => ({ ...p }))
+    ...normalized,
+    headers: normalized.headers.map((h) => ({ ...h })),
+    params: normalized.params.map((p) => ({ ...p }))
   };
 }
 
@@ -49,6 +74,8 @@ export function normalizeDraftForCompare(draft: RequestDraft): string {
     url: draft.url,
     body: draft.body,
     body_type: draft.body_type,
+    pre_request_script: draft.pre_request_script ?? '',
+    post_request_script: draft.post_request_script ?? '',
     headers: draft.headers.filter((h) => h.key.trim() || h.value.trim()),
     params: draft.params.filter((p) => p.key.trim() || p.value.trim())
   };
@@ -105,7 +132,9 @@ export const defaultDraft = (): RequestDraft => ({
   headers: [emptyKeyValue()],
   params: [emptyKeyValue()],
   body: '',
-  body_type: 'none'
+  body_type: 'none',
+  pre_request_script: '',
+  post_request_script: ''
 });
 
 /**
@@ -121,7 +150,8 @@ export function createTab(draft: RequestDraft = defaultDraft()): RequestTab {
     draft: initialDraft,
     savedDraft: cloneDraft(initialDraft),
     response: null,
-    sending: false
+    sending: false,
+    testResults: []
   };
 }
 
@@ -141,6 +171,8 @@ export function draftFromSaved(req: SavedRequest): RequestDraft {
     headers: req.headers.length ? req.headers : [emptyKeyValue()],
     params: req.params.length ? req.params : [emptyKeyValue()],
     body: req.body,
-    body_type: req.body_type
+    body_type: req.body_type,
+    pre_request_script: req.pre_request_script ?? '',
+    post_request_script: req.post_request_script ?? ''
   };
 }

@@ -78,6 +78,16 @@ export interface Collection {
   headers: KeyValue[];
 
   /**
+   * JavaScript run before every request in this collection (before request-level pre script).
+   */
+  pre_request_script: string;
+
+  /**
+   * JavaScript run after every request in this collection (after request-level post script).
+   */
+  post_request_script: string;
+
+  /**
    * ISO 8601 timestamp when the collection was created.
    */
   created_at: string;
@@ -131,6 +141,16 @@ export interface SavedRequest {
    * Content type of the request body.
    */
   body_type: BodyType;
+
+  /**
+   * JavaScript run before the request is sent.
+   */
+  pre_request_script: string;
+
+  /**
+   * JavaScript run after the response is received.
+   */
+  post_request_script: string;
 
   /**
    * Position within the collection for sidebar ordering.
@@ -188,6 +208,16 @@ export interface ExportedRequest {
   body_type: BodyType;
 
   /**
+   * JavaScript run before the request is sent.
+   */
+  pre_request_script: string;
+
+  /**
+   * JavaScript run after the response is received.
+   */
+  post_request_script: string;
+
+  /**
    * Position within the collection for sidebar ordering.
    */
   sort_order: number;
@@ -216,6 +246,16 @@ export interface CollectionExport {
    * Headers sent with every request in this collection.
    */
   headers: KeyValue[];
+
+  /**
+   * JavaScript run before every request in this collection.
+   */
+  pre_request_script: string;
+
+  /**
+   * JavaScript run after every request in this collection.
+   */
+  post_request_script: string;
 
   /**
    * Saved requests belonging to the collection.
@@ -286,6 +326,16 @@ export interface SaveRequestInput {
    * Content type of the request body.
    */
   body_type: BodyType;
+
+  /**
+   * JavaScript run before the request is sent.
+   */
+  pre_request_script: string;
+
+  /**
+   * JavaScript run after the response is received.
+   */
+  post_request_script: string;
 }
 
 /**
@@ -394,6 +444,54 @@ export interface SendResult {
 }
 
 /**
+ * Script execution phase relative to the HTTP request.
+ */
+export type ScriptPhase = 'pre' | 'post';
+
+/**
+ * Request context passed into a pre/post script sandbox.
+ */
+export interface ScriptRequestContext {
+  method: HttpMethod;
+  url: string;
+  headers: KeyValue[];
+  params: KeyValue[];
+  body: string;
+  bodyType: BodyType;
+}
+
+/**
+ * Input for running a pre/post script in the main process sandbox.
+ */
+export interface ScriptRunInput {
+  phase: ScriptPhase;
+  script: string;
+  request: ScriptRequestContext;
+  response?: SendResult;
+  variables: Record<string, string>;
+}
+
+/**
+ * Result of a single hc.test assertion.
+ */
+export interface ScriptTestResult {
+  name: string;
+  passed: boolean;
+  error?: string;
+}
+
+/**
+ * Result returned from the script sandbox after execution.
+ */
+export interface ScriptRunResult {
+  request: ScriptRequestContext;
+  variableSets: Record<string, string>;
+  tests: ScriptTestResult[];
+  logs: string[];
+  error?: string;
+}
+
+/**
  * Theme preference for light, dark, or system appearance.
  */
 export type ThemeSource = 'light' | 'dark' | 'system';
@@ -441,7 +539,9 @@ export interface Api {
     id: number,
     name: string,
     variables: Variable[],
-    headers: KeyValue[]
+    headers: KeyValue[],
+    preRequestScript: string,
+    postRequestScript: string
   ) => Promise<Collection>;
 
   /**
@@ -496,6 +596,14 @@ export interface Api {
    * @returns Response metadata from the main process.
    */
   sendRequest: (req: SendRequestInput) => Promise<SendResult>;
+
+  /**
+   * Runs a pre/post script in an isolated-vm sandbox.
+   *
+   * @param input - Script source, phase, request/response context, and variables.
+   * @returns Mutated request, variable sets, tests, and logs from the sandbox.
+   */
+  runScript: (input: ScriptRunInput) => Promise<ScriptRunResult>;
 
   /**
    * Subscribes to menu bar action events from the main process.

@@ -1,17 +1,29 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import type {
   Collection,
   CollectionExportResult,
   KeyValue,
   SavedRequest,
+  ScriptRequestContext,
+  ScriptRunResult,
+  ScriptTestResult,
   SendResult,
   Variable
 } from '#/shared/types';
+import {
+  applyScriptRequestMutations,
+  buildRuntimeVars,
+  buildScriptSlots,
+  mergeVariableSets,
+  substituteWithMap
+} from '#/renderer/src/store/scriptOrchestration';
 import {
   cloneDraft,
   createTab,
   defaultDraft,
   draftFromSaved,
+  normalizeDraft,
   type RequestDraft,
   type RequestTab
 } from '#/renderer/src/store/drafts';
@@ -137,14 +149,15 @@ function loadTabsFromStorage(): { tabs: RequestTab[]; activeTabId: string } {
     if (!parsed.tabs?.length || !parsed.activeTabId) return defaultTabState();
 
     const tabs: RequestTab[] = parsed.tabs.map((t) => {
-      const draft = t.draft;
-      const savedDraft = t.savedDraft ?? draft;
+      const draft = normalizeDraft(t.draft);
+      const savedDraft = normalizeDraft(t.savedDraft ?? t.draft);
       return {
         tabId: t.tabId,
         draft,
         savedDraft: cloneDraft(savedDraft),
         response: null,
-        sending: false
+        sending: false,
+        testResults: []
       };
     });
 
@@ -179,6 +192,9 @@ export interface ConsoleEntry {
   requestName: string;
   collectionName?: string;
   result: SendResult;
+  logs?: string[];
+  tests?: ScriptTestResult[];
+  scriptError?: string;
 }
 
 /** State and actions exposed to renderer components via useAppStore. */
@@ -193,6 +209,7 @@ export interface AppStore {
   setDraft: (next: RequestDraft) => void;
   response: SendResult | null;
   sending: boolean;
+  testResults: ScriptTestResult[];
   setActiveTab: (tabId: string) => void;
   closeTab: (tabId: string) => void;
   createCollection: (name: string) => Promise<Collection>;
@@ -200,7 +217,9 @@ export interface AppStore {
     id: number,
     name: string,
     variables: Variable[],
-    headers: KeyValue[]
+    headers: KeyValue[],
+    preRequestScript: string,
+    postRequestScript: string
   ) => Promise<void>;
   deleteCollection: (id: number) => Promise<void>;
   exportCollection: (id: number) => Promise<CollectionExportResult>;
@@ -239,6 +258,7 @@ export function useAppStore(): AppStore {
   const draft = activeTab?.draft ?? defaultDraft();
   const response = activeTab?.response ?? null;
   const sending = activeTab?.sending ?? false;
+  const testResults = activeTab?.testResults ?? [];
 
   /**
    * Updates a single tab by ID.
@@ -359,7 +379,9 @@ export function useAppStore(): AppStore {
       headers: [],
       params: [],
       body: '',
-      body_type: 'none'
+      body_type: 'none',
+      pre_request_script: '',
+      post_request_script: ''
     });
 
     const tab = createTab(draftFromSaved(saved));
@@ -420,9 +442,18 @@ export function useAppStore(): AppStore {
     id: number,
     name: string,
     variables: Variable[],
-    headers: KeyValue[]
+    headers: KeyValue[],
+    preRequestScript: string,
+    postRequestScript: string
   ): Promise<void> => {
-    await window.api.updateCollection(id, name, variables, headers);
+    await window.api.updateCollection(
+      id,
+      name,
+      variables,
+      headers,
+      preRequestScript,
+      postRequestScript
+    );
     await refreshCollections();
   };
 
@@ -489,7 +520,9 @@ export function useAppStore(): AppStore {
       headers: currentDraft.headers.filter((h) => h.key.trim() || h.value.trim()),
       params: currentDraft.params.filter((p) => p.key.trim() || p.value.trim()),
       body: currentDraft.body,
-      body_type: currentDraft.body_type
+      body_type: currentDraft.body_type,
+      pre_request_script: currentDraft.pre_request_script ?? '',
+      post_request_script: currentDraft.post_request_script ?? ''
     });
 
     const savedDraft = cloneDraft(draftFromSaved(saved));
@@ -559,48 +592,106 @@ export function useAppStore(): AppStore {
     const { draft: currentDraft } = activeTab;
     const collectionId = currentDraft.collection_id ?? selectedCollectionId;
     const collection = collectionId ? collections.find((c) => c.id === collectionId) : undefined;
-    const resolvedUrl = collection
-      ? substituteVariables(currentDraft.url, collection.variables)
-      : currentDraft.url;
-    const variables = collection?.variables ?? [];
-    const collectionHeaders = collection
-      ? (collection.headers ?? []).map((header) => ({
-          ...header,
-          value: substituteVariables(header.value, variables)
-        }))
-      : [];
-    const draftHeaders = currentDraft.headers.map((header) => ({
-      ...header,
-      value: substituteVariables(header.value, variables)
-    }));
-    const headers = [...collectionHeaders, ...draftHeaders];
-    const params = currentDraft.params.map((param) => ({
-      ...param,
-      value: substituteVariables(param.value, variables)
-    }));
-    const body = substituteVariables(currentDraft.body, variables);
 
-    updateTab(tabId, () => ({ sending: true, response: null }));
+    let runtimeVars = buildRuntimeVars(collection?.variables ?? []);
+    const allLogs: string[] = [];
+    const allTests: ScriptTestResult[] = [];
+    const scriptErrors: string[] = [];
+
+    let scriptRequest: ScriptRequestContext = {
+      method: currentDraft.method,
+      url: currentDraft.url,
+      headers: currentDraft.headers.map((header) => ({ ...header })),
+      params: currentDraft.params.map((param) => ({ ...param })),
+      body: currentDraft.body,
+      bodyType: currentDraft.body_type
+    };
+
+    const runScriptPhase = async (phase: 'pre' | 'post', response?: SendResult): Promise<void> => {
+      const slots = buildScriptSlots(
+        collection?.pre_request_script ?? '',
+        collection?.post_request_script ?? '',
+        currentDraft.pre_request_script,
+        currentDraft.post_request_script,
+        phase
+      );
+
+      for (const slot of slots) {
+        const scriptSource = substituteWithMap(slot.source, runtimeVars);
+        const result: ScriptRunResult = await window.api.runScript({
+          phase: slot.phase,
+          script: scriptSource,
+          request: scriptRequest,
+          response,
+          variables: runtimeVars
+        });
+
+        if (result.logs.length) {
+          allLogs.push(`[${slot.label}]`, ...result.logs);
+        }
+        if (result.tests.length) {
+          allTests.push(...result.tests);
+        }
+        if (result.error) {
+          scriptErrors.push(`${slot.label}: ${result.error}`);
+        }
+
+        scriptRequest = applyScriptRequestMutations(scriptRequest, result);
+        runtimeVars = mergeVariableSets(runtimeVars, result.variableSets);
+      }
+    };
+
+    updateTab(tabId, () => ({ sending: true, response: null, testResults: [] }));
     try {
+      await runScriptPhase('pre');
+
+      const resolvedUrl = substituteWithMap(scriptRequest.url, runtimeVars);
+      const collectionHeaders = collection
+        ? (collection.headers ?? []).map((header) => ({
+            ...header,
+            value: substituteWithMap(header.value, runtimeVars)
+          }))
+        : [];
+      const draftHeaders = scriptRequest.headers.map((header) => ({
+        ...header,
+        value: substituteWithMap(header.value, runtimeVars)
+      }));
+      const headers = [...collectionHeaders, ...draftHeaders];
+      const params = scriptRequest.params.map((param) => ({
+        ...param,
+        value: substituteWithMap(param.value, runtimeVars)
+      }));
+      const body = substituteWithMap(scriptRequest.body, runtimeVars);
+
       const result = await window.api.sendRequest({
-        method: currentDraft.method,
+        method: scriptRequest.method,
         url: resolvedUrl,
         headers,
         params,
         body,
-        bodyType: currentDraft.body_type
+        bodyType: scriptRequest.bodyType
       });
-      updateTab(tabId, () => ({ response: result }));
+
+      await runScriptPhase('post', result);
+
+      updateTab(tabId, () => ({ response: result, testResults: allTests }));
       setConsoleEntries((prev) => [
         {
           id: crypto.randomUUID(),
           timestamp: Date.now(),
           requestName: currentDraft.name,
           collectionName: collection?.name,
-          result
+          result,
+          logs: allLogs.length ? allLogs : undefined,
+          tests: allTests.length ? allTests : undefined,
+          scriptError: scriptErrors.length ? scriptErrors.join('\n') : undefined
         },
         ...prev
       ]);
+
+      if (scriptErrors.length) {
+        toast.error(`Script error: ${scriptErrors[0]}`);
+      }
     } finally {
       updateTab(tabId, () => ({ sending: false }));
     }
@@ -621,6 +712,7 @@ export function useAppStore(): AppStore {
     setDraft,
     response,
     sending,
+    testResults,
     setActiveTab,
     closeTab,
     createCollection,

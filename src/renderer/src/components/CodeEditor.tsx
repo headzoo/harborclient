@@ -1,3 +1,4 @@
+import { javascript } from '@codemirror/lang-javascript';
 import { json } from '@codemirror/lang-json';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import {
@@ -15,7 +16,7 @@ import { useEffect, useMemo, useState, type JSX } from 'react';
 import type { Variable } from '#/shared/types';
 import { resolveVariable } from '#/renderer/src/store';
 
-export type CodeEditorLanguage = 'json' | 'text';
+export type CodeEditorLanguage = 'json' | 'text' | 'javascript';
 
 interface Props {
   /**
@@ -268,6 +269,9 @@ export function CodeEditor({
     ];
     if (language === 'json') {
       next.push(json());
+    }
+    if (language === 'javascript') {
+      next.push(javascript());
     }
     if (variables) {
       next.push(variableHighlighter, variableTooltip(variables, onEditVariable));

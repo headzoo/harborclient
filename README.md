@@ -13,11 +13,11 @@ HarborClient is a Postman-style HTTP client built with Electron:
 
 ## Documentation
 
-| Topic | Link |
-| --- | --- |
-| Introduction | [Introduction](https://harborclient.com/) |
-| Getting started | [Getting started](https://harborclient.com/getting-started) |
-| Features | [Features](https://harborclient.com/features) |
+| Topic             | Link                                                            |
+| ----------------- | --------------------------------------------------------------- |
+| Introduction      | [Introduction](https://harborclient.com/)                       |
+| Getting started   | [Getting started](https://harborclient.com/getting-started)     |
+| Features          | [Features](https://harborclient.com/features)                   |
 | Project structure | [Project structure](https://harborclient.com/project-structure) |
 
 Canonical docs live in [`docs/`](./docs/). Edit those pages directly, then run `pnpm docs:build:nav` to refresh the VitePress sidebar.

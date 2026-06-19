@@ -9,6 +9,7 @@ import {
   getDirtyTabs,
   isDraftDirty,
   isTabDirty,
+  normalizeDraft,
   normalizeDraftForCompare,
   type RequestDraft,
   type RequestTab
@@ -21,7 +22,29 @@ const sampleDraft = (): RequestDraft => ({
   headers: [{ key: 'Authorization', value: 'Bearer token', enabled: true }],
   params: [{ key: 'page', value: '1', enabled: true }],
   body: '{"ok":true}',
-  body_type: 'json'
+  body_type: 'json',
+  pre_request_script: '',
+  post_request_script: ''
+});
+
+describe('normalizeDraft', () => {
+  it('fills missing script fields from legacy persisted tabs', () => {
+    const legacy = {
+      name: 'Legacy',
+      method: 'GET' as const,
+      url: '',
+      headers: [emptyKeyValue()],
+      params: [emptyKeyValue()],
+      body: '',
+      body_type: 'none' as const
+    };
+
+    expect(normalizeDraft(legacy as RequestDraft)).toEqual({
+      ...legacy,
+      pre_request_script: '',
+      post_request_script: ''
+    });
+  });
 });
 
 describe('cloneDraft', () => {
@@ -121,7 +144,9 @@ describe('defaultDraft and emptyKeyValue', () => {
       headers: [emptyKeyValue()],
       params: [emptyKeyValue()],
       body: '',
-      body_type: 'none'
+      body_type: 'none',
+      pre_request_script: '',
+      post_request_script: ''
     });
   });
 
@@ -139,6 +164,7 @@ describe('createTab', () => {
     expect(tabA.savedDraft).not.toBe(tabA.draft);
     expect(tabA.response).toBeNull();
     expect(tabA.sending).toBe(false);
+    expect(tabA.testResults).toEqual([]);
 
     tabA.draft.url = 'https://changed.example';
     expect(tabA.savedDraft.url).toBe('https://example.com');
@@ -157,6 +183,8 @@ describe('draftFromSaved', () => {
       params: [{ key: 'q', value: 'search', enabled: true }],
       body: 'body',
       body_type: 'text',
+      pre_request_script: '',
+      post_request_script: '',
       sort_order: 0,
       created_at: '2026-01-01T00:00:00.000Z',
       updated_at: '2026-01-01T00:00:00.000Z'
@@ -171,7 +199,9 @@ describe('draftFromSaved', () => {
       headers: [{ key: 'X-Test', value: '1', enabled: true }],
       params: [{ key: 'q', value: 'search', enabled: true }],
       body: 'body',
-      body_type: 'text'
+      body_type: 'text',
+      pre_request_script: '',
+      post_request_script: ''
     });
   });
 
@@ -186,6 +216,8 @@ describe('draftFromSaved', () => {
       params: [],
       body: '',
       body_type: 'none',
+      pre_request_script: '',
+      post_request_script: '',
       sort_order: 0,
       created_at: '2026-01-01T00:00:00.000Z',
       updated_at: '2026-01-01T00:00:00.000Z'

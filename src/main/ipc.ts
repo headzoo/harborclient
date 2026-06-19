@@ -14,8 +14,10 @@ import {
   updateCollection
 } from '#/main/db';
 import { executeRequest } from '#/main/http';
+import { runScript } from '#/main/scripts';
 import type {
   SaveRequestInput,
+  ScriptRunInput,
   SendRequestInput,
   ThemeSource,
   Variable,
@@ -50,8 +52,15 @@ export function registerIpcHandlers(): void {
   // Updates a collection's name, variables, and headers.
   ipcMain.handle(
     'collections:update',
-    (_event, id: number, name: string, variables: Variable[], headers: KeyValue[]) =>
-      updateCollection(id, name, variables, headers)
+    (
+      _event,
+      id: number,
+      name: string,
+      variables: Variable[],
+      headers: KeyValue[],
+      preRequestScript: string,
+      postRequestScript: string
+    ) => updateCollection(id, name, variables, headers, preRequestScript, postRequestScript)
   );
 
   // Deletes a collection and all of its saved requests.
@@ -108,6 +117,9 @@ export function registerIpcHandlers(): void {
 
   // Sends an HTTP request and returns the response (status, headers, body, timing).
   ipcMain.handle('http:send', (_event, req: SendRequestInput) => executeRequest(req));
+
+  // Runs a pre/post script in an isolated-vm sandbox.
+  ipcMain.handle('scripts:run', (_event, input: ScriptRunInput) => runScript(input));
 
   // Returns the application version from package.json.
   ipcMain.handle('app:getVersion', () => app.getVersion());

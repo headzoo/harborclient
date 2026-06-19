@@ -1,5 +1,5 @@
 import { useMemo, useState, type JSX } from 'react';
-import type { SendResult } from '#/shared/types';
+import type { ScriptTestResult, SendResult } from '#/shared/types';
 import { CodeEditor } from '#/renderer/src/components/CodeEditor';
 import { segment, segmentGroup, statusDotClass } from './classes';
 import { bodyLanguage, formatBody, formatBytes } from './responseFormatUtils';
@@ -14,14 +14,19 @@ interface Props {
    * Whether a request is in flight; shows a loading state when true.
    */
   sending: boolean;
+
+  /**
+   * hc.test results from pre/post scripts for the last send.
+   */
+  testResults: ScriptTestResult[];
 }
 
-type ViewerTab = 'body' | 'headers';
+type ViewerTab = 'body' | 'headers' | 'tests';
 
 /**
- * Displays HTTP response status, timing, body, and headers.
+ * Displays HTTP response status, timing, body, headers, and script test results.
  */
-export function ResponseViewer({ response, sending }: Props): JSX.Element {
+export function ResponseViewer({ response, sending, testResults }: Props): JSX.Element {
   const [tab, setTab] = useState<ViewerTab>('body');
 
   const formattedBody = useMemo(() => (response ? formatBody(response.body) : ''), [response]);
@@ -30,6 +35,11 @@ export function ResponseViewer({ response, sending }: Props): JSX.Element {
     () => (response ? bodyLanguage(response.body, response.headers) : 'text'),
     [response]
   );
+
+  const hasTests = testResults.length > 0;
+  const passedCount = testResults.filter((test) => test.passed).length;
+  const failedCount = testResults.length - passedCount;
+  const effectiveTab = tab === 'tests' && !hasTests ? 'body' : tab;
 
   const emptyState = (message: string): JSX.Element => (
     <div className="flex flex-1 flex-col p-3">
@@ -68,24 +78,34 @@ export function ResponseViewer({ response, sending }: Props): JSX.Element {
 
       <div className="mb-2">
         <div className={segmentGroup}>
-          <button className={segment(tab === 'body')} onClick={() => setTab('body')}>
+          <button className={segment(effectiveTab === 'body')} onClick={() => setTab('body')}>
             Body
           </button>
-          <button className={segment(tab === 'headers')} onClick={() => setTab('headers')}>
+          <button className={segment(effectiveTab === 'headers')} onClick={() => setTab('headers')}>
             Headers
           </button>
+          {hasTests && (
+            <button className={segment(effectiveTab === 'tests')} onClick={() => setTab('tests')}>
+              Test Results
+              <span
+                className={`ml-1.5 text-[12px] ${failedCount > 0 ? 'text-danger' : 'text-muted'}`}
+              >
+                {passedCount}/{testResults.length}
+              </span>
+            </button>
+          )}
         </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto">
-        {tab === 'body' && (
+        {effectiveTab === 'body' && (
           <CodeEditor
             readOnly
             value={formattedBody || '(empty body)'}
             language={responseBodyLanguage}
           />
         )}
-        {tab === 'headers' && (
+        {effectiveTab === 'headers' && (
           <div className="overflow-hidden rounded-md border border-separator">
             {Object.entries(response.headers).length === 0 ? (
               <div className="p-4 text-center text-[13px] text-muted">No headers</div>
@@ -102,6 +122,24 @@ export function ResponseViewer({ response, sending }: Props): JSX.Element {
                 </div>
               ))
             )}
+          </div>
+        )}
+        {effectiveTab === 'tests' && hasTests && (
+          <div className="overflow-hidden rounded-md border border-separator">
+            {testResults.map((test, index) => (
+              <div
+                key={`${test.name}-${index}`}
+                className={`flex items-center gap-2 px-2.5 py-1.5 ${index > 0 ? 'border-t border-separator' : ''}`}
+              >
+                <span
+                  className={`inline-block h-2 w-2 shrink-0 rounded-full ${test.passed ? 'bg-success' : 'bg-danger'}`}
+                />
+                <span className="text-[13px] text-text">{test.name}</span>
+                {!test.passed && test.error && (
+                  <span className="text-[12px] text-danger">{test.error}</span>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>

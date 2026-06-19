@@ -29,6 +29,7 @@ on:
       - build/icons/**
       - images/logo.png
       - images/logo-white.png
+      - images/screenshots/**
       - README.md
       - docs/**
       - scripts/sync-docs-assets.mjs
