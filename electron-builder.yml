@@ -1,5 +1,5 @@
-appId: com.harbor.client
-productName: Harbor Client
+appId: com.harborclient
+productName: HarborClient
 artifactName: harborclient-${version}.${ext}
 executableName: harborclient
 icon: build/icons/512x512.png

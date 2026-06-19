@@ -1,4 +1,6 @@
 import Database from 'better-sqlite3';
+import { app } from 'electron';
+import { copyFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import type {
   BodyType,
@@ -13,6 +15,36 @@ import type {
 } from '#/shared/types';
 
 let db: Database.Database | null = null;
+
+const DB_FILENAME = 'harborclient.db';
+const LEGACY_DB_FILENAME = 'harbor-client.db';
+const LEGACY_USER_DATA_DIR = 'harbor-client';
+
+/**
+ * Resolves the SQLite database path, copying from legacy locations when needed.
+ *
+ * @param userDataPath - Electron app userData path where harborclient.db is stored.
+ * @returns Path to the database file to open.
+ */
+function resolveDbPath(userDataPath: string): string {
+  const dbPath = join(userDataPath, DB_FILENAME);
+  if (existsSync(dbPath)) return dbPath;
+
+  const legacyCandidates = [
+    join(app.getPath('appData'), LEGACY_USER_DATA_DIR, LEGACY_DB_FILENAME),
+    join(userDataPath, LEGACY_DB_FILENAME)
+  ];
+
+  for (const legacyPath of legacyCandidates) {
+    if (existsSync(legacyPath)) {
+      mkdirSync(userDataPath, { recursive: true });
+      copyFileSync(legacyPath, dbPath);
+      return dbPath;
+    }
+  }
+
+  return dbPath;
+}
 
 /**
  * Parses a JSON string, returning a fallback value on failure.
@@ -85,13 +117,13 @@ function rowToRequest(row: Record<string, unknown>): SavedRequest {
 /**
  * Opens (or returns) the SQLite database for the given user-data directory.
  *
- * @param userDataPath - Electron app userData path where harbor-client.db is stored.
+ * @param userDataPath - Electron app userData path where harborclient.db is stored.
  * @returns The initialized database handle.
  */
 export function initDb(userDataPath: string): Database.Database {
   if (db) return db;
 
-  const dbPath = join(userDataPath, 'harbor-client.db');
+  const dbPath = resolveDbPath(userDataPath);
   db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');

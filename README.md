@@ -1,10 +1,10 @@
-![Harbor Client](https://headzoo.github.io/harborclient/images/logo-white.png)
+![HarborClient](https://headzoo.github.io/harborclient/images/logo-white.png)
 
 **Full documentation:** [https://harborclient.com/](https://harborclient.com/)
 
 **A desktop HTTP client to build, send, and inspect HTTP requests with collections, tabs, and local persistence.**
 
-Harbor Client is a Postman-style HTTP client built with Electron:
+HarborClient is a Postman-style HTTP client built with Electron:
 
 - **Request builder** — Method selector, URL bar, query params, headers, and body (none, JSON, or plain text)
 - **Collections** — Organize saved requests into named collections with create, rename, and delete

@@ -15,7 +15,8 @@ import {
   type RequestTab
 } from '#/renderer/src/store/drafts';
 
-const OPEN_TABS_KEY = 'harbor-client.openTabs';
+const OPEN_TABS_KEY = 'harborclient.openTabs';
+const LEGACY_OPEN_TABS_KEY = 'harbor-client.openTabs';
 
 const VARIABLE_PATTERN = /\{\{\s*([\w.-]+)\s*\}\}/g;
 
@@ -68,7 +69,13 @@ function defaultTabState(): { tabs: RequestTab[]; activeTabId: string } {
  */
 function loadTabsFromStorage(): { tabs: RequestTab[]; activeTabId: string } {
   try {
-    const raw = localStorage.getItem(OPEN_TABS_KEY);
+    let raw = localStorage.getItem(OPEN_TABS_KEY);
+    if (!raw) {
+      raw = localStorage.getItem(LEGACY_OPEN_TABS_KEY);
+      if (raw) {
+        localStorage.setItem(OPEN_TABS_KEY, raw);
+      }
+    }
     if (!raw) return defaultTabState();
 
     const parsed = JSON.parse(raw) as PersistedOpenTabs;

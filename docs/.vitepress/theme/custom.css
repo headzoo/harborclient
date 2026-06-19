@@ -2,6 +2,11 @@
  * Dark theme uses VitePress defaults (appearance: force-dark in config).
  */
 
+.VPHero .image img {
+  max-width: min(480px, 90vw);
+  height: auto;
+}
+
 /* GitHub-flavored alerts (`> [!NOTE]`, etc.) — gfmAlerts in .vitepress/config.ts */
 .vp-doc .custom-block.github-alert {
   margin: 16px 0;

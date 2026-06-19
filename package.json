@@ -1,9 +1,9 @@
 {
-  "name": "harbor-client",
+  "name": "harborclient",
   "version": "1.1.4",
   "description": "A Postman-style HTTP client built with Electron",
   "main": "./out/main/index.js",
-  "desktopName": "harbor-client",
+  "desktopName": "harborclient",
   "homepage": "https://harborclient.com/",
   "author": {
     "name": "Harbor",

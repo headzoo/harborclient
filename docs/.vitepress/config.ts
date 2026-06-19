@@ -14,7 +14,7 @@ const withSiteBase = (path: string) => {
 };
 
 export default defineConfig({
-  title: 'Harbor Client',
+  title: 'HarborClient',
   description: 'A Postman-style HTTP client built with Electron',
   base: siteBase,
   appearance: 'force-dark',
@@ -82,10 +82,12 @@ export default defineConfig({
   themeConfig: {
     logo: {
       src: '/images/logo.png',
-      alt: 'Harbor Client',
+      alt: 'HarborClient',
     },
     siteTitle: false,
     nav: [
+      { text: 'Guide', link: '/getting-started' },
+      { text: 'Features', link: '/features' },
       {
         text: `v${pkg.version}`,
         link: 'https://github.com/headzoo/harborclient/releases',
@@ -95,7 +97,7 @@ export default defineConfig({
       {
         icon: 'github',
         link: 'https://github.com/headzoo/harborclient',
-        ariaLabel: 'Harbor Client on GitHub',
+        ariaLabel: 'HarborClient on GitHub',
       },
     ],
     sidebar,

@@ -326,7 +326,7 @@ export default function App(): JSX.Element {
             ) : (
               <>
                 <p className="mb-4 text-[12px] text-muted">
-                  Choose a Harbor Client collection export (.json) to import all saved requests.
+                  Choose a HarborClient collection export (.json) to import all saved requests.
                 </p>
                 <div className="flex justify-end gap-2">
                   <button className={secondaryButton} onClick={closeCollectionModal}>
@@ -383,8 +383,8 @@ export default function App(): JSX.Element {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex flex-col items-center text-center">
-              <img src={logoUrl} alt="Harbor Client" className="mb-4 h-16 w-16 rounded-xl" />
-              <h2 className="m-0 mb-1 text-[15px] font-semibold text-text">Harbor Client</h2>
+              <img src={logoUrl} alt="HarborClient" className="mb-4 h-16 w-16 rounded-xl" />
+              <h2 className="m-0 mb-1 text-[15px] font-semibold text-text">HarborClient</h2>
               {appVersion && <p className="m-0 text-[12px] text-muted">Version {appVersion}</p>}
             </div>
             <div className="mt-6 flex justify-center">

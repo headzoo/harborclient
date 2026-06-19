@@ -20,7 +20,7 @@ export const syncedPages = [];
  * >}
  */
 export const docsNav = [
-  { kind: 'overview', title: 'Introduction' },
+  { kind: 'overview', title: 'Home' },
   { kind: 'page', slug: 'getting-started', title: 'Getting started' },
   { kind: 'page', slug: 'features', title: 'Features', maxDepth: 3 },
   { kind: 'page', slug: 'prerequisites', title: 'Prerequisites' },

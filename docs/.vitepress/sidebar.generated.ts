@@ -5,7 +5,7 @@ import type { DefaultTheme } from 'vitepress'
 export const sidebar: DefaultTheme.SidebarItem[] = 
 [
   {
-    "text": "Introduction",
+    "text": "Home",
     "link": "/"
   },
   {

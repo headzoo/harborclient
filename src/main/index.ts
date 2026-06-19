@@ -52,7 +52,7 @@ function createWindow(): BrowserWindow {
     height: mainWindowState.height,
     minWidth: 900,
     minHeight: 600,
-    title: 'Harbor Client',
+    title: 'HarborClient',
     icon: resolveAppIcon(),
     show: false,
     backgroundColor: '#f5f5f7',

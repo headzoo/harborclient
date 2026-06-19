@@ -1,9 +1,30 @@
-![Logo](/images/logo.png)
+---
+layout: home
+sidebar: false
+outline: false
 
-A desktop HTTP client to build, send, and inspect HTTP requests with collections, tabs, and local persistence.
+hero:
+  name: Harbor Client
+  text: A desktop HTTP client
+  tagline: Build, send, and inspect HTTP requests with collections, tabs, and local persistence.
+  image:
+    src: /images/logo.png
+    alt: Harbor Client
+  actions:
+    - theme: brand
+      text: Download
+      link: https://github.com/headzoo/harborclient/releases/latest
+    - theme: alt
+      text: Get Started
+      link: /getting-started
 
-## Download
-
-Releases are available for macOS, Windows, and Linux.
-
-[Download Harbor Client](https://github.com/headzoo/harborclient/releases/latest)
+features:
+  - title: Request builder
+    details: Method selector, URL bar, query params, headers, and body (none, JSON, or plain text).
+  - title: Collections
+    details: Organize saved requests into named collections with create, rename, and delete.
+  - title: Tabs
+    details: Open multiple requests at once; tab state persists across restarts.
+  - title: Local storage
+    details: Collections and requests saved in SQLite in app user data.
+---
