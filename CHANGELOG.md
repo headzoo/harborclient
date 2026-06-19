@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add new dependencies for enhanced functionality and update documentation structure. (`fb1ae63`)
 - Refactor UI components to replace button-based tab navigation with SegmentedTabs for improved user experience. Update styles and imports accordingly across multiple files, enhancing consistency in tab management.. (`e4bb3b7`)
 - Enhance database management by integrating Firestore support alongside SQLite. Update IDatabase interface and SqliteDatabase class for asynchronous operations. Refactor IPC handlers and application initialization to accommodate new database settings. Modify package.json for dependency updates and improve test coverage for database interactions.. (`c7bab81`)
 - Update README.md to change logo image path from external URL to local path.. (`bd90979`)

@@ -58,6 +58,7 @@
     "react-hot-toast": "^2.6.0"
   },
   "devDependencies": {
+    "@braintree/sanitize-url": "^7.1.2",
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.1.0",
     "@tailwindcss/vite": "^4.3.1",
@@ -66,6 +67,10 @@
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.1",
     "concurrently": "^8.2.2",
+    "cytoscape": "^3.34.0",
+    "cytoscape-cose-bilkent": "^4.1.0",
+    "dayjs": "^1.11.21",
+    "debug": "^4.4.3",
     "electron": "^35.2.1",
     "electron-builder": "^26.0.12",
     "electron-vite": "^3.1.0",
@@ -73,11 +78,13 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
+    "mermaid": "^11.15.0",
     "prettier": "^3.8.4",
     "tailwindcss": "^4.3.1",
     "typescript": "^5.8.3",
     "vite": "^6.3.3",
     "vitepress": "^1.6.4",
+    "vitepress-plugin-mermaid": "^2.0.17",
     "vitest": "^4.1.9"
   },
   "pnpm": {

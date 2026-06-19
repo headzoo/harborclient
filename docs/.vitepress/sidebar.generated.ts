@@ -25,6 +25,37 @@ export const sidebar: DefaultTheme.SidebarItem[] =
     "link": "/scripts"
   },
   {
+    "text": "Request scripts",
+    "link": "/request-scripts",
+    "items": [
+      {
+        "text": "Execution order",
+        "link": "/request-scripts#execution-order"
+      },
+      {
+        "text": "The hc object",
+        "link": "/request-scripts#the-hc-object"
+      },
+      {
+        "text": "console",
+        "link": "/request-scripts#console"
+      },
+      {
+        "text": "What gets applied back",
+        "link": "/request-scripts#what-gets-applied-back"
+      },
+      {
+        "text": "Sandbox limits",
+        "link": "/request-scripts#sandbox-limits"
+      },
+      {
+        "text": "Examples",
+        "link": "/request-scripts#examples"
+      }
+    ],
+    "collapsed": false
+  },
+  {
     "text": "Project structure",
     "link": "/project-structure"
   },

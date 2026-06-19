@@ -45,10 +45,6 @@ export default function App(): JSX.Element {
   const [showConsole, setShowConsole] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [appVersion, setAppVersion] = useState('');
-  const requests =
-    store.selectedCollectionId != null
-      ? (store.requestsByCollection[store.selectedCollectionId] ?? [])
-      : [];
 
   /** Ref to store.tabs to avoid unnecessary re-renders. */
   const tabsRef = useRef(store.tabs);
@@ -250,10 +246,11 @@ export default function App(): JSX.Element {
         {showSidebar && (
           <Sidebar
             collections={store.collections}
-            requests={requests}
+            requestsByCollection={store.requestsByCollection}
             selectedCollectionId={store.selectedCollectionId}
             activeRequestId={store.draft.id}
             onSelectCollection={store.setSelectedCollectionId}
+            onExpandCollection={store.refreshRequests}
             onAddCollection={() => {
               setNewCollectionName('');
               setCollectionModalTab('create');

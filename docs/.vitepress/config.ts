@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitepress';
+import { withMermaid } from 'vitepress-plugin-mermaid';
 import pkg from '../../package.json';
 import { toAnchor } from '../../scripts/docs-slugger.mjs';
 import { sidebar } from './sidebar.generated';
@@ -13,7 +14,8 @@ const withSiteBase = (path: string) => {
   return `${siteBase.replace(/\/$/, '')}${path}`;
 };
 
-export default defineConfig({
+export default withMermaid(
+  defineConfig({
   title: 'HarborClient',
   description: 'A Postman-style HTTP client built with Electron',
   base: siteBase,
@@ -21,6 +23,14 @@ export default defineConfig({
   cleanUrls: true,
   vite: {
     publicDir: '.vitepress/static',
+    optimizeDeps: {
+      include: ['dayjs', 'mermaid'],
+    },
+    resolve: {
+      alias: {
+        dayjs: 'dayjs/',
+      },
+    },
   },
   head: [
     [
@@ -109,4 +119,8 @@ export default defineConfig({
       provider: 'local',
     },
   },
-});
+  mermaid: {
+    theme: 'dark',
+  },
+  }),
+);

@@ -1,4 +1,4 @@
-import { useState, type JSX } from 'react';
+import { useEffect, useState, type JSX } from 'react';
 import type { Collection, SavedRequest } from '#/shared/types';
 import { RowActionsMenu } from '#/renderer/src/components/RowActionsMenu';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
@@ -12,9 +12,10 @@ interface Props {
   collections: Collection[];
 
   /**
-   * Saved requests in the selected collection.
+   * Saved requests keyed by collection ID. A missing key means the
+   * collection's requests have not been loaded yet.
    */
-  requests: SavedRequest[];
+  requestsByCollection: Record<number, SavedRequest[]>;
 
   /**
    * ID of the active collection, or null when none is selected.
@@ -32,6 +33,14 @@ interface Props {
    * @param id - Selected collection ID.
    */
   onSelectCollection: (id: number) => void;
+
+  /**
+   * Ensures a collection's saved requests are loaded. Called when a
+   * collection is expanded so its contents can be rendered.
+   *
+   * @param id - Collection ID to load requests for.
+   */
+  onExpandCollection: (id: number) => void;
 
   /**
    * Opens the new-collection modal.
@@ -86,10 +95,11 @@ interface Props {
  */
 export function Sidebar({
   collections,
-  requests,
+  requestsByCollection,
   selectedCollectionId,
   activeRequestId,
   onSelectCollection,
+  onExpandCollection,
   onAddCollection,
   onConfigureCollection,
   onDeleteCollection,
@@ -101,26 +111,43 @@ export function Sidebar({
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
+  // Auto-expand a collection when it becomes selected, but only when the
+  // selection actually changes. This keeps a freshly selected collection
+  // open while still letting the user manually collapse it afterwards.
+  useEffect(() => {
+    if (selectedCollectionId == null) return;
+    setExpandedIds((prev) => {
+      if (prev.has(selectedCollectionId)) return prev;
+      const next = new Set(prev);
+      next.add(selectedCollectionId);
+      return next;
+    });
+    onExpandCollection(selectedCollectionId);
+  }, [selectedCollectionId, onExpandCollection]);
+
   /**
-   * Toggles collection disclosure and selects it.
+   * Toggles a collection's disclosure without changing the selection,
+   * loading its requests the first time it is expanded.
    *
    * @param collectionId - Collection to expand or collapse.
    */
   const toggleCollection = (collectionId: number): void => {
+    const willExpand = !expandedIds.has(collectionId);
     setExpandedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(collectionId)) {
-        next.delete(collectionId);
-      } else {
+      if (willExpand) {
         next.add(collectionId);
+      } else {
+        next.delete(collectionId);
       }
       return next;
     });
-    onSelectCollection(collectionId);
+    if (willExpand) {
+      onExpandCollection(collectionId);
+    }
   };
 
-  const isExpanded = (collectionId: number): boolean =>
-    expandedIds.has(collectionId) || selectedCollectionId === collectionId;
+  const isExpanded = (collectionId: number): boolean => expandedIds.has(collectionId);
 
   return (
     <aside className="flex w-100 shrink-0 flex-col border-r border-separator bg-sidebar">
@@ -145,6 +172,8 @@ export function Sidebar({
           {collections.map((collection) => {
             const expanded = isExpanded(collection.id);
             const selected = selectedCollectionId === collection.id;
+            const collectionRequests = requestsByCollection[collection.id];
+            const loaded = collectionRequests != null;
 
             return (
               <div key={collection.id}>
@@ -158,7 +187,7 @@ export function Sidebar({
                   </button>
                   <button
                     className="min-w-0 flex-1 cursor-pointer truncate border-none bg-transparent py-0.5 text-left text-[13px] text-inherit app-no-drag"
-                    onClick={() => toggleCollection(collection.id)}
+                    onClick={() => onSelectCollection(collection.id)}
                     onDoubleClick={() => onConfigureCollection(collection.id)}
                   >
                     {collection.name}
@@ -192,10 +221,10 @@ export function Sidebar({
 
                 {expanded && (
                   <div className="ml-4 flex flex-col gap-0.5 py-0.5">
-                    {requests.length === 0 && (
+                    {loaded && collectionRequests.length === 0 && (
                       <div className="px-2 py-1 text-[12px] text-muted">No saved requests</div>
                     )}
-                    {requests.map((req) => (
+                    {(collectionRequests ?? []).map((req) => (
                       <div key={req.id} className={sourceRow(activeRequestId === req.id)}>
                         <button
                           className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 border-none bg-transparent py-0.5 text-left text-inherit app-no-drag"
