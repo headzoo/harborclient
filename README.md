@@ -14,13 +14,13 @@ A desktop HTTP client. Build, send, and inspect HTTP requests with collections, 
 
 ## Tech stack
 
-| Layer | Stack |
-| --- | --- |
-| Desktop | Electron 35 |
-| UI | React 19, Tailwind CSS 4 |
-| Build | electron-vite, TypeScript, Vite 6 |
-| Storage | better-sqlite3 |
-| HTTP | Node `fetch` in the main process |
+| Layer   | Stack                             |
+| ------- | --------------------------------- |
+| Desktop | Electron 35                       |
+| UI      | React 19, Tailwind CSS 4          |
+| Build   | electron-vite, TypeScript, Vite 6 |
+| Storage | better-sqlite3                    |
+| HTTP    | Node `fetch` in the main process  |
 
 ## Prerequisites
 
@@ -38,12 +38,12 @@ pnpm dev
 
 ## Scripts
 
-| Command | Description |
-| --- | --- |
-| `pnpm dev` | Start the app in development mode with hot reload |
-| `pnpm build` | Build main, preload, and renderer for production |
-| `pnpm preview` | Run the production build locally |
-| `pnpm dist` | Build and package installers (AppImage/deb, DMG, NSIS) |
+| Command        | Description                                            |
+| -------------- | ------------------------------------------------------ |
+| `pnpm dev`     | Start the app in development mode with hot reload      |
+| `pnpm build`   | Build main, preload, and renderer for production       |
+| `pnpm preview` | Run the production build locally                       |
+| `pnpm dist`    | Build and package installers (AppImage/deb, DMG, NSIS) |
 
 Packaged artifacts are written to `release/`.
 

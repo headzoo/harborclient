@@ -1,16 +1,16 @@
-import { app, BrowserWindow, nativeTheme, shell } from 'electron'
-import windowStateKeeper from 'electron-window-state'
-import { join } from 'path'
-import { closeDb, initDb } from '#/main/db'
-import { registerIpcHandlers } from '#/main/ipc'
+import { app, BrowserWindow, nativeTheme, shell } from 'electron';
+import windowStateKeeper from 'electron-window-state';
+import { join } from 'path';
+import { closeDb, initDb } from '#/main/db';
+import { registerIpcHandlers } from '#/main/ipc';
 
-const isDev = !app.isPackaged
+const isDev = !app.isPackaged;
 
-nativeTheme.themeSource = 'system'
+nativeTheme.themeSource = 'system';
 
 // chrome-sandbox needs SUID (mode 4755), which fails on mounted/network filesystems
 if (process.platform === 'linux' && isDev) {
-  app.commandLine.appendSwitch('no-sandbox')
+  app.commandLine.appendSwitch('no-sandbox');
 }
 
 /**
@@ -19,7 +19,7 @@ if (process.platform === 'linux' && isDev) {
 function resolveAppIcon(): string {
   return app.isPackaged
     ? join(process.resourcesPath, 'icon.png')
-    : join(__dirname, '../../images/logo-square.png')
+    : join(__dirname, '../../images/logo-square.png');
 }
 
 /**
@@ -29,7 +29,7 @@ function createWindow(): void {
   const mainWindowState = windowStateKeeper({
     defaultWidth: 1280,
     defaultHeight: 800
-  })
+  });
 
   const mainWindow = new BrowserWindow({
     x: mainWindowState.x,
@@ -55,43 +55,43 @@ function createWindow(): void {
       contextIsolation: true,
       nodeIntegration: false
     }
-  })
+  });
 
-  mainWindowState.manage(mainWindow)
+  mainWindowState.manage(mainWindow);
 
   mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
-  })
+    mainWindow.show();
+  });
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
-    return { action: 'deny' }
-  })
+    shell.openExternal(details.url);
+    return { action: 'deny' };
+  });
 
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
   }
 }
 
 app.whenReady().then(() => {
-  initDb(app.getPath('userData'))
-  registerIpcHandlers()
-  createWindow()
+  initDb(app.getPath('userData'));
+  registerIpcHandlers();
+  createWindow();
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
-  })
-})
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+});
 
 app.on('window-all-closed', () => {
-  closeDb()
+  closeDb();
   if (process.platform !== 'darwin') {
-    app.quit()
+    app.quit();
   }
-})
+});
 
 app.on('before-quit', () => {
-  closeDb()
-})
+  closeDb();
+});

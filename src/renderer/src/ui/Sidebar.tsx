@@ -1,86 +1,82 @@
-import { useState } from 'react'
-import type { Collection, SavedRequest } from '#/shared/types'
-import { RowActionsMenu } from '#/renderer/src/components/RowActionsMenu'
-import {
-  METHOD_CLASSES,
-  sourceRow,
-  toolbarButton
-} from './classes'
+import { useState, type JSX } from 'react';
+import type { Collection, SavedRequest } from '#/shared/types';
+import { RowActionsMenu } from '#/renderer/src/components/RowActionsMenu';
+import { METHOD_CLASSES, sourceRow, toolbarButton } from './classes';
 
 interface Props {
   /**
    * All saved collections.
    */
-  collections: Collection[]
+  collections: Collection[];
 
   /**
    * Saved requests in the selected collection.
    */
-  requests: SavedRequest[]
+  requests: SavedRequest[];
 
   /**
    * ID of the active collection, or null when none is selected.
    */
-  selectedCollectionId: number | null
+  selectedCollectionId: number | null;
 
   /**
    * ID of the request loaded in the editor, if any.
    */
-  activeRequestId?: number
+  activeRequestId?: number;
 
   /**
    * Called when the user picks a collection.
    *
    * @param id - Selected collection ID.
    */
-  onSelectCollection: (id: number) => void
+  onSelectCollection: (id: number) => void;
 
   /**
    * Opens the new-collection modal.
    */
-  onAddCollection: () => void
+  onAddCollection: () => void;
 
   /**
    * Opens the collection settings view.
    *
    * @param id - Collection ID to configure.
    */
-  onConfigureCollection: (id: number) => void
+  onConfigureCollection: (id: number) => void;
 
   /**
    * Deletes a collection and its saved requests.
    *
    * @param id - Collection ID to delete.
    */
-  onDeleteCollection: (id: number) => Promise<void>
+  onDeleteCollection: (id: number) => Promise<void>;
 
   /**
    * Exports a collection to a JSON file.
    *
    * @param id - Collection ID to export.
    */
-  onExportCollection: (id: number) => Promise<void> | void
+  onExportCollection: (id: number) => Promise<void> | void;
 
   /**
    * Creates a new saved request in a collection.
    *
    * @param id - Collection ID to add the request to.
    */
-  onNewRequestInCollection: (id: number) => Promise<void> | void
+  onNewRequestInCollection: (id: number) => Promise<void> | void;
 
   /**
    * Loads a saved request into the editor.
    *
    * @param req - Saved request to load.
    */
-  onLoadRequest: (req: SavedRequest) => void
+  onLoadRequest: (req: SavedRequest) => void;
 
   /**
    * Deletes a saved request.
    *
    * @param id - Request ID to delete.
    */
-  onDeleteRequest: (id: number) => Promise<void>
+  onDeleteRequest: (id: number) => Promise<void>;
 }
 
 /**
@@ -99,30 +95,30 @@ export function Sidebar({
   onNewRequestInCollection,
   onLoadRequest,
   onDeleteRequest
-}: Props) {
-  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+}: Props): JSX.Element {
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   /**
    * Toggles collection disclosure and selects it.
    *
    * @param collectionId - Collection to expand or collapse.
    */
-  const toggleCollection = (collectionId: number) => {
+  const toggleCollection = (collectionId: number): void => {
     setExpandedIds((prev) => {
-      const next = new Set(prev)
+      const next = new Set(prev);
       if (next.has(collectionId)) {
-        next.delete(collectionId)
+        next.delete(collectionId);
       } else {
-        next.add(collectionId)
+        next.add(collectionId);
       }
-      return next
-    })
-    onSelectCollection(collectionId)
-  }
+      return next;
+    });
+    onSelectCollection(collectionId);
+  };
 
-  const isExpanded = (collectionId: number) =>
-    expandedIds.has(collectionId) || selectedCollectionId === collectionId
+  const isExpanded = (collectionId: number): boolean =>
+    expandedIds.has(collectionId) || selectedCollectionId === collectionId;
 
   return (
     <aside className="flex w-100 shrink-0 flex-col border-r border-separator bg-sidebar">
@@ -141,8 +137,8 @@ export function Sidebar({
             <div className="px-2 py-1.5 text-[13px] text-muted">No collections yet</div>
           )}
           {collections.map((collection) => {
-            const expanded = isExpanded(collection.id)
-            const selected = selectedCollectionId === collection.id
+            const expanded = isExpanded(collection.id);
+            const selected = selectedCollectionId === collection.id;
 
             return (
               <div key={collection.id}>
@@ -180,7 +176,7 @@ export function Sidebar({
                         variant: 'danger',
                         onSelect: () => {
                           if (confirm(`Delete collection "${collection.name}"?`)) {
-                            void onDeleteCollection(collection.id)
+                            void onDeleteCollection(collection.id);
                           }
                         }
                       }
@@ -194,10 +190,7 @@ export function Sidebar({
                       <div className="px-2 py-1 text-[12px] text-muted">No saved requests</div>
                     )}
                     {requests.map((req) => (
-                      <div
-                        key={req.id}
-                        className={sourceRow(activeRequestId === req.id)}
-                      >
+                      <div key={req.id} className={sourceRow(activeRequestId === req.id)}>
                         <button
                           className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 border-none bg-transparent py-0.5 text-left text-inherit app-no-drag"
                           onClick={() => onLoadRequest(req)}
@@ -219,7 +212,7 @@ export function Sidebar({
                               variant: 'danger',
                               onSelect: () => {
                                 if (confirm(`Delete request "${req.name}"?`)) {
-                                  void onDeleteRequest(req.id)
+                                  void onDeleteRequest(req.id);
                                 }
                               }
                             }
@@ -230,10 +223,10 @@ export function Sidebar({
                   </div>
                 )}
               </div>
-            )
+            );
           })}
         </div>
       </div>
     </aside>
-  )
+  );
 }

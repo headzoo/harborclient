@@ -1,18 +1,12 @@
-import { useEffect, useState } from 'react'
-import type { Collection, Variable } from '#/shared/types'
-import {
-  field,
-  iconButtonDanger,
-  primaryButton,
-  secondaryButton,
-  toolbarButton
-} from './classes'
+import { useState, type JSX } from 'react';
+import type { Collection, Variable } from '#/shared/types';
+import { field, iconButtonDanger, primaryButton, secondaryButton, toolbarButton } from './classes';
 
 interface Props {
   /**
    * Collection being configured.
    */
-  collection: Collection
+  collection: Collection;
 
   /**
    * Persists collection name and variables.
@@ -21,32 +15,31 @@ interface Props {
    * @param name - New display name.
    * @param variables - Collection-scoped variables.
    */
-  onSave: (id: number, name: string, variables: Variable[]) => Promise<void>
+  onSave: (id: number, name: string, variables: Variable[]) => Promise<void>;
 
   /**
    * Closes the settings view without saving.
    */
-  onClose: () => void
+  onClose: () => void;
 }
 
-const rowGrid = 'grid grid-cols-[1fr_1fr_28px] items-center gap-1.5'
+const rowGrid = 'grid grid-cols-[1fr_1fr_28px] items-center gap-1.5';
 
-const emptyVariable = (): Variable => ({ key: '', value: '' })
+const emptyVariable = (): Variable => ({ key: '', value: '' });
 
 /**
  * Full-area collection settings: rename and manage collection-scoped variables.
  */
-export function CollectionSettings({ collection, onSave, onClose }: Props) {
-  const [name, setName] = useState(collection.name)
+export function CollectionSettings(props: Props): JSX.Element {
+  return <CollectionSettingsForm key={props.collection.id} {...props} />;
+}
+
+function CollectionSettingsForm({ collection, onSave, onClose }: Props): JSX.Element {
+  const [name, setName] = useState(collection.name);
   const [variables, setVariables] = useState<Variable[]>(
     collection.variables.length ? collection.variables : [emptyVariable()]
-  )
-  const [saving, setSaving] = useState(false)
-
-  useEffect(() => {
-    setName(collection.name)
-    setVariables(collection.variables.length ? collection.variables : [emptyVariable()])
-  }, [collection])
+  );
+  const [saving, setSaving] = useState(false);
 
   /**
    * Updates a single variable row by index.
@@ -54,43 +47,41 @@ export function CollectionSettings({ collection, onSave, onClose }: Props) {
    * @param index - Row index to update.
    * @param patch - Partial fields to merge into the row.
    */
-  const updateVariable = (index: number, patch: Partial<Variable>) => {
-    setVariables((prev) =>
-      prev.map((row, i) => (i === index ? { ...row, ...patch } : row))
-    )
-  }
+  const updateVariable = (index: number, patch: Partial<Variable>): void => {
+    setVariables((prev) => prev.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+  };
 
   /** Appends a blank variable row. */
-  const addVariable = () => {
-    setVariables((prev) => [...prev, emptyVariable()])
-  }
+  const addVariable = (): void => {
+    setVariables((prev) => [...prev, emptyVariable()]);
+  };
 
   /**
    * Removes a variable row, keeping at least one empty row.
    *
    * @param index - Row index to remove.
    */
-  const removeVariable = (index: number) => {
+  const removeVariable = (index: number): void => {
     setVariables((prev) => {
-      if (prev.length === 1) return [emptyVariable()]
-      return prev.filter((_, i) => i !== index)
-    })
-  }
+      if (prev.length === 1) return [emptyVariable()];
+      return prev.filter((_, i) => i !== index);
+    });
+  };
 
   /** Persists name and non-empty variable rows. */
-  const handleSave = async () => {
-    const trimmedName = name.trim()
-    if (!trimmedName) return
+  const handleSave = async (): Promise<void> => {
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
 
-    const cleanedVariables = variables.filter((v) => v.key.trim() || v.value.trim())
-    setSaving(true)
+    const cleanedVariables = variables.filter((v) => v.key.trim() || v.value.trim());
+    setSaving(true);
     try {
-      await onSave(collection.id, trimmedName, cleanedVariables)
-      onClose()
+      await onSave(collection.id, trimmedName, cleanedVariables);
+      onClose();
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-6">
@@ -110,8 +101,8 @@ export function CollectionSettings({ collection, onSave, onClose }: Props) {
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') void handleSave()
-              if (e.key === 'Escape') onClose()
+              if (e.key === 'Enter') void handleSave();
+              if (e.key === 'Escape') onClose();
             }}
           />
         </div>
@@ -123,7 +114,9 @@ export function CollectionSettings({ collection, onSave, onClose }: Props) {
           </p>
 
           <div className="flex flex-col gap-1.5">
-            <div className={`${rowGrid} text-[11px] font-medium uppercase tracking-wide text-muted`}>
+            <div
+              className={`${rowGrid} text-[11px] font-medium uppercase tracking-wide text-muted`}
+            >
               <span>Key</span>
               <span>Value</span>
               <span />
@@ -174,5 +167,5 @@ export function CollectionSettings({ collection, onSave, onClose }: Props) {
         </div>
       </div>
     </div>
-  )
+  );
 }

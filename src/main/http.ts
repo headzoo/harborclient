@@ -1,4 +1,4 @@
-import type { BodyType, KeyValue, SendRequestInput, SendResult, SentRequest } from '#/shared/types'
+import type { BodyType, KeyValue, SendRequestInput, SendResult, SentRequest } from '#/shared/types';
 
 /**
  * Appends enabled query parameters to a base URL.
@@ -8,24 +8,24 @@ import type { BodyType, KeyValue, SendRequestInput, SendResult, SentRequest } fr
  * @returns URL with merged query parameters.
  */
 export function buildUrl(baseUrl: string, params: KeyValue[]): string {
-  const trimmed = baseUrl.trim()
-  if (!trimmed) return trimmed
+  const trimmed = baseUrl.trim();
+  if (!trimmed) return trimmed;
 
-  const enabledParams = params.filter((p) => p.enabled && p.key.trim())
-  if (enabledParams.length === 0) return trimmed
+  const enabledParams = params.filter((p) => p.enabled && p.key.trim());
+  if (enabledParams.length === 0) return trimmed;
 
   try {
-    const url = new URL(trimmed)
+    const url = new URL(trimmed);
     for (const param of enabledParams) {
-      url.searchParams.set(param.key.trim(), param.value)
+      url.searchParams.set(param.key.trim(), param.value);
     }
-    return url.toString()
+    return url.toString();
   } catch {
-    const separator = trimmed.includes('?') ? '&' : '?'
+    const separator = trimmed.includes('?') ? '&' : '?';
     const query = enabledParams
       .map((p) => `${encodeURIComponent(p.key.trim())}=${encodeURIComponent(p.value)}`)
-      .join('&')
-    return `${trimmed}${separator}${query}`
+      .join('&');
+    return `${trimmed}${separator}${query}`;
   }
 }
 
@@ -37,27 +37,25 @@ export function buildUrl(baseUrl: string, params: KeyValue[]): string {
  * @returns Header map ready for fetch.
  */
 export function buildHeaders(headers: KeyValue[], bodyType: BodyType): Record<string, string> {
-  const result: Record<string, string> = {}
+  const result: Record<string, string> = {};
 
   for (const header of headers) {
     if (header.enabled && header.key.trim()) {
-      result[header.key.trim()] = header.value
+      result[header.key.trim()] = header.value;
     }
   }
 
-  const hasContentType = Object.keys(result).some(
-    (key) => key.toLowerCase() === 'content-type'
-  )
+  const hasContentType = Object.keys(result).some((key) => key.toLowerCase() === 'content-type');
 
   if (!hasContentType) {
     if (bodyType === 'json') {
-      result['Content-Type'] = 'application/json'
+      result['Content-Type'] = 'application/json';
     } else if (bodyType === 'text') {
-      result['Content-Type'] = 'text/plain'
+      result['Content-Type'] = 'text/plain';
     }
   }
 
-  return result
+  return result;
 }
 
 /**
@@ -67,18 +65,18 @@ export function buildHeaders(headers: KeyValue[], bodyType: BodyType): Record<st
  * @returns Response status, headers, body, timing, and size; error field on failure.
  */
 export async function executeRequest(input: SendRequestInput): Promise<SendResult> {
-  const url = buildUrl(input.url, input.params)
-  const headers = buildHeaders(input.headers, input.bodyType)
+  const url = buildUrl(input.url, input.params);
+  const headers = buildHeaders(input.headers, input.bodyType);
   const sentBody =
     input.bodyType !== 'none' && input.method !== 'GET' && input.method !== 'HEAD'
       ? input.body
-      : ''
+      : '';
   const request: SentRequest = {
     method: input.method,
     url,
     headers,
     body: sentBody
-  }
+  };
 
   if (!url.trim()) {
     return {
@@ -95,30 +93,30 @@ export async function executeRequest(input: SendRequestInput): Promise<SendResul
         headers,
         body: sentBody
       }
-    }
+    };
   }
 
-  const start = performance.now()
+  const start = performance.now();
 
   try {
     const init: RequestInit = {
       method: input.method,
       headers
-    }
+    };
 
     if (input.bodyType !== 'none' && input.method !== 'GET' && input.method !== 'HEAD') {
-      init.body = input.body
+      init.body = input.body;
     }
 
-    const response = await fetch(url, init)
-    const body = await response.text()
-    const timeMs = Math.round(performance.now() - start)
-    const sizeBytes = new TextEncoder().encode(body).length
+    const response = await fetch(url, init);
+    const body = await response.text();
+    const timeMs = Math.round(performance.now() - start);
+    const sizeBytes = new TextEncoder().encode(body).length;
 
-    const responseHeaders: Record<string, string> = {}
+    const responseHeaders: Record<string, string> = {};
     response.headers.forEach((value, key) => {
-      responseHeaders[key] = value
-    })
+      responseHeaders[key] = value;
+    });
 
     return {
       status: response.status,
@@ -128,10 +126,10 @@ export async function executeRequest(input: SendRequestInput): Promise<SendResul
       timeMs,
       sizeBytes,
       request
-    }
+    };
   } catch (err) {
-    const timeMs = Math.round(performance.now() - start)
-    const message = err instanceof Error ? err.message : 'Unknown error'
+    const timeMs = Math.round(performance.now() - start);
+    const message = err instanceof Error ? err.message : 'Unknown error';
 
     return {
       status: 0,
@@ -142,6 +140,6 @@ export async function executeRequest(input: SendRequestInput): Promise<SendResul
       sizeBytes: 0,
       error: message,
       request
-    }
+    };
   }
 }

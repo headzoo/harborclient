@@ -1,23 +1,23 @@
-import { useMemo, useState } from 'react'
-import type { SendResult } from '#/shared/types'
-import { segment, segmentGroup, statusDotClass } from './classes'
+import { useMemo, useState, type JSX } from 'react';
+import type { SendResult } from '#/shared/types';
+import { segment, segmentGroup, statusDotClass } from './classes';
 
 interface Props {
   /**
    * Last send result to display, or null before the first send.
    */
-  response: SendResult | null
+  response: SendResult | null;
 
   /**
    * Whether a request is in flight; shows a loading state when true.
    */
-  sending: boolean
+  sending: boolean;
 }
 
-type ViewerTab = 'body' | 'headers' | 'console'
+type ViewerTab = 'body' | 'headers' | 'console';
 
 const detailRow =
-  'grid grid-cols-[180px_1fr] gap-3 px-2.5 py-1.5 border-t border-separator first:border-t-0'
+  'grid grid-cols-[180px_1fr] gap-3 px-2.5 py-1.5 border-t border-separator first:border-t-0';
 
 /**
  * Pretty-prints JSON response bodies when valid; returns raw text otherwise.
@@ -26,11 +26,11 @@ const detailRow =
  * @returns Formatted body for display.
  */
 function formatBody(body: string): string {
-  if (!body) return ''
+  if (!body) return '';
   try {
-    return JSON.stringify(JSON.parse(body), null, 2)
+    return JSON.stringify(JSON.parse(body), null, 2);
   } catch {
-    return body
+    return body;
   }
 }
 
@@ -41,9 +41,9 @@ function formatBody(body: string): string {
  * @returns Human-readable size string.
  */
 function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 /**
@@ -52,13 +52,13 @@ function formatBytes(bytes: number): string {
  * @param label - Field label shown in the left column.
  * @param value - Field value shown in the right column.
  */
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({ label, value }: { label: string; value: string }): JSX.Element {
   return (
     <div className={detailRow}>
       <span className="break-words text-[13px] font-medium text-accent">{label}</span>
       <span className="break-words font-mono text-[12px] text-text-secondary">{value}</span>
     </div>
-  )
+  );
 }
 
 /**
@@ -66,51 +66,50 @@ function DetailRow({ label, value }: { label: string; value: string }) {
  *
  * @param title - Section title.
  */
-function SectionTitle({ title }: { title: string }) {
+function SectionTitle({ title }: { title: string }): JSX.Element {
   return (
     <h3 className="m-0 mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted">
       {title}
     </h3>
-  )
+  );
 }
 
 /**
  * Displays HTTP response status, timing, body, and headers.
  */
-export function ResponseViewer({ response, sending }: Props) {
-  const [tab, setTab] = useState<ViewerTab>('body')
+export function ResponseViewer({ response, sending }: Props): JSX.Element {
+  const [tab, setTab] = useState<ViewerTab>('body');
 
-  const formattedBody = useMemo(
-    () => (response ? formatBody(response.body) : ''),
-    [response]
-  )
+  const formattedBody = useMemo(() => (response ? formatBody(response.body) : ''), [response]);
 
   const formattedRequestBody = useMemo(
     () => (response?.request ? formatBody(response.request.body) : ''),
     [response]
-  )
+  );
 
-  const emptyState = (message: string) => (
+  const emptyState = (message: string): JSX.Element => (
     <div className="flex flex-1 flex-col p-3">
       <div className="flex flex-1 items-center justify-center text-[13px] text-muted">
         {message}
       </div>
     </div>
-  )
+  );
 
   if (sending) {
-    return emptyState('Sending request…')
+    return emptyState('Sending request…');
   }
 
   if (!response) {
-    return emptyState('Send a request to see the response')
+    return emptyState('Send a request to see the response');
   }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col p-3">
       <div className="mb-2 flex items-center gap-3 text-[13px]">
         <span className="inline-flex items-center gap-1.5 font-medium text-text">
-          <span className={`inline-block h-2 w-2 shrink-0 rounded-full ${statusDotClass(response.status)}`} />
+          <span
+            className={`inline-block h-2 w-2 shrink-0 rounded-full ${statusDotClass(response.status)}`}
+          />
           {response.error ? 'Error' : `${response.status} ${response.statusText}`}
         </span>
         <span className="text-muted">{response.timeMs} ms</span>
@@ -154,7 +153,9 @@ export function ResponseViewer({ response, sending }: Props) {
                   key={key}
                 >
                   <span className="break-words text-[13px] font-medium text-accent">{key}</span>
-                  <span className="break-words font-mono text-[12px] text-text-secondary">{value}</span>
+                  <span className="break-words font-mono text-[12px] text-text-secondary">
+                    {value}
+                  </span>
                 </div>
               ))
             )}
@@ -173,11 +174,7 @@ export function ResponseViewer({ response, sending }: Props) {
                     <DetailRow label="Request Method" value={response.request.method} />
                     <DetailRow
                       label="Status Code"
-                      value={
-                        response.error
-                          ? 'Error'
-                          : `${response.status} ${response.statusText}`
-                      }
+                      value={response.error ? 'Error' : `${response.status} ${response.statusText}`}
                     />
                   </div>
                 </div>
@@ -223,5 +220,5 @@ export function ResponseViewer({ response, sending }: Props) {
         )}
       </div>
     </div>
-  )
+  );
 }

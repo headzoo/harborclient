@@ -1,31 +1,32 @@
-import type { KeyValue } from '#/shared/types'
-import { field, iconButtonDanger, toolbarButton } from '#/renderer/src/ui/classes'
+import type { JSX } from 'react';
+import type { KeyValue } from '#/shared/types';
+import { field, iconButtonDanger, toolbarButton } from '#/renderer/src/ui/classes';
 
 interface Props {
   /**
    * Editable key-value rows.
    */
-  rows: KeyValue[]
+  rows: KeyValue[];
 
   /**
    * Called when rows are added, updated, or removed.
    *
    * @param rows - Updated row list.
    */
-  onChange: (rows: KeyValue[]) => void
+  onChange: (rows: KeyValue[]) => void;
 
   /**
    * Placeholder text for the key column.
    */
-  placeholderKey?: string
+  placeholderKey?: string;
 
   /**
    * Placeholder text for the value column.
    */
-  placeholderValue?: string
+  placeholderValue?: string;
 }
 
-const rowGrid = 'grid grid-cols-[24px_1fr_1fr_28px] items-center gap-1.5'
+const rowGrid = 'grid grid-cols-[24px_1fr_1fr_28px] items-center gap-1.5';
 
 /**
  * Editable table of key-value rows with enable toggles for headers and params.
@@ -35,35 +36,35 @@ export function KeyValueEditor({
   onChange,
   placeholderKey = 'Key',
   placeholderValue = 'Value'
-}: Props) {
+}: Props): JSX.Element {
   /**
    * Updates a single row by index.
    *
    * @param index - Row index to update.
    * @param patch - Partial fields to merge into the row.
    */
-  const updateRow = (index: number, patch: Partial<KeyValue>) => {
-    const next = rows.map((row, i) => (i === index ? { ...row, ...patch } : row))
-    onChange(next)
-  }
+  const updateRow = (index: number, patch: Partial<KeyValue>): void => {
+    const next = rows.map((row, i) => (i === index ? { ...row, ...patch } : row));
+    onChange(next);
+  };
 
   /** Appends a blank row to the table. */
-  const addRow = () => {
-    onChange([...rows, { key: '', value: '', enabled: true }])
-  }
+  const addRow = (): void => {
+    onChange([...rows, { key: '', value: '', enabled: true }]);
+  };
 
   /**
    * Removes a row, keeping at least one empty row.
    *
    * @param index - Row index to remove.
    */
-  const removeRow = (index: number) => {
+  const removeRow = (index: number): void => {
     if (rows.length === 1) {
-      onChange([{ key: '', value: '', enabled: true }])
-      return
+      onChange([{ key: '', value: '', enabled: true }]);
+      return;
     }
-    onChange(rows.filter((_, i) => i !== index))
-  }
+    onChange(rows.filter((_, i) => i !== index));
+  };
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -110,5 +111,5 @@ export function KeyValueEditor({
         + Add row
       </button>
     </div>
-  )
+  );
 }

@@ -1,69 +1,57 @@
-import { useState } from 'react'
-import type { BodyType } from '#/shared/types'
-import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor'
-import { MethodSelect } from '#/renderer/src/components/MethodSelect'
-import type { RequestDraft } from '#/renderer/src/store/drafts'
-import {
-  field,
-  primaryButton,
-  secondaryButton,
-  segment,
-  segmentGroup
-} from './classes'
+import { useState, type JSX } from 'react';
+import type { BodyType } from '#/shared/types';
+import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
+import { MethodSelect } from '#/renderer/src/components/MethodSelect';
+import type { RequestDraft } from '#/renderer/src/store/drafts';
+import { field, primaryButton, secondaryButton, segment, segmentGroup } from './classes';
 
-type EditorTab = 'params' | 'headers' | 'body'
+type EditorTab = 'params' | 'headers' | 'body';
 
 interface Props {
   /**
    * Current request being edited.
    */
-  draft: RequestDraft
+  draft: RequestDraft;
 
   /**
    * Called when any draft field changes.
    *
    * @param draft - Updated request draft.
    */
-  onChange: (draft: RequestDraft) => void
+  onChange: (draft: RequestDraft) => void;
 
   /**
    * Called when the user clicks Send.
    */
-  onSend: () => void
+  onSend: () => void;
 
   /**
    * Called when the user clicks Save.
    */
-  onSave: () => void
+  onSave: () => void;
 
   /**
    * Disables Send while a request is in flight.
    */
-  sending: boolean
+  sending: boolean;
 }
 
 /**
  * Request builder: method, URL, params, headers, body, and send/save actions.
  */
-export function RequestEditor({
-  draft,
-  onChange,
-  onSend,
-  onSave,
-  sending
-}: Props) {
-  const [tab, setTab] = useState<EditorTab>('params')
+export function RequestEditor({ draft, onChange, onSend, onSave, sending }: Props): JSX.Element {
+  const [tab, setTab] = useState<EditorTab>('params');
 
   /**
    * Merges a partial update into the current draft.
    *
    * @param patch - Fields to update on the draft.
    */
-  const update = (patch: Partial<RequestDraft>) => {
-    onChange({ ...draft, ...patch })
-  }
+  const update = (patch: Partial<RequestDraft>): void => {
+    onChange({ ...draft, ...patch });
+  };
 
-  const showBody = draft.method !== 'GET' && draft.method !== 'HEAD'
+  const showBody = draft.method !== 'GET' && draft.method !== 'HEAD';
 
   return (
     <div className="border-b border-separator p-3">
@@ -91,7 +79,7 @@ export function RequestEditor({
             value={draft.url}
             onChange={(e) => update({ url: e.target.value })}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') onSend()
+              if (e.key === 'Enter') onSend();
             }}
           />
         </div>
@@ -150,11 +138,7 @@ export function RequestEditor({
             {draft.body_type !== 'none' && (
               <textarea
                 className="min-h-36 w-full resize-y rounded-md border border-separator bg-control p-2 font-mono text-[12px] text-inherit shadow-[inset_0_0.5px_1px_rgba(0,0,0,0.06)] app-no-drag"
-                placeholder={
-                  draft.body_type === 'json'
-                    ? '{\n  "key": "value"\n}'
-                    : 'Request body'
-                }
+                placeholder={draft.body_type === 'json' ? '{\n  "key": "value"\n}' : 'Request body'}
                 value={draft.body}
                 onChange={(e) => update({ body: e.target.value })}
                 spellCheck={false}
@@ -164,5 +148,5 @@ export function RequestEditor({
         )}
       </div>
     </div>
-  )
+  );
 }

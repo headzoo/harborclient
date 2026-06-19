@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron';
 import type {
   Api,
   Collection,
@@ -8,7 +8,7 @@ import type {
   SendRequestInput,
   SendResult,
   Variable
-} from '#/shared/types'
+} from '#/shared/types';
 
 /**
  * Lists all collections via IPC.
@@ -16,7 +16,7 @@ import type {
  * @returns All collections from the main process.
  */
 function listCollections(): Promise<Collection[]> {
-  return ipcRenderer.invoke('collections:list')
+  return ipcRenderer.invoke('collections:list');
 }
 
 /**
@@ -26,7 +26,7 @@ function listCollections(): Promise<Collection[]> {
  * @returns The newly created collection.
  */
 function createCollection(name: string): Promise<Collection> {
-  return ipcRenderer.invoke('collections:create', name)
+  return ipcRenderer.invoke('collections:create', name);
 }
 
 /**
@@ -38,7 +38,7 @@ function createCollection(name: string): Promise<Collection> {
  * @returns The updated collection.
  */
 function updateCollection(id: number, name: string, variables: Variable[]): Promise<Collection> {
-  return ipcRenderer.invoke('collections:update', id, name, variables)
+  return ipcRenderer.invoke('collections:update', id, name, variables);
 }
 
 /**
@@ -47,7 +47,7 @@ function updateCollection(id: number, name: string, variables: Variable[]): Prom
  * @param id - Collection ID to delete.
  */
 function deleteCollection(id: number): Promise<void> {
-  return ipcRenderer.invoke('collections:delete', id)
+  return ipcRenderer.invoke('collections:delete', id);
 }
 
 /**
@@ -57,7 +57,7 @@ function deleteCollection(id: number): Promise<void> {
  * @returns Whether the dialog was canceled and the saved path when written.
  */
 function exportCollection(id: number): Promise<CollectionExportResult> {
-  return ipcRenderer.invoke('collections:export', id)
+  return ipcRenderer.invoke('collections:export', id);
 }
 
 /**
@@ -66,7 +66,7 @@ function exportCollection(id: number): Promise<CollectionExportResult> {
  * @returns The imported collection, or null when the dialog was canceled.
  */
 function importCollection(): Promise<Collection | null> {
-  return ipcRenderer.invoke('collections:import')
+  return ipcRenderer.invoke('collections:import');
 }
 
 /**
@@ -76,7 +76,7 @@ function importCollection(): Promise<Collection | null> {
  * @returns Requests in the collection.
  */
 function listRequests(collectionId: number): Promise<SavedRequest[]> {
-  return ipcRenderer.invoke('requests:list', collectionId)
+  return ipcRenderer.invoke('requests:list', collectionId);
 }
 
 /**
@@ -86,7 +86,7 @@ function listRequests(collectionId: number): Promise<SavedRequest[]> {
  * @returns The saved request.
  */
 function saveRequest(req: SaveRequestInput): Promise<SavedRequest> {
-  return ipcRenderer.invoke('requests:save', req)
+  return ipcRenderer.invoke('requests:save', req);
 }
 
 /**
@@ -95,7 +95,7 @@ function saveRequest(req: SaveRequestInput): Promise<SavedRequest> {
  * @param id - Request ID to delete.
  */
 function deleteRequest(id: number): Promise<void> {
-  return ipcRenderer.invoke('requests:delete', id)
+  return ipcRenderer.invoke('requests:delete', id);
 }
 
 /**
@@ -105,7 +105,7 @@ function deleteRequest(id: number): Promise<void> {
  * @returns Response metadata from the main process.
  */
 function sendRequest(req: SendRequestInput): Promise<SendResult> {
-  return ipcRenderer.invoke('http:send', req)
+  return ipcRenderer.invoke('http:send', req);
 }
 
 const api: Api = {
@@ -119,7 +119,7 @@ const api: Api = {
   saveRequest,
   deleteRequest,
   sendRequest
-}
+};
 
-contextBridge.exposeInMainWorld('api', api)
-contextBridge.exposeInMainWorld('platform', process.platform)
+contextBridge.exposeInMainWorld('api', api);
+contextBridge.exposeInMainWorld('platform', process.platform);

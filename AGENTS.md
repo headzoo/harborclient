@@ -6,8 +6,7 @@ which sets `core.hooksPath` to `.githooks`).
 
 How it works:
 
-- After each commit, the hook prepends `- <commit subject>. (\`<short sha>\`)` to the
-  `## Unreleased` section and amends the change into the same commit.
+- After each commit, the hook prepends `- <commit subject>. (\`<short sha>\`)`to the`## Unreleased` section and amends the change into the same commit.
 - The hook stays out of the way when:
   - `CHANGELOG.md` is already part of the commit (you wrote your own entry).
   - The commit is a merge, revert, fixup, squash, or `chore(changelog)` /

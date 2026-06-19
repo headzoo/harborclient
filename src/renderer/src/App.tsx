@@ -1,87 +1,91 @@
-import { useEffect, useRef, useState } from 'react'
-import toast, { Toaster } from 'react-hot-toast'
-import { useAppStore } from '#/renderer/src/store'
-import { isTabDirty } from '#/renderer/src/store/drafts'
-import { CollectionSettings } from '#/renderer/src/ui/CollectionSettings'
-import { Sidebar } from '#/renderer/src/ui/Sidebar'
-import { TabBar } from '#/renderer/src/ui/TabBar'
-import { RequestEditor } from '#/renderer/src/ui/RequestEditor'
-import { ResponseViewer } from '#/renderer/src/ui/ResponseViewer'
-import { TitleBar } from '#/renderer/src/ui/TitleBar'
-import { field, primaryButton, secondaryButton, segment, segmentGroup } from '#/renderer/src/ui/classes'
+import { useCallback, useEffect, useState, type JSX } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
+import { useAppStore } from '#/renderer/src/store';
+import { isTabDirty } from '#/renderer/src/store/drafts';
+import { CollectionSettings } from '#/renderer/src/ui/CollectionSettings';
+import { Sidebar } from '#/renderer/src/ui/Sidebar';
+import { TabBar } from '#/renderer/src/ui/TabBar';
+import { RequestEditor } from '#/renderer/src/ui/RequestEditor';
+import { ResponseViewer } from '#/renderer/src/ui/ResponseViewer';
+import { TitleBar } from '#/renderer/src/ui/TitleBar';
+import {
+  field,
+  primaryButton,
+  secondaryButton,
+  segment,
+  segmentGroup
+} from '#/renderer/src/ui/classes';
 
-const isMac = window.platform === 'darwin'
+const isMac = window.platform === 'darwin';
 
-type CollectionModalMode = 'create' | 'create-and-save' | null
-type CollectionModalTab = 'create' | 'import'
+type CollectionModalMode = 'create' | 'create-and-save' | null;
+type CollectionModalTab = 'create' | 'import';
 
 interface CloseTabPrompt {
-  tabId: string
-  name: string
+  tabId: string;
+  name: string;
 }
 
 /**
  * Root application layout: sidebar, request editor, and response viewer.
  */
-export default function App() {
-  const store = useAppStore()
-  const [collectionModal, setCollectionModal] = useState<CollectionModalMode>(null)
-  const [collectionModalTab, setCollectionModalTab] = useState<CollectionModalTab>('create')
-  const [newCollectionName, setNewCollectionName] = useState('')
-  const [closeTabPrompt, setCloseTabPrompt] = useState<CloseTabPrompt | null>(null)
-  const [configuringCollectionId, setConfiguringCollectionId] = useState<number | null>(null)
+export default function App(): JSX.Element {
+  const store = useAppStore();
+  const { selectedCollectionId, saveRequest } = store;
+  const [collectionModal, setCollectionModal] = useState<CollectionModalMode>(null);
+  const [collectionModalTab, setCollectionModalTab] = useState<CollectionModalTab>('create');
+  const [newCollectionName, setNewCollectionName] = useState('');
+  const [closeTabPrompt, setCloseTabPrompt] = useState<CloseTabPrompt | null>(null);
+  const [configuringCollectionId, setConfiguringCollectionId] = useState<number | null>(null);
   const requests =
     store.selectedCollectionId != null
-      ? store.requestsByCollection[store.selectedCollectionId] ?? []
-      : []
+      ? (store.requestsByCollection[store.selectedCollectionId] ?? [])
+      : [];
 
   /**
    * Saves the current draft, prompting for a new collection when none exists.
    */
-  const handleSave = async () => {
-    if (store.selectedCollectionId == null) {
-      setNewCollectionName('')
-      setCollectionModalTab('create')
-      setCollectionModal('create-and-save')
-      return
+  const handleSave = useCallback(async (): Promise<void> => {
+    if (selectedCollectionId == null) {
+      setNewCollectionName('');
+      setCollectionModalTab('create');
+      setCollectionModal('create-and-save');
+      return;
     }
     try {
-      await store.saveRequest()
-      toast.success('Request saved')
+      await saveRequest();
+      toast.success('Request saved');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to save request')
+      alert(err instanceof Error ? err.message : 'Failed to save request');
     }
-  }
-
-  const handleSaveRef = useRef(handleSave)
-  handleSaveRef.current = handleSave
+  }, [selectedCollectionId, saveRequest]);
 
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
+    const onKeyDown = (e: KeyboardEvent): void => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-        e.preventDefault()
-        void handleSaveRef.current()
+        e.preventDefault();
+        void handleSave();
       }
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [])
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [handleSave]);
 
   /**
    * Creates a collection, optionally saving the current draft into it.
    */
-  const handleCollectionModalSubmit = async () => {
-    const name = newCollectionName.trim()
-    if (!name) return
+  const handleCollectionModalSubmit = async (): Promise<void> => {
+    const name = newCollectionName.trim();
+    if (!name) return;
     try {
-      const collection = await store.createCollection(name)
+      const collection = await store.createCollection(name);
       if (collectionModal === 'create-and-save') {
-        await store.saveRequest(collection.id)
-        toast.success('Request saved')
+        await store.saveRequest(collection.id);
+        toast.success('Request saved');
       }
-      setCollectionModal(null)
-      setNewCollectionName('')
-      setCollectionModalTab('create')
+      setCollectionModal(null);
+      setNewCollectionName('');
+      setCollectionModalTab('create');
     } catch (err) {
       alert(
         err instanceof Error
@@ -89,51 +93,51 @@ export default function App() {
           : collectionModal === 'create-and-save'
             ? 'Failed to save request'
             : 'Failed to create collection'
-      )
+      );
     }
-  }
+  };
 
   /**
    * Imports a collection from a JSON file selected via a native dialog.
    */
-  const handleImportCollection = async () => {
+  const handleImportCollection = async (): Promise<void> => {
     try {
-      const collection = await store.importCollection()
-      if (!collection) return
+      const collection = await store.importCollection();
+      if (!collection) return;
 
-      toast.success('Collection imported')
-      setCollectionModal(null)
-      setNewCollectionName('')
-      setCollectionModalTab('create')
+      toast.success('Collection imported');
+      setCollectionModal(null);
+      setNewCollectionName('');
+      setCollectionModalTab('create');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to import collection')
+      alert(err instanceof Error ? err.message : 'Failed to import collection');
     }
-  }
+  };
 
-  const closeCollectionModal = () => {
-    setCollectionModal(null)
-    setNewCollectionName('')
-    setCollectionModalTab('create')
-  }
+  const closeCollectionModal = (): void => {
+    setCollectionModal(null);
+    setNewCollectionName('');
+    setCollectionModalTab('create');
+  };
 
   /**
    * Closes a tab, prompting when it has unsaved changes.
    *
    * @param tabId - Tab to close.
    */
-  const handleCloseTab = (tabId: string) => {
-    const tab = store.tabs.find((t) => t.tabId === tabId)
+  const handleCloseTab = (tabId: string): void => {
+    const tab = store.tabs.find((t) => t.tabId === tabId);
     if (tab && isTabDirty(tab)) {
-      setCloseTabPrompt({ tabId, name: tab.draft.name })
-      return
+      setCloseTabPrompt({ tabId, name: tab.draft.name });
+      return;
     }
-    store.closeTab(tabId)
-  }
+    store.closeTab(tabId);
+  };
 
-  const showImportTab = collectionModal === 'create'
+  const showImportTab = collectionModal === 'create';
   const configuringCollection = configuringCollectionId
     ? store.collections.find((c) => c.id === configuringCollectionId)
-    : undefined
+    : undefined;
 
   return (
     <div className={`flex h-screen flex-col ${isMac ? 'platform-darwin' : ''}`}>
@@ -146,23 +150,23 @@ export default function App() {
           activeRequestId={store.draft.id}
           onSelectCollection={store.setSelectedCollectionId}
           onAddCollection={() => {
-            setNewCollectionName('')
-            setCollectionModalTab('create')
-            setCollectionModal('create')
+            setNewCollectionName('');
+            setCollectionModalTab('create');
+            setCollectionModal('create');
           }}
           onConfigureCollection={(id) => setConfiguringCollectionId(id)}
           onDeleteCollection={store.deleteCollection}
           onExportCollection={async (id) => {
-            const result = await store.exportCollection(id)
+            const result = await store.exportCollection(id);
             if (!result.canceled) {
-              toast.success('Collection exported')
+              toast.success('Collection exported');
             }
           }}
           onNewRequestInCollection={async (id) => {
             try {
-              await store.newRequestInCollection(id)
+              await store.newRequestInCollection(id);
             } catch (err) {
-              alert(err instanceof Error ? err.message : 'Failed to create request')
+              alert(err instanceof Error ? err.message : 'Failed to create request');
             }
           }}
           onLoadRequest={store.loadRequest}
@@ -175,10 +179,10 @@ export default function App() {
               collection={configuringCollection}
               onSave={async (id, name, variables) => {
                 try {
-                  await store.updateCollection(id, name, variables)
-                  toast.success('Collection updated')
+                  await store.updateCollection(id, name, variables);
+                  toast.success('Collection updated');
                 } catch (err) {
-                  alert(err instanceof Error ? err.message : 'Failed to update collection')
+                  alert(err instanceof Error ? err.message : 'Failed to update collection');
                 }
               }}
               onClose={() => setConfiguringCollectionId(null)}
@@ -255,8 +259,8 @@ export default function App() {
                   value={newCollectionName}
                   onChange={(e) => setNewCollectionName(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') void handleCollectionModalSubmit()
-                    if (e.key === 'Escape') closeCollectionModal()
+                    if (e.key === 'Enter') void handleCollectionModalSubmit();
+                    if (e.key === 'Escape') closeCollectionModal();
                   }}
                 />
                 <div className="mt-4 flex justify-end gap-2">
@@ -281,10 +285,7 @@ export default function App() {
                   <button className={secondaryButton} onClick={closeCollectionModal}>
                     Cancel
                   </button>
-                  <button
-                    className={primaryButton}
-                    onClick={() => void handleImportCollection()}
-                  >
+                  <button className={primaryButton} onClick={() => void handleImportCollection()}>
                     Import .json
                   </button>
                 </div>
@@ -314,8 +315,8 @@ export default function App() {
               <button
                 className={primaryButton}
                 onClick={() => {
-                  store.closeTab(closeTabPrompt.tabId)
-                  setCloseTabPrompt(null)
+                  store.closeTab(closeTabPrompt.tabId);
+                  setCloseTabPrompt(null);
                 }}
               >
                 Close without saving
@@ -340,5 +341,5 @@ export default function App() {
         }}
       />
     </div>
-  )
+  );
 }

@@ -1,65 +1,65 @@
-import { useEffect, useRef } from 'react'
-import { iconButton } from '#/renderer/src/ui/classes'
+import { useEffect, useRef, type JSX } from 'react';
+import { iconButton } from '#/renderer/src/ui/classes';
 
 type MenuItem = {
-  label: string
-  onSelect: () => void
-  variant?: 'default' | 'danger'
-}
+  label: string;
+  onSelect: () => void;
+  variant?: 'default' | 'danger';
+};
 
 interface Props {
   /**
    * Menu entries shown when the trigger is open.
    */
-  items: MenuItem[]
+  items: MenuItem[];
 
   /**
    * Unique id for this menu instance (e.g. "collection-3").
    */
-  menuId: string
+  menuId: string;
 
   /**
    * Id of the currently open menu, or null when all are closed.
    */
-  openMenuId: string | null
+  openMenuId: string | null;
 
   /**
    * Called when the user opens or closes a menu.
    *
    * @param id - Open menu id, or null to close.
    */
-  onOpenChange: (id: string | null) => void
+  onOpenChange: (id: string | null) => void;
 }
 
 /**
  * Hamburger-triggered dropdown for row-level actions (rename, delete, etc.).
  */
-export function RowActionsMenu({ items, menuId, openMenuId, onOpenChange }: Props) {
-  const isOpen = openMenuId === menuId
-  const rootRef = useRef<HTMLDivElement>(null)
+export function RowActionsMenu({ items, menuId, openMenuId, onOpenChange }: Props): JSX.Element {
+  const isOpen = openMenuId === menuId;
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) return;
 
-    const handleMouseDown = (e: MouseEvent) => {
+    const handleMouseDown = (e: MouseEvent): void => {
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-        onOpenChange(null)
+        onOpenChange(null);
       }
-    }
+    };
 
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {
-        onOpenChange(null)
+        onOpenChange(null);
       }
-    }
+    };
 
-    document.addEventListener('mousedown', handleMouseDown)
-    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.removeEventListener('mousedown', handleMouseDown)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [isOpen, onOpenChange])
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onOpenChange]);
 
   return (
     <div ref={rootRef} className="relative shrink-0">
@@ -70,8 +70,8 @@ export function RowActionsMenu({ items, menuId, openMenuId, onOpenChange }: Prop
         aria-haspopup="menu"
         aria-expanded={isOpen}
         onClick={(e) => {
-          e.stopPropagation()
-          onOpenChange(isOpen ? null : menuId)
+          e.stopPropagation();
+          onOpenChange(isOpen ? null : menuId);
         }}
       >
         ☰
@@ -92,9 +92,9 @@ export function RowActionsMenu({ items, menuId, openMenuId, onOpenChange }: Prop
                   : 'block w-full cursor-pointer border-none bg-transparent px-3 py-1 text-left text-[13px] text-text hover:bg-selection app-no-drag'
               }
               onClick={(e) => {
-                e.stopPropagation()
-                onOpenChange(null)
-                item.onSelect()
+                e.stopPropagation();
+                onOpenChange(null);
+                item.onSelect();
               }}
             >
               {item.label}
@@ -103,5 +103,5 @@ export function RowActionsMenu({ items, menuId, openMenuId, onOpenChange }: Prop
         </div>
       )}
     </div>
-  )
+  );
 }

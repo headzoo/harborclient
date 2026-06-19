@@ -1,12 +1,12 @@
 /**
  * Supported HTTP request methods.
  */
-export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS'
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
 
 /**
  * Request body content type.
  */
-export type BodyType = 'none' | 'json' | 'text'
+export type BodyType = 'none' | 'json' | 'text';
 
 /**
  * A key-value pair with an enable toggle for headers and query params.
@@ -15,17 +15,17 @@ export interface KeyValue {
   /**
    * Header or query parameter name.
    */
-  key: string
+  key: string;
 
   /**
    * Header or query parameter value.
    */
-  value: string
+  value: string;
 
   /**
    * When false, the pair is ignored when building the request.
    */
-  enabled: boolean
+  enabled: boolean;
 }
 
 /**
@@ -35,12 +35,12 @@ export interface Variable {
   /**
    * Variable name referenced in {{key}} placeholders.
    */
-  key: string
+  key: string;
 
   /**
    * Value substituted when the variable is resolved.
    */
-  value: string
+  value: string;
 }
 
 /**
@@ -50,22 +50,22 @@ export interface Collection {
   /**
    * Unique database ID.
    */
-  id: number
+  id: number;
 
   /**
    * Display name shown in the sidebar.
    */
-  name: string
+  name: string;
 
   /**
    * Collection-scoped variables for {{key}} substitution in requests.
    */
-  variables: Variable[]
+  variables: Variable[];
 
   /**
    * ISO 8601 timestamp when the collection was created.
    */
-  created_at: string
+  created_at: string;
 }
 
 /**
@@ -75,62 +75,62 @@ export interface SavedRequest {
   /**
    * Unique database ID.
    */
-  id: number
+  id: number;
 
   /**
    * ID of the collection this request belongs to.
    */
-  collection_id: number
+  collection_id: number;
 
   /**
    * Display name shown in the sidebar.
    */
-  name: string
+  name: string;
 
   /**
    * HTTP method used for the request.
    */
-  method: HttpMethod
+  method: HttpMethod;
 
   /**
    * Request URL without query parameters.
    */
-  url: string
+  url: string;
 
   /**
    * Request headers as editable key-value pairs.
    */
-  headers: KeyValue[]
+  headers: KeyValue[];
 
   /**
    * Query parameters as editable key-value pairs.
    */
-  params: KeyValue[]
+  params: KeyValue[];
 
   /**
    * Raw request body content.
    */
-  body: string
+  body: string;
 
   /**
    * Content type of the request body.
    */
-  body_type: BodyType
+  body_type: BodyType;
 
   /**
    * Position within the collection for sidebar ordering.
    */
-  sort_order: number
+  sort_order: number;
 
   /**
    * ISO 8601 timestamp when the request was created.
    */
-  created_at: string
+  created_at: string;
 
   /**
    * ISO 8601 timestamp when the request was last saved.
    */
-  updated_at: string
+  updated_at: string;
 }
 
 /**
@@ -140,42 +140,42 @@ export interface ExportedRequest {
   /**
    * Display name for the saved request.
    */
-  name: string
+  name: string;
 
   /**
    * HTTP method used for the request.
    */
-  method: HttpMethod
+  method: HttpMethod;
 
   /**
    * Request URL without query parameters.
    */
-  url: string
+  url: string;
 
   /**
    * Request headers as editable key-value pairs.
    */
-  headers: KeyValue[]
+  headers: KeyValue[];
 
   /**
    * Query parameters as editable key-value pairs.
    */
-  params: KeyValue[]
+  params: KeyValue[];
 
   /**
    * Raw request body content.
    */
-  body: string
+  body: string;
 
   /**
    * Content type of the request body.
    */
-  body_type: BodyType
+  body_type: BodyType;
 
   /**
    * Position within the collection for sidebar ordering.
    */
-  sort_order: number
+  sort_order: number;
 }
 
 /**
@@ -185,22 +185,22 @@ export interface CollectionExport {
   /**
    * Export schema version for forward compatibility.
    */
-  formatVersion: 1
+  formatVersion: 1;
 
   /**
    * Display name for the collection.
    */
-  name: string
+  name: string;
 
   /**
    * Collection-scoped variables for {{key}} substitution in requests.
    */
-  variables: Variable[]
+  variables: Variable[];
 
   /**
    * Saved requests belonging to the collection.
    */
-  requests: ExportedRequest[]
+  requests: ExportedRequest[];
 }
 
 /**
@@ -210,12 +210,12 @@ export interface CollectionExportResult {
   /**
    * True when the user canceled the save dialog.
    */
-  canceled: boolean
+  canceled: boolean;
 
   /**
    * Absolute path where the file was written; omitted when canceled.
    */
-  path?: string
+  path?: string;
 }
 
 /**
@@ -225,47 +225,47 @@ export interface SaveRequestInput {
   /**
    * Existing request ID; omit to insert a new request.
    */
-  id?: number
+  id?: number;
 
   /**
    * ID of the collection to save the request in.
    */
-  collection_id: number
+  collection_id: number;
 
   /**
    * Display name for the saved request.
    */
-  name: string
+  name: string;
 
   /**
    * HTTP method used for the request.
    */
-  method: HttpMethod
+  method: HttpMethod;
 
   /**
    * Request URL without query parameters.
    */
-  url: string
+  url: string;
 
   /**
    * Request headers as editable key-value pairs.
    */
-  headers: KeyValue[]
+  headers: KeyValue[];
 
   /**
    * Query parameters as editable key-value pairs.
    */
-  params: KeyValue[]
+  params: KeyValue[];
 
   /**
    * Raw request body content.
    */
-  body: string
+  body: string;
 
   /**
    * Content type of the request body.
    */
-  body_type: BodyType
+  body_type: BodyType;
 }
 
 /**
@@ -275,32 +275,32 @@ export interface SendRequestInput {
   /**
    * HTTP method to use for the request.
    */
-  method: HttpMethod
+  method: HttpMethod;
 
   /**
    * Request URL without query parameters.
    */
-  url: string
+  url: string;
 
   /**
    * Request headers as editable key-value pairs.
    */
-  headers: KeyValue[]
+  headers: KeyValue[];
 
   /**
    * Query parameters as editable key-value pairs.
    */
-  params: KeyValue[]
+  params: KeyValue[];
 
   /**
    * Raw request body content.
    */
-  body: string
+  body: string;
 
   /**
    * Content type of the request body.
    */
-  bodyType: BodyType
+  bodyType: BodyType;
 }
 
 /**
@@ -310,22 +310,22 @@ export interface SentRequest {
   /**
    * HTTP method used for the request.
    */
-  method: HttpMethod
+  method: HttpMethod;
 
   /**
    * Fully resolved request URL including query parameters.
    */
-  url: string
+  url: string;
 
   /**
    * Request headers as a flat key-value map.
    */
-  headers: Record<string, string>
+  headers: Record<string, string>;
 
   /**
    * Request body content that was sent, or empty string when none.
    */
-  body: string
+  body: string;
 }
 
 /**
@@ -335,42 +335,42 @@ export interface SendResult {
   /**
    * HTTP status code, or 0 when the request failed before a response.
    */
-  status: number
+  status: number;
 
   /**
    * HTTP status text from the response.
    */
-  statusText: string
+  statusText: string;
 
   /**
    * Response headers as a flat key-value map.
    */
-  headers: Record<string, string>
+  headers: Record<string, string>;
 
   /**
    * Response body as text.
    */
-  body: string
+  body: string;
 
   /**
    * Round-trip time in milliseconds.
    */
-  timeMs: number
+  timeMs: number;
 
   /**
    * Response body size in bytes.
    */
-  sizeBytes: number
+  sizeBytes: number;
 
   /**
    * Error message when the request failed; omitted on success.
    */
-  error?: string
+  error?: string;
 
   /**
    * The outgoing request as actually sent; omitted on older results.
    */
-  request?: SentRequest
+  request?: SentRequest;
 }
 
 /**
@@ -382,7 +382,7 @@ export interface Api {
    *
    * @returns All collections from the main process.
    */
-  listCollections: () => Promise<Collection[]>
+  listCollections: () => Promise<Collection[]>;
 
   /**
    * Creates a new collection.
@@ -390,7 +390,7 @@ export interface Api {
    * @param name - Display name for the collection.
    * @returns The newly created collection.
    */
-  createCollection: (name: string) => Promise<Collection>
+  createCollection: (name: string) => Promise<Collection>;
 
   /**
    * Updates a collection's name and variables.
@@ -400,14 +400,14 @@ export interface Api {
    * @param variables - Collection-scoped variables.
    * @returns The updated collection.
    */
-  updateCollection: (id: number, name: string, variables: Variable[]) => Promise<Collection>
+  updateCollection: (id: number, name: string, variables: Variable[]) => Promise<Collection>;
 
   /**
    * Deletes a collection and all of its saved requests.
    *
    * @param id - Collection ID to delete.
    */
-  deleteCollection: (id: number) => Promise<void>
+  deleteCollection: (id: number) => Promise<void>;
 
   /**
    * Exports a collection to a JSON file via a native save dialog.
@@ -415,14 +415,14 @@ export interface Api {
    * @param id - Collection ID to export.
    * @returns Whether the dialog was canceled and the saved path when written.
    */
-  exportCollection: (id: number) => Promise<CollectionExportResult>
+  exportCollection: (id: number) => Promise<CollectionExportResult>;
 
   /**
    * Imports a collection from a JSON file via a native open dialog.
    *
    * @returns The imported collection, or null when the dialog was canceled.
    */
-  importCollection: () => Promise<Collection | null>
+  importCollection: () => Promise<Collection | null>;
 
   /**
    * Lists saved requests in a collection.
@@ -430,7 +430,7 @@ export interface Api {
    * @param collectionId - Collection to query.
    * @returns Requests in the collection.
    */
-  listRequests: (collectionId: number) => Promise<SavedRequest[]>
+  listRequests: (collectionId: number) => Promise<SavedRequest[]>;
 
   /**
    * Inserts a new saved request or updates an existing one.
@@ -438,14 +438,14 @@ export interface Api {
    * @param req - Request fields to persist.
    * @returns The saved request.
    */
-  saveRequest: (req: SaveRequestInput) => Promise<SavedRequest>
+  saveRequest: (req: SaveRequestInput) => Promise<SavedRequest>;
 
   /**
    * Deletes a saved request by ID.
    *
    * @param id - Request ID to delete.
    */
-  deleteRequest: (id: number) => Promise<void>
+  deleteRequest: (id: number) => Promise<void>;
 
   /**
    * Sends an HTTP request via the main process.
@@ -453,7 +453,7 @@ export interface Api {
    * @param req - Request configuration to execute.
    * @returns Response metadata from the main process.
    */
-  sendRequest: (req: SendRequestInput) => Promise<SendResult>
+  sendRequest: (req: SendRequestInput) => Promise<SendResult>;
 }
 
 declare global {
@@ -464,6 +464,6 @@ declare global {
     /**
      * IPC bridge for collections, saved requests, and HTTP execution.
      */
-    api: Api
+    api: Api;
   }
 }

@@ -1,25 +1,25 @@
-import type { BodyType, HttpMethod, KeyValue, SavedRequest, SendResult } from '#/shared/types'
+import type { BodyType, HttpMethod, KeyValue, SavedRequest, SendResult } from '#/shared/types';
 
 /** Editable request state in the UI before or during save. */
 export interface RequestDraft {
-  id?: number
-  collection_id?: number
-  name: string
-  method: HttpMethod
-  url: string
-  headers: KeyValue[]
-  params: KeyValue[]
-  body: string
-  body_type: BodyType
+  id?: number;
+  collection_id?: number;
+  name: string;
+  method: HttpMethod;
+  url: string;
+  headers: KeyValue[];
+  params: KeyValue[];
+  body: string;
+  body_type: BodyType;
 }
 
 /** Open request tab with draft, response, and in-flight state. */
 export interface RequestTab {
-  tabId: string
-  draft: RequestDraft
-  savedDraft: RequestDraft
-  response: SendResult | null
-  sending: boolean
+  tabId: string;
+  draft: RequestDraft;
+  savedDraft: RequestDraft;
+  response: SendResult | null;
+  sending: boolean;
 }
 
 /**
@@ -33,7 +33,7 @@ export function cloneDraft(draft: RequestDraft): RequestDraft {
     ...draft,
     headers: draft.headers.map((h) => ({ ...h })),
     params: draft.params.map((p) => ({ ...p }))
-  }
+  };
 }
 
 /**
@@ -51,8 +51,8 @@ export function normalizeDraftForCompare(draft: RequestDraft): string {
     body_type: draft.body_type,
     headers: draft.headers.filter((h) => h.key.trim() || h.value.trim()),
     params: draft.params.filter((p) => p.key.trim() || p.value.trim())
-  }
-  return JSON.stringify(payload)
+  };
+  return JSON.stringify(payload);
 }
 
 /**
@@ -63,7 +63,7 @@ export function normalizeDraftForCompare(draft: RequestDraft): string {
  * @returns True when the tab has unsaved changes.
  */
 export function isDraftDirty(draft: RequestDraft, savedDraft: RequestDraft): boolean {
-  return normalizeDraftForCompare(draft) !== normalizeDraftForCompare(savedDraft)
+  return normalizeDraftForCompare(draft) !== normalizeDraftForCompare(savedDraft);
 }
 
 /**
@@ -73,7 +73,7 @@ export function isDraftDirty(draft: RequestDraft, savedDraft: RequestDraft): boo
  * @returns True when the tab draft differs from its saved baseline.
  */
 export function isTabDirty(tab: RequestTab): boolean {
-  return isDraftDirty(tab.draft, tab.savedDraft)
+  return isDraftDirty(tab.draft, tab.savedDraft);
 }
 
 /**
@@ -81,7 +81,7 @@ export function isTabDirty(tab: RequestTab): boolean {
  *
  * @returns Blank KeyValue entry for editors.
  */
-export const emptyKeyValue = (): KeyValue => ({ key: '', value: '', enabled: true })
+export const emptyKeyValue = (): KeyValue => ({ key: '', value: '', enabled: true });
 
 /**
  * Returns a new unsaved request draft with default values.
@@ -96,7 +96,7 @@ export const defaultDraft = (): RequestDraft => ({
   params: [emptyKeyValue()],
   body: '',
   body_type: 'none'
-})
+});
 
 /**
  * Creates a new open tab from a draft.
@@ -105,14 +105,14 @@ export const defaultDraft = (): RequestDraft => ({
  * @returns New RequestTab with a unique tabId.
  */
 export function createTab(draft: RequestDraft = defaultDraft()): RequestTab {
-  const initialDraft = cloneDraft(draft)
+  const initialDraft = cloneDraft(draft);
   return {
     tabId: crypto.randomUUID(),
     draft: initialDraft,
     savedDraft: cloneDraft(initialDraft),
     response: null,
     sending: false
-  }
+  };
 }
 
 /**
@@ -132,5 +132,5 @@ export function draftFromSaved(req: SavedRequest): RequestDraft {
     params: req.params.length ? req.params : [emptyKeyValue()],
     body: req.body,
     body_type: req.body_type
-  }
+  };
 }
