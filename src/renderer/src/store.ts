@@ -1,35 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type {
-  BodyType,
-  Collection,
-  HttpMethod,
-  KeyValue,
-  SavedRequest,
-  SendResult
-} from '#/shared/types'
+import type { Collection, SavedRequest } from '#/shared/types'
+import {
+  createTab,
+  defaultDraft,
+  draftFromSaved,
+  type RequestDraft,
+  type RequestTab
+} from '#/renderer/src/store/drafts'
 
 const OPEN_TABS_KEY = 'harbor-client.openTabs'
-
-/** Editable request state in the UI before or during save. */
-export interface RequestDraft {
-  id?: number
-  collection_id?: number
-  name: string
-  method: HttpMethod
-  url: string
-  headers: KeyValue[]
-  params: KeyValue[]
-  body: string
-  body_type: BodyType
-}
-
-/** Open request tab with draft, response, and in-flight state. */
-export interface RequestTab {
-  tabId: string
-  draft: RequestDraft
-  response: SendResult | null
-  sending: boolean
-}
 
 /** Persisted tab shape (draft only, no response/sending). */
 interface PersistedTab {
@@ -40,63 +19,6 @@ interface PersistedTab {
 interface PersistedOpenTabs {
   tabs: PersistedTab[]
   activeTabId: string
-}
-
-/**
- * Returns an empty key-value row with enabled set to true.
- *
- * @returns Blank KeyValue entry for editors.
- */
-export const emptyKeyValue = (): KeyValue => ({ key: '', value: '', enabled: true })
-
-/**
- * Returns a new unsaved request draft with default values.
- *
- * @returns Default RequestDraft for a new request.
- */
-export const defaultDraft = (): RequestDraft => ({
-  name: 'Untitled Request',
-  method: 'GET',
-  url: '',
-  headers: [emptyKeyValue()],
-  params: [emptyKeyValue()],
-  body: '',
-  body_type: 'none'
-})
-
-/**
- * Creates a new open tab from a draft.
- *
- * @param draft - Initial draft for the tab.
- * @returns New RequestTab with a unique tabId.
- */
-export function createTab(draft: RequestDraft = defaultDraft()): RequestTab {
-  return {
-    tabId: crypto.randomUUID(),
-    draft,
-    response: null,
-    sending: false
-  }
-}
-
-/**
- * Converts a saved request from the database into an editable draft.
- *
- * @param req - Saved request to load into the editor.
- * @returns RequestDraft populated from the saved request.
- */
-export function draftFromSaved(req: SavedRequest): RequestDraft {
-  return {
-    id: req.id,
-    collection_id: req.collection_id,
-    name: req.name,
-    method: req.method,
-    url: req.url,
-    headers: req.headers.length ? req.headers : [emptyKeyValue()],
-    params: req.params.length ? req.params : [emptyKeyValue()],
-    body: req.body,
-    body_type: req.body_type
-  }
 }
 
 /**
@@ -139,20 +61,33 @@ function loadTabsFromStorage(): { tabs: RequestTab[]; activeTabId: string } {
   }
 }
 
+let initialTabState: { tabs: RequestTab[]; activeTabId: string } | undefined
+
+/**
+ * Returns cached initial tab state, loading from storage on first call.
+ *
+ * @returns Tabs and active tab ID for useState lazy initializers.
+ */
+function getInitialTabState(): { tabs: RequestTab[]; activeTabId: string } {
+  if (initialTabState === undefined) {
+    initialTabState = loadTabsFromStorage()
+  }
+  return initialTabState
+}
+
 /**
  * Central application state hook for collections, drafts, and HTTP requests.
  *
  * @returns Store state and actions for the renderer UI.
  */
 export function useAppStore() {
-  const initial = loadTabsFromStorage()
   const [collections, setCollections] = useState<Collection[]>([])
   const [requestsByCollection, setRequestsByCollection] = useState<
     Record<number, SavedRequest[]>
   >({})
   const [selectedCollectionId, setSelectedCollectionId] = useState<number | null>(null)
-  const [tabs, setTabs] = useState<RequestTab[]>(initial.tabs)
-  const [activeTabId, setActiveTabId] = useState(initial.activeTabId)
+  const [tabs, setTabs] = useState<RequestTab[]>(() => getInitialTabState().tabs)
+  const [activeTabId, setActiveTabId] = useState(() => getInitialTabState().activeTabId)
 
   const activeTab = useMemo(
     () => tabs.find((t) => t.tabId === activeTabId) ?? tabs[0],
@@ -247,6 +182,33 @@ export function useAppStore() {
     setTabs((prev) => [...prev, tab])
     setActiveTabId(tab.tabId)
   }, [])
+
+  /**
+   * Creates a saved request in a collection and opens it in a new tab.
+   *
+   * @param collectionId - Collection to add the request to.
+   * @returns The newly saved request.
+   */
+  const newRequestInCollection = async (collectionId: number) => {
+    setSelectedCollectionId(collectionId)
+
+    const saved = await window.api.saveRequest({
+      collection_id: collectionId,
+      name: 'Untitled Request',
+      method: 'GET',
+      url: '',
+      headers: [],
+      params: [],
+      body: '',
+      body_type: 'none'
+    })
+
+    const tab = createTab(draftFromSaved(saved))
+    setTabs((prev) => [...prev, tab])
+    setActiveTabId(tab.tabId)
+    await refreshRequests(collectionId)
+    return saved
+  }
 
   /**
    * Closes a tab; keeps at least one tab open.
@@ -467,6 +429,7 @@ export function useAppStore() {
     deleteRequest,
     loadRequest,
     newRequest,
+    newRequestInCollection,
     sendRequest,
     refreshRequests
   }

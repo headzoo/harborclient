@@ -1,0 +1,79 @@
+import type { BodyType, HttpMethod, KeyValue, SavedRequest, SendResult } from '#/shared/types'
+
+/** Editable request state in the UI before or during save. */
+export interface RequestDraft {
+  id?: number
+  collection_id?: number
+  name: string
+  method: HttpMethod
+  url: string
+  headers: KeyValue[]
+  params: KeyValue[]
+  body: string
+  body_type: BodyType
+}
+
+/** Open request tab with draft, response, and in-flight state. */
+export interface RequestTab {
+  tabId: string
+  draft: RequestDraft
+  response: SendResult | null
+  sending: boolean
+}
+
+/**
+ * Returns an empty key-value row with enabled set to true.
+ *
+ * @returns Blank KeyValue entry for editors.
+ */
+export const emptyKeyValue = (): KeyValue => ({ key: '', value: '', enabled: true })
+
+/**
+ * Returns a new unsaved request draft with default values.
+ *
+ * @returns Default RequestDraft for a new request.
+ */
+export const defaultDraft = (): RequestDraft => ({
+  name: 'Untitled Request',
+  method: 'GET',
+  url: '',
+  headers: [emptyKeyValue()],
+  params: [emptyKeyValue()],
+  body: '',
+  body_type: 'none'
+})
+
+/**
+ * Creates a new open tab from a draft.
+ *
+ * @param draft - Initial draft for the tab.
+ * @returns New RequestTab with a unique tabId.
+ */
+export function createTab(draft: RequestDraft = defaultDraft()): RequestTab {
+  return {
+    tabId: crypto.randomUUID(),
+    draft,
+    response: null,
+    sending: false
+  }
+}
+
+/**
+ * Converts a saved request from the database into an editable draft.
+ *
+ * @param req - Saved request to load into the editor.
+ * @returns RequestDraft populated from the saved request.
+ */
+export function draftFromSaved(req: SavedRequest): RequestDraft {
+  return {
+    id: req.id,
+    collection_id: req.collection_id,
+    name: req.name,
+    method: req.method,
+    url: req.url,
+    headers: req.headers.length ? req.headers : [emptyKeyValue()],
+    params: req.params.length ? req.params : [emptyKeyValue()],
+    body: req.body,
+    body_type: req.body_type
+  }
+}

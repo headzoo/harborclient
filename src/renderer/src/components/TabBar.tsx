@@ -1,4 +1,4 @@
-import type { RequestTab } from '#/renderer/src/store'
+import type { RequestTab } from '#/renderer/src/store/drafts'
 import { METHOD_CLASSES, toolbarButton } from '#/renderer/src/ui/classes'
 
 interface Props {

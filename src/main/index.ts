@@ -14,6 +14,15 @@ if (process.platform === 'linux' && isDev) {
 }
 
 /**
+ * Resolves the app icon path for dev and packaged builds.
+ */
+function resolveAppIcon(): string {
+  return app.isPackaged
+    ? join(process.resourcesPath, 'icon.png')
+    : join(__dirname, '../../images/logo-square.png')
+}
+
+/**
  * Creates and configures the main application window.
  */
 function createWindow(): void {
@@ -30,6 +39,7 @@ function createWindow(): void {
     minWidth: 900,
     minHeight: 600,
     title: 'Harbor Client',
+    icon: resolveAppIcon(),
     show: false,
     autoHideMenuBar: true,
     backgroundColor: '#f5f5f7',

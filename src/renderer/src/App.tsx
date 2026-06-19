@@ -118,9 +118,15 @@ export default function App() {
               toast.success('Collection exported')
             }
           }}
+          onNewRequestInCollection={async (id) => {
+            try {
+              await store.newRequestInCollection(id)
+            } catch (err) {
+              alert(err instanceof Error ? err.message : 'Failed to create request')
+            }
+          }}
           onLoadRequest={store.loadRequest}
           onDeleteRequest={store.deleteRequest}
-          onNewRequest={store.newRequest}
         />
 
         <main className="flex min-w-0 flex-1 flex-col bg-surface">
@@ -132,7 +138,7 @@ export default function App() {
             onNew={store.newRequest}
           />
           <RequestEditor
-            key={store.activeTabId}
+            key={`editor-${store.activeTabId}`}
             draft={store.draft}
             onChange={store.setDraft}
             onSend={() => void store.sendRequest()}
@@ -140,7 +146,7 @@ export default function App() {
             sending={store.sending}
           />
           <ResponseViewer
-            key={store.activeTabId}
+            key={`response-${store.activeTabId}`}
             response={store.response}
             sending={store.sending}
           />

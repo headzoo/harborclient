@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { BodyType } from '#/shared/types'
 import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor'
 import { MethodSelect } from '#/renderer/src/components/MethodSelect'
-import type { RequestDraft } from '#/renderer/src/store'
+import type { RequestDraft } from '#/renderer/src/store/drafts'
 import {
   field,
   primaryButton,

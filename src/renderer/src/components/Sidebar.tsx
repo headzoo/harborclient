@@ -64,6 +64,13 @@ interface Props {
   onExportCollection: (id: number) => Promise<void> | void
 
   /**
+   * Creates a new saved request in a collection.
+   *
+   * @param id - Collection ID to add the request to.
+   */
+  onNewRequestInCollection: (id: number) => Promise<void> | void
+
+  /**
    * Loads a saved request into the editor.
    *
    * @param req - Saved request to load.
@@ -76,11 +83,6 @@ interface Props {
    * @param id - Request ID to delete.
    */
   onDeleteRequest: (id: number) => Promise<void>
-
-  /**
-   * Resets the editor to a blank draft.
-   */
-  onNewRequest: () => void
 }
 
 /**
@@ -96,9 +98,9 @@ export function Sidebar({
   onRenameCollection,
   onDeleteCollection,
   onExportCollection,
+  onNewRequestInCollection,
   onLoadRequest,
-  onDeleteRequest,
-  onNewRequest
+  onDeleteRequest
 }: Props) {
   const [editingCollectionId, setEditingCollectionId] = useState<number | null>(null)
   const [editingName, setEditingName] = useState('')
@@ -147,13 +149,6 @@ export function Sidebar({
 
   return (
     <aside className="flex w-100 shrink-0 flex-col border-r border-separator bg-sidebar">
-      <div className="flex items-center justify-between gap-2 px-3 py-2">
-        <h1 className="m-0 text-[13px] font-semibold text-text">Harbor Client</h1>
-        <button className={toolbarButton} onClick={onNewRequest}>
-          + New
-        </button>
-      </div>
-
       <div className="flex-1 overflow-y-auto px-2 pb-3">
         <div className="mb-1 flex items-center justify-between gap-2 ps-1">
           <h2 className="m-0 text-[11px] font-medium uppercase tracking-wide text-muted">
@@ -209,6 +204,10 @@ export function Sidebar({
                     onOpenChange={setOpenMenuId}
                     items={[
                       { label: 'Rename', onSelect: () => startRename(collection) },
+                      {
+                        label: 'New Request',
+                        onSelect: () => void onNewRequestInCollection(collection.id)
+                      },
                       {
                         label: 'Export',
                         onSelect: () => void onExportCollection(collection.id)

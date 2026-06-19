@@ -1,5 +1,9 @@
 appId: com.harbor.client
 productName: Harbor Client
+icon: images/logo-square.png
+extraResources:
+  - from: images/logo-square.png
+    to: icon.png
 directories:
   buildResources: build
   output: release
