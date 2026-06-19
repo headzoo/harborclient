@@ -1,8 +1,8 @@
 ![Harbor Client](https://headzoo.github.io/harborclient/images/logo.png)
 
-**Full documentation:** [https://headzoo.github.io/harborclient/](https://headzoo.github.io/harborclient/)
+**Full documentation:** [https://harborclient.com/](https://harborclient.com/)
 
-**A desktop HTTP client. Build, send, and inspect HTTP requests with collections, tabs, and local persistence.**
+**A desktop HTTP client to build, send, and inspect HTTP requests with collections, tabs, and local persistence.**
 
 Harbor Client is a Postman-style HTTP client built with Electron:
 
@@ -15,10 +15,10 @@ Harbor Client is a Postman-style HTTP client built with Electron:
 
 | Topic | Link |
 | --- | --- |
-| Introduction | [Introduction](https://headzoo.github.io/harborclient/) |
-| Getting started | [Getting started](https://headzoo.github.io/harborclient/getting-started) |
-| Features | [Features](https://headzoo.github.io/harborclient/features) |
-| Project structure | [Project structure](https://headzoo.github.io/harborclient/project-structure) |
+| Introduction | [Introduction](https://harborclient.com/) |
+| Getting started | [Getting started](https://harborclient.com/getting-started) |
+| Features | [Features](https://harborclient.com/features) |
+| Project structure | [Project structure](https://harborclient.com/project-structure) |
 
 Canonical docs live in [`docs/`](./docs/). Edit those pages directly, then run `pnpm docs:build:nav` to refresh the VitePress sidebar.
 

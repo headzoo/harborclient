@@ -3,7 +3,7 @@ import pkg from '../../package.json';
 import { toAnchor } from '../../scripts/docs-slugger.mjs';
 import { sidebar } from './sidebar.generated';
 
-const siteBase = '/harborclient/';
+const siteBase = '/';
 
 const withSiteBase = (path: string) => {
   if (!path.startsWith('/') || path.startsWith(siteBase) || path.startsWith('//')) {

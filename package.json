@@ -4,7 +4,7 @@
   "description": "A Postman-style HTTP client built with Electron",
   "main": "./out/main/index.js",
   "desktopName": "harbor-client",
-  "homepage": "https://github.com/harbor/harbor-client",
+  "homepage": "https://harborclient.com/",
   "author": {
     "name": "Harbor",
     "email": "harbor@example.com"
