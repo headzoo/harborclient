@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import toast, { Toaster } from 'react-hot-toast'
 import { useAppStore } from '#/renderer/src/store'
+import { isTabDirty } from '#/renderer/src/store/drafts'
 import { Sidebar } from '#/renderer/src/components/Sidebar'
 import { TabBar } from '#/renderer/src/components/TabBar'
 import { RequestEditor } from '#/renderer/src/components/RequestEditor'
@@ -13,6 +14,11 @@ const isMac = window.platform === 'darwin'
 type CollectionModalMode = 'create' | 'create-and-save' | null
 type CollectionModalTab = 'create' | 'import'
 
+interface CloseTabPrompt {
+  tabId: string
+  name: string
+}
+
 /**
  * Root application layout: sidebar, request editor, and response viewer.
  */
@@ -21,6 +27,7 @@ export default function App() {
   const [collectionModal, setCollectionModal] = useState<CollectionModalMode>(null)
   const [collectionModalTab, setCollectionModalTab] = useState<CollectionModalTab>('create')
   const [newCollectionName, setNewCollectionName] = useState('')
+  const [closeTabPrompt, setCloseTabPrompt] = useState<CloseTabPrompt | null>(null)
   const requests =
     store.selectedCollectionId != null
       ? store.requestsByCollection[store.selectedCollectionId] ?? []
@@ -43,6 +50,20 @@ export default function App() {
       alert(err instanceof Error ? err.message : 'Failed to save request')
     }
   }
+
+  const handleSaveRef = useRef(handleSave)
+  handleSaveRef.current = handleSave
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault()
+        void handleSaveRef.current()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   /**
    * Creates a collection, optionally saving the current draft into it.
@@ -93,6 +114,20 @@ export default function App() {
     setCollectionModalTab('create')
   }
 
+  /**
+   * Closes a tab, prompting when it has unsaved changes.
+   *
+   * @param tabId - Tab to close.
+   */
+  const handleCloseTab = (tabId: string) => {
+    const tab = store.tabs.find((t) => t.tabId === tabId)
+    if (tab && isTabDirty(tab)) {
+      setCloseTabPrompt({ tabId, name: tab.draft.name })
+      return
+    }
+    store.closeTab(tabId)
+  }
+
   const showImportTab = collectionModal === 'create'
 
   return (
@@ -134,7 +169,7 @@ export default function App() {
             tabs={store.tabs}
             activeTabId={store.activeTabId}
             onSelect={store.setActiveTab}
-            onClose={store.closeTab}
+            onClose={handleCloseTab}
             onNew={store.newRequest}
           />
           <RequestEditor
@@ -233,6 +268,37 @@ export default function App() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {closeTabPrompt && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setCloseTabPrompt(null)}
+        >
+          <div
+            className="w-96 rounded-lg border border-separator bg-surface p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">Unsaved changes</h2>
+            <p className="mb-4 text-[12px] text-muted">
+              &ldquo;{closeTabPrompt.name}&rdquo; has unsaved changes. Close without saving?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button className={secondaryButton} onClick={() => setCloseTabPrompt(null)}>
+                Cancel
+              </button>
+              <button
+                className={primaryButton}
+                onClick={() => {
+                  store.closeTab(closeTabPrompt.tabId)
+                  setCloseTabPrompt(null)
+                }}
+              >
+                Close without saving
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Collection, SavedRequest } from '#/shared/types'
 import {
+  cloneDraft,
   createTab,
   defaultDraft,
   draftFromSaved,
@@ -14,6 +15,7 @@ const OPEN_TABS_KEY = 'harbor-client.openTabs'
 interface PersistedTab {
   tabId: string
   draft: RequestDraft
+  savedDraft?: RequestDraft
 }
 
 interface PersistedOpenTabs {
@@ -44,12 +46,17 @@ function loadTabsFromStorage(): { tabs: RequestTab[]; activeTabId: string } {
     const parsed = JSON.parse(raw) as PersistedOpenTabs
     if (!parsed.tabs?.length || !parsed.activeTabId) return defaultTabState()
 
-    const tabs: RequestTab[] = parsed.tabs.map((t) => ({
-      tabId: t.tabId,
-      draft: t.draft,
-      response: null,
-      sending: false
-    }))
+    const tabs: RequestTab[] = parsed.tabs.map((t) => {
+      const draft = t.draft
+      const savedDraft = t.savedDraft ?? draft
+      return {
+        tabId: t.tabId,
+        draft,
+        savedDraft: cloneDraft(savedDraft),
+        response: null,
+        sending: false
+      }
+    })
 
     const activeExists = tabs.some((t) => t.tabId === parsed.activeTabId)
     return {
@@ -146,7 +153,7 @@ export function useAppStore() {
 
   useEffect(() => {
     const payload: PersistedOpenTabs = {
-      tabs: tabs.map((t) => ({ tabId: t.tabId, draft: t.draft })),
+      tabs: tabs.map((t) => ({ tabId: t.tabId, draft: t.draft, savedDraft: t.savedDraft })),
       activeTabId
     }
     localStorage.setItem(OPEN_TABS_KEY, JSON.stringify(payload))
@@ -326,7 +333,8 @@ export function useAppStore() {
       body_type: currentDraft.body_type
     })
 
-    updateTab(activeTab.tabId, () => ({ draft: draftFromSaved(saved) }))
+    const savedDraft = cloneDraft(draftFromSaved(saved))
+    updateTab(activeTab.tabId, () => ({ draft: savedDraft, savedDraft }))
     await refreshRequests(targetId)
     return saved
   }

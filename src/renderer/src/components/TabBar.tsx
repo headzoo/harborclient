@@ -1,5 +1,5 @@
-import type { RequestTab } from '#/renderer/src/store/drafts'
-import { METHOD_CLASSES, toolbarButton } from '#/renderer/src/ui/classes'
+import { isTabDirty, type RequestTab } from '#/renderer/src/store/drafts'
+import { METHOD_CLASSES } from '#/renderer/src/ui/classes'
 
 interface Props {
   /**
@@ -58,6 +58,12 @@ export function TabBar({ tabs, activeTabId, onSelect, onClose, onNew }: Props) {
               >
                 {tab.draft.method}
               </span>
+              {isTabDirty(tab) && (
+                <span
+                  className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted"
+                  title="Unsaved changes"
+                />
+              )}
               <span className="truncate text-[13px]">{tab.draft.name}</span>
             </button>
             <button
@@ -73,13 +79,15 @@ export function TabBar({ tabs, activeTabId, onSelect, onClose, onNew }: Props) {
           </div>
         )
       })}
-      <button
-        className={`${toolbarButton} mb-0.5 shrink-0 self-center`}
-        title="New tab"
-        onClick={onNew}
-      >
-        +
-      </button>
+      <div className="flex shrink-0 items-center rounded-t-md border border-b-0 border-transparent bg-transparent px-2 py-1 text-muted hover:bg-selection/60 hover:text-text">
+        <button
+          className="flex cursor-pointer items-center justify-center border-none bg-transparent p-0 text-[13px] text-inherit app-no-drag"
+          title="New tab"
+          onClick={onNew}
+        >
+          +
+        </button>
+      </div>
     </div>
   )
 }
