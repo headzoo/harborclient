@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.1.4 - 2026-06-19
+
 - Update GitHub Actions workflow to replace 'windows-latest' with 'windows-2022' for better compatibility with pnpm and better-sqlite3 compilation.. (`2a616f1`)
 
 ## 1.1.3 - 2026-06-19
