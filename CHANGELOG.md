@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Refactor Font Awesome registry authentication in CI workflows to use a script for configuration. This simplifies the setup process and maintains the requirement for FONTAWESOME_PACKAGE_TOKEN, enhancing security and usability.. (`d40962c`)
 - Update CI and release workflows to require FONTAWESOME_PACKAGE_TOKEN and inherit secrets. This enhances security and ensures proper authentication for Font Awesome package management.. (`0182eaf`)
 - Add Font Awesome registry authentication to CI workflows. Ensure FONTAWESOME_PACKAGE_TOKEN is configured and set for pnpm, enhancing package management for Font Awesome dependencies.. (`b664034`)
 - Add FontAwesome support and implement close confirmation prompts in the application. Update dependencies in package.json and pnpm-lock.yaml, enhance main process with close handlers, and improve UI components for unsaved changes notifications.. (`4e521e8`)
