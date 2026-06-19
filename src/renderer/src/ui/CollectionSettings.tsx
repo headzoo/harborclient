@@ -23,9 +23,9 @@ interface Props {
   onClose: () => void;
 }
 
-const rowGrid = 'grid grid-cols-[1fr_1fr_28px] items-center gap-1.5';
+const emptyVariable = (): Variable => ({ key: '', value: '', defaultValue: '', share: false });
 
-const emptyVariable = (): Variable => ({ key: '', value: '' });
+const thClass = 'pb-1 text-left text-[11px] font-medium uppercase tracking-wide text-muted';
 
 /**
  * Full-area collection settings: rename and manage collection-scoped variables.
@@ -73,7 +73,9 @@ function CollectionSettingsForm({ collection, onSave, onClose }: Props): JSX.Ele
     const trimmedName = name.trim();
     if (!trimmedName) return;
 
-    const cleanedVariables = variables.filter((v) => v.key.trim() || v.value.trim());
+    const cleanedVariables = variables.filter(
+      (v) => v.key.trim() || v.value.trim() || v.defaultValue.trim()
+    );
     setSaving(true);
     try {
       await onSave(collection.id, trimmedName, cleanedVariables);
@@ -85,7 +87,7 @@ function CollectionSettingsForm({ collection, onSave, onClose }: Props): JSX.Ele
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-6">
-      <div className="mx-auto w-full max-w-2xl">
+      <div className="mx-auto w-full">
         <div className="mb-6 flex items-center justify-between gap-4">
           <h1 className="m-0 text-[15px] font-semibold text-text">Collection Settings</h1>
           <button className={secondaryButton} onClick={onClose}>
@@ -110,43 +112,73 @@ function CollectionSettingsForm({ collection, onSave, onClose }: Props): JSX.Ele
         <div className="mb-6">
           <h2 className="m-0 mb-1 text-[13px] font-medium text-text">Variables</h2>
           <p className="mb-3 text-[12px] text-muted">
-            Use variables in request URLs with {'{{variable}}'} syntax.
+            Use variables in request URLs with {'{{variable}}'} syntax. When value is empty, the
+            default is used. Values are omitted from export unless Share is checked.
           </p>
 
           <div className="flex flex-col gap-1.5">
-            <div
-              className={`${rowGrid} text-[11px] font-medium uppercase tracking-wide text-muted`}
-            >
-              <span>Key</span>
-              <span>Value</span>
-              <span />
-            </div>
-            {variables.map((variable, index) => (
-              <div className={`${rowGrid} group`} key={index}>
-                <input
-                  type="text"
-                  className={field}
-                  value={variable.key}
-                  placeholder="variable"
-                  onChange={(e) => updateVariable(index, { key: e.target.value })}
-                />
-                <input
-                  type="text"
-                  className={field}
-                  value={variable.value}
-                  placeholder="value"
-                  onChange={(e) => updateVariable(index, { value: e.target.value })}
-                />
-                <button
-                  type="button"
-                  className={iconButtonDanger}
-                  onClick={() => removeVariable(index)}
-                  title="Remove"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
+            <table className="w-full border-separate border-spacing-x-1.5 border-spacing-y-1.5">
+              <thead>
+                <tr>
+                  <th className={thClass}>Key</th>
+                  <th className={thClass}>Value</th>
+                  <th className={thClass}>Default</th>
+                  <th className={`${thClass} w-14 text-center`}>Share</th>
+                  <th className={`${thClass} w-7 p-0 text-center`} />
+                </tr>
+              </thead>
+              <tbody>
+                {variables.map((variable, index) => (
+                  <tr className="group" key={index}>
+                    <td>
+                      <input
+                        type="text"
+                        className={`${field} w-full`}
+                        value={variable.key}
+                        placeholder="variable"
+                        onChange={(e) => updateVariable(index, { key: e.target.value })}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        className={`${field} w-full`}
+                        value={variable.value}
+                        placeholder="value"
+                        onChange={(e) => updateVariable(index, { value: e.target.value })}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        className={`${field} w-full`}
+                        value={variable.defaultValue}
+                        placeholder="default"
+                        onChange={(e) => updateVariable(index, { defaultValue: e.target.value })}
+                      />
+                    </td>
+                    <td className="w-14 text-center">
+                      <input
+                        type="checkbox"
+                        checked={variable.share}
+                        onChange={(e) => updateVariable(index, { share: e.target.checked })}
+                        title="Include value in collection export"
+                      />
+                    </td>
+                    <td className="w-7 p-0 text-center">
+                      <button
+                        type="button"
+                        className={iconButtonDanger}
+                        onClick={() => removeVariable(index)}
+                        title="Remove"
+                      >
+                        ×
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
             <button type="button" className={`${toolbarButton} self-start`} onClick={addVariable}>
               + Add variable
             </button>

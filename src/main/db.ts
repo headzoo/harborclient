@@ -30,6 +30,21 @@ function parseJson<T>(value: string, fallback: T): T {
 }
 
 /**
+ * Coerces a partial or legacy variable record to the full Variable shape.
+ *
+ * @param v - Raw variable fields from storage or import.
+ * @returns Normalized variable with defaults for missing fields.
+ */
+function normalizeVariable(v: Partial<Variable>): Variable {
+  return {
+    key: typeof v.key === 'string' ? v.key : '',
+    value: typeof v.value === 'string' ? v.value : '',
+    defaultValue: typeof v.defaultValue === 'string' ? v.defaultValue : '',
+    share: v.share === true
+  };
+}
+
+/**
  * Maps a raw SQLite row to a Collection object.
  *
  * @param row - Database row from the collections table.
@@ -39,7 +54,7 @@ function rowToCollection(row: Record<string, unknown>): Collection {
   return {
     id: row.id as number,
     name: row.name as string,
-    variables: parseJson<Variable[]>(row.variables as string, []),
+    variables: parseJson<Partial<Variable>[]>(row.variables as string, []).map(normalizeVariable),
     created_at: row.created_at as string
   };
 }
@@ -319,9 +334,9 @@ function validateCollectionExport(data: unknown): CollectionExport {
   }
 
   const variables = Array.isArray(record.variables)
-    ? (record.variables as Variable[]).filter(
-        (v) => v && typeof v.key === 'string' && typeof v.value === 'string'
-      )
+    ? (record.variables as Partial<Variable>[])
+        .map(normalizeVariable)
+        .filter((v) => v.key.trim() || v.value.trim() || v.defaultValue.trim())
     : [];
 
   const requests = record.requests.map((item, index) => {
@@ -392,10 +407,17 @@ export function exportCollectionData(id: number): CollectionExport {
     })
   );
 
+  const variables = parseJson<Partial<Variable>[]>(row.variables, []).map(normalizeVariable);
+
   return {
     formatVersion: 1,
     name: row.name,
-    variables: parseJson<Variable[]>(row.variables, []),
+    variables: variables.map((v) => ({
+      key: v.key,
+      value: v.share ? v.value : '',
+      defaultValue: v.defaultValue,
+      share: v.share
+    })),
     requests
   };
 }

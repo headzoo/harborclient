@@ -27,7 +27,11 @@ const VARIABLE_PATTERN = /\{\{\s*([\w.-]+)\s*\}\}/g;
  * @returns Text with known variables substituted; unknown tokens are left unchanged.
  */
 export function substituteVariables(text: string, variables: Variable[]): string {
-  const lookup = new Map(variables.filter((v) => v.key.trim()).map((v) => [v.key.trim(), v.value]));
+  const lookup = new Map(
+    variables
+      .filter((v) => v.key.trim())
+      .map((v) => [v.key.trim(), v.value !== '' ? v.value : v.defaultValue])
+  );
 
   return text.replace(VARIABLE_PATTERN, (match, key: string) => {
     const value = lookup.get(key);

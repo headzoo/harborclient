@@ -41,6 +41,16 @@ export interface Variable {
    * Value substituted when the variable is resolved.
    */
   value: string;
+
+  /**
+   * Fallback value used when value is empty.
+   */
+  defaultValue: string;
+
+  /**
+   * When true, value is included in collection exports.
+   */
+  share: boolean;
 }
 
 /**
