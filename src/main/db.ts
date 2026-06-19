@@ -1,6 +1,15 @@
 import Database from 'better-sqlite3'
 import { join } from 'path'
-import type { BodyType, Collection, HttpMethod, KeyValue, SaveRequestInput, SavedRequest } from '#/shared/types'
+import type {
+  BodyType,
+  Collection,
+  CollectionExport,
+  ExportedRequest,
+  HttpMethod,
+  KeyValue,
+  SaveRequestInput,
+  SavedRequest
+} from '#/shared/types'
 
 let db: Database.Database | null = null
 
@@ -244,6 +253,166 @@ export function saveRequest(input: SaveRequestInput): SavedRequest {
  */
 export function deleteRequest(id: number): void {
   getDb().prepare('DELETE FROM requests WHERE id = ?').run(id)
+}
+
+const HTTP_METHODS = new Set<HttpMethod>([
+  'GET',
+  'POST',
+  'PUT',
+  'PATCH',
+  'DELETE',
+  'HEAD',
+  'OPTIONS'
+])
+
+const BODY_TYPES = new Set<BodyType>(['none', 'json', 'text'])
+
+/**
+ * Validates and normalizes imported collection export data.
+ *
+ * @param data - Parsed JSON payload from an export file.
+ * @returns Normalized collection export.
+ * @throws When the payload is invalid.
+ */
+function validateCollectionExport(data: unknown): CollectionExport {
+  if (!data || typeof data !== 'object') {
+    throw new Error('Invalid collection file: expected a JSON object')
+  }
+
+  const record = data as Record<string, unknown>
+  const formatVersion = record.formatVersion
+  if (formatVersion !== 1) {
+    throw new Error('Invalid collection file: unsupported format version')
+  }
+
+  const name = typeof record.name === 'string' ? record.name.trim() : ''
+  if (!name) {
+    throw new Error('Invalid collection file: collection name is required')
+  }
+
+  if (!Array.isArray(record.requests)) {
+    throw new Error('Invalid collection file: requests must be an array')
+  }
+
+  const requests = record.requests.map((item, index) => {
+    if (!item || typeof item !== 'object') {
+      throw new Error(`Invalid collection file: request ${index + 1} is malformed`)
+    }
+
+    const req = item as Record<string, unknown>
+    const method = req.method
+    if (typeof method !== 'string' || !HTTP_METHODS.has(method as HttpMethod)) {
+      throw new Error(`Invalid collection file: request ${index + 1} has an invalid method`)
+    }
+
+    const bodyType = req.body_type
+    if (typeof bodyType !== 'string' || !BODY_TYPES.has(bodyType as BodyType)) {
+      throw new Error(`Invalid collection file: request ${index + 1} has an invalid body type`)
+    }
+
+    const requestName = typeof req.name === 'string' ? req.name.trim() : ''
+    if (!requestName) {
+      throw new Error(`Invalid collection file: request ${index + 1} is missing a name`)
+    }
+
+    return {
+      name: requestName,
+      method: method as HttpMethod,
+      url: typeof req.url === 'string' ? req.url : '',
+      headers: Array.isArray(req.headers) ? (req.headers as KeyValue[]) : [],
+      params: Array.isArray(req.params) ? (req.params as KeyValue[]) : [],
+      body: typeof req.body === 'string' ? req.body : '',
+      body_type: bodyType as BodyType,
+      sort_order: typeof req.sort_order === 'number' ? req.sort_order : index
+    } satisfies ExportedRequest
+  })
+
+  return {
+    formatVersion: 1,
+    name,
+    requests
+  }
+}
+
+/**
+ * Builds a portable export payload for a collection and its requests.
+ *
+ * @param id - Collection ID to export.
+ * @returns Collection export data without database IDs.
+ * @throws When the collection does not exist.
+ */
+export function exportCollectionData(id: number): CollectionExport {
+  const row = getDb()
+    .prepare('SELECT name FROM collections WHERE id = ?')
+    .get(id) as { name: string } | undefined
+
+  if (!row) throw new Error('Collection not found')
+
+  const requests = listRequests(id).map(
+    ({ name, method, url, headers, params, body, body_type, sort_order }) => ({
+      name,
+      method,
+      url,
+      headers,
+      params,
+      body,
+      body_type,
+      sort_order
+    })
+  )
+
+  return {
+    formatVersion: 1,
+    name: row.name,
+    requests
+  }
+}
+
+/**
+ * Imports a collection and its requests from export data.
+ *
+ * @param data - Parsed collection export payload.
+ * @returns The newly created collection.
+ * @throws When the payload is invalid.
+ */
+export function importCollectionData(data: unknown): Collection {
+  const exportData = validateCollectionExport(data)
+  const database = getDb()
+  const now = new Date().toISOString()
+
+  const importCollection = database.transaction((payload: CollectionExport) => {
+    const collectionResult = database
+      .prepare('INSERT INTO collections (name) VALUES (?)')
+      .run(payload.name)
+
+    const collectionId = Number(collectionResult.lastInsertRowid)
+    const insertRequest = database.prepare(
+      `INSERT INTO requests (
+        collection_id, name, method, url, headers, params, body, body_type, sort_order, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+
+    for (const request of payload.requests) {
+      insertRequest.run(
+        collectionId,
+        request.name,
+        request.method,
+        request.url,
+        JSON.stringify(request.headers),
+        JSON.stringify(request.params),
+        request.body,
+        request.body_type,
+        request.sort_order,
+        now
+      )
+    }
+
+    return database
+      .prepare('SELECT id, name, created_at FROM collections WHERE id = ?')
+      .get(collectionId) as Collection
+  })
+
+  return importCollection(exportData)
 }
 
 /**

@@ -1,10 +1,9 @@
 import { useState } from 'react'
 import type { Collection, SavedRequest } from '#/shared/types'
+import { RowActionsMenu } from '#/renderer/src/components/RowActionsMenu'
 import {
   METHOD_CLASSES,
   field,
-  iconButton,
-  iconButtonDanger,
   sourceRow,
   toolbarButton
 } from '#/renderer/src/ui/classes'
@@ -58,6 +57,13 @@ interface Props {
   onDeleteCollection: (id: number) => Promise<void>
 
   /**
+   * Exports a collection to a JSON file.
+   *
+   * @param id - Collection ID to export.
+   */
+  onExportCollection: (id: number) => Promise<void> | void
+
+  /**
    * Loads a saved request into the editor.
    *
    * @param req - Saved request to load.
@@ -89,6 +95,7 @@ export function Sidebar({
   onAddCollection,
   onRenameCollection,
   onDeleteCollection,
+  onExportCollection,
   onLoadRequest,
   onDeleteRequest,
   onNewRequest
@@ -96,6 +103,7 @@ export function Sidebar({
   const [editingCollectionId, setEditingCollectionId] = useState<number | null>(null)
   const [editingName, setEditingName] = useState('')
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
   /**
    * Enters inline rename mode for a collection.
@@ -195,24 +203,27 @@ export function Sidebar({
                       {collection.name}
                     </button>
                   )}
-                  <button
-                    className={iconButton}
-                    title="Rename"
-                    onClick={() => startRename(collection)}
-                  >
-                    ✎
-                  </button>
-                  <button
-                    className={iconButtonDanger}
-                    title="Delete collection"
-                    onClick={() => {
-                      if (confirm(`Delete collection "${collection.name}"?`)) {
-                        void onDeleteCollection(collection.id)
+                  <RowActionsMenu
+                    menuId={`collection-${collection.id}`}
+                    openMenuId={openMenuId}
+                    onOpenChange={setOpenMenuId}
+                    items={[
+                      { label: 'Rename', onSelect: () => startRename(collection) },
+                      {
+                        label: 'Export',
+                        onSelect: () => void onExportCollection(collection.id)
+                      },
+                      {
+                        label: 'Delete',
+                        variant: 'danger',
+                        onSelect: () => {
+                          if (confirm(`Delete collection "${collection.name}"?`)) {
+                            void onDeleteCollection(collection.id)
+                          }
+                        }
                       }
-                    }}
-                  >
-                    ×
-                  </button>
+                    ]}
+                  />
                 </div>
 
                 {expanded && (
@@ -236,17 +247,22 @@ export function Sidebar({
                           </span>
                           <span className="truncate text-[13px]">{req.name}</span>
                         </button>
-                        <button
-                          className={iconButtonDanger}
-                          title="Delete request"
-                          onClick={() => {
-                            if (confirm(`Delete request "${req.name}"?`)) {
-                              void onDeleteRequest(req.id)
+                        <RowActionsMenu
+                          menuId={`request-${req.id}`}
+                          openMenuId={openMenuId}
+                          onOpenChange={setOpenMenuId}
+                          items={[
+                            {
+                              label: 'Delete',
+                              variant: 'danger',
+                              onSelect: () => {
+                                if (confirm(`Delete request "${req.name}"?`)) {
+                                  void onDeleteRequest(req.id)
+                                }
+                              }
                             }
-                          }}
-                        >
-                          ×
-                        </button>
+                          ]}
+                        />
                       </div>
                     ))}
                   </div>

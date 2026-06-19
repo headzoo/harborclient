@@ -1,5 +1,13 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { Api, Collection, SaveRequestInput, SavedRequest, SendRequestInput, SendResult } from '#/shared/types'
+import type {
+  Api,
+  Collection,
+  CollectionExportResult,
+  SaveRequestInput,
+  SavedRequest,
+  SendRequestInput,
+  SendResult
+} from '#/shared/types'
 
 /**
  * Lists all collections via IPC.
@@ -38,6 +46,25 @@ function renameCollection(id: number, name: string): Promise<Collection> {
  */
 function deleteCollection(id: number): Promise<void> {
   return ipcRenderer.invoke('collections:delete', id)
+}
+
+/**
+ * Exports a collection to a JSON file via IPC.
+ *
+ * @param id - Collection ID to export.
+ * @returns Whether the dialog was canceled and the saved path when written.
+ */
+function exportCollection(id: number): Promise<CollectionExportResult> {
+  return ipcRenderer.invoke('collections:export', id)
+}
+
+/**
+ * Imports a collection from a JSON file via IPC.
+ *
+ * @returns The imported collection, or null when the dialog was canceled.
+ */
+function importCollection(): Promise<Collection | null> {
+  return ipcRenderer.invoke('collections:import')
 }
 
 /**
@@ -84,6 +111,8 @@ const api: Api = {
   createCollection,
   renameCollection,
   deleteCollection,
+  exportCollection,
+  importCollection,
   listRequests,
   saveRequest,
   deleteRequest,

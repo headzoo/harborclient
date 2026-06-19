@@ -1,8 +1,11 @@
-import { ipcMain } from 'electron'
+import { BrowserWindow, dialog, ipcMain } from 'electron'
+import { readFile, writeFile } from 'fs/promises'
 import {
   createCollection,
   deleteCollection,
   deleteRequest,
+  exportCollectionData,
+  importCollectionData,
   listCollections,
   listRequests,
   renameCollection,
@@ -28,6 +31,46 @@ export function registerIpcHandlers(): void {
 
   // Deletes a collection and all of its saved requests.
   ipcMain.handle('collections:delete', (_event, id: number) => deleteCollection(id));
+
+  // Exports a collection to a JSON file via a native save dialog.
+  ipcMain.handle('collections:export', async (_event, id: number) => {
+    const data = exportCollectionData(id)
+    const win = BrowserWindow.getFocusedWindow()
+    const dialogOptions = {
+      defaultPath: `${data.name}.json`,
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    }
+    const { canceled, filePath } = win
+      ? await dialog.showSaveDialog(win, dialogOptions)
+      : await dialog.showSaveDialog(dialogOptions)
+
+    if (canceled || !filePath) {
+      return { canceled: true }
+    }
+
+    await writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8')
+    return { canceled: false, path: filePath }
+  });
+
+  // Imports a collection from a JSON file via a native open dialog.
+  ipcMain.handle('collections:import', async () => {
+    const win = BrowserWindow.getFocusedWindow()
+    const dialogOptions = {
+      properties: ['openFile'] as Array<'openFile'>,
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    }
+    const { canceled, filePaths } = win
+      ? await dialog.showOpenDialog(win, dialogOptions)
+      : await dialog.showOpenDialog(dialogOptions)
+
+    if (canceled || filePaths.length === 0) {
+      return null
+    }
+
+    const raw = await readFile(filePaths[0], 'utf-8')
+    const parsed = JSON.parse(raw) as unknown
+    return importCollectionData(parsed)
+  });
 
   // Returns all saved requests in a collection, ordered by sort order then name.
   ipcMain.handle('requests:list', (_event, collectionId: number) =>

@@ -312,6 +312,31 @@ export function useAppStore() {
   }
 
   /**
+   * Exports a collection to a JSON file via a native save dialog.
+   *
+   * @param id - Collection ID to export.
+   * @returns Whether the dialog was canceled and the saved path when written.
+   */
+  const exportCollection = async (id: number) => {
+    return window.api.exportCollection(id)
+  }
+
+  /**
+   * Imports a collection from a JSON file and selects it.
+   *
+   * @returns The imported collection, or null when the dialog was canceled.
+   */
+  const importCollection = async () => {
+    const collection = await window.api.importCollection()
+    if (!collection) return null
+
+    await refreshCollections()
+    setSelectedCollectionId(collection.id)
+    await refreshRequests(collection.id)
+    return collection
+  }
+
+  /**
    * Persists the active tab's draft to a collection.
    *
    * @param collectionId - Target collection; defaults to the selected collection.
@@ -436,6 +461,8 @@ export function useAppStore() {
     createCollection,
     renameCollection,
     deleteCollection,
+    exportCollection,
+    importCollection,
     saveRequest,
     deleteRequest,
     loadRequest,

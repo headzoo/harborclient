@@ -114,6 +114,86 @@ export interface SavedRequest {
 }
 
 /**
+ * Portable request shape for collection export/import (no database IDs).
+ */
+export interface ExportedRequest {
+  /**
+   * Display name for the saved request.
+   */
+  name: string
+
+  /**
+   * HTTP method used for the request.
+   */
+  method: HttpMethod
+
+  /**
+   * Request URL without query parameters.
+   */
+  url: string
+
+  /**
+   * Request headers as editable key-value pairs.
+   */
+  headers: KeyValue[]
+
+  /**
+   * Query parameters as editable key-value pairs.
+   */
+  params: KeyValue[]
+
+  /**
+   * Raw request body content.
+   */
+  body: string
+
+  /**
+   * Content type of the request body.
+   */
+  body_type: BodyType
+
+  /**
+   * Position within the collection for sidebar ordering.
+   */
+  sort_order: number
+}
+
+/**
+ * Portable collection export file format.
+ */
+export interface CollectionExport {
+  /**
+   * Export schema version for forward compatibility.
+   */
+  formatVersion: 1
+
+  /**
+   * Display name for the collection.
+   */
+  name: string
+
+  /**
+   * Saved requests belonging to the collection.
+   */
+  requests: ExportedRequest[]
+}
+
+/**
+ * Result of a collection export save-dialog action.
+ */
+export interface CollectionExportResult {
+  /**
+   * True when the user canceled the save dialog.
+   */
+  canceled: boolean
+
+  /**
+   * Absolute path where the file was written; omitted when canceled.
+   */
+  path?: string
+}
+
+/**
  * Input for creating or updating a saved request.
  */
 export interface SaveRequestInput {
@@ -272,6 +352,21 @@ export interface Api {
    * @param id - Collection ID to delete.
    */
   deleteCollection: (id: number) => Promise<void>
+
+  /**
+   * Exports a collection to a JSON file via a native save dialog.
+   *
+   * @param id - Collection ID to export.
+   * @returns Whether the dialog was canceled and the saved path when written.
+   */
+  exportCollection: (id: number) => Promise<CollectionExportResult>
+
+  /**
+   * Imports a collection from a JSON file via a native open dialog.
+   *
+   * @returns The imported collection, or null when the dialog was canceled.
+   */
+  importCollection: () => Promise<Collection | null>
 
   /**
    * Lists saved requests in a collection.

@@ -6,18 +6,20 @@ import { TabBar } from '#/renderer/src/components/TabBar'
 import { RequestEditor } from '#/renderer/src/components/RequestEditor'
 import { ResponseViewer } from '#/renderer/src/components/ResponseViewer'
 import { TitleBar } from '#/renderer/src/components/TitleBar'
-import { field, primaryButton, secondaryButton } from '#/renderer/src/ui/classes'
+import { field, primaryButton, secondaryButton, segment, segmentGroup } from '#/renderer/src/ui/classes'
 
 const isMac = window.platform === 'darwin'
+
+type CollectionModalMode = 'create' | 'create-and-save' | null
+type CollectionModalTab = 'create' | 'import'
 
 /**
  * Root application layout: sidebar, request editor, and response viewer.
  */
 export default function App() {
   const store = useAppStore()
-  const [collectionModal, setCollectionModal] = useState<
-    'create' | 'create-and-save' | null
-  >(null)
+  const [collectionModal, setCollectionModal] = useState<CollectionModalMode>(null)
+  const [collectionModalTab, setCollectionModalTab] = useState<CollectionModalTab>('create')
   const [newCollectionName, setNewCollectionName] = useState('')
   const requests =
     store.selectedCollectionId != null
@@ -30,6 +32,7 @@ export default function App() {
   const handleSave = async () => {
     if (store.selectedCollectionId == null) {
       setNewCollectionName('')
+      setCollectionModalTab('create')
       setCollectionModal('create-and-save')
       return
     }
@@ -55,6 +58,7 @@ export default function App() {
       }
       setCollectionModal(null)
       setNewCollectionName('')
+      setCollectionModalTab('create')
     } catch (err) {
       alert(
         err instanceof Error
@@ -66,10 +70,30 @@ export default function App() {
     }
   }
 
+  /**
+   * Imports a collection from a JSON file selected via a native dialog.
+   */
+  const handleImportCollection = async () => {
+    try {
+      const collection = await store.importCollection()
+      if (!collection) return
+
+      toast.success('Collection imported')
+      setCollectionModal(null)
+      setNewCollectionName('')
+      setCollectionModalTab('create')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to import collection')
+    }
+  }
+
   const closeCollectionModal = () => {
     setCollectionModal(null)
     setNewCollectionName('')
+    setCollectionModalTab('create')
   }
+
+  const showImportTab = collectionModal === 'create'
 
   return (
     <div className={`flex h-screen flex-col ${isMac ? 'platform-darwin' : ''}`}>
@@ -83,10 +107,17 @@ export default function App() {
           onSelectCollection={store.setSelectedCollectionId}
           onAddCollection={() => {
             setNewCollectionName('')
+            setCollectionModalTab('create')
             setCollectionModal('create')
           }}
           onRenameCollection={store.renameCollection}
           onDeleteCollection={store.deleteCollection}
+          onExportCollection={async (id) => {
+            const result = await store.exportCollection(id)
+            if (!result.canceled) {
+              toast.success('Collection exported')
+            }
+          }}
           onLoadRequest={store.loadRequest}
           onDeleteRequest={store.deleteRequest}
           onNewRequest={store.newRequest}
@@ -122,39 +153,80 @@ export default function App() {
           onClick={closeCollectionModal}
         >
           <div
-            className="w-80 rounded-lg border border-separator bg-surface p-4 shadow-xl"
+            className="w-96 rounded-lg border border-separator bg-surface p-4 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">New collection</h2>
+            <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">
+              {showImportTab ? 'Add collection' : 'New collection'}
+            </h2>
             {collectionModal === 'create-and-save' && (
               <p className="mb-3 text-[12px] text-muted">
                 Create a collection to save this request into.
               </p>
             )}
-            <input
-              className={`${field} w-full ${collectionModal === 'create' ? 'mt-2' : ''}`}
-              type="text"
-              autoFocus
-              placeholder="Collection name"
-              value={newCollectionName}
-              onChange={(e) => setNewCollectionName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void handleCollectionModalSubmit()
-                if (e.key === 'Escape') closeCollectionModal()
-              }}
-            />
-            <div className="mt-4 flex justify-end gap-2">
-              <button className={secondaryButton} onClick={closeCollectionModal}>
-                Cancel
-              </button>
-              <button
-                className={primaryButton}
-                onClick={() => void handleCollectionModalSubmit()}
-                disabled={!newCollectionName.trim()}
-              >
-                {collectionModal === 'create-and-save' ? 'Create & Save' : 'Create'}
-              </button>
-            </div>
+
+            {showImportTab && (
+              <div className={`${segmentGroup} mb-3 w-full`}>
+                <button
+                  className={`${segment(collectionModalTab === 'create')} flex-1`}
+                  onClick={() => setCollectionModalTab('create')}
+                >
+                  Create new
+                </button>
+                <button
+                  className={`${segment(collectionModalTab === 'import')} flex-1`}
+                  onClick={() => setCollectionModalTab('import')}
+                >
+                  Import from file
+                </button>
+              </div>
+            )}
+
+            {collectionModalTab === 'create' || !showImportTab ? (
+              <>
+                <input
+                  className={`${field} w-full`}
+                  type="text"
+                  autoFocus
+                  placeholder="Collection name"
+                  value={newCollectionName}
+                  onChange={(e) => setNewCollectionName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') void handleCollectionModalSubmit()
+                    if (e.key === 'Escape') closeCollectionModal()
+                  }}
+                />
+                <div className="mt-4 flex justify-end gap-2">
+                  <button className={secondaryButton} onClick={closeCollectionModal}>
+                    Cancel
+                  </button>
+                  <button
+                    className={primaryButton}
+                    onClick={() => void handleCollectionModalSubmit()}
+                    disabled={!newCollectionName.trim()}
+                  >
+                    {collectionModal === 'create-and-save' ? 'Create & Save' : 'Create'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="mb-4 text-[12px] text-muted">
+                  Choose a Harbor Client collection export (.json) to import all saved requests.
+                </p>
+                <div className="flex justify-end gap-2">
+                  <button className={secondaryButton} onClick={closeCollectionModal}>
+                    Cancel
+                  </button>
+                  <button
+                    className={primaryButton}
+                    onClick={() => void handleImportCollection()}
+                  >
+                    Import .json
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
