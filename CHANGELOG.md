@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Remove version specification for pnpm in CI and release workflows to streamline setup process.. (`c019fb3`)
 - Update Electron build configuration to disable executable signing for Windows and enhance CI workflow to include Windows build support. Add download section in documentation for macOS, Windows, and Linux releases.. (`5fb58f2`)
 - Update logo images in README.md and documentation; enhance description clarity in index.md. (`9c9cc17`)
 - Update homepage links in package.json and README.md to reflect new domain; adjust siteBase in VitePress config for correct routing.. (`ad3e8ab`)
