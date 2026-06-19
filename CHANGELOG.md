@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add Font Awesome registry authentication to CI workflows. Ensure FONTAWESOME_PACKAGE_TOKEN is configured and set for pnpm, enhancing package management for Font Awesome dependencies.. (`b664034`)
 - Add FontAwesome support and implement close confirmation prompts in the application. Update dependencies in package.json and pnpm-lock.yaml, enhance main process with close handlers, and improve UI components for unsaved changes notifications.. (`4e521e8`)
 - Refactor response formatting utilities: move formatBytes and formatBody functions to responseFormatUtils. Update ConsolePanel and ResponseViewer to use new imports, enhancing code organization and readability.. (`fdd4d96`)
 - Add console panel and footer to App component; implement console logging functionality in store. Refactor ResponseViewer to remove console tab and related code. Enhance TabBar styling for better UI consistency.. (`f9d9546`)
