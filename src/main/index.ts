@@ -54,6 +54,19 @@ function setupCloseHandlers(window: BrowserWindow): void {
   });
 }
 
+/**
+ * Exits native fullscreen when the user presses Escape.
+ *
+ * @param window - Main application window.
+ */
+function setupFullscreenEscapeHandler(window: BrowserWindow): void {
+  window.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown' || input.key !== 'Escape' || !window.isFullScreen()) return;
+    window.setFullScreen(false);
+    event.preventDefault();
+  });
+}
+
 // chrome-sandbox needs SUID (mode 4755), which fails on mounted/network filesystems
 if (process.platform === 'linux' && isDev) {
   app.commandLine.appendSwitch('no-sandbox');
@@ -116,6 +129,7 @@ function createWindow(): BrowserWindow {
   });
 
   setupCloseHandlers(window);
+  setupFullscreenEscapeHandler(window);
 
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {
     window.loadURL(process.env['ELECTRON_RENDERER_URL']);

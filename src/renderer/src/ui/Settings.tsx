@@ -1,6 +1,8 @@
 import { useEffect, useState, type JSX } from 'react';
 import type { ThemeSource } from '#/shared/types';
-import { secondaryButton, segment, segmentGroup } from './classes';
+import { FaIcon } from '#/renderer/src/components/FaIcon';
+import { faXmark } from '#/renderer/src/fontawesome';
+import { iconButton, segment, segmentGroup } from './classes';
 
 interface Props {
   /**
@@ -47,11 +49,16 @@ export function Settings({ onClose }: Props): JSX.Element {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-6">
-      <div className="mx-auto w-full max-w-lg">
+      <div className="mx-auto w-full">
         <div className="mb-6 flex items-center justify-between gap-4">
           <h1 className="m-0 text-[15px] font-semibold text-text">Settings</h1>
-          <button className={secondaryButton} onClick={onClose}>
-            Close
+          <button
+            type="button"
+            className={`${iconButton} opacity-100 text-[28px]`}
+            title="Close"
+            onClick={onClose}
+          >
+            <FaIcon icon={faXmark} className="h-4 w-4" />
           </button>
         </div>
 

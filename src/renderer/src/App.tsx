@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import logoUrl from '@images/logo-square.png';
+import type { SavedRequest } from '#/shared/types';
 import { useAppStore } from '#/renderer/src/store';
 import { getDirtyTabs, isTabDirty } from '#/renderer/src/store/drafts';
 import { CollectionSettings } from '#/renderer/src/ui/CollectionSettings';
@@ -42,6 +43,8 @@ export default function App(): JSX.Element {
   const [closeTabPrompt, setCloseTabPrompt] = useState<CloseTabPrompt | null>(null);
   const [quitPrompt, setQuitPrompt] = useState<string[] | null>(null);
   const [configuringCollectionId, setConfiguringCollectionId] = useState<number | null>(null);
+  const [collectionSettingsDirty, setCollectionSettingsDirty] = useState(false);
+  const [pendingLoadRequest, setPendingLoadRequest] = useState<SavedRequest | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showConsole, setShowConsole] = useState(false);
@@ -68,8 +71,42 @@ export default function App(): JSX.Element {
   const handleEditVariables = useCallback((): void => {
     if (activeCollectionId == null) return;
     setShowSettings(false);
+    setCollectionSettingsDirty(false);
     setConfiguringCollectionId(activeCollectionId);
   }, [activeCollectionId]);
+
+  /** Closes application settings. */
+  const closeAppSettings = useCallback((): void => {
+    setShowSettings(false);
+  }, []);
+
+  /** Closes collection settings and clears dirty tracking. */
+  const closeCollectionSettings = useCallback((): void => {
+    setConfiguringCollectionId(null);
+    setCollectionSettingsDirty(false);
+  }, []);
+
+  /**
+   * Loads a saved request from the sidebar, closing settings overlays first.
+   */
+  const handleLoadRequest = useCallback(
+    (req: SavedRequest): void => {
+      if (configuringCollectionId != null && collectionSettingsDirty) {
+        setPendingLoadRequest(req);
+        return;
+      }
+      closeAppSettings();
+      closeCollectionSettings();
+      store.loadRequest(req);
+    },
+    [
+      configuringCollectionId,
+      collectionSettingsDirty,
+      closeAppSettings,
+      closeCollectionSettings,
+      store
+    ]
+  );
 
   /**
    * Saves the current draft, prompting for a new collection when none exists.
@@ -227,6 +264,7 @@ export default function App(): JSX.Element {
             }}
             onConfigureCollection={(id) => {
               setShowSettings(false);
+              setCollectionSettingsDirty(false);
               setConfiguringCollectionId(id);
             }}
             onDeleteCollection={store.deleteCollection}
@@ -243,17 +281,18 @@ export default function App(): JSX.Element {
                 alert(err instanceof Error ? err.message : 'Failed to create request');
               }
             }}
-            onLoadRequest={store.loadRequest}
+            onLoadRequest={handleLoadRequest}
             onDeleteRequest={store.deleteRequest}
           />
         )}
 
         <main className="flex min-w-0 flex-1 flex-col bg-surface">
           {showSettings ? (
-            <Settings onClose={() => setShowSettings(false)} />
+            <Settings onClose={closeAppSettings} />
           ) : configuringCollection ? (
             <CollectionSettings
               collection={configuringCollection}
+              onDirtyChange={setCollectionSettingsDirty}
               onSave={async (id, name, variables, headers) => {
                 try {
                   await store.updateCollection(id, name, variables, headers);
@@ -262,7 +301,7 @@ export default function App(): JSX.Element {
                   alert(err instanceof Error ? err.message : 'Failed to update collection');
                 }
               }}
-              onClose={() => setConfiguringCollectionId(null)}
+              onClose={closeCollectionSettings}
             />
           ) : (
             <>
@@ -385,6 +424,40 @@ export default function App(): JSX.Element {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {pendingLoadRequest && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setPendingLoadRequest(null)}
+        >
+          <div
+            className="w-96 rounded-lg border border-separator bg-surface p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">Unsaved changes</h2>
+            <p className="mb-4 text-[12px] text-muted">
+              Collection settings have unsaved changes. Open request without saving?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button className={secondaryButton} onClick={() => setPendingLoadRequest(null)}>
+                Cancel
+              </button>
+              <button
+                className={primaryButton}
+                onClick={() => {
+                  const req = pendingLoadRequest;
+                  setPendingLoadRequest(null);
+                  closeAppSettings();
+                  closeCollectionSettings();
+                  store.loadRequest(req);
+                }}
+              >
+                Open without saving
+              </button>
+            </div>
           </div>
         </div>
       )}

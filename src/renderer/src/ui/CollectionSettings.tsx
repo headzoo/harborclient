@@ -1,4 +1,4 @@
-import { useState, type JSX } from 'react';
+import { useEffect, useMemo, useState, type JSX } from 'react';
 import type { Collection, KeyValue, Variable } from '#/shared/types';
 import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
@@ -33,9 +33,31 @@ interface Props {
    * Closes the settings view without saving.
    */
   onClose: () => void;
+
+  /**
+   * Called when unsaved form edits appear or are cleared.
+   */
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 const emptyVariable = (): Variable => ({ key: '', value: '', defaultValue: '', share: false });
+
+const cleanVariables = (variables: Variable[]): Variable[] =>
+  variables.filter((v) => v.key.trim() || v.value.trim() || v.defaultValue.trim());
+
+const cleanHeaders = (headers: KeyValue[]): KeyValue[] =>
+  headers.filter((h) => h.key.trim() || h.value.trim());
+
+const serializeCollectionForm = (
+  name: string,
+  variables: Variable[],
+  headers: KeyValue[]
+): string =>
+  JSON.stringify({
+    name: name.trim(),
+    variables: cleanVariables(variables),
+    headers: cleanHeaders(headers)
+  });
 
 const thClass = 'pb-1 text-left text-[11px] font-medium uppercase tracking-wide text-muted';
 
@@ -46,7 +68,12 @@ export function CollectionSettings(props: Props): JSX.Element {
   return <CollectionSettingsForm key={props.collection.id} {...props} />;
 }
 
-function CollectionSettingsForm({ collection, onSave, onClose }: Props): JSX.Element {
+function CollectionSettingsForm({
+  collection,
+  onSave,
+  onClose,
+  onDirtyChange
+}: Props): JSX.Element {
   const [name, setName] = useState(collection.name);
   const [variables, setVariables] = useState<Variable[]>(
     collection.variables.length ? collection.variables : [emptyVariable()]
@@ -55,6 +82,17 @@ function CollectionSettingsForm({ collection, onSave, onClose }: Props): JSX.Ele
     collection.headers.length ? collection.headers : [emptyKeyValue()]
   );
   const [saving, setSaving] = useState(false);
+
+  const isDirty = useMemo(
+    () =>
+      serializeCollectionForm(name, variables, headers) !==
+      serializeCollectionForm(collection.name, collection.variables, collection.headers),
+    [name, variables, headers, collection]
+  );
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
   /**
    * Updates a single variable row by index.
@@ -88,10 +126,8 @@ function CollectionSettingsForm({ collection, onSave, onClose }: Props): JSX.Ele
     const trimmedName = name.trim();
     if (!trimmedName) return;
 
-    const cleanedVariables = variables.filter(
-      (v) => v.key.trim() || v.value.trim() || v.defaultValue.trim()
-    );
-    const cleanedHeaders = headers.filter((h) => h.key.trim() || h.value.trim());
+    const cleanedVariables = cleanVariables(variables);
+    const cleanedHeaders = cleanHeaders(headers);
     setSaving(true);
     try {
       await onSave(collection.id, trimmedName, cleanedVariables, cleanedHeaders);

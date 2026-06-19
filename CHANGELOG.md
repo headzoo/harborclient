@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add fullscreen escape handler and enhance collection settings management. Implement unsaved changes prompt for loading requests, improve state management in App component, and refine CollectionSettings for better dirty state tracking.. (`505154e`)
+
 ## 1.2.0 - 2026-06-19
 
 - Refactor type imports and improve formatting in multiple files for better readability. Update IPC, App, and types to enhance code organization and maintainability.. (`279a6b4`)
