@@ -304,6 +304,31 @@ export interface SendRequestInput {
 }
 
 /**
+ * The HTTP request as actually sent over the wire.
+ */
+export interface SentRequest {
+  /**
+   * HTTP method used for the request.
+   */
+  method: HttpMethod
+
+  /**
+   * Fully resolved request URL including query parameters.
+   */
+  url: string
+
+  /**
+   * Request headers as a flat key-value map.
+   */
+  headers: Record<string, string>
+
+  /**
+   * Request body content that was sent, or empty string when none.
+   */
+  body: string
+}
+
+/**
  * Result of an HTTP request including timing and size metadata.
  */
 export interface SendResult {
@@ -341,6 +366,11 @@ export interface SendResult {
    * Error message when the request failed; omitted on success.
    */
   error?: string
+
+  /**
+   * The outgoing request as actually sent; omitted on older results.
+   */
+  request?: SentRequest
 }
 
 /**

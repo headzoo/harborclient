@@ -1,4 +1,4 @@
-import type { BodyType, KeyValue, SendRequestInput, SendResult } from '#/shared/types'
+import type { BodyType, KeyValue, SendRequestInput, SendResult, SentRequest } from '#/shared/types'
 
 /**
  * Appends enabled query parameters to a base URL.
@@ -69,6 +69,16 @@ function buildHeaders(headers: KeyValue[], bodyType: BodyType): Record<string, s
 export async function executeRequest(input: SendRequestInput): Promise<SendResult> {
   const url = buildUrl(input.url, input.params)
   const headers = buildHeaders(input.headers, input.bodyType)
+  const sentBody =
+    input.bodyType !== 'none' && input.method !== 'GET' && input.method !== 'HEAD'
+      ? input.body
+      : ''
+  const request: SentRequest = {
+    method: input.method,
+    url,
+    headers,
+    body: sentBody
+  }
 
   if (!url.trim()) {
     return {
@@ -78,7 +88,13 @@ export async function executeRequest(input: SendRequestInput): Promise<SendResul
       body: '',
       timeMs: 0,
       sizeBytes: 0,
-      error: 'URL is required'
+      error: 'URL is required',
+      request: {
+        method: input.method,
+        url: input.url,
+        headers,
+        body: sentBody
+      }
     }
   }
 
@@ -110,7 +126,8 @@ export async function executeRequest(input: SendRequestInput): Promise<SendResul
       headers: responseHeaders,
       body,
       timeMs,
-      sizeBytes
+      sizeBytes,
+      request
     }
   } catch (err) {
     const timeMs = Math.round(performance.now() - start)
@@ -123,7 +140,8 @@ export async function executeRequest(input: SendRequestInput): Promise<SendResul
       body: '',
       timeMs,
       sizeBytes: 0,
-      error: message
+      error: message,
+      request
     }
   }
 }

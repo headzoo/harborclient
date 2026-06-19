@@ -14,6 +14,11 @@ interface Props {
   sending: boolean
 }
 
+type ViewerTab = 'body' | 'headers' | 'console'
+
+const detailRow =
+  'grid grid-cols-[180px_1fr] gap-3 px-2.5 py-1.5 border-t border-separator first:border-t-0'
+
 /**
  * Pretty-prints JSON response bodies when valid; returns raw text otherwise.
  *
@@ -42,13 +47,46 @@ function formatBytes(bytes: number): string {
 }
 
 /**
+ * Renders a key-value detail row for inspector-style panels.
+ *
+ * @param label - Field label shown in the left column.
+ * @param value - Field value shown in the right column.
+ */
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className={detailRow}>
+      <span className="break-words text-[13px] font-medium text-accent">{label}</span>
+      <span className="break-words font-mono text-[12px] text-text-secondary">{value}</span>
+    </div>
+  )
+}
+
+/**
+ * Renders a section heading for inspector-style panels.
+ *
+ * @param title - Section title.
+ */
+function SectionTitle({ title }: { title: string }) {
+  return (
+    <h3 className="m-0 mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted">
+      {title}
+    </h3>
+  )
+}
+
+/**
  * Displays HTTP response status, timing, body, and headers.
  */
 export function ResponseViewer({ response, sending }: Props) {
-  const [tab, setTab] = useState<'body' | 'headers'>('body')
+  const [tab, setTab] = useState<ViewerTab>('body')
 
   const formattedBody = useMemo(
     () => (response ? formatBody(response.body) : ''),
+    [response]
+  )
+
+  const formattedRequestBody = useMemo(
+    () => (response?.request ? formatBody(response.request.body) : ''),
     [response]
   )
 
@@ -93,6 +131,9 @@ export function ResponseViewer({ response, sending }: Props) {
           <button className={segment(tab === 'headers')} onClick={() => setTab('headers')}>
             Headers
           </button>
+          <button className={segment(tab === 'console')} onClick={() => setTab('console')}>
+            Console
+          </button>
         </div>
       </div>
 
@@ -116,6 +157,67 @@ export function ResponseViewer({ response, sending }: Props) {
                   <span className="break-words font-mono text-[12px] text-text-secondary">{value}</span>
                 </div>
               ))
+            )}
+          </div>
+        )}
+        {tab === 'console' && (
+          <div className="flex flex-col gap-4">
+            {!response.request ? (
+              <div className="text-[13px] text-muted">No request data</div>
+            ) : (
+              <>
+                <div>
+                  <SectionTitle title="General" />
+                  <div className="overflow-hidden rounded-md border border-separator">
+                    <DetailRow label="Request URL" value={response.request.url} />
+                    <DetailRow label="Request Method" value={response.request.method} />
+                    <DetailRow
+                      label="Status Code"
+                      value={
+                        response.error
+                          ? 'Error'
+                          : `${response.status} ${response.statusText}`
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <SectionTitle title="Request Headers" />
+                  <div className="overflow-hidden rounded-md border border-separator">
+                    {Object.entries(response.request.headers).length === 0 ? (
+                      <div className="p-4 text-center text-[13px] text-muted">No headers</div>
+                    ) : (
+                      Object.entries(response.request.headers).map(([key, value], index) => (
+                        <div
+                          className={`grid grid-cols-[180px_1fr] gap-3 px-2.5 py-1.5 ${index > 0 ? 'border-t border-separator' : ''}`}
+                          key={key}
+                        >
+                          <span className="break-words text-[13px] font-medium text-accent">
+                            {key}
+                          </span>
+                          <span className="break-words font-mono text-[12px] text-text-secondary">
+                            {value}
+                          </span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <SectionTitle title="Payload" />
+                  {response.request.body ? (
+                    <pre className="m-0 rounded-md bg-control p-2 font-mono text-[12px] break-words whitespace-pre-wrap shadow-[inset_0_0.5px_1px_rgba(0,0,0,0.06)]">
+                      {formattedRequestBody}
+                    </pre>
+                  ) : (
+                    <div className="rounded-md border border-separator px-2.5 py-2 text-[13px] text-muted">
+                      (no payload)
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         )}
