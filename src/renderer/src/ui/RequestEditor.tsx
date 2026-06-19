@@ -1,7 +1,8 @@
 import { useState, type JSX } from 'react';
-import type { BodyType } from '#/shared/types';
+import type { BodyType, Variable } from '#/shared/types';
 import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
 import { MethodSelect } from '#/renderer/src/components/MethodSelect';
+import { VariableInput } from '#/renderer/src/components/VariableInput';
 import type { RequestDraft } from '#/renderer/src/store/drafts';
 import { field, primaryButton, secondaryButton, segment, segmentGroup } from './classes';
 
@@ -34,12 +35,24 @@ interface Props {
    * Disables Send while a request is in flight.
    */
   sending: boolean;
+
+  /**
+   * Collection-scoped variables for URL highlighting and tooltips.
+   */
+  variables: Variable[];
 }
 
 /**
  * Request builder: method, URL, params, headers, body, and send/save actions.
  */
-export function RequestEditor({ draft, onChange, onSend, onSave, sending }: Props): JSX.Element {
+export function RequestEditor({
+  draft,
+  onChange,
+  onSend,
+  onSave,
+  sending,
+  variables
+}: Props): JSX.Element {
   const [tab, setTab] = useState<EditorTab>('params');
 
   /**
@@ -55,7 +68,7 @@ export function RequestEditor({ draft, onChange, onSend, onSave, sending }: Prop
 
   return (
     <div className="border-b border-separator p-3">
-      <div className="mb-2 flex items-center gap-2">
+      <div className="mb-2 flex justify-between gap-2">
         <input
           className={`${field} max-w-xs`}
           type="text"
@@ -72,12 +85,12 @@ export function RequestEditor({ draft, onChange, onSend, onSave, sending }: Prop
         <div className="flex min-w-0 flex-1 items-center overflow-hidden rounded-md border border-separator bg-control shadow-[inset_0_0.5px_1px_rgba(0,0,0,0.06)]">
           <MethodSelect value={draft.method} onChange={(method) => update({ method })} />
           <div className="h-5 w-px shrink-0 bg-separator" />
-          <input
-            className="min-w-0 flex-1 border-none bg-transparent px-2 py-1.5 text-[13px] text-inherit app-no-drag focus-visible:shadow-none"
-            type="text"
-            placeholder="Enter request URL"
+          <VariableInput
+            className="app-no-drag"
             value={draft.url}
-            onChange={(e) => update({ url: e.target.value })}
+            onChange={(url) => update({ url })}
+            variables={variables}
+            placeholder="Enter request URL"
             onKeyDown={(e) => {
               if (e.key === 'Enter') onSend();
             }}

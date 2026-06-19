@@ -47,6 +47,12 @@ export default function App(): JSX.Element {
       ? (store.requestsByCollection[store.selectedCollectionId] ?? [])
       : [];
 
+  const activeCollectionId = store.draft.collection_id ?? store.selectedCollectionId;
+  const activeVariables =
+    activeCollectionId != null
+      ? (store.collections.find((c) => c.id === activeCollectionId)?.variables ?? [])
+      : [];
+
   /**
    * Saves the current draft, prompting for a new collection when none exists.
    */
@@ -250,6 +256,7 @@ export default function App(): JSX.Element {
                 onSend={() => void store.sendRequest()}
                 onSave={() => void handleSave()}
                 sending={store.sending}
+                variables={activeVariables}
               />
               <ResponseViewer
                 key={`response-${store.activeTabId}`}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { substituteVariables } from '#/renderer/src/store';
+import { resolveVariable, substituteVariables, tokenizeVariables } from '#/renderer/src/store';
 
 const variable = (
   key: string,
@@ -68,5 +68,44 @@ describe('substituteVariables', () => {
     ]);
 
     expect(result).toBe('https://api.example.com/api');
+  });
+});
+
+describe('tokenizeVariables', () => {
+  it('returns a single plain-text token when no variables are present', () => {
+    expect(tokenizeVariables('https://api.example.com')).toEqual([
+      { text: 'https://api.example.com' }
+    ]);
+  });
+
+  it('splits text around variable tokens', () => {
+    expect(tokenizeVariables('https://{{host}}/api/{{version}}')).toEqual([
+      { text: 'https://' },
+      { text: '{{host}}', key: 'host' },
+      { text: '/api/' },
+      { text: '{{version}}', key: 'version' }
+    ]);
+  });
+
+  it('captures keys with surrounding whitespace inside braces', () => {
+    expect(tokenizeVariables('https://{{ host }}/users')).toEqual([
+      { text: 'https://' },
+      { text: '{{ host }}', key: 'host' },
+      { text: '/users' }
+    ]);
+  });
+});
+
+describe('resolveVariable', () => {
+  it('returns the resolved value for a known key', () => {
+    expect(resolveVariable('host', [variable('host', 'api.example.com')])).toBe('api.example.com');
+  });
+
+  it('falls back to defaultValue when value is empty', () => {
+    expect(resolveVariable('host', [variable('host', '', 'localhost')])).toBe('localhost');
+  });
+
+  it('returns undefined for unknown keys', () => {
+    expect(resolveVariable('missing', [variable('host', 'api.example.com')])).toBeUndefined();
   });
 });
