@@ -110,7 +110,9 @@ jobs:
             args: --linux
           - os: macos-latest
             args: --mac
-          - os: windows-latest
+          # windows-latest ships VS 2026 (v18); pnpm's bundled node-gyp 11 cannot
+          # detect it, so better-sqlite3 fails to compile. VS 2022 on windows-2022 works.
+          - os: windows-2022
             args: --win
     runs-on: ${{ matrix.os }}
 
