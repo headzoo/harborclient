@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add logo-white.png to documentation assets and update watch configuration for improved branding consistency. (`f495c33`)
 - Update logo images for improved visual consistency; replace logo in README and documentation, and add new logo files for enhanced branding.. (`b6cce6e`)
 
 ## 1.1.5 - 2026-06-19

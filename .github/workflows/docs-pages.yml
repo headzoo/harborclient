@@ -28,6 +28,7 @@ on:
     paths:
       - build/icons/**
       - images/logo.png
+      - images/logo-white.png
       - README.md
       - docs/**
       - scripts/sync-docs-assets.mjs

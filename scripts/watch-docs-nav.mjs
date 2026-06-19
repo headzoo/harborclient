@@ -13,6 +13,7 @@ const watchDirs = [path.join(repoDir, 'docs')];
 /** Individual files that trigger rebuilds when changed. */
 const watchFiles = [
   path.join(repoDir, 'images/logo.png'),
+  path.join(repoDir, 'images/logo-white.png'),
   path.join(repoDir, 'scripts/sync-docs-assets.mjs'),
   path.join(repoDir, 'scripts/build-docs-nav.mjs'),
   path.join(repoDir, 'scripts/docs-nav.config.mjs'),

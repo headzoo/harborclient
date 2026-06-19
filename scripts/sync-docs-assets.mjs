@@ -9,6 +9,7 @@ const staticImagesDir = path.join(repoDir, 'docs/.vitepress/static/images');
 /** Repo-relative sources copied into the VitePress static dir on each docs build. */
 const assets = [
   ['images/logo.png', 'logo.png'],
+  ['images/logo-white.png', 'logo-white.png'],
   ['build/icons/16x16.png', 'favicon-16x16.png'],
   ['build/icons/32x32.png', 'favicon-32x32.png'],
   ['build/icons/128x128.png', 'apple-touch-icon.png'],
