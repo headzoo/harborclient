@@ -4,12 +4,12 @@ sidebar: false
 outline: false
 
 hero:
-  name: Harbor Client
+  name: HarborClient
   text: A desktop HTTP client
   tagline: Build, send, and inspect HTTP requests with collections, tabs, and local persistence.
   image:
     src: /images/logo.png
-    alt: Harbor Client
+    alt: HarborClient
   actions:
     - theme: brand
       text: Download
