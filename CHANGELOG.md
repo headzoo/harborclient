@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Implement variable editing functionality in RequestEditor and KeyValueEditor components. Add onEditVariable prop to enable editing of variables directly from the UI. Enhance VariableInput with tooltip support for editing, improving user experience in managing collection-scoped variables.. (`b681b7e`)
 - Enhance collection management by adding support for headers in database schema and API. Update related functions and UI components to handle headers, ensuring they are included in collection creation, updates, and exports. Introduce tests for header substitution in requests.. (`f642c60`)
 - Add logo-white.png to documentation assets and update watch configuration for improved branding consistency. (`f495c33`)
 - Update logo images for improved visual consistency; replace logo in README and documentation, and add new logo files for enhanced branding.. (`b6cce6e`)

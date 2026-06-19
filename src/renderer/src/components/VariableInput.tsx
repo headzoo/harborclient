@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type JSX, type KeyboardEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type JSX, type KeyboardEvent } from 'react';
 import type { Variable } from '#/shared/types';
 import { resolveVariable, tokenizeVariables } from '#/renderer/src/store';
 
@@ -41,6 +41,11 @@ interface Props {
    * Additional classes applied to the input element.
    */
   className?: string;
+
+  /**
+   * Opens collection settings to edit the hovered variable.
+   */
+  onEditVariable?: () => void;
 }
 
 /**
@@ -52,14 +57,32 @@ export function VariableInput({
   variables,
   placeholder,
   onKeyDown,
-  className = ''
+  className = '',
+  onEditVariable
 }: Props): JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const spanRefs = useRef<Map<number, HTMLSpanElement>>(new Map());
+  const hideTimer = useRef<number | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
   const tokens = useMemo(() => tokenizeVariables(value), [value]);
+
+  /** Clears any pending tooltip hide timer. */
+  const cancelHide = (): void => {
+    if (hideTimer.current != null) {
+      window.clearTimeout(hideTimer.current);
+      hideTimer.current = null;
+    }
+  };
+
+  /** Hides the tooltip after a short grace period so the pointer can reach it. */
+  const scheduleHide = (): void => {
+    cancelHide();
+    hideTimer.current = window.setTimeout(() => setTooltip(null), 120);
+  };
+
+  useEffect(() => () => cancelHide(), []);
 
   /**
    * Keeps the colored backdrop aligned with horizontal scroll in the input.
@@ -78,6 +101,8 @@ export function VariableInput({
    * @param e - Mouse move event from the input.
    */
   const handleMouseMove = (e: React.MouseEvent<HTMLInputElement>): void => {
+    cancelHide();
+
     for (const [index, token] of tokens.entries()) {
       if (!token.key) continue;
 
@@ -143,18 +168,32 @@ export function VariableInput({
         onKeyDown={onKeyDown}
         onScroll={syncScroll}
         onMouseMove={handleMouseMove}
-        onMouseLeave={() => setTooltip(null)}
+        onMouseLeave={scheduleHide}
       />
 
       {tooltip && (
         <div
-          className="pointer-events-none fixed z-50 max-w-xs -translate-x-1/2 -translate-y-full rounded-md border border-separator bg-surface px-2 py-1 text-[12px] text-text shadow-md"
+          className="pointer-events-auto fixed z-50 flex max-w-sm -translate-x-1/2 -translate-y-full flex-col gap-1.5 rounded-md border border-separator bg-surface px-3 py-2 text-[13px] text-text shadow-md"
           style={{ top: tooltip.top - 4, left: tooltip.left }}
+          onMouseEnter={cancelHide}
+          onMouseLeave={() => setTooltip(null)}
         >
           {tooltip.value !== undefined ? (
             tooltip.value
           ) : (
             <span className="text-muted">Not defined</span>
+          )}
+          {onEditVariable && (
+            <button
+              type="button"
+              className="self-start text-[12px] text-accent hover:underline app-no-drag"
+              onClick={() => {
+                onEditVariable();
+                setTooltip(null);
+              }}
+            >
+              Edit value
+            </button>
           )}
         </div>
       )}

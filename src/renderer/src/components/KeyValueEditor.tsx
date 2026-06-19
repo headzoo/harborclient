@@ -30,6 +30,11 @@ interface Props {
    * Collection-scoped variables for value highlighting and tooltips.
    */
   variables: Variable[];
+
+  /**
+   * Opens collection settings to edit a hovered variable.
+   */
+  onEditVariable?: () => void;
 }
 
 const rowGrid = 'grid grid-cols-[24px_1fr_1fr_28px] items-center gap-1.5';
@@ -42,7 +47,8 @@ export function KeyValueEditor({
   onChange,
   placeholderKey = 'Key',
   placeholderValue = 'Value',
-  variables
+  variables,
+  onEditVariable
 }: Props): JSX.Element {
   /**
    * Updates a single row by index.
@@ -104,6 +110,7 @@ export function KeyValueEditor({
               onChange={(value) => updateRow(index, { value })}
               variables={variables}
               placeholder={placeholderValue}
+              onEditVariable={onEditVariable}
             />
           </div>
           <button

@@ -55,6 +55,13 @@ export default function App(): JSX.Element {
   const activeVariables = activeCollection?.variables ?? [];
   const activeCollectionName = activeCollection?.name;
 
+  /** Opens the active collection's settings to edit variables. */
+  const handleEditVariables = useCallback((): void => {
+    if (activeCollectionId == null) return;
+    setShowSettings(false);
+    setConfiguringCollectionId(activeCollectionId);
+  }, [activeCollectionId]);
+
   /**
    * Saves the current draft, prompting for a new collection when none exists.
    */
@@ -260,6 +267,7 @@ export default function App(): JSX.Element {
                 sending={store.sending}
                 variables={activeVariables}
                 collectionName={activeCollectionName}
+                onEditVariables={handleEditVariables}
               />
               <ResponseViewer
                 key={`response-${store.activeTabId}`}

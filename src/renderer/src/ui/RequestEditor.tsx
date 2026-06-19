@@ -46,6 +46,11 @@ interface Props {
    * Name of the collection this request belongs to, for display as a breadcrumb prefix.
    */
   collectionName?: string;
+
+  /**
+   * Opens collection settings to edit variables.
+   */
+  onEditVariables?: () => void;
 }
 
 /**
@@ -58,7 +63,8 @@ export function RequestEditor({
   onSave,
   sending,
   variables,
-  collectionName
+  collectionName,
+  onEditVariables
 }: Props): JSX.Element {
   const [tab, setTab] = useState<EditorTab>('params');
   const [editingName, setEditingName] = useState(false);
@@ -140,6 +146,7 @@ export function RequestEditor({
             onChange={(url) => update({ url })}
             variables={variables}
             placeholder="Enter request URL"
+            onEditVariable={onEditVariables}
             onKeyDown={(e) => {
               if (e.key === 'Enter') onSend();
             }}
@@ -174,6 +181,7 @@ export function RequestEditor({
             placeholderKey="param"
             placeholderValue="value"
             variables={variables}
+            onEditVariable={onEditVariables}
           />
         )}
         {tab === 'headers' && (
@@ -183,6 +191,7 @@ export function RequestEditor({
             placeholderKey="header"
             placeholderValue="value"
             variables={variables}
+            onEditVariable={onEditVariables}
           />
         )}
         {tab === 'body' && showBody && (
