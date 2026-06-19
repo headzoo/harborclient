@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Update Electron build configuration and package.json for improved icon management and desktop name setting. (`2b71cc7`)
 - Enhance variable management by introducing a normalization function for legacy variable records, updating the handling of variables in collection exports, and improving the UI for variable settings. Add support for default values and sharing options in the Variable interface, ensuring better data integrity and user experience.. (`96d7430`)
 
 ## 1.1.0 - 2026-06-19

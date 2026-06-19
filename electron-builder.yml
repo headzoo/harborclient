@@ -1,8 +1,8 @@
 appId: com.harbor.client
 productName: Harbor Client
-icon: images/logo-square.png
+icon: build/icons/512x512.png
 extraResources:
-  - from: images/logo-square.png
+  - from: build/icons/512x512.png
     to: icon.png
 directories:
   buildResources: build
@@ -14,6 +14,8 @@ files:
 asarUnpack:
   - node_modules/better-sqlite3/**/*
 linux:
+  icon: build/icons
+  syncDesktopName: true
   target:
     - AppImage
     - deb
