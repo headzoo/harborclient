@@ -5,7 +5,7 @@ import {
   METHOD_CLASSES,
   sourceRow,
   toolbarButton
-} from '#/renderer/src/ui/classes'
+} from './classes'
 
 interface Props {
   /**

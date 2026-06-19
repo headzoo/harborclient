@@ -1,5 +1,5 @@
 import { isTabDirty, type RequestTab } from '#/renderer/src/store/drafts'
-import { METHOD_CLASSES } from '#/renderer/src/ui/classes'
+import { METHOD_CLASSES } from './classes'
 
 interface Props {
   /**

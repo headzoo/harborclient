@@ -6,7 +6,7 @@ import {
   primaryButton,
   secondaryButton,
   toolbarButton
-} from '#/renderer/src/ui/classes'
+} from './classes'
 
 interface Props {
   /**

@@ -9,7 +9,7 @@ import {
   secondaryButton,
   segment,
   segmentGroup
-} from '#/renderer/src/ui/classes'
+} from './classes'
 
 type EditorTab = 'params' | 'headers' | 'body'
 

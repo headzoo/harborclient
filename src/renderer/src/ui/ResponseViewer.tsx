@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { SendResult } from '#/shared/types'
-import { segment, segmentGroup, statusDotClass } from '#/renderer/src/ui/classes'
+import { segment, segmentGroup, statusDotClass } from './classes'
 
 interface Props {
   /**
