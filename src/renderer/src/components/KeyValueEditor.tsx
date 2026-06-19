@@ -2,8 +2,8 @@ import type { JSX } from 'react';
 import type { KeyValue, Variable } from '#/shared/types';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { VariableInput } from '#/renderer/src/components/VariableInput';
-import { faPlus, faXmark } from '#/renderer/src/fontawesome';
-import { field, iconButtonDanger, toolbarButton } from '#/renderer/src/ui/classes';
+import { faXmark } from '#/renderer/src/fontawesome';
+import { field, iconButtonDanger } from '#/renderer/src/ui/classes';
 
 interface Props {
   /**
@@ -60,12 +60,11 @@ export function KeyValueEditor({
    */
   const updateRow = (index: number, patch: Partial<KeyValue>): void => {
     const next = rows.map((row, i) => (i === index ? { ...row, ...patch } : row));
+    const isLast = index === rows.length - 1;
+    if (isLast && next[index].key.trim() !== '') {
+      next.push({ key: '', value: '', enabled: true });
+    }
     onChange(next);
-  };
-
-  /** Appends a blank row to the table. */
-  const addRow = (): void => {
-    onChange([...rows, { key: '', value: '', enabled: true }]);
   };
 
   /**
@@ -125,14 +124,6 @@ export function KeyValueEditor({
           </button>
         </div>
       ))}
-      <button
-        type="button"
-        className={`${toolbarButton} inline-flex items-center gap-1 self-start`}
-        onClick={addRow}
-      >
-        <FaIcon icon={faPlus} className="h-3 w-3" />
-        Add row
-      </button>
     </div>
   );
 }

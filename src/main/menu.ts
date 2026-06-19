@@ -1,4 +1,4 @@
-import { BrowserWindow, Menu, type MenuItemConstructorOptions } from 'electron';
+import { BrowserWindow, Menu, shell, type MenuItemConstructorOptions } from 'electron';
 import type { MenuActionId } from '#/shared/types';
 
 /**
@@ -53,7 +53,16 @@ export function buildMenu(window: BrowserWindow): Menu {
     },
     {
       label: 'Edit',
-      submenu: [{ role: 'undo' }, { role: 'redo' }]
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { type: 'separator' },
+        { role: 'selectAll' }
+      ]
     },
     {
       label: 'View',
@@ -62,6 +71,10 @@ export function buildMenu(window: BrowserWindow): Menu {
     {
       label: 'Help',
       submenu: [
+        {
+          label: 'Documentation',
+          click: () => void shell.openExternal('https://harborclient.com/')
+        },
         {
           label: 'About',
           click: () => sendMenuAction(window, 'about')

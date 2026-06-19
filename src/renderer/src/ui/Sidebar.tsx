@@ -110,18 +110,24 @@ export function Sidebar({
 }: Props): JSX.Element {
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [prevSelectedId, setPrevSelectedId] = useState<number | null>(null);
 
   // Auto-expand a collection when it becomes selected, but only when the
-  // selection actually changes. This keeps a freshly selected collection
-  // open while still letting the user manually collapse it afterwards.
+  // selection actually changes. Adjusting state during render (instead of in
+  // an effect) avoids the cascading-render warning while still letting the
+  // user manually collapse a collection afterwards.
+  if (selectedCollectionId !== prevSelectedId) {
+    setPrevSelectedId(selectedCollectionId);
+    if (selectedCollectionId != null && !expandedIds.has(selectedCollectionId)) {
+      const next = new Set(expandedIds);
+      next.add(selectedCollectionId);
+      setExpandedIds(next);
+    }
+  }
+
+  // Loading a collection's requests is a side effect, so it stays in an effect.
   useEffect(() => {
     if (selectedCollectionId == null) return;
-    setExpandedIds((prev) => {
-      if (prev.has(selectedCollectionId)) return prev;
-      const next = new Set(prev);
-      next.add(selectedCollectionId);
-      return next;
-    });
     onExpandCollection(selectedCollectionId);
   }, [selectedCollectionId, onExpandCollection]);
 
@@ -152,16 +158,16 @@ export function Sidebar({
   return (
     <aside className="flex w-100 shrink-0 flex-col border-r border-separator bg-sidebar">
       <div className="flex-1 overflow-y-auto px-2 pb-3">
-        <div className="mb-1 flex items-center justify-between gap-2 ps-1">
+        <div className="mb-1 flex items-center justify-between gap-2 ps-1 py-3">
           <h2 className="m-0 text-[11px] font-medium uppercase tracking-wide text-muted">
             Collections
           </h2>
           <button
+            title="Add Collection"
             className={`${toolbarButton} inline-flex items-center gap-1`}
             onClick={onAddCollection}
           >
             <FaIcon icon={faPlus} className="h-3 w-3" />
-            Collection
           </button>
         </div>
 

@@ -548,6 +548,14 @@ export default function App(): JSX.Element {
               <img src={logoUrl} alt="HarborClient" className="mb-4 h-16 w-16 rounded-xl" />
               <h2 className="m-0 mb-1 text-[15px] font-semibold text-text">HarborClient</h2>
               {appVersion && <p className="m-0 text-[12px] text-muted">Version {appVersion}</p>}
+              <a
+                href="https://harborclient.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 text-[14px] text-accent hover:underline"
+              >
+                Documentation
+              </a>
             </div>
             <div className="mt-6 flex justify-center">
               <button className={primaryButton} onClick={() => setShowAbout(false)}>

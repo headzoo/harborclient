@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Enhance application menu and UI components for improved user experience. (`935b8c5`)
 - Enhance select component styling for improved user experience. (`eb21315`)
 - Remove Settings component and associated logic from the UI, streamlining the application by eliminating unused settings functionality.. (`727b360`)
 - Add new dependencies for enhanced functionality and update documentation structure. (`fb1ae63`)

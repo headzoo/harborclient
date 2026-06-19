@@ -10,7 +10,7 @@ export const secondaryButton =
   'cursor-pointer rounded-md border border-separator bg-control px-3 py-1 text-[15px] text-text shadow-sm hover:bg-selection disabled:cursor-not-allowed disabled:opacity-50 app-no-drag';
 
 export const toolbarButton =
-  'cursor-pointer rounded-md border-none bg-transparent px-2 py-1 text-[15px] text-accent hover:bg-selection app-no-drag';
+  'cursor-pointer rounded-md border-none bg-transparent px-2 py-1 text-[15px] hover:bg-selection app-no-drag';
 
 export const iconButton =
   'inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted opacity-0 transition-opacity group-hover:opacity-100 hover:bg-selection hover:text-text app-no-drag';
