@@ -1,0 +1,33 @@
+import { useEffect, useRef } from 'react';
+import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
+import { getDirtyTabs } from '#/renderer/src/store/drafts';
+import { setQuitPrompt } from '#/renderer/src/store/slices/modalsSlice';
+import { selectTabs } from '#/renderer/src/store/selectors';
+
+/**
+ * Subscribes to main-process before-close events and prompts when tabs have unsaved edits.
+ */
+export function useBeforeClose(): void {
+  const dispatch = useAppDispatch();
+  const tabs = useAppSelector(selectTabs);
+  const tabsRef = useRef(tabs);
+
+  useEffect(() => {
+    tabsRef.current = tabs;
+  });
+
+  /**
+   * Confirms window close when no tabs are dirty; otherwise shows the quit prompt.
+   */
+  useEffect(() => {
+    const unsubscribe = window.api.onBeforeClose(() => {
+      const dirtyTabs = getDirtyTabs(tabsRef.current);
+      if (dirtyTabs.length === 0) {
+        window.api.confirmClose(true);
+        return;
+      }
+      dispatch(setQuitPrompt(dirtyTabs.map((tab) => tab.draft.name)));
+    });
+    return unsubscribe;
+  }, [dispatch]);
+}

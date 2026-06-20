@@ -1,5 +1,4 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, shell } from 'electron';
-import windowStateKeeper from 'electron-window-state';
 import { join } from 'path';
 import { RoutingDatabase } from '#/main/db';
 import { initLocalRegistry } from '#/main/db/localRegistryInstance';
@@ -15,6 +14,12 @@ import {
 import { ensureDatabaseSlots } from '#/main/settings/databaseSlots';
 import { ensureInviteKeys } from '#/main/invite/inviteKeys';
 import { buildMenu } from '#/main/menu';
+import {
+  loadWindowState,
+  restoreWindowPresentation,
+  saveWindowState,
+  trackWindowState
+} from '#/main/windowState';
 import type { DatabaseConnection, ThemeSource } from '#/shared/types';
 
 const isDev = !app.isPackaged;
@@ -111,7 +116,10 @@ function promptForClose(reason: CloseReason): void {
  */
 function setupCloseHandlers(window: BrowserWindow): void {
   window.on('close', (event) => {
-    if (isQuitting) return;
+    if (isQuitting) {
+      saveWindowState(window);
+      return;
+    }
     event.preventDefault();
     promptForClose('window');
   });
@@ -150,16 +158,13 @@ function resolveAppIcon(): string {
  * @returns The created browser window.
  */
 function createWindow(): BrowserWindow {
-  const mainWindowState = windowStateKeeper({
-    defaultWidth: 1280,
-    defaultHeight: 800
-  });
+  const savedState = loadWindowState();
 
   const window = new BrowserWindow({
-    x: mainWindowState.x,
-    y: mainWindowState.y,
-    width: mainWindowState.width,
-    height: mainWindowState.height,
+    x: savedState.x,
+    y: savedState.y,
+    width: savedState.width,
+    height: savedState.height,
     minWidth: 900,
     minHeight: 600,
     title: 'HarborClient',
@@ -180,10 +185,10 @@ function createWindow(): BrowserWindow {
     }
   });
 
-  mainWindowState.manage(window);
-
   window.on('ready-to-show', () => {
     window.show();
+    restoreWindowPresentation(window, savedState);
+    trackWindowState(window);
   });
 
   window.webContents.setWindowOpenHandler((details) => {
@@ -257,6 +262,9 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', (event) => {
   if (isQuitting) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      saveWindowState(mainWindow);
+    }
     void db.close();
     return;
   }

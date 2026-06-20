@@ -48,7 +48,7 @@ export function Section({
 }: Props): JSX.Element {
   return (
     <div className="mb-3">
-      <div className="mb-1 flex items-center justify-between gap-2 ps-1 py-3">
+      <div className="-mx-2 mb-1 flex items-center justify-between gap-2 bg-sidebar-section px-2 py-3">
         <button
           type="button"
           className="inline-flex min-w-0 flex-1 cursor-pointer items-center gap-1 border-none bg-transparent p-0 text-left app-no-drag"

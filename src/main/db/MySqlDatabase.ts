@@ -260,6 +260,17 @@ export class MySqlDatabase implements IDatabase {
     const folderId = input.folder_id ?? null;
     const now = new Date().toISOString();
 
+    if (folderId != null) {
+      const [folderRows] = await this.getPool().execute<RowDataPacket[]>(
+        'SELECT collection_id FROM folders WHERE id = ?',
+        [folderId]
+      );
+      const folderRow = folderRows[0];
+      if (!folderRow || folderRow.collection_id !== input.collection_id) {
+        throw new Error('Folder not found');
+      }
+    }
+
     if (input.id) {
       const [result] = await this.getPool().execute<ResultSetHeader>(
         `UPDATE requests SET

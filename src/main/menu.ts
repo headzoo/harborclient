@@ -51,6 +51,10 @@ export function buildMenu(window: BrowserWindow): Menu {
           label: 'Certificates',
           click: () => sendMenuAction(window, 'certificates')
         },
+        {
+          label: 'Accept invite',
+          click: () => sendMenuAction(window, 'accept-invite')
+        },
         { type: 'separator' },
         { role: 'quit' }
       ]

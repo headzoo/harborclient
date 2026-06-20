@@ -17,6 +17,14 @@ import type {
 
 const MIGRATION_FLAG_KEY = '__migrated__';
 const THEME_SETTING_KEY = 'theme';
+const COLLECTION_MOVE_PENDING_KEY = 'collection_move_pending';
+
+interface PendingMoveCleanup {
+  sourceConnectionId: string;
+  sourceProviderCollectionId: number;
+}
+
+type PendingMoveCleanupMap = Record<string, PendingMoveCleanup>;
 
 interface MountedBackend {
   slot: number;
@@ -363,8 +371,8 @@ export class RoutingDatabase implements IDatabase {
       const sourceBackend = this.byConnectionId.get(entry.connectionId);
       const record = sourceBackend
         ? (await sourceBackend.db.listCollections()).find(
-            (item) => item.id === entry.providerCollectionId
-          )
+          (item) => item.id === entry.providerCollectionId
+        )
         : undefined;
       return this.buildCollection(entry, record);
     }
@@ -378,66 +386,144 @@ export class RoutingDatabase implements IDatabase {
       throw new Error(`Collection not found: ${globalCollectionId}`);
     }
 
-    const requests = await sourceBackend.db.listRequests(entry.providerCollectionId);
-    const folders = await sourceBackend.db.listFolders(entry.providerCollectionId);
+    const sourceConnectionId = entry.connectionId;
+    const sourceProviderCollectionId = entry.providerCollectionId;
 
-    const created = await targetBackend.db.createCollection(record.name);
-    const updated = await targetBackend.db.updateCollection(
-      created.id,
-      record.name,
-      record.variables,
-      record.headers,
-      record.pre_request_script,
-      record.post_request_script
-    );
+    const requests = await sourceBackend.db.listRequests(sourceProviderCollectionId);
+    const folders = await sourceBackend.db.listFolders(sourceProviderCollectionId);
 
-    const folderIdMap = new Map<number, number>();
-    const sortedFolders = [...folders].sort(
-      (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)
-    );
-    for (const folder of sortedFolders) {
-      const createdFolder = await targetBackend.db.createFolder(updated.id, folder.name);
-      folderIdMap.set(folder.id, createdFolder.id);
-    }
-    if (sortedFolders.length > 0) {
-      await targetBackend.db.reorderFolders(
-        updated.id,
-        sortedFolders.map((folder) => folderIdMap.get(folder.id)!)
+    let targetProviderCollectionId: number | undefined;
+
+    try {
+      const created = await targetBackend.db.createCollection(record.name);
+      const updated = await targetBackend.db.updateCollection(
+        created.id,
+        record.name,
+        record.variables,
+        record.headers,
+        record.pre_request_script,
+        record.post_request_script
       );
-    }
+      targetProviderCollectionId = updated.id;
 
-    const sortedRequests = [...requests].sort(
-      (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)
-    );
+      const folderIdMap = new Map<number, number>();
+      const sortedFolders = [...folders].sort(
+        (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)
+      );
+      for (const folder of sortedFolders) {
+        const createdFolder = await targetBackend.db.createFolder(updated.id, folder.name);
+        folderIdMap.set(folder.id, createdFolder.id);
+      }
+      if (sortedFolders.length > 0) {
+        await targetBackend.db.reorderFolders(
+          updated.id,
+          sortedFolders.map((folder) => folderIdMap.get(folder.id)!)
+        );
+      }
 
-    for (const request of sortedRequests) {
-      const targetFolderId =
-        request.folder_id != null ? (folderIdMap.get(request.folder_id) ?? null) : null;
+      const sortedRequests = [...requests].sort(
+        (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)
+      );
 
-      await targetBackend.db.saveRequest({
-        collection_id: updated.id,
-        folder_id: targetFolderId,
-        name: request.name,
-        method: request.method,
-        url: request.url,
-        headers: request.headers,
-        params: request.params,
-        body: request.body,
-        body_type: request.body_type,
-        pre_request_script: request.pre_request_script,
-        post_request_script: request.post_request_script,
-        comment: request.comment
+      for (const request of sortedRequests) {
+        const targetFolderId =
+          request.folder_id != null ? (folderIdMap.get(request.folder_id) ?? null) : null;
+
+        await targetBackend.db.saveRequest({
+          collection_id: updated.id,
+          folder_id: targetFolderId,
+          name: request.name,
+          method: request.method,
+          url: request.url,
+          headers: request.headers,
+          params: request.params,
+          body: request.body,
+          body_type: request.body_type,
+          pre_request_script: request.pre_request_script,
+          post_request_script: request.post_request_script,
+          comment: request.comment
+        });
+      }
+
+      const updatedEntry = this.registry.updateRegistryEntry(globalCollectionId, {
+        name: record.name,
+        connectionId: targetConnectionId,
+        providerCollectionId: updated.id
       });
+
+      this.writePendingMoveCleanup(
+        globalCollectionId,
+        sourceConnectionId,
+        sourceProviderCollectionId
+      );
+
+      try {
+        await sourceBackend.db.deleteCollection(sourceProviderCollectionId);
+        this.clearPendingMoveCleanup(globalCollectionId);
+      } catch (err) {
+        console.warn(
+          `Collection moved but source cleanup failed; will retry on next launch (global id ${globalCollectionId}):`,
+          err
+        );
+      }
+
+      return this.buildCollection(updatedEntry, updated);
+    } catch (err) {
+      if (targetProviderCollectionId != null) {
+        await this.cleanupPartialMoveTarget(
+          targetBackend,
+          targetProviderCollectionId,
+          globalCollectionId,
+          sourceConnectionId,
+          sourceProviderCollectionId
+        );
+      }
+      throw err;
     }
+  }
 
-    await sourceBackend.db.deleteCollection(entry.providerCollectionId);
+  /**
+   * Deletes stale source copies left behind by interrupted collection moves.
+   */
+  async recoverPendingMoveCleanups(): Promise<void> {
+    const pending = this.readPendingMoveCleanups();
 
-    const updatedEntry = this.registry.updateRegistryEntry(globalCollectionId, {
-      name: record.name,
-      connectionId: targetConnectionId,
-      providerCollectionId: updated.id
-    });
-    return this.buildCollection(updatedEntry, updated);
+    for (const [globalIdStr, cleanup] of Object.entries(pending)) {
+      const globalId = Number(globalIdStr);
+
+      try {
+        const entry = this.registry.getRegistryEntry(globalId);
+        if (!entry) {
+          this.clearPendingMoveCleanup(globalId);
+          continue;
+        }
+
+        if (
+          entry.connectionId === cleanup.sourceConnectionId &&
+          entry.providerCollectionId === cleanup.sourceProviderCollectionId
+        ) {
+          this.clearPendingMoveCleanup(globalId);
+          continue;
+        }
+
+        const sourceBackend = this.byConnectionId.get(cleanup.sourceConnectionId);
+        if (sourceBackend) {
+          try {
+            await sourceBackend.db.deleteCollection(cleanup.sourceProviderCollectionId);
+          } catch (err) {
+            console.warn(
+              `Failed to recover stale source collection after move (global id ${globalId}):`,
+              err
+            );
+            continue;
+          }
+        }
+
+        this.clearPendingMoveCleanup(globalId);
+      } catch (err) {
+        console.warn(`Failed to recover pending move cleanup for collection ${globalIdStr}:`, err);
+      }
+    }
   }
 
   /**
@@ -613,6 +699,8 @@ export class RoutingDatabase implements IDatabase {
       }
     }
 
+    await router.recoverPendingMoveCleanups();
+
     return router;
   }
 
@@ -725,5 +813,54 @@ export class RoutingDatabase implements IDatabase {
       throw new Error(`Collection not found: ${id}`);
     }
     return entry;
+  }
+
+  private readPendingMoveCleanups(): PendingMoveCleanupMap {
+    const raw = this.registry.getSetting(COLLECTION_MOVE_PENDING_KEY);
+    if (!raw) return {};
+
+    try {
+      return JSON.parse(raw) as PendingMoveCleanupMap;
+    } catch {
+      return {};
+    }
+  }
+
+  private writePendingMoveCleanup(
+    globalId: number,
+    sourceConnectionId: string,
+    sourceProviderCollectionId: number
+  ): void {
+    const pending = this.readPendingMoveCleanups();
+    pending[String(globalId)] = { sourceConnectionId, sourceProviderCollectionId };
+    this.registry.setSetting(COLLECTION_MOVE_PENDING_KEY, JSON.stringify(pending));
+  }
+
+  private clearPendingMoveCleanup(globalId: number): void {
+    const pending = this.readPendingMoveCleanups();
+    delete pending[String(globalId)];
+    this.registry.setSetting(COLLECTION_MOVE_PENDING_KEY, JSON.stringify(pending));
+  }
+
+  private async cleanupPartialMoveTarget(
+    targetBackend: MountedBackend,
+    targetProviderCollectionId: number,
+    globalCollectionId: number,
+    sourceConnectionId: string,
+    sourceProviderCollectionId: number
+  ): Promise<void> {
+    const current = this.registry.getRegistryEntry(globalCollectionId);
+    if (
+      current?.connectionId !== sourceConnectionId ||
+      current?.providerCollectionId !== sourceProviderCollectionId
+    ) {
+      return;
+    }
+
+    try {
+      await targetBackend.db.deleteCollection(targetProviderCollectionId);
+    } catch (cleanupErr) {
+      console.warn('Failed to clean up partial move target collection:', cleanupErr);
+    }
   }
 }

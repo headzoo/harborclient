@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(documentation): enhance code documentation guidelines and add new dependencies. (`a571797`)
+
 ## 1.4.2 - 2026-06-20
 
 - feat(certificates): implement certificate management for invite security. (`9b3bbbc`)

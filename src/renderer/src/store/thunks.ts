@@ -41,6 +41,22 @@ import {
   updateActiveTabDraftAfterSave,
   updateTab
 } from '#/renderer/src/store/slices/tabsSlice';
+import {
+  closeOverlay,
+  selectCollectionSettingsDirty,
+  selectEnvironmentSettingsDirty
+} from '#/renderer/src/store/slices/navigationSlice';
+import {
+  closeCollectionModal,
+  openCollectionModal,
+  setAboutVersion,
+  setInviteToken,
+  setInviteTokenError,
+  setInviteTokenLoading,
+  setInviteTrustedKeys,
+  setInviteTrustedKeysLoading,
+  setPendingLoadRequest
+} from '#/renderer/src/store/slices/modalsSlice';
 import type { AppDispatch, ThunkApiConfig } from '#/renderer/src/store/redux';
 import { selectActiveTab } from '#/renderer/src/store/selectors';
 
@@ -475,9 +491,9 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
       const resolvedUrl = substituteWithMap(scriptRequest.url, runtimeVars);
       const collectionHeaders = collection
         ? (collection.headers ?? []).map((header) => ({
-            ...header,
-            value: substituteWithMap(header.value, runtimeVars)
-          }))
+          ...header,
+          value: substituteWithMap(header.value, runtimeVars)
+        }))
         : [];
       const draftHeaders = scriptRequest.headers.map((header) => ({
         ...header,
@@ -568,3 +584,102 @@ export function dispatchLoadRequest(dispatch: AppDispatch, req: SavedRequest): v
 export function dispatchNewRequest(dispatch: AppDispatch): void {
   dispatch(newTab());
 }
+
+/** Loads trusted keys for the invite modal recipient picker. */
+export const loadTrustedKeys = createAsyncThunk<void, void, ThunkApiConfig>(
+  'modals/loadTrustedKeys',
+  async (_, { dispatch }) => {
+    dispatch(setInviteTrustedKeysLoading(true));
+    dispatch(setInviteTokenError(null));
+    try {
+      const keys = await window.api.listTrustedKeys();
+      dispatch(setInviteTrustedKeys(keys));
+    } catch (err) {
+      dispatch(
+        setInviteTokenError(err instanceof Error ? err.message : 'Failed to load trusted keys')
+      );
+      dispatch(setInviteTrustedKeys([]));
+    } finally {
+      dispatch(setInviteTrustedKeysLoading(false));
+    }
+  }
+);
+
+/** Generates an encrypted invite token for the selected recipient. */
+export const generateInviteToken = createAsyncThunk<void, void, ThunkApiConfig>(
+  'modals/generateInviteToken',
+  async (_, { dispatch, getState }) => {
+    const invite = getState().modals.invite;
+    if (!invite || !invite.recipientKid) return;
+
+    dispatch(setInviteTokenLoading(true));
+    dispatch(setInviteTokenError(null));
+    dispatch(setInviteToken(''));
+
+    try {
+      const token = await window.api.createInviteToken(invite.collectionId, invite.recipientKid);
+      dispatch(setInviteToken(token));
+    } catch (err) {
+      dispatch(
+        setInviteTokenError(err instanceof Error ? err.message : 'Failed to create invite token')
+      );
+    } finally {
+      dispatch(setInviteTokenLoading(false));
+    }
+  }
+);
+
+/** Accepts an invite JWT and refreshes collections. */
+export const acceptInviteToken = createAsyncThunk<void, string, ThunkApiConfig>(
+  'modals/acceptInviteToken',
+  async (token, { dispatch }) => {
+    await window.api.acceptInvite(token);
+    await dispatch(refreshCollections());
+    dispatch(closeCollectionModal());
+    toast.success('Shared connection added');
+  }
+);
+
+/** Loads a saved request, prompting when settings overlays have unsaved edits. */
+export const requestLoadRequest = createAsyncThunk<void, SavedRequest, ThunkApiConfig>(
+  'modals/requestLoadRequest',
+  async (req, { dispatch, getState }) => {
+    const state = getState();
+    const mainView = state.navigation.mainView;
+    const collectionDirty = mainView.type === 'collection' && selectCollectionSettingsDirty(state);
+    const environmentDirty =
+      mainView.type === 'environment' && selectEnvironmentSettingsDirty(state);
+
+    if (collectionDirty || environmentDirty) {
+      dispatch(setPendingLoadRequest(req));
+      return;
+    }
+
+    dispatch(closeOverlay());
+    dispatch(loadRequest(req));
+  }
+);
+
+/** Saves the current draft from the menu, prompting for a collection when none is selected. */
+export const saveFromMenu = createAsyncThunk<void, void, ThunkApiConfig>(
+  'requests/saveFromMenu',
+  async (_, { dispatch, getState }) => {
+    const selectedCollectionId = getState().collections.selectedCollectionId;
+    if (selectedCollectionId == null) {
+      dispatch(openCollectionModal({ mode: 'create-and-save' }));
+      return;
+    }
+    await dispatch(saveRequest()).unwrap();
+    toast.success('Request saved');
+  }
+);
+
+/** Fetches the application version for the about dialog. */
+export const fetchAppVersion = createAsyncThunk<string, void, ThunkApiConfig>(
+  'modals/fetchAppVersion',
+  async (_, { dispatch }) => {
+    const version = await window.api.getAppVersion();
+    dispatch(setAboutVersion(version));
+    return version;
+  }
+);

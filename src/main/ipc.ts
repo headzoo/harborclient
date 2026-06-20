@@ -1,5 +1,7 @@
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from 'electron';
+import type { IpcMainInvokeEvent } from 'electron';
 import { randomUUID } from 'crypto';
+import { z } from 'zod';
 import { ensureInviteKeys, getInviteIdentity, importInviteKeyPair } from '#/main/invite/inviteKeys';
 import { createInviteToken, verifyInviteToken } from '#/main/invite/inviteToken';
 import { addTrustedKey, listTrustedKeys, removeTrustedKey } from '#/main/invite/trustedKeys';
@@ -13,6 +15,7 @@ import {
   setCookiesForDomain
 } from '#/main/cookieJar';
 import { buildUrl, executeRequest } from '#/main/http';
+import { ipcArgSchemas } from '#/main/ipc/ipcSchemas';
 import { runScript } from '#/main/scripts';
 import {
   deleteDatabaseConnection,
@@ -29,17 +32,7 @@ import {
   getRequestEditorTab,
   setRequestEditorTab
 } from '#/main/settings/requestEditorSettings';
-import type {
-  DatabaseConnection,
-  EditorTab,
-  GeneralSettings,
-  SaveRequestInput,
-  ScriptRunInput,
-  SendRequestInput,
-  ThemeSource,
-  Variable,
-  KeyValue
-} from '#/shared/types';
+import type { DatabaseConnection, ThemeSource } from '#/shared/types';
 
 const THEME_SETTING_KEY = 'theme';
 
@@ -59,29 +52,58 @@ function parseThemeSource(value: string | undefined): ThemeSource {
 }
 
 /**
+ * Registers an IPC handler that validates positional arguments before invoking the callback.
+ *
+ * @param channel - IPC channel name.
+ * @param args - Zod tuple schema for handler arguments.
+ * @param fn - Handler invoked with validated arguments.
+ */
+function handle<S extends z.ZodTuple>(
+  channel: string,
+  args: S,
+  fn: (event: IpcMainInvokeEvent, ...handlerArgs: z.infer<S>) => unknown
+): void {
+  ipcMain.handle(channel, (event, ...raw) => {
+    const result = args.safeParse(raw);
+    if (!result.success) {
+      throw new Error(`Invalid IPC argument for "${channel}": ${result.error.message}`);
+    }
+    return fn(event, ...(result.data as z.infer<S>));
+  });
+}
+
+/**
  * Registers IPC handlers that bridge renderer calls to db and HTTP modules.
  */
 export function registerIpcHandlers(db: IDatabase): void {
-  ipcMain.handle('collections:list', () => db.listCollections());
+  // Lists all saved request collections.
+  handle('collections:list', ipcArgSchemas.none, () => db.listCollections());
 
-  ipcMain.handle('collections:create', (_event, name: string) => db.createCollection(name));
-
-  ipcMain.handle(
-    'collections:update',
-    (
-      _event,
-      id: number,
-      name: string,
-      variables: Variable[],
-      headers: KeyValue[],
-      preRequestScript: string,
-      postRequestScript: string
-    ) => db.updateCollection(id, name, variables, headers, preRequestScript, postRequestScript)
+  // Creates a new collection with the given display name.
+  handle('collections:create', ipcArgSchemas.name, (_event, collectionName) =>
+    db.createCollection(collectionName)
   );
 
-  ipcMain.handle('collections:delete', (_event, id: number) => db.deleteCollection(id));
+  // Updates a collection's name, variables, headers, and scripts.
+  handle(
+    'collections:update',
+    ipcArgSchemas.collectionUpdate,
+    (_event, id, collectionName, variables, headers, preRequestScript, postRequestScript) =>
+      db.updateCollection(
+        id,
+        collectionName,
+        variables,
+        headers,
+        preRequestScript,
+        postRequestScript
+      )
+  );
 
-  ipcMain.handle('collections:export', async (_event, id: number) => {
+  // Deletes a collection and all of its folders and requests.
+  handle('collections:delete', ipcArgSchemas.dbId, (_event, id) => db.deleteCollection(id));
+
+  // Exports a collection to a JSON file via a native save dialog.
+  handle('collections:export', ipcArgSchemas.dbId, async (_event, id) => {
     const data = await db.exportCollectionData(id);
     const win = BrowserWindow.getFocusedWindow();
     const dialogOptions = {
@@ -100,7 +122,8 @@ export function registerIpcHandlers(db: IDatabase): void {
     return { canceled: false, path: filePath };
   });
 
-  ipcMain.handle('collections:import', async () => {
+  // Imports a collection from a JSON file selected via a native open dialog.
+  handle('collections:import', ipcArgSchemas.none, async () => {
     const win = BrowserWindow.getFocusedWindow();
     const dialogOptions = {
       properties: ['openFile'] as Array<'openFile'>,
@@ -119,14 +142,16 @@ export function registerIpcHandlers(db: IDatabase): void {
     return db.importCollectionData(parsed);
   });
 
-  ipcMain.handle('collections:move', (_event, id: number, targetConnectionId: string) => {
+  // Moves a collection to a different database connection.
+  handle('collections:move', ipcArgSchemas.collectionMove, (_event, id, targetConnectionId) => {
     if (!(db instanceof RoutingDatabase)) {
       throw new Error('Collection move is unavailable.');
     }
     return db.moveCollection(id, targetConnectionId);
   });
 
-  ipcMain.handle('dialog:openFiles', async () => {
+  // Opens a native file picker and returns selected absolute file paths.
+  handle('dialog:openFiles', ipcArgSchemas.none, async () => {
     const win = BrowserWindow.getFocusedWindow();
     const dialogOptions = {
       properties: ['openFile', 'multiSelections'] as Array<'openFile' | 'multiSelections'>,
@@ -143,49 +168,73 @@ export function registerIpcHandlers(db: IDatabase): void {
     return filePaths;
   });
 
-  ipcMain.handle('environments:list', () => db.listEnvironments());
+  // Lists all named variable environments.
+  handle('environments:list', ipcArgSchemas.none, () => db.listEnvironments());
 
-  ipcMain.handle('environments:create', (_event, name: string) => db.createEnvironment(name));
-
-  ipcMain.handle('environments:update', (_event, id: number, name: string, variables: Variable[]) =>
-    db.updateEnvironment(id, name, variables)
+  // Creates a new environment with the given display name.
+  handle('environments:create', ipcArgSchemas.name, (_event, environmentName) =>
+    db.createEnvironment(environmentName)
   );
 
-  ipcMain.handle('environments:delete', (_event, id: number) => db.deleteEnvironment(id));
-
-  ipcMain.handle('requests:list', (_event, collectionId: number) => db.listRequests(collectionId));
-
-  ipcMain.handle('requests:save', (_event, req: SaveRequestInput) => db.saveRequest(req));
-
-  ipcMain.handle('requests:delete', (_event, id: number) => db.deleteRequest(id));
-
-  ipcMain.handle('folders:list', (_event, collectionId: number) => db.listFolders(collectionId));
-
-  ipcMain.handle('folders:create', (_event, collectionId: number, name: string) =>
-    db.createFolder(collectionId, name)
+  // Updates an environment's name and variables.
+  handle(
+    'environments:update',
+    ipcArgSchemas.environmentUpdate,
+    (_event, id, environmentName, variables) => db.updateEnvironment(id, environmentName, variables)
   );
 
-  ipcMain.handle('folders:rename', (_event, id: number, name: string) => db.renameFolder(id, name));
+  // Deletes an environment by id.
+  handle('environments:delete', ipcArgSchemas.dbId, (_event, id) => db.deleteEnvironment(id));
 
-  ipcMain.handle('folders:delete', (_event, id: number) => db.deleteFolder(id));
+  // Lists saved requests in a collection.
+  handle('requests:list', ipcArgSchemas.collectionId, (_event, collectionId) =>
+    db.listRequests(collectionId)
+  );
 
-  ipcMain.handle('folders:reorder', (_event, collectionId: number, orderedFolderIds: number[]) =>
+  // Inserts or updates a saved request.
+  handle('requests:save', ipcArgSchemas.saveRequest, (_event, req) => db.saveRequest(req));
+
+  // Deletes a saved request by id.
+  handle('requests:delete', ipcArgSchemas.dbId, (_event, id) => db.deleteRequest(id));
+
+  // Lists folders in a collection.
+  handle('folders:list', ipcArgSchemas.collectionId, (_event, collectionId) =>
+    db.listFolders(collectionId)
+  );
+
+  // Creates a folder in a collection.
+  handle('folders:create', ipcArgSchemas.folderCreate, (_event, collectionId, folderName) =>
+    db.createFolder(collectionId, folderName)
+  );
+
+  // Renames a folder.
+  handle('folders:rename', ipcArgSchemas.folderRename, (_event, id, folderName) =>
+    db.renameFolder(id, folderName)
+  );
+
+  // Deletes a folder and its requests.
+  handle('folders:delete', ipcArgSchemas.dbId, (_event, id) => db.deleteFolder(id));
+
+  // Reorders folders within a collection.
+  handle('folders:reorder', ipcArgSchemas.folderReorder, (_event, collectionId, orderedFolderIds) =>
     db.reorderFolders(collectionId, orderedFolderIds)
   );
 
-  ipcMain.handle(
+  // Reorders requests within a collection folder (or at collection root).
+  handle(
     'requests:reorder',
-    (_event, collectionId: number, folderId: number | null, orderedRequestIds: number[]) =>
+    ipcArgSchemas.requestReorder,
+    (_event, collectionId, folderId, orderedRequestIds) =>
       db.reorderRequests(collectionId, folderId, orderedRequestIds)
   );
 
-  ipcMain.handle(
-    'requests:move',
-    (_event, requestId: number, folderId: number | null, index: number) =>
-      db.moveRequest(requestId, folderId, index)
+  // Moves a request to a folder and position within the collection.
+  handle('requests:move', ipcArgSchemas.requestMove, (_event, requestId, folderId, index) =>
+    db.moveRequest(requestId, folderId, index)
   );
 
-  ipcMain.handle('http:send', async (_event, req: SendRequestInput, requestId?: string) => {
+  // Sends an HTTP request and captures response cookies in the jar.
+  handle('http:send', ipcArgSchemas.sendRequest, async (_event, req, requestId) => {
     const controller = new AbortController();
     if (requestId) {
       activeRequests.set(requestId, controller);
@@ -207,101 +256,130 @@ export function registerIpcHandlers(db: IDatabase): void {
     }
   });
 
-  ipcMain.handle('http:cancel', (_event, requestId: string) => {
+  // Aborts an in-flight HTTP request by its client-side request id.
+  handle('http:cancel', ipcArgSchemas.cancelRequest, (_event, requestId) => {
     activeRequests.get(requestId)?.abort();
   });
 
-  ipcMain.handle('scripts:run', (_event, input: ScriptRunInput) => runScript(input));
+  // Runs a pre- or post-request script in the main-process sandbox.
+  handle('scripts:run', ipcArgSchemas.scriptRun, (_event, input) => runScript(input));
 
-  ipcMain.handle('app:getVersion', () => app.getVersion());
+  // Returns the application semver from package metadata.
+  handle('app:getVersion', ipcArgSchemas.none, () => app.getVersion());
 
-  ipcMain.handle('theme:get', async () => parseThemeSource(await db.getSetting(THEME_SETTING_KEY)));
+  // Returns the persisted light/dark/system theme preference.
+  handle('theme:get', ipcArgSchemas.none, async () =>
+    parseThemeSource(await db.getSetting(THEME_SETTING_KEY))
+  );
 
-  ipcMain.handle('theme:set', async (_event, theme: ThemeSource) => {
+  // Persists and applies the light/dark/system theme preference.
+  handle('theme:set', ipcArgSchemas.themeSet, async (_event, theme) => {
     nativeTheme.themeSource = theme;
     await db.setSetting(THEME_SETTING_KEY, theme);
   });
 
-  ipcMain.handle('general:getSettings', () => getGeneralSettings());
+  // Returns general HTTP execution settings (timeout, size limit, SSL verify).
+  handle('general:getSettings', ipcArgSchemas.none, () => getGeneralSettings());
 
-  ipcMain.handle('general:setSettings', (_event, settings: GeneralSettings) => {
+  // Persists general HTTP execution settings.
+  handle('general:setSettings', ipcArgSchemas.generalSettings, (_event, settings) => {
     setGeneralSettings(settings);
   });
 
-  ipcMain.handle('databaseConnections:list', () => listDatabaseConnections());
+  // Lists configured database connections.
+  handle('databaseConnections:list', ipcArgSchemas.none, () => listDatabaseConnections());
 
-  ipcMain.handle('databaseConnections:save', (_event, conn: DatabaseConnection) =>
+  // Creates or updates a database connection.
+  handle('databaseConnections:save', ipcArgSchemas.databaseConnection, (_event, conn) =>
     saveDatabaseConnection(conn)
   );
 
-  ipcMain.handle('databaseConnections:delete', (_event, id: string) =>
+  // Deletes a database connection by id.
+  handle('databaseConnections:delete', ipcArgSchemas.connectionId, (_event, id) =>
     deleteDatabaseConnection(id)
   );
 
-  ipcMain.handle('database:getActiveId', () => getActiveDatabaseId());
+  // Returns the id of the active database connection.
+  handle('database:getActiveId', ipcArgSchemas.none, () => getActiveDatabaseId());
 
-  ipcMain.handle('database:setActiveId', (_event, id: string) => {
+  // Sets the active database connection (applied on restart).
+  handle('database:setActiveId', ipcArgSchemas.connectionId, (_event, id) => {
     setActiveDatabaseId(id);
   });
 
-  ipcMain.handle('requestEditor:getTab', (_event, key: string) => getRequestEditorTab(key));
+  // Returns the persisted request editor tab for a storage key.
+  handle('requestEditor:getTab', ipcArgSchemas.storageKey, (_event, key) =>
+    getRequestEditorTab(key)
+  );
 
-  ipcMain.handle('requestEditor:setTab', (_event, key: string, tab: EditorTab) => {
+  // Persists the active request editor tab for a storage key.
+  handle('requestEditor:setTab', ipcArgSchemas.setEditorTab, (_event, key, tab) => {
     setRequestEditorTab(key, tab);
   });
 
-  ipcMain.handle('requestEditor:deleteTab', (_event, key: string) => {
+  // Clears the persisted request editor tab for a storage key.
+  handle('requestEditor:deleteTab', ipcArgSchemas.storageKey, (_event, key) => {
     deleteRequestEditorTab(key);
   });
 
-  ipcMain.handle('cookies:getForDomain', (_event, domain: string) => getCookiesForDomain(domain));
+  // Returns cookies stored for a hostname.
+  handle('cookies:getForDomain', ipcArgSchemas.domain, (_event, cookieDomain) =>
+    getCookiesForDomain(cookieDomain)
+  );
 
-  ipcMain.handle('cookies:setForDomain', (_event, domain: string, cookies: KeyValue[]) => {
-    setCookiesForDomain(domain, cookies);
+  // Replaces cookies stored for a hostname.
+  handle('cookies:setForDomain', ipcArgSchemas.setCookies, (_event, cookieDomain, cookies) => {
+    setCookiesForDomain(cookieDomain, cookies);
   });
 
-  ipcMain.handle('invite:create', async (_event, collectionId: number, recipientKid?: string) => {
-    if (!(db instanceof RoutingDatabase)) {
-      throw new Error('Invite is unavailable.');
-    }
+  // Creates an encrypted invite token for sharing a collection.
+  handle(
+    'invite:create',
+    ipcArgSchemas.inviteCreate,
+    async (_event, collectionId, recipientKid) => {
+      if (!(db instanceof RoutingDatabase)) {
+        throw new Error('Invite is unavailable.');
+      }
 
-    if (!recipientKid) {
-      throw new Error(
-        'A recipient key is required. Add their public key under Certificates and select them when creating an invite.'
+      if (!recipientKid) {
+        throw new Error(
+          'A recipient key is required. Add their public key under Certificates and select them when creating an invite.'
+        );
+      }
+
+      const share = db.getShareInfo(collectionId);
+      const connection = listDatabaseConnections().find((conn) => conn.id === share.connectionId);
+      if (!connection) {
+        throw new Error(`Unknown database connection: ${share.connectionId}`);
+      }
+      if (connection.type === 'sqlite') {
+        throw new Error('SQLite connections cannot be shared via invite.');
+      }
+
+      const recipient = listTrustedKeys().find((key) => key.id === recipientKid);
+      if (!recipient) {
+        throw new Error(`Unknown recipient key: ${recipientKid}`);
+      }
+
+      const { privateKey, publicKey } = await ensureInviteKeys(app.getPath('userData'));
+      return createInviteToken(
+        connection,
+        { name: share.name, providerCollectionId: share.providerCollectionId },
+        privateKey,
+        publicKey,
+        recipient.publicKeyPem
       );
     }
+  );
 
-    const share = db.getShareInfo(collectionId);
-    const connection = listDatabaseConnections().find((conn) => conn.id === share.connectionId);
-    if (!connection) {
-      throw new Error(`Unknown database connection: ${share.connectionId}`);
-    }
-    if (connection.type === 'sqlite') {
-      throw new Error('SQLite connections cannot be shared via invite.');
-    }
-
-    const recipient = listTrustedKeys().find((key) => key.id === recipientKid);
-    if (!recipient) {
-      throw new Error(`Unknown recipient key: ${recipientKid}`);
-    }
-
-    const { privateKey, publicKey } = await ensureInviteKeys(app.getPath('userData'));
-    return createInviteToken(
-      connection,
-      { name: share.name, providerCollectionId: share.providerCollectionId },
-      privateKey,
-      publicKey,
-      recipient.publicKeyPem
-    );
-  });
-
-  ipcMain.handle('invite:accept', async (_event, token: string) => {
+  // Verifies an invite token and registers the shared collection connection.
+  handle('invite:accept', ipcArgSchemas.token, async (_event, inviteToken) => {
     const { privateKey, publicKey } = await ensureInviteKeys(app.getPath('userData'));
     let connection;
     let collection;
     try {
       ({ connection, collection } = verifyInviteToken(
-        token,
+        inviteToken,
         privateKey,
         publicKey,
         listTrustedKeys()
@@ -336,11 +414,13 @@ export function registerIpcHandlers(db: IDatabase): void {
     return listDatabaseConnections();
   });
 
-  ipcMain.handle('certs:getIdentity', async () => {
+  // Returns the local invite RSA identity (public key and fingerprint).
+  handle('certs:getIdentity', ipcArgSchemas.none, async () => {
     return getInviteIdentity(app.getPath('userData'));
   });
 
-  ipcMain.handle('certs:exportPrivateKey', async () => {
+  // Writes the local invite private key to a PEM file via a save dialog.
+  handle('certs:exportPrivateKey', ipcArgSchemas.none, async () => {
     const { privateKey } = await ensureInviteKeys(app.getPath('userData'));
     const win = BrowserWindow.getFocusedWindow();
     const dialogOptions = {
@@ -359,7 +439,8 @@ export function registerIpcHandlers(db: IDatabase): void {
     return { canceled: false, path: filePath };
   });
 
-  ipcMain.handle('certs:exportPublicKey', async () => {
+  // Writes the local invite public key to a PEM file via a save dialog.
+  handle('certs:exportPublicKey', ipcArgSchemas.none, async () => {
     const { publicKey } = await ensureInviteKeys(app.getPath('userData'));
     const win = BrowserWindow.getFocusedWindow();
     const dialogOptions = {
@@ -378,7 +459,8 @@ export function registerIpcHandlers(db: IDatabase): void {
     return { canceled: false, path: filePath };
   });
 
-  ipcMain.handle('certs:importKeyPair', async () => {
+  // Imports a local invite key pair from a PEM file via an open dialog.
+  handle('certs:importKeyPair', ipcArgSchemas.none, async () => {
     const win = BrowserWindow.getFocusedWindow();
     const dialogOptions = {
       properties: ['openFile'] as Array<'openFile'>,
@@ -396,13 +478,16 @@ export function registerIpcHandlers(db: IDatabase): void {
     return importInviteKeyPair(app.getPath('userData'), privateKeyPem);
   });
 
-  ipcMain.handle('certs:listTrustedKeys', () => listTrustedKeys());
+  // Lists trusted recipient public keys for invite encryption.
+  handle('certs:listTrustedKeys', ipcArgSchemas.none, () => listTrustedKeys());
 
-  ipcMain.handle('certs:addTrustedKey', (_event, label: string, publicKeyPem: string) =>
-    addTrustedKey(label, publicKeyPem)
+  // Adds a trusted recipient public key by label and PEM content.
+  handle('certs:addTrustedKey', ipcArgSchemas.labelAndPublicKey, (_event, keyLabel, keyPem) =>
+    addTrustedKey(keyLabel, keyPem)
   );
 
-  ipcMain.handle('certs:importTrustedPublicKey', async (_event, label: string) => {
+  // Imports a trusted recipient public key from a PEM file via an open dialog.
+  handle('certs:importTrustedPublicKey', ipcArgSchemas.label, async (_event, keyLabel) => {
     const win = BrowserWindow.getFocusedWindow();
     const dialogOptions = {
       properties: ['openFile'] as Array<'openFile'>,
@@ -416,9 +501,12 @@ export function registerIpcHandlers(db: IDatabase): void {
       throw new Error('Import canceled.');
     }
 
-    const publicKeyPem = await readFile(filePaths[0], 'utf-8');
-    return addTrustedKey(label, publicKeyPem);
+    const importedPublicKeyPem = await readFile(filePaths[0], 'utf-8');
+    return addTrustedKey(keyLabel, importedPublicKeyPem);
   });
 
-  ipcMain.handle('certs:removeTrustedKey', (_event, id: string) => removeTrustedKey(id));
+  // Removes a trusted recipient public key by id.
+  handle('certs:removeTrustedKey', ipcArgSchemas.connectionId, (_event, id) =>
+    removeTrustedKey(id)
+  );
 }

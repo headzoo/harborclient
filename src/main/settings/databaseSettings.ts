@@ -8,6 +8,7 @@ import type {
   PostgresSettings,
   SqliteSettings
 } from '#/shared/types';
+import { normalizeSqliteFilename } from '#/main/settings/sqliteFilename';
 import { parseJson } from '#/shared/parseJson';
 
 const CONNECTIONS_KEY = 'databaseConnections';
@@ -81,8 +82,8 @@ function normalizeSqliteField(value: string, fallback: string): string {
  */
 function normalizeSqliteSettings(input: Partial<SqliteSettings>): SqliteSettings {
   return {
-    dbFilename: normalizeSqliteField(input.dbFilename ?? '', DEFAULT_SQLITE_SETTINGS.dbFilename),
-    legacyDbFilename: normalizeSqliteField(
+    dbFilename: normalizeSqliteFilename(input.dbFilename ?? '', DEFAULT_SQLITE_SETTINGS.dbFilename),
+    legacyDbFilename: normalizeSqliteFilename(
       input.legacyDbFilename ?? '',
       DEFAULT_SQLITE_SETTINGS.legacyDbFilename
     ),

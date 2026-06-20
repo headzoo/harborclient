@@ -888,6 +888,7 @@ export type MenuActionId =
   | 'save'
   | 'settings'
   | 'certificates'
+  | 'accept-invite'
   | 'about';
 
 /**

@@ -1,7 +1,8 @@
 import { deleteApp, initializeApp, type FirebaseApp } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { connectAuthEmulator, createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import {
   collection,
+  connectFirestoreEmulator,
   deleteDoc,
   doc,
   getDoc,
@@ -87,8 +88,40 @@ export class FirestoreDatabase implements IDatabase {
 
     this.#app = initializeApp({ apiKey, authDomain, projectId, appId });
     const auth = getAuth(this.#app);
-    await signInWithEmailAndPassword(auth, email, password);
+
+    const authEmulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST;
+    if (authEmulatorHost) {
+      const authEmulatorUrl = authEmulatorHost.includes('://')
+        ? authEmulatorHost
+        : `http://${authEmulatorHost}`;
+      connectAuthEmulator(auth, authEmulatorUrl, { disableWarnings: true });
+    }
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (err) {
+      const code = (err as { code?: string }).code;
+      if (authEmulatorHost && code === 'auth/user-not-found') {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        if (this.#app) {
+          await deleteApp(this.#app);
+          this.#app = null;
+        }
+        throw err;
+      }
+    }
+
     this.#firestore = initializeFirestore(this.#app, { experimentalForceLongPolling: true });
+
+    const firestoreEmulatorHost = process.env.FIRESTORE_EMULATOR_HOST;
+    if (firestoreEmulatorHost) {
+      const [host, portText] = firestoreEmulatorHost.split(':');
+      const port = Number(portText);
+      if (host && Number.isFinite(port)) {
+        connectFirestoreEmulator(this.#firestore, host, port);
+      }
+    }
   }
 
   async listCollections(): Promise<Collection[]> {
@@ -231,6 +264,14 @@ export class FirestoreDatabase implements IDatabase {
     const comment = input.comment ?? '';
     const now = new Date().toISOString();
     const firestore = this.getFirestore();
+    const folderId = input.folder_id ?? null;
+
+    if (folderId != null) {
+      const folderSnap = await getDoc(doc(firestore, 'folders', String(folderId)));
+      if (!folderSnap.exists()) throw new Error('Folder not found');
+      const folderData = folderSnap.data() as Record<string, unknown>;
+      if (folderData.collection_id !== input.collection_id) throw new Error('Folder not found');
+    }
 
     if (input.id) {
       const ref = doc(firestore, 'requests', String(input.id));
@@ -259,7 +300,6 @@ export class FirestoreDatabase implements IDatabase {
       }
     }
 
-    const folderId = input.folder_id ?? null;
     const existingRequests = await this.listRequests(input.collection_id);
     const maxOrder = existingRequests
       .filter(

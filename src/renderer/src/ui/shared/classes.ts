@@ -33,6 +33,18 @@ export function sourceRow(selected: boolean): string {
     : 'group flex items-center gap-1 rounded-md px-1.5 py-0.5 hover:bg-selection/60 app-no-drag';
 }
 
+/**
+ * Active/inactive surface classes for a request tab in the tab bar.
+ *
+ * @param active - Whether this tab is the selected editor.
+ * @returns Border, background, and text color classes for the tab shell.
+ */
+export function requestTabItem(active: boolean): string {
+  return active
+    ? 'border-separator bg-surface text-text'
+    : 'border-transparent bg-transparent text-muted hover:bg-selection/60 hover:text-text';
+}
+
 export const separator = 'h-px bg-separator';
 
 export const sectionLabel = 'mb-1 px-2 text-[11px] font-medium uppercase tracking-wide text-muted';

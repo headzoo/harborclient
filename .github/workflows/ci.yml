@@ -11,6 +11,33 @@ jobs:
   check:
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: harborclient
+          MYSQL_DATABASE: harborclient_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pharborclient"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: harborclient
+          POSTGRES_DB: harborclient_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
       - uses: actions/checkout@v4
 
@@ -30,4 +57,21 @@ jobs:
 
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm test
+
+      - name: Test
+        env:
+          HARBOR_TEST_MYSQL_HOST: 127.0.0.1
+          HARBOR_TEST_MYSQL_PORT: 3306
+          HARBOR_TEST_MYSQL_USER: root
+          HARBOR_TEST_MYSQL_PASSWORD: harborclient
+          HARBOR_TEST_MYSQL_DATABASE: harborclient_test
+          HARBOR_TEST_POSTGRES_HOST: 127.0.0.1
+          HARBOR_TEST_POSTGRES_PORT: 5432
+          HARBOR_TEST_POSTGRES_USER: postgres
+          HARBOR_TEST_POSTGRES_PASSWORD: harborclient
+          HARBOR_TEST_POSTGRES_DATABASE: harborclient_test
+        run: >-
+          pnpm exec firebase emulators:exec
+          --only auth,firestore
+          --project demo-harborclient-test
+          "node scripts/test-with-native.mjs"

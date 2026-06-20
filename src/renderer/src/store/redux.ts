@@ -5,6 +5,8 @@ import environmentsReducer from '#/renderer/src/store/slices/environmentsSlice';
 import tabsReducer from '#/renderer/src/store/slices/tabsSlice';
 import consoleReducer from '#/renderer/src/store/slices/consoleSlice';
 import uiReducer from '#/renderer/src/store/slices/uiSlice';
+import navigationReducer from '#/renderer/src/store/slices/navigationSlice';
+import modalsReducer from '#/renderer/src/store/slices/modalsSlice';
 import { persistActiveEnvironmentId, persistTabs } from '#/renderer/src/store/persistence';
 
 export const store = configureStore({
@@ -13,7 +15,9 @@ export const store = configureStore({
     environments: environmentsReducer,
     tabs: tabsReducer,
     console: consoleReducer,
-    ui: uiReducer
+    ui: uiReducer,
+    navigation: navigationReducer,
+    modals: modalsReducer
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(busyMiddleware)
 });

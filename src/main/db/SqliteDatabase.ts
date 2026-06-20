@@ -300,6 +300,15 @@ export class SqliteDatabase implements IDatabase {
     const folderId = input.folder_id ?? null;
     const now = new Date().toISOString();
 
+    if (folderId != null) {
+      const folderRow = this.getDb()
+        .prepare('SELECT collection_id FROM folders WHERE id = ?')
+        .get(folderId) as { collection_id: number } | undefined;
+      if (!folderRow || folderRow.collection_id !== input.collection_id) {
+        throw new Error('Folder not found');
+      }
+    }
+
     if (input.id) {
       const result = this.getDb()
         .prepare(
@@ -531,12 +540,12 @@ export class SqliteDatabase implements IDatabase {
       )
       .get(id) as
       | {
-          name: string;
-          variables: string;
-          headers: string;
-          pre_request_script: string;
-          post_request_script: string;
-        }
+        name: string;
+        variables: string;
+        headers: string;
+        pre_request_script: string;
+        post_request_script: string;
+      }
       | undefined;
 
     if (!row) throw new Error('Collection not found');

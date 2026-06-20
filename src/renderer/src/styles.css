@@ -3,6 +3,7 @@
 @theme {
   --color-surface: var(--mac-surface);
   --color-sidebar: var(--mac-sidebar);
+  --color-sidebar-section: var(--mac-sidebar-section);
   --color-control: var(--mac-control);
   --color-separator: var(--mac-separator);
   --color-text: var(--mac-text);
@@ -31,6 +32,7 @@
 
     --mac-surface: #f5f5f7;
     --mac-sidebar: #ececee;
+    --mac-sidebar-section: color-mix(in srgb, var(--mac-sidebar) 93%, black);
     --mac-control: #ffffff;
     --mac-separator: rgba(0, 0, 0, 0.08);
     --mac-text: rgba(0, 0, 0, 0.85);
@@ -66,6 +68,7 @@
     :root {
       --mac-surface: #1e1e1e;
       --mac-sidebar: #252526;
+      --mac-sidebar-section: color-mix(in srgb, var(--mac-sidebar) 86%, black);
       --mac-control: #3a3a3c;
       --mac-separator: rgba(255, 255, 255, 0.08);
       --mac-text: rgba(255, 255, 255, 0.85);

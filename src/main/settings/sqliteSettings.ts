@@ -1,4 +1,5 @@
 import Store from 'electron-store';
+import { normalizeSqliteFilename } from '#/main/settings/sqliteFilename';
 import type { SqliteSettings } from '#/shared/types';
 
 const DEFAULT_SQLITE_SETTINGS: SqliteSettings = {
@@ -45,8 +46,8 @@ function normalizeField(value: string, fallback: string): string {
  */
 function normalizeSettings(input: Partial<SqliteSettings>): SqliteSettings {
   return {
-    dbFilename: normalizeField(input.dbFilename ?? '', DEFAULT_SQLITE_SETTINGS.dbFilename),
-    legacyDbFilename: normalizeField(
+    dbFilename: normalizeSqliteFilename(input.dbFilename ?? '', DEFAULT_SQLITE_SETTINGS.dbFilename),
+    legacyDbFilename: normalizeSqliteFilename(
       input.legacyDbFilename ?? '',
       DEFAULT_SQLITE_SETTINGS.legacyDbFilename
     ),

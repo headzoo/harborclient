@@ -3,7 +3,7 @@ import type { RequestTab } from '#/renderer/src/store/drafts';
 import { isTabDirty } from '#/renderer/src/store/drafts';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faXmark } from '#/renderer/src/fontawesome';
-import { METHOD_CLASSES } from '#/renderer/src/ui/shared/classes';
+import { METHOD_CLASSES, requestTabItem } from '#/renderer/src/ui/shared/classes';
 
 interface Props {
   tab: RequestTab;
@@ -18,11 +18,7 @@ interface Props {
 export function TabItem({ tab, active, onSelect, onClose }: Props): JSX.Element {
   return (
     <div
-      className={`group flex max-w-[220px] shrink-0 items-stretch gap-1.5 rounded-t-md border border-b-0 px-4 ${
-        active
-          ? 'border-separator bg-surface text-text'
-          : 'border-transparent bg-transparent text-muted hover:bg-selection/60 hover:text-text'
-      }`}
+      className={`group -mb-1 flex max-w-[220px] shrink-0 self-stretch items-stretch gap-1.5 rounded-t-md border border-b-0 px-4 ${requestTabItem(active)}`}
     >
       <button
         className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 border-none bg-transparent p-0 py-2 text-inherit app-no-drag"

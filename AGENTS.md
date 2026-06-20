@@ -42,6 +42,29 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for project layout, the IPC contract
 (`src/shared/types.ts` → `src/preload/index.ts` → `src/main/ipc.ts`), code
 style, and path aliases.
 
+## Documentation
+
+Always add clear, useful documentation when you write or change code. Match the
+JSDoc style already used in the codebase (see `src/renderer/src/ui/Request/Editor/`
+and `src/renderer/src/components/VariableInput.tsx` for examples).
+
+**Every function** — exported or local, component or helper — must have a JSDoc
+docblock. Explain what the function does and why, not just restate its name.
+Document parameters with `@param`, return values with `@returns` when non-void,
+and thrown errors with `@throws` when relevant.
+
+**Every `useEffect` and `useMemo`** must have a docblock directly above the hook
+call. For `useEffect`, describe the side effect, what triggers it, and any
+cleanup. For `useMemo`, describe what is being derived and why memoization
+matters.
+
+**Props and types** — document non-obvious fields on interfaces and type aliases
+with inline JSDoc comments.
+
+When you touch existing code, add or improve docblocks for any functions or
+hooks you modify. Prefer concise prose over repeating identifiers; a reader
+should understand intent without opening the implementation.
+
 ## Changelog
 
 `CHANGELOG.md` is kept up to date automatically by the `post-commit` hook in
