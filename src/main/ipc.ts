@@ -14,9 +14,15 @@ import {
   setPostgresSettings
 } from '#/main/settings/databaseSettings';
 import { getGeneralSettings, setGeneralSettings } from '#/main/settings/generalSettings';
+import {
+  deleteRequestEditorTab,
+  getRequestEditorTab,
+  setRequestEditorTab
+} from '#/main/settings/requestEditorSettings';
 import { getSqliteSettings, setSqliteSettings } from '#/main/settings/sqliteSettings';
 import type {
   DatabaseProvider,
+  EditorTab,
   FirestoreSettings,
   GeneralSettings,
   MySqlSettings,
@@ -206,5 +212,15 @@ export function registerIpcHandlers(db: IDatabase): void {
 
   ipcMain.handle('postgres:setSettings', (_event, settings: PostgresSettings) => {
     setPostgresSettings(settings);
+  });
+
+  ipcMain.handle('requestEditor:getTab', (_event, key: string) => getRequestEditorTab(key));
+
+  ipcMain.handle('requestEditor:setTab', (_event, key: string, tab: EditorTab) => {
+    setRequestEditorTab(key, tab);
+  });
+
+  ipcMain.handle('requestEditor:deleteTab', (_event, key: string) => {
+    deleteRequestEditorTab(key);
   });
 }

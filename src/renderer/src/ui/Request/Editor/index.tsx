@@ -1,17 +1,22 @@
-import { useState, type JSX } from 'react';
+import type { JSX } from 'react';
 import type { Variable } from '#/shared/types';
 import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
 import type { RequestDraft } from '#/renderer/src/store/drafts';
 import { Name } from './Name';
 import { TabContent } from './TabContent';
 import { UrlBar } from './UrlBar';
-import type { EditorTab } from './types';
+import { usePersistedEditorTab } from './usePersistedEditorTab';
 
 interface Props {
   /**
    * Current request being edited.
    */
   draft: RequestDraft;
+
+  /**
+   * Open tab id for per-request editor tab persistence.
+   */
+  tabId: string;
 
   /**
    * Called when any draft field changes.
@@ -51,6 +56,7 @@ interface Props {
  */
 export function Editor({
   draft,
+  tabId,
   onChange,
   onSend,
   sending,
@@ -58,7 +64,8 @@ export function Editor({
   collectionName,
   onEditVariables
 }: Props): JSX.Element {
-  const [tab, setTab] = useState<EditorTab>('params');
+  const showBody = draft.method !== 'GET' && draft.method !== 'HEAD';
+  const { tab, setTab } = usePersistedEditorTab({ draft, tabId, showBody });
 
   /**
    * Merges a partial update into the current draft.
@@ -68,8 +75,6 @@ export function Editor({
   const update = (patch: Partial<RequestDraft>): void => {
     onChange({ ...draft, ...patch });
   };
-
-  const showBody = draft.method !== 'GET' && draft.method !== 'HEAD';
 
   return (
     <div className="p-3">
@@ -90,7 +95,7 @@ export function Editor({
         onEditVariables={onEditVariables}
       />
 
-      <div className="mt-4">
+      <div className="mt-2">
         <SegmentedTabs
           value={tab}
           onChange={setTab}

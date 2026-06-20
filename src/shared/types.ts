@@ -562,6 +562,11 @@ export type ThemeSource = 'light' | 'dark' | 'system';
 export type DatabaseProvider = 'sqlite' | 'firestore' | 'mysql' | 'postgres';
 
 /**
+ * Request editor tab identifiers.
+ */
+export type EditorTab = 'params' | 'headers' | 'body' | 'pre' | 'post';
+
+/**
  * General application settings for HTTP request execution.
  */
 export interface GeneralSettings {
@@ -941,6 +946,28 @@ export interface Api {
    * @param settings - PostgreSQL configuration to store.
    */
   setPostgresSettings: (settings: PostgresSettings) => Promise<void>;
+
+  /**
+   * Returns the persisted request editor tab for a storage key.
+   *
+   * @param key - Saved request id or `tab:${tabId}` for unsaved drafts.
+   */
+  getRequestEditorTab: (key: string) => Promise<EditorTab | null>;
+
+  /**
+   * Persists the request editor tab for a storage key.
+   *
+   * @param key - Saved request id or `tab:${tabId}` for unsaved drafts.
+   * @param tab - Editor tab to remember.
+   */
+  setRequestEditorTab: (key: string, tab: EditorTab) => Promise<void>;
+
+  /**
+   * Removes persisted request editor tab state for a storage key.
+   *
+   * @param key - Saved request id string to clear.
+   */
+  deleteRequestEditorTab: (key: string) => Promise<void>;
 
   /**
    * Subscribes to window close and app quit attempts from the main process.

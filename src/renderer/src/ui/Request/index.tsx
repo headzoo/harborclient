@@ -124,6 +124,7 @@ export function Request({ onEditVariables }: Props): JSX.Element {
       <div ref={splitRef} style={{ height: editorHeight }} className="shrink-0 overflow-auto">
         <Editor
           key={`editor-${activeTabId}`}
+          tabId={activeTabId}
           draft={draft}
           onChange={(next) => dispatch(setActiveDraft(next))}
           onSend={() => void dispatch(sendRequest())}

@@ -215,6 +215,7 @@ export const deleteRequest = createAsyncThunk<void, number, ThunkApiConfig>(
   'tabs/deleteRequest',
   async (id, { dispatch, getState }) => {
     await window.api.deleteRequest(id);
+    await window.api.deleteRequestEditorTab(String(id));
     dispatch(closeTabsForRequest(id));
 
     const selectedCollectionId = getState().collections.selectedCollectionId;

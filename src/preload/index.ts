@@ -4,6 +4,7 @@ import type {
   Collection,
   CollectionExportResult,
   DatabaseProvider,
+  EditorTab,
   Environment,
   FirestoreSettings,
   GeneralSettings,
@@ -330,6 +331,34 @@ function setPostgresSettings(settings: PostgresSettings): Promise<void> {
 }
 
 /**
+ * Returns the persisted request editor tab for a storage key.
+ *
+ * @param key - Saved request id or `tab:${tabId}` for unsaved drafts.
+ */
+function getRequestEditorTab(key: string): Promise<EditorTab | null> {
+  return ipcRenderer.invoke('requestEditor:getTab', key);
+}
+
+/**
+ * Persists the request editor tab for a storage key.
+ *
+ * @param key - Saved request id or `tab:${tabId}` for unsaved drafts.
+ * @param tab - Editor tab to remember.
+ */
+function setRequestEditorTab(key: string, tab: EditorTab): Promise<void> {
+  return ipcRenderer.invoke('requestEditor:setTab', key, tab);
+}
+
+/**
+ * Removes persisted request editor tab state for a storage key.
+ *
+ * @param key - Saved request id string to clear.
+ */
+function deleteRequestEditorTab(key: string): Promise<void> {
+  return ipcRenderer.invoke('requestEditor:deleteTab', key);
+}
+
+/**
  * Subscribes to window close and app quit attempts from the main process.
  *
  * @param callback - Handler invoked when the user tries to close or quit.
@@ -394,6 +423,9 @@ const api: Api = {
   setMySqlSettings,
   getPostgresSettings,
   setPostgresSettings,
+  getRequestEditorTab,
+  setRequestEditorTab,
+  deleteRequestEditorTab,
   onBeforeClose,
   confirmClose,
   selectFiles
