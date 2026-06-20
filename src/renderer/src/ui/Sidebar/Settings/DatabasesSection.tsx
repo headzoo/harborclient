@@ -151,19 +151,25 @@ export function DatabasesSection(): JSX.Element {
     }
   };
 
+  const sqliteCount = connections.filter((connection) => connection.type === 'sqlite').length;
+
   return (
     <>
       <div>
-        <div className="mb-4 flex items-start justify-between gap-4">
-          <div>
+        <div className="mb-4 flex items-end justify-between gap-4">
+          <div className="min-w-0">
             <h2 className="m-0 mb-1 text-[13px] font-medium text-text">Databases</h2>
             <p className="m-0 text-[12px] text-muted">
-              Define database connections. The active database is used for new collections,
-              environments, and app settings. Individual collections can be moved to other databases
-              from collection settings.
+              Define database connections. The active database is used for new collections and
+              imports.
             </p>
           </div>
-          <button type="button" className={primaryButton} disabled={loading} onClick={handleAdd}>
+          <button
+            type="button"
+            className={`${primaryButton} shrink-0 whitespace-nowrap`}
+            disabled={loading}
+            onClick={handleAdd}
+          >
             Add database
           </button>
         </div>
@@ -174,6 +180,8 @@ export function DatabasesSection(): JSX.Element {
           <ul className="m-0 flex list-none flex-col gap-2 p-0">
             {connections.map((connection) => {
               const isActive = connection.id === activeId;
+              const isLastSqlite = connection.type === 'sqlite' && sqliteCount <= 1;
+              const cannotDelete = connections.length <= 1 || isLastSqlite;
 
               return (
                 <li
@@ -192,6 +200,11 @@ export function DatabasesSection(): JSX.Element {
                       )}
                     </div>
                     <span className="text-[12px] text-muted">{providerLabel(connection.type)}</span>
+                    {isLastSqlite && (
+                      <p className="mb-0 mt-1 text-[11px] text-muted">
+                        At least one SQLite connection must remain.
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex shrink-0 items-center gap-2">
@@ -214,7 +227,7 @@ export function DatabasesSection(): JSX.Element {
                     <button
                       type="button"
                       className={secondaryButton}
-                      disabled={connections.length <= 1}
+                      disabled={cannotDelete}
                       onClick={() => setDeletingConnection(connection)}
                     >
                       Delete

@@ -1,4 +1,7 @@
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from 'electron';
+import { randomUUID } from 'crypto';
+import { ensureInviteKeys } from '#/main/invite/inviteKeys';
+import { createInviteToken, decodeInviteToken } from '#/main/invite/inviteToken';
 import { readFile, writeFile } from 'fs/promises';
 import type { IDatabase } from '#/main/db/IDatabase';
 import { RoutingDatabase } from '#/main/db/RoutingDatabase';
@@ -12,11 +15,13 @@ import { buildUrl, executeRequest } from '#/main/http';
 import { runScript } from '#/main/scripts';
 import {
   deleteDatabaseConnection,
+  findMatchingConnection,
   getActiveDatabaseId,
   listDatabaseConnections,
   saveDatabaseConnection,
   setActiveDatabaseId
 } from '#/main/settings/databaseSettings';
+import { getSlotForConnection } from '#/main/settings/databaseSlots';
 import { getGeneralSettings, setGeneralSettings } from '#/main/settings/generalSettings';
 import {
   deleteRequestEditorTab,
@@ -226,5 +231,54 @@ export function registerIpcHandlers(db: IDatabase): void {
 
   ipcMain.handle('cookies:setForDomain', (_event, domain: string, cookies: KeyValue[]) => {
     setCookiesForDomain(domain, cookies);
+  });
+
+  ipcMain.handle('invite:create', async (_event, collectionId: number) => {
+    if (!(db instanceof RoutingDatabase)) {
+      throw new Error('Invite is unavailable.');
+    }
+
+    const share = db.getShareInfo(collectionId);
+    const connection = listDatabaseConnections().find((conn) => conn.id === share.connectionId);
+    if (!connection) {
+      throw new Error(`Unknown database connection: ${share.connectionId}`);
+    }
+    if (connection.type === 'sqlite') {
+      throw new Error('SQLite connections cannot be shared via invite.');
+    }
+
+    const { privateKey } = await ensureInviteKeys(app.getPath('userData'));
+    return createInviteToken(
+      connection,
+      { name: share.name, providerCollectionId: share.providerCollectionId },
+      privateKey
+    );
+  });
+
+  ipcMain.handle('invite:accept', async (_event, token: string) => {
+    const { connection, collection } = decodeInviteToken(token);
+
+    const existing = findMatchingConnection(connection);
+    const targetConn: DatabaseConnection = existing ?? { ...connection, id: randomUUID() };
+    if (!existing) {
+      saveDatabaseConnection(targetConn);
+    }
+
+    const slot = getSlotForConnection(targetConn.id);
+    if (slot == null) {
+      throw new Error('Failed to assign a slot for the invited connection.');
+    }
+
+    if (db instanceof RoutingDatabase) {
+      try {
+        await db.registerSharedCollection(targetConn, slot, app.getPath('userData'), collection);
+      } catch (err) {
+        throw new Error(
+          err instanceof Error ? err.message : 'Failed to connect to the invited database.'
+        );
+      }
+    }
+
+    return listDatabaseConnections();
   });
 }

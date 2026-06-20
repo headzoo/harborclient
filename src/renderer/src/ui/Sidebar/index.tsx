@@ -44,6 +44,11 @@ interface Props {
   onConfigureEnvironment: (id: number) => void;
 
   /**
+   * Opens the invite modal for a collection.
+   */
+  onInviteCollection: (collectionId: number, collectionName: string) => void;
+
+  /**
    * Loads a saved request into the editor.
    */
   onLoadRequest: (req: SavedRequest) => void;
@@ -56,6 +61,7 @@ export function Sidebar({
   onAddCollection,
   onConfigureCollection,
   onConfigureEnvironment,
+  onInviteCollection,
   onLoadRequest
 }: Props): JSX.Element {
   const dispatch = useAppDispatch();
@@ -105,6 +111,12 @@ export function Sidebar({
     [databaseConnections]
   );
 
+  const connectionTypesById = useMemo(
+    () =>
+      Object.fromEntries(databaseConnections.map((connection) => [connection.id, connection.type])),
+    [databaseConnections]
+  );
+
   const closeEnvironmentModal = (): void => {
     setShowEnvironmentModal(false);
     setNewEnvironmentName('');
@@ -142,6 +154,7 @@ export function Sidebar({
               selectedCollectionId={selectedCollectionId}
               primaryConnectionId={primaryConnectionId}
               connectionNamesById={connectionNamesById}
+              connectionTypesById={connectionTypesById}
               activeRequestId={draft.id}
               onSelectCollection={(id) => dispatch(setSelectedCollectionId(id))}
               onExpandCollection={(id) => void dispatch(refreshRequests(id))}
@@ -155,6 +168,7 @@ export function Sidebar({
                   toast.success('Collection exported');
                 }
               }}
+              onInviteCollection={onInviteCollection}
               onNewRequestInCollection={async (id) => {
                 try {
                   await dispatch(newRequestInCollection(id)).unwrap();

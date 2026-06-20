@@ -2,15 +2,18 @@ import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, shell } from 'e
 import windowStateKeeper from 'electron-window-state';
 import { join } from 'path';
 import { RoutingDatabase } from '#/main/db';
+import { initLocalRegistry } from '#/main/db/localRegistryInstance';
 import { createDatabaseInstance } from '#/main/db/createDatabaseInstance';
 import type { IDatabase } from '#/main/db/IDatabase';
 import { registerIpcHandlers } from '#/main/ipc';
 import {
   getActiveDatabaseId,
+  getActiveDatabaseConnection,
   getSqliteFallbackSettings,
   listDatabaseConnections
 } from '#/main/settings/databaseSettings';
 import { ensureDatabaseSlots } from '#/main/settings/databaseSlots';
+import { ensureInviteKeys } from '#/main/invite/inviteKeys';
 import { buildMenu } from '#/main/menu';
 import type { DatabaseConnection, ThemeSource } from '#/shared/types';
 
@@ -33,19 +36,21 @@ let closeReason: CloseReason | null = null;
  * @returns Initialized routing database instance.
  */
 async function createDatabase(): Promise<RoutingDatabase> {
+  const userDataPath = app.getPath('userData');
+  const registry = await initLocalRegistry(userDataPath);
   const connections = listDatabaseConnections();
   const primaryConnectionId = getActiveDatabaseId();
   const slots = ensureDatabaseSlots(connections, primaryConnectionId);
-  const userDataPath = app.getPath('userData');
 
   const router = await RoutingDatabase.create(
+    registry,
     primaryConnectionId,
     connections,
     slots,
     userDataPath
   );
 
-  if (!router.hasAnyBackend()) {
+  if (!router.hasDefaultProvider()) {
     const sqliteConnection: DatabaseConnection = connections.find(
       (conn) => conn.type === 'sqlite'
     ) ?? {
@@ -58,11 +63,19 @@ async function createDatabase(): Promise<RoutingDatabase> {
     const sqliteDb = await createDatabaseInstance(sqliteConnection, userDataPath);
     const slot = slots[sqliteConnection.id] ?? 0;
     router.mount(slot, sqliteConnection, sqliteDb);
+    router.setDefaultDataConnectionId(sqliteConnection.id);
   }
 
-  if (!router.hasPrimary()) {
-    throw new Error('No database backend could be initialized.');
+  if (!router.hasDefaultProvider()) {
+    throw new Error('No database provider could be initialized.');
   }
+
+  const activeConnection = getActiveDatabaseConnection();
+  const sqliteSettings =
+    activeConnection.type === 'sqlite' ? activeConnection.settings : getSqliteFallbackSettings();
+  const legacyProviderDbPath = join(userDataPath, sqliteSettings.dbFilename);
+
+  await router.migrateRegistryIfNeeded(legacyProviderDbPath);
 
   return router;
 }
@@ -211,6 +224,7 @@ ipcMain.on('app:close-decision', (_event, proceed: boolean) => {
 
 app.whenReady().then(async () => {
   try {
+    await ensureInviteKeys(app.getPath('userData'));
     db = await createDatabase();
     await applyPersistedTheme();
     registerIpcHandlers(db);

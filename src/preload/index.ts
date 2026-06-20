@@ -376,6 +376,24 @@ function selectFiles(): Promise<string[]> {
   return ipcRenderer.invoke('dialog:openFiles');
 }
 
+/**
+ * Creates a signed JWT encoding a collection's connection and mapping for sharing via IPC.
+ *
+ * @param collectionId - Global collection id to share.
+ */
+function createInviteToken(collectionId: number): Promise<string> {
+  return ipcRenderer.invoke('invite:create', collectionId);
+}
+
+/**
+ * Decodes an invite JWT and adds the embedded database connection via IPC.
+ *
+ * @param token - JWT string from an invite.
+ */
+function acceptInvite(token: string): Promise<DatabaseConnection[]> {
+  return ipcRenderer.invoke('invite:accept', token);
+}
+
 const api: Api = {
   listCollections,
   createCollection,
@@ -412,7 +430,9 @@ const api: Api = {
   deleteRequestEditorTab,
   onBeforeClose,
   confirmClose,
-  selectFiles
+  selectFiles,
+  createInviteToken,
+  acceptInvite
 };
 
 contextBridge.exposeInMainWorld('api', api);

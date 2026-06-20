@@ -1,3 +1,4 @@
+import { LocalRegistry, type CollectionRegistryEntry } from '#/main/db/LocalRegistry';
 import { createDatabaseInstance } from '#/main/db/createDatabaseInstance';
 import { decodeGlobalId, encodeGlobalId } from '#/main/db/idNamespace';
 import type { IDatabase } from '#/main/db/IDatabase';
@@ -13,6 +14,9 @@ import type {
   Variable
 } from '#/shared/types';
 
+const MIGRATION_FLAG_KEY = '__migrated__';
+const THEME_SETTING_KEY = 'theme';
+
 interface MountedBackend {
   slot: number;
   connectionId: string;
@@ -22,95 +26,124 @@ interface MountedBackend {
 }
 
 /**
- * Routes collection and request operations to mounted database backends,
- * namespacing numeric IDs so multiple backends can be active at once.
+ * Routes collection and request operations across multiple database backends.
+ *
+ * A hidden LocalRegistry holds the authoritative collection list,
+ * environments, and app settings. Collection data and requests live in the
+ * mapped provider. Request ids are namespaced per backend; collection ids
+ * come from the registry.
  */
 export class RoutingDatabase implements IDatabase {
-  private readonly primaryConnectionId: string;
-  private readonly backends = new Map<number, MountedBackend>();
+  private readonly registry: LocalRegistry;
+  private defaultDataConnectionId: string;
+  private readonly byConnectionId = new Map<string, MountedBackend>();
+  private readonly bySlot = new Map<number, MountedBackend>();
 
   /**
-   * @param primaryConnectionId - Connection used for new collections, environments, and settings.
+   * @param registry - Hidden local store for collection metadata, environments, and settings.
+   * @param defaultDataConnectionId - Preferred provider for new collection data.
    */
-  constructor(primaryConnectionId: string) {
-    this.primaryConnectionId = primaryConnectionId;
+  constructor(registry: LocalRegistry, defaultDataConnectionId: string) {
+    this.registry = registry;
+    this.defaultDataConnectionId = defaultDataConnectionId;
   }
 
   /**
    * Registers an initialized backend at the given slot.
    */
   mount(slot: number, connection: DatabaseConnection, db: IDatabase): void {
-    this.backends.set(slot, {
+    const backend: MountedBackend = {
       slot,
       connectionId: connection.id,
       connectionName: connection.name,
       connectionType: connection.type,
       db
+    };
+    this.byConnectionId.set(connection.id, backend);
+    this.bySlot.set(slot, backend);
+  }
+
+  /**
+   * Returns true when at least one data provider backend is mounted.
+   */
+  hasAnyBackend(): boolean {
+    return this.byConnectionId.size > 0;
+  }
+
+  /**
+   * Returns true when the default data provider is mounted.
+   */
+  hasDefaultProvider(): boolean {
+    return this.byConnectionId.has(this.defaultDataConnectionId);
+  }
+
+  /**
+   * Sets the default data connection id when the preferred provider is unavailable.
+   */
+  setDefaultDataConnectionId(connectionId: string): void {
+    this.defaultDataConnectionId = connectionId;
+  }
+
+  /**
+   * Initializes all mounted backends (no-op; backends are initialized before mount).
+   */
+  async init(): Promise<void> {
+    // Backends are initialized before being mounted.
+  }
+
+  /**
+   * Closes every mounted provider and the registry.
+   */
+  async close(): Promise<void> {
+    await Promise.all([...this.byConnectionId.values()].map((backend) => backend.db.close()));
+    await this.registry.close();
+  }
+
+  /**
+   * Lists all collections from the registry, hydrating data from each provider.
+   */
+  async listCollections(): Promise<Collection[]> {
+    const entries = this.registry.listRegistry();
+
+    const recordsByConnection = new Map<string, Map<number, Collection>>();
+    const neededConnectionIds = new Set(entries.map((entry) => entry.connectionId));
+
+    for (const connectionId of neededConnectionIds) {
+      const backend = this.byConnectionId.get(connectionId);
+      if (!backend) continue;
+      try {
+        const records = await backend.db.listCollections();
+        recordsByConnection.set(
+          connectionId,
+          new Map(records.map((record) => [record.id, record]))
+        );
+      } catch (err) {
+        console.warn(`Failed to read collections from "${backend.connectionName}":`, err);
+      }
+    }
+
+    return entries.map((entry) => {
+      const record = recordsByConnection.get(entry.connectionId)?.get(entry.providerCollectionId);
+      return this.buildCollection(entry, record);
     });
   }
 
   /**
-   * Returns true when at least one backend is mounted.
-   */
-  hasAnyBackend(): boolean {
-    return this.backends.size > 0;
-  }
-
-  /**
-   * Returns true when the primary connection backend is mounted, or a SQLite fallback is available.
-   */
-  hasPrimary(): boolean {
-    return this.getEffectivePrimaryBackend() != null;
-  }
-
-  /**
-   * Returns the primary connection id used for new collections and app settings.
-   */
-  getPrimaryConnectionId(): string {
-    return this.primaryConnectionId;
-  }
-
-  /**
-   * Initializes all mounted backends (no-op when none are mounted yet).
-   */
-  async init(): Promise<void> {
-    // Backends are initialized before mount.
-  }
-
-  /**
-   * Closes every mounted backend connection.
-   */
-  async close(): Promise<void> {
-    await Promise.all([...this.backends.values()].map((backend) => backend.db.close()));
-  }
-
-  /**
-   * Lists collections from all mounted backends with global ids and connection metadata.
-   */
-  async listCollections(): Promise<Collection[]> {
-    const results: Collection[] = [];
-
-    for (const backend of this.backends.values()) {
-      const collections = await backend.db.listCollections();
-      for (const collection of collections) {
-        results.push(this.toGlobalCollection(collection, backend));
-      }
-    }
-
-    return results.sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  /**
-   * Creates a collection in the primary backend.
+   * Creates a collection in the default data provider and registers it.
    */
   async createCollection(name: string): Promise<Collection> {
-    const backend = this.requirePrimaryBackend();
+    const backend = this.requireDefaultDataBackend();
     const created = await backend.db.createCollection(name);
-    return this.toGlobalCollection(created, backend);
+    const entry = this.registry.addRegistryEntry({
+      name: created.name,
+      connectionId: backend.connectionId,
+      providerCollectionId: created.id
+    });
+    return this.buildCollection(entry, created);
   }
 
   /**
-   * Updates a collection in its owning backend.
+   * Updates a collection's data in its provider and its name in the registry.
    */
   async updateCollection(
     id: number,
@@ -120,169 +153,173 @@ export class RoutingDatabase implements IDatabase {
     preRequestScript: string,
     postRequestScript: string
   ): Promise<Collection> {
-    const { backend, localId } = this.resolveCollection(id);
-    const updated = await backend.db.updateCollection(
-      localId,
+    const entry = this.requireEntry(id);
+    const backend = this.requireBackendByConnectionId(entry.connectionId);
+    const record = await backend.db.updateCollection(
+      entry.providerCollectionId,
       name,
       variables,
       headers,
       preRequestScript,
       postRequestScript
     );
-    return this.toGlobalCollection(updated, backend);
+    const updatedEntry = this.registry.updateRegistryEntry(id, { name });
+    return this.buildCollection(updatedEntry, record);
   }
 
   /**
-   * Deletes a collection from its owning backend.
+   * Deletes a collection from its provider and the registry.
    */
   async deleteCollection(id: number): Promise<void> {
-    const { backend, localId } = this.resolveCollection(id);
-    await backend.db.deleteCollection(localId);
+    const entry = this.requireEntry(id);
+    const backend = this.byConnectionId.get(entry.connectionId);
+    if (backend) {
+      await backend.db.deleteCollection(entry.providerCollectionId);
+    }
+    this.registry.deleteRegistryEntry(id);
   }
 
   /**
-   * Lists environments from the primary backend only.
+   * Lists environments from the hidden registry.
    */
   async listEnvironments(): Promise<Environment[]> {
-    const backend = this.requirePrimaryBackend();
-    const environments = await backend.db.listEnvironments();
-    return environments.map((environment) => this.toGlobalEnvironment(environment, backend.slot));
+    return this.registry.listEnvironments();
   }
 
   /**
-   * Creates an environment in the primary backend.
+   * Creates an environment in the hidden registry.
    */
   async createEnvironment(name: string): Promise<Environment> {
-    const backend = this.requirePrimaryBackend();
-    const created = await backend.db.createEnvironment(name);
-    return this.toGlobalEnvironment(created, backend.slot);
+    return this.registry.createEnvironment(name);
   }
 
   /**
-   * Updates an environment in the primary backend.
+   * Updates an environment in the hidden registry.
    */
   async updateEnvironment(id: number, name: string, variables: Variable[]): Promise<Environment> {
-    const backend = this.requirePrimaryBackend();
-    const { localId } = decodeGlobalId(id);
-    const updated = await backend.db.updateEnvironment(localId, name, variables);
-    return this.toGlobalEnvironment(updated, backend.slot);
+    return this.registry.updateEnvironment(id, name, variables);
   }
 
   /**
-   * Deletes an environment from the primary backend.
+   * Deletes an environment from the hidden registry.
    */
   async deleteEnvironment(id: number): Promise<void> {
-    const backend = this.requirePrimaryBackend();
-    const { localId } = decodeGlobalId(id);
-    await backend.db.deleteEnvironment(localId);
+    this.registry.deleteEnvironment(id);
   }
 
   /**
    * Lists requests for a collection, rewriting ids to the global namespace.
    */
   async listRequests(collectionId: number): Promise<SavedRequest[]> {
-    const { backend, localId } = this.resolveCollection(collectionId);
-    const requests = await backend.db.listRequests(localId);
-    return requests.map((request) => this.toGlobalRequest(request, backend));
+    const entry = this.requireEntry(collectionId);
+    const backend = this.requireBackendByConnectionId(entry.connectionId);
+    const requests = await backend.db.listRequests(entry.providerCollectionId);
+    return requests.map((request) => this.toGlobalRequest(request, backend, collectionId));
   }
 
   /**
    * Saves a request in the backend that owns the target collection.
    */
   async saveRequest(input: SaveRequestInput): Promise<SavedRequest> {
-    const { backend, localId: localCollectionId } = this.resolveCollection(input.collection_id);
+    const entry = this.requireEntry(input.collection_id);
+    const backend = this.requireBackendByConnectionId(entry.connectionId);
     const localRequestId = input.id != null ? decodeGlobalId(input.id).localId : undefined;
 
     const saved = await backend.db.saveRequest({
       ...input,
       id: localRequestId,
-      collection_id: localCollectionId
+      collection_id: entry.providerCollectionId
     });
-    return this.toGlobalRequest(saved, backend);
+    return this.toGlobalRequest(saved, backend, input.collection_id);
   }
 
   /**
-   * Deletes a request from its owning backend.
+   * Deletes a request from the backend identified by its namespaced id.
    */
   async deleteRequest(id: number): Promise<void> {
     const { slot, localId } = decodeGlobalId(id);
-    const backend = this.requireBackend(slot);
+    const backend = this.bySlot.get(slot);
+    if (!backend) {
+      throw new Error(`Database backend for slot ${slot} is unavailable.`);
+    }
     await backend.db.deleteRequest(localId);
   }
 
   /**
-   * Exports collection data from its owning backend.
+   * Exports collection data from its owning provider.
    */
   async exportCollectionData(id: number): Promise<CollectionExport> {
-    const { backend, localId } = this.resolveCollection(id);
-    return backend.db.exportCollectionData(localId);
+    const entry = this.requireEntry(id);
+    const backend = this.requireBackendByConnectionId(entry.connectionId);
+    return backend.db.exportCollectionData(entry.providerCollectionId);
   }
 
   /**
-   * Imports a collection into the primary backend.
+   * Imports a collection into the default data provider and registers it.
    */
   async importCollectionData(data: unknown): Promise<Collection> {
-    const backend = this.requirePrimaryBackend();
+    const backend = this.requireDefaultDataBackend();
     const imported = await backend.db.importCollectionData(data);
-    return this.toGlobalCollection(imported, backend);
+    const entry = this.registry.addRegistryEntry({
+      name: imported.name,
+      connectionId: backend.connectionId,
+      providerCollectionId: imported.id
+    });
+    return this.buildCollection(entry, imported);
   }
 
   /**
-   * Reads a setting from the primary backend.
+   * Reads a setting from the hidden registry.
    */
   async getSetting(key: string): Promise<string | undefined> {
-    const backend = this.requirePrimaryBackend();
-    return backend.db.getSetting(key);
+    return this.registry.getSetting(key);
   }
 
   /**
-   * Persists a setting in the primary backend.
+   * Persists a setting in the hidden registry.
    */
   async setSetting(key: string, value: string): Promise<void> {
-    const backend = this.requirePrimaryBackend();
-    await backend.db.setSetting(key, value);
+    this.registry.setSetting(key, value);
   }
 
   /**
-   * Copies a collection and its requests to another backend, then deletes the source copy.
-   *
-   * @param globalCollectionId - Global id of the collection to move.
-   * @param targetConnectionId - Connection id of the destination backend.
-   * @returns The collection in its new backend with a new global id.
+   * Moves a collection's data to another provider, keeping its global id stable.
    */
   async moveCollection(
     globalCollectionId: number,
     targetConnectionId: string
   ): Promise<Collection> {
-    const { backend: sourceBackend, localId: sourceLocalId } =
-      this.resolveCollection(globalCollectionId);
-    const targetBackend = this.requireBackendByConnectionId(targetConnectionId);
+    const entry = this.requireEntry(globalCollectionId);
 
-    if (sourceBackend.connectionId === targetBackend.connectionId) {
-      const collections = await sourceBackend.db.listCollections();
-      const existing = collections.find((collection) => collection.id === sourceLocalId);
-      if (!existing) {
-        throw new Error(`Collection not found: ${globalCollectionId}`);
-      }
-      return this.toGlobalCollection(existing, sourceBackend);
+    if (entry.connectionId === targetConnectionId) {
+      const sourceBackend = this.byConnectionId.get(entry.connectionId);
+      const record = sourceBackend
+        ? (await sourceBackend.db.listCollections()).find(
+            (item) => item.id === entry.providerCollectionId
+          )
+        : undefined;
+      return this.buildCollection(entry, record);
     }
 
-    const collections = await sourceBackend.db.listCollections();
-    const collection = collections.find((item) => item.id === sourceLocalId);
-    if (!collection) {
+    const sourceBackend = this.requireBackendByConnectionId(entry.connectionId);
+    const targetBackend = this.requireBackendByConnectionId(targetConnectionId);
+
+    const sourceCollections = await sourceBackend.db.listCollections();
+    const record = sourceCollections.find((item) => item.id === entry.providerCollectionId);
+    if (!record) {
       throw new Error(`Collection not found: ${globalCollectionId}`);
     }
 
-    const requests = await sourceBackend.db.listRequests(sourceLocalId);
+    const requests = await sourceBackend.db.listRequests(entry.providerCollectionId);
 
-    const created = await targetBackend.db.createCollection(collection.name);
+    const created = await targetBackend.db.createCollection(record.name);
     const updated = await targetBackend.db.updateCollection(
       created.id,
-      collection.name,
-      collection.variables,
-      collection.headers,
-      collection.pre_request_script,
-      collection.post_request_script
+      record.name,
+      record.variables,
+      record.headers,
+      record.pre_request_script,
+      record.post_request_script
     );
 
     const sortedRequests = [...requests].sort(
@@ -305,24 +342,159 @@ export class RoutingDatabase implements IDatabase {
       });
     }
 
-    await sourceBackend.db.deleteCollection(sourceLocalId);
-    return this.toGlobalCollection(updated, targetBackend);
+    await sourceBackend.db.deleteCollection(entry.providerCollectionId);
+
+    const updatedEntry = this.registry.updateRegistryEntry(globalCollectionId, {
+      name: record.name,
+      connectionId: targetConnectionId,
+      providerCollectionId: updated.id
+    });
+    return this.buildCollection(updatedEntry, updated);
+  }
+
+  /**
+   * Returns the sharing metadata for a collection: its owning connection and provider id.
+   *
+   * @param globalCollectionId - Global (registry) collection id.
+   */
+  getShareInfo(globalCollectionId: number): {
+    connectionId: string;
+    name: string;
+    providerCollectionId: number;
+  } {
+    const entry = this.requireEntry(globalCollectionId);
+    return {
+      connectionId: entry.connectionId,
+      name: entry.name,
+      providerCollectionId: entry.providerCollectionId
+    };
+  }
+
+  /**
+   * Mounts a shared connection at runtime and registers a single shared collection.
+   *
+   * @param connection - Connection configuration to mount.
+   * @param slot - Backend slot for request id namespacing.
+   * @param userDataPath - Electron userData path for SQLite file storage.
+   * @param meta - Shared collection name and provider id from the invite.
+   * @returns The registered collection.
+   */
+  async registerSharedCollection(
+    connection: DatabaseConnection,
+    slot: number,
+    userDataPath: string,
+    meta: { name: string; providerCollectionId: number }
+  ): Promise<Collection> {
+    const alreadyMounted = this.byConnectionId.has(connection.id);
+    if (!alreadyMounted) {
+      const db = await createDatabaseInstance(connection, userDataPath);
+      this.mount(slot, connection, db);
+    }
+
+    const existing = this.registry
+      .listRegistry()
+      .find(
+        (entry) =>
+          entry.connectionId === connection.id &&
+          entry.providerCollectionId === meta.providerCollectionId
+      );
+
+    const entry =
+      existing ??
+      this.registry.addRegistryEntry({
+        name: meta.name,
+        connectionId: connection.id,
+        providerCollectionId: meta.providerCollectionId
+      });
+
+    let record: Collection | undefined;
+    try {
+      const records = await this.requireBackendByConnectionId(connection.id).db.listCollections();
+      record = records.find((item) => item.id === meta.providerCollectionId);
+    } catch {
+      record = undefined;
+    }
+
+    return this.buildCollection(entry, record);
+  }
+
+  /**
+   * Backfills the registry from existing provider data on first run.
+   *
+   * @param legacyProviderDbPath - Path to the user SQLite provider file for legacy registry migration.
+   */
+  async migrateRegistryIfNeeded(legacyProviderDbPath: string): Promise<void> {
+    if (this.registry.getSetting(MIGRATION_FLAG_KEY) === '1') {
+      return;
+    }
+
+    const defaultBackend = this.resolveDefaultDataBackend();
+
+    if (this.registry.listRegistry().length === 0) {
+      const legacyCount = this.registry.migrateFromLegacyProviderDb(legacyProviderDbPath);
+      if (legacyCount === 0) {
+        const defaultCollections = await defaultBackend.db.listCollections();
+        for (const collection of defaultCollections) {
+          this.registry.addRegistryEntry({
+            id: collection.id,
+            name: collection.name,
+            connectionId: defaultBackend.connectionId,
+            providerCollectionId: collection.id
+          });
+        }
+
+        for (const backend of this.byConnectionId.values()) {
+          if (backend.connectionId === defaultBackend.connectionId) continue;
+          try {
+            const collections = await backend.db.listCollections();
+            for (const collection of collections) {
+              this.registry.addRegistryEntry({
+                name: collection.name,
+                connectionId: backend.connectionId,
+                providerCollectionId: collection.id
+              });
+            }
+          } catch (err) {
+            console.warn(`Failed to migrate collections from "${backend.connectionName}":`, err);
+          }
+        }
+      }
+    }
+
+    if (this.registry.listEnvironments().length === 0) {
+      try {
+        const environments = await defaultBackend.db.listEnvironments();
+        for (const environment of environments) {
+          this.registry.seedEnvironment(environment);
+        }
+      } catch (err) {
+        console.warn('Failed to migrate environments from default provider:', err);
+      }
+    }
+
+    const theme = await defaultBackend.db.getSetting(THEME_SETTING_KEY);
+    if (theme != null && this.registry.getSetting(THEME_SETTING_KEY) == null) {
+      this.registry.setSetting(THEME_SETTING_KEY, theme);
+    }
+
+    this.registry.setSetting(MIGRATION_FLAG_KEY, '1');
   }
 
   /**
    * Creates and mounts every configured connection, skipping failures gracefully.
-   *
-   * @param connections - All configured connections.
-   * @param slots - Connection id to slot map.
-   * @param userDataPath - Electron userData path for SQLite storage.
    */
   static async create(
-    primaryConnectionId: string,
+    registry: LocalRegistry,
+    preferredConnectionId: string,
     connections: DatabaseConnection[],
     slots: Record<string, number>,
     userDataPath: string
   ): Promise<RoutingDatabase> {
-    const router = new RoutingDatabase(primaryConnectionId);
+    const defaultDataConnectionId = RoutingDatabase.resolveDefaultConnectionId(
+      preferredConnectionId,
+      connections
+    );
+    const router = new RoutingDatabase(registry, defaultDataConnectionId);
 
     for (const connection of connections) {
       const slot = slots[connection.id];
@@ -339,84 +511,106 @@ export class RoutingDatabase implements IDatabase {
       }
     }
 
+    if (!router.hasDefaultProvider()) {
+      const fallback = [...router.byConnectionId.values()].find(
+        (backend) => backend.connectionType === 'sqlite'
+      );
+      if (fallback) {
+        router.setDefaultDataConnectionId(fallback.connectionId);
+      } else {
+        const first = router.byConnectionId.values().next().value;
+        if (first) {
+          router.setDefaultDataConnectionId(first.connectionId);
+        }
+      }
+    }
+
     return router;
   }
 
-  private getPrimaryBackend(): MountedBackend | undefined {
-    for (const backend of this.backends.values()) {
-      if (backend.connectionId === this.primaryConnectionId) {
-        return backend;
-      }
-    }
-    return undefined;
-  }
-
-  private getEffectivePrimaryBackend(): MountedBackend | undefined {
-    const primary = this.getPrimaryBackend();
-    if (primary) return primary;
-
-    for (const backend of this.backends.values()) {
-      if (backend.connectionType === 'sqlite') {
-        return backend;
-      }
+  private static resolveDefaultConnectionId(
+    preferredConnectionId: string,
+    connections: DatabaseConnection[]
+  ): string {
+    const preferred = connections.find((conn) => conn.id === preferredConnectionId);
+    if (preferred) {
+      return preferredConnectionId;
     }
 
-    return this.backends.values().next().value;
+    const sqlite = connections.find((conn) => conn.type === 'sqlite');
+    if (sqlite) {
+      return sqlite.id;
+    }
+
+    return connections[0]?.id ?? preferredConnectionId;
   }
 
-  private requirePrimaryBackend(): MountedBackend {
-    const backend = this.getEffectivePrimaryBackend();
+  private buildCollection(
+    entry: CollectionRegistryEntry,
+    record: Collection | undefined
+  ): Collection {
+    return {
+      id: entry.id,
+      name: entry.name,
+      variables: record?.variables ?? [],
+      headers: record?.headers ?? [],
+      pre_request_script: record?.pre_request_script ?? '',
+      post_request_script: record?.post_request_script ?? '',
+      created_at: record?.created_at ?? entry.created_at,
+      connectionId: entry.connectionId
+    };
+  }
+
+  private toGlobalRequest(
+    request: SavedRequest,
+    backend: MountedBackend,
+    globalCollectionId: number
+  ): SavedRequest {
+    return {
+      ...request,
+      id: encodeGlobalId(backend.slot, request.id),
+      collection_id: globalCollectionId
+    };
+  }
+
+  private resolveDefaultDataBackend(): MountedBackend {
+    if (this.byConnectionId.has(this.defaultDataConnectionId)) {
+      return this.requireBackendByConnectionId(this.defaultDataConnectionId);
+    }
+
+    const sqlite = [...this.byConnectionId.values()].find(
+      (backend) => backend.connectionType === 'sqlite'
+    );
+    if (sqlite) return sqlite;
+
+    const first = this.byConnectionId.values().next().value;
+    if (!first) {
+      throw new Error('No database provider is available.');
+    }
+    return first;
+  }
+
+  private requireDefaultDataBackend(): MountedBackend {
+    const backend = this.byConnectionId.get(this.defaultDataConnectionId);
     if (!backend) {
-      throw new Error('Primary database is unavailable.');
-    }
-    return backend;
-  }
-
-  private requireBackend(slot: number): MountedBackend {
-    const backend = this.backends.get(slot);
-    if (!backend) {
-      throw new Error(`Database backend for slot ${slot} is unavailable.`);
+      throw new Error('Default database provider is unavailable.');
     }
     return backend;
   }
 
   private requireBackendByConnectionId(connectionId: string): MountedBackend {
-    for (const backend of this.backends.values()) {
-      if (backend.connectionId === connectionId) {
-        return backend;
-      }
+    const backend = this.byConnectionId.get(connectionId);
+    if (!backend) {
+      throw new Error(`Database connection "${connectionId}" is unavailable.`);
     }
-    throw new Error(`Database connection "${connectionId}" is unavailable.`);
+    return backend;
   }
 
-  private resolveCollection(globalCollectionId: number): {
-    backend: MountedBackend;
-    localId: number;
-  } {
-    const { slot, localId } = decodeGlobalId(globalCollectionId);
-    return { backend: this.requireBackend(slot), localId };
-  }
-
-  private toGlobalCollection(collection: Collection, backend: MountedBackend): Collection {
-    return {
-      ...collection,
-      id: encodeGlobalId(backend.slot, collection.id),
-      connectionId: backend.connectionId
-    };
-  }
-
-  private toGlobalRequest(request: SavedRequest, backend: MountedBackend): SavedRequest {
-    return {
-      ...request,
-      id: encodeGlobalId(backend.slot, request.id),
-      collection_id: encodeGlobalId(backend.slot, request.collection_id)
-    };
-  }
-
-  private toGlobalEnvironment(environment: Environment, slot: number): Environment {
-    return {
-      ...environment,
-      id: encodeGlobalId(slot, environment.id)
-    };
+  private requireEntry(id: number): CollectionRegistryEntry {
+    const entry = this.registry.getRegistryEntry(id);
+    if (!entry) {
+      throw new Error(`Collection not found: ${id}`);
+    }
+    return entry;
   }
 }

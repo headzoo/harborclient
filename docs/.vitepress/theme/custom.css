@@ -74,20 +74,6 @@
   }
 }
 
-.home-screenshot {
-  max-width: 960px;
-  margin: 0 auto 48px;
-  padding: 0 24px;
-}
-
-.home-screenshot img {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: 8px;
-  border: 1px solid var(--vp-c-divider);
-}
-
 /* GitHub-flavored alerts (`> [!NOTE]`, etc.) — gfmAlerts in .vitepress/config.ts */
 .vp-doc .custom-block.github-alert {
   margin: 16px 0;

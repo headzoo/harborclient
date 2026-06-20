@@ -48,20 +48,8 @@ export const sidebar: DefaultTheme.SidebarItem[] =
         "link": "/settings#general"
       },
       {
-        "text": "SQLite",
-        "link": "/settings#sqlite"
-      },
-      {
-        "text": "Firestore",
-        "link": "/settings#firestore"
-      },
-      {
-        "text": "MySQL",
-        "link": "/settings#mysql"
-      },
-      {
-        "text": "PostgreSQL",
-        "link": "/settings#postgresql"
+        "text": "Databases",
+        "link": "/settings#databases"
       },
       {
         "text": "What's next",
@@ -97,6 +85,10 @@ export const sidebar: DefaultTheme.SidebarItem[] =
       {
         "text": "Import and export",
         "link": "/collections#import-and-export"
+      },
+      {
+        "text": "Sharing collections",
+        "link": "/collections#sharing-collections"
       },
       {
         "text": "How collections affect sends",

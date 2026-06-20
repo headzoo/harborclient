@@ -1,34 +1,41 @@
-import Store from 'electron-store';
+import { getLocalRegistry } from '#/main/db/localRegistryInstance';
 import type { KeyValue } from '#/shared/types';
 
 const STORE_KEY = 'cookieJar';
 
-let store: Store<{ cookieJar: Record<string, KeyValue[]> }> | null = null;
-
 /**
- * Returns the lazy electron-store instance for the cookie jar.
+ * Parses a JSON string, returning a fallback value on failure.
+ *
+ * @param value - JSON string to parse.
+ * @param fallback - Value returned when parsing fails or value is empty.
  */
-function getStore(): Store<{ cookieJar: Record<string, KeyValue[]> }> {
-  if (!store) {
-    store = new Store<{ cookieJar: Record<string, KeyValue[]> }>({
-      name: 'settings',
-      defaults: {
-        cookieJar: {}
-      }
-    });
+function parseJson<T>(value: string | undefined, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
   }
-  return store;
 }
 
 /**
  * Reads persisted cookies keyed by hostname.
  */
 function getJarMap(): Record<string, KeyValue[]> {
-  const stored = getStore().get(STORE_KEY, {});
+  const stored = parseJson<Record<string, KeyValue[]>>(getLocalRegistry().getSetting(STORE_KEY), {});
   if (!stored || typeof stored !== 'object') {
     return {};
   }
   return stored;
+}
+
+/**
+ * Persists the cookie jar map to the local registry.
+ *
+ * @param jar - Domain to cookies map.
+ */
+function persistJarMap(jar: Record<string, KeyValue[]>): void {
+  getLocalRegistry().setSetting(STORE_KEY, JSON.stringify(jar));
 }
 
 /**
@@ -107,13 +114,13 @@ export function setCookiesForDomain(domain: string, cookies: KeyValue[]): void {
   if (normalizedCookies.length === 0) {
     if (normalized in jar) {
       delete jar[normalized];
-      getStore().set(STORE_KEY, jar);
+      persistJarMap(jar);
     }
     return;
   }
 
   jar[normalized] = normalizedCookies;
-  getStore().set(STORE_KEY, jar);
+  persistJarMap(jar);
 }
 
 /**

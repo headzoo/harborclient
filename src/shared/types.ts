@@ -1036,6 +1036,21 @@ export interface Api {
    * @returns Selected absolute file paths, or an empty array when canceled.
    */
   selectFiles: () => Promise<string[]>;
+
+  /**
+   * Creates a signed JWT encoding a collection's database connection and mapping for sharing.
+   *
+   * @param collectionId - Global collection id to share.
+   */
+  createInviteToken: (collectionId: number) => Promise<string>;
+
+  /**
+   * Decodes an invite JWT and adds the embedded database connection.
+   *
+   * @param token - JWT string from an invite.
+   * @returns Updated list of all connections.
+   */
+  acceptInvite: (token: string) => Promise<DatabaseConnection[]>;
 }
 
 declare global {

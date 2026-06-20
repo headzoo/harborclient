@@ -1,23 +1,38 @@
-import Store from 'electron-store';
+import { getLocalRegistry } from '#/main/db/localRegistryInstance';
 import type { DatabaseConnection } from '#/shared/types';
 import { getActiveDatabaseId, listDatabaseConnections } from '#/main/settings/databaseSettings';
 
-type SlotsStore = {
-  databaseSlots?: Record<string, number>;
-};
-
-let store: Store<SlotsStore> | null = null;
+const SLOTS_KEY = 'databaseSlots';
 
 /**
- * Returns the lazy electron-store instance for database slot mappings.
+ * Parses a JSON string, returning a fallback value on failure.
+ *
+ * @param value - JSON string to parse.
+ * @param fallback - Value returned when parsing fails or value is empty.
  */
-function getStore(): Store<SlotsStore> {
-  if (!store) {
-    store = new Store<SlotsStore>({
-      name: 'settings'
-    });
+function parseJson<T>(value: string | undefined, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
   }
-  return store;
+}
+
+/**
+ * Reads the persisted slot map from the local registry.
+ */
+function readSlots(): Record<string, number> {
+  return parseJson(getLocalRegistry().getSetting(SLOTS_KEY), {});
+}
+
+/**
+ * Persists the slot map to the local registry.
+ *
+ * @param slots - Connection id to slot map.
+ */
+function persistSlots(slots: Record<string, number>): void {
+  getLocalRegistry().setSetting(SLOTS_KEY, JSON.stringify(slots));
 }
 
 /**
@@ -44,8 +59,7 @@ export function ensureDatabaseSlots(
   connections: DatabaseConnection[],
   activeId: string
 ): Record<string, number> {
-  const settingsStore = getStore();
-  const existing = settingsStore.get('databaseSlots') ?? {};
+  const existing = readSlots();
   const slots: Record<string, number> = { ...existing };
 
   if (Object.keys(slots).length === 0 && connections.length > 0) {
@@ -62,7 +76,7 @@ export function ensureDatabaseSlots(
       slot += 1;
     }
 
-    settingsStore.set('databaseSlots', slots);
+    persistSlots(slots);
     return slots;
   }
 
@@ -75,7 +89,7 @@ export function ensureDatabaseSlots(
   }
 
   if (changed) {
-    settingsStore.set('databaseSlots', slots);
+    persistSlots(slots);
   }
 
   return slots;
@@ -106,5 +120,5 @@ export function assignSlotForNewConnection(connectionId: string): void {
   if (slots[connectionId] !== undefined) return;
 
   slots[connectionId] = nextSlot(slots);
-  getStore().set('databaseSlots', slots);
+  persistSlots(slots);
 }

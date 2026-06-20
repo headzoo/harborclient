@@ -1,33 +1,55 @@
+import { mkdtempSync, rmSync } from 'fs';
+import { tmpdir } from 'os';
+import { join } from 'path';
+import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { LocalRegistry } from '#/main/db/LocalRegistry';
+import {
+  clearLocalRegistryForTesting,
+  setLocalRegistryForTesting
+} from '#/main/db/localRegistryInstance';
 import type { KeyValue } from '#/shared/types';
 
-const mockStoreData: { cookieJar: Record<string, KeyValue[]> } = { cookieJar: {} };
-
-vi.mock('electron-store', () => ({
-  default: class MockStore {
-    /**
-     * Returns a persisted value or the provided default.
-     */
-    get(key: string, defaultValue?: unknown): unknown {
-      return mockStoreData[key as keyof typeof mockStoreData] ?? defaultValue;
-    }
-
-    /**
-     * Persists a value under the given key.
-     */
-    set(key: string, value: unknown): void {
-      mockStoreData[key as keyof typeof mockStoreData] = value as Record<string, KeyValue[]>;
-    }
+/**
+ * better-sqlite3 is rebuilt for Electron during postinstall; vitest uses system Node.
+ */
+function sqliteAvailable(): boolean {
+  try {
+    const db = new Database(':memory:');
+    db.close();
+    return true;
+  } catch {
+    return false;
   }
-}));
+}
 
-describe('hostFromUrl', () => {
-  let cookieJar: typeof import('#/main/cookieJar');
+const describeSqlite = sqliteAvailable() ? describe : describe.skip;
 
+let tempDir: string;
+let registry: LocalRegistry;
+let cookieJar: typeof import('#/main/cookieJar');
+
+/**
+ * Sets up an isolated local registry for cookie jar tests.
+ */
+async function setupCookieJarTest(): Promise<void> {
+  vi.resetModules();
+  tempDir = mkdtempSync(join(tmpdir(), 'hc-cookie-test-'));
+  registry = new LocalRegistry(tempDir);
+  await registry.init();
+  setLocalRegistryForTesting(registry);
+  cookieJar = await import('#/main/cookieJar');
+}
+
+describeSqlite('hostFromUrl', () => {
   beforeEach(async () => {
-    vi.resetModules();
-    mockStoreData.cookieJar = {};
-    cookieJar = await import('#/main/cookieJar');
+    await setupCookieJarTest();
+  });
+
+  afterEach(async () => {
+    await registry.close();
+    rmSync(tempDir, { recursive: true, force: true });
+    clearLocalRegistryForTesting();
   });
 
   it('returns null for empty or whitespace URLs', () => {
@@ -50,13 +72,15 @@ describe('hostFromUrl', () => {
   });
 });
 
-describe('getCookiesForDomain and setCookiesForDomain', () => {
-  let cookieJar: typeof import('#/main/cookieJar');
-
+describeSqlite('getCookiesForDomain and setCookiesForDomain', () => {
   beforeEach(async () => {
-    vi.resetModules();
-    mockStoreData.cookieJar = {};
-    cookieJar = await import('#/main/cookieJar');
+    await setupCookieJarTest();
+  });
+
+  afterEach(async () => {
+    await registry.close();
+    rmSync(tempDir, { recursive: true, force: true });
+    clearLocalRegistryForTesting();
   });
 
   it('returns an empty list for unknown domains', () => {
@@ -99,7 +123,7 @@ describe('getCookiesForDomain and setCookiesForDomain', () => {
     cookieJar.setCookiesForDomain('example.com', [{ key: '', value: '', enabled: true }]);
 
     expect(cookieJar.getCookiesForDomain('example.com')).toEqual([]);
-    expect(mockStoreData.cookieJar).toEqual({});
+    expect(registry.getSetting('cookieJar')).toBe('{}');
   });
 
   it('returns defensive copies that do not mutate stored cookies', () => {
@@ -114,13 +138,15 @@ describe('getCookiesForDomain and setCookiesForDomain', () => {
   });
 });
 
-describe('buildCookieHeader', () => {
-  let cookieJar: typeof import('#/main/cookieJar');
-
+describeSqlite('buildCookieHeader', () => {
   beforeEach(async () => {
-    vi.resetModules();
-    mockStoreData.cookieJar = {};
-    cookieJar = await import('#/main/cookieJar');
+    await setupCookieJarTest();
+  });
+
+  afterEach(async () => {
+    await registry.close();
+    rmSync(tempDir, { recursive: true, force: true });
+    clearLocalRegistryForTesting();
   });
 
   it('returns null when the URL has no host', () => {
@@ -146,16 +172,15 @@ describe('buildCookieHeader', () => {
   });
 });
 
-describe('captureSetCookies', () => {
-  let cookieJar: typeof import('#/main/cookieJar');
-
+describeSqlite('captureSetCookies', () => {
   beforeEach(async () => {
-    vi.resetModules();
-    mockStoreData.cookieJar = {};
-    cookieJar = await import('#/main/cookieJar');
+    await setupCookieJarTest();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await registry.close();
+    rmSync(tempDir, { recursive: true, force: true });
+    clearLocalRegistryForTesting();
     vi.useRealTimers();
   });
 
@@ -223,6 +248,6 @@ describe('captureSetCookies', () => {
   it('does nothing when the URL has no host', () => {
     cookieJar.captureSetCookies('', ['session=abc']);
 
-    expect(mockStoreData.cookieJar).toEqual({});
+    expect(registry.getSetting('cookieJar')).toBeUndefined();
   });
 });

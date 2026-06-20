@@ -1,4 +1,4 @@
-import Store from 'electron-store';
+import { getLocalRegistry } from '#/main/db/localRegistryInstance';
 import type { GeneralSettings } from '#/shared/types';
 
 export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
@@ -9,21 +9,19 @@ export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
 
 const STORE_KEY = 'general';
 
-let store: Store<{ general: GeneralSettings }> | null = null;
-
 /**
- * Returns the lazy electron-store instance for general settings.
+ * Parses a JSON string, returning a fallback value on failure.
+ *
+ * @param value - JSON string to parse.
+ * @param fallback - Value returned when parsing fails or value is empty.
  */
-function getStore(): Store<{ general: GeneralSettings }> {
-  if (!store) {
-    store = new Store<{ general: GeneralSettings }>({
-      name: 'settings',
-      defaults: {
-        general: DEFAULT_GENERAL_SETTINGS
-      }
-    });
+function parseJson<T>(value: string | undefined, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
   }
-  return store;
 }
 
 /**
@@ -66,7 +64,10 @@ function normalizeSettings(input: Partial<GeneralSettings>): GeneralSettings {
  * @returns Current general settings with defaults applied.
  */
 export function getGeneralSettings(): GeneralSettings {
-  const stored = getStore().get(STORE_KEY, DEFAULT_GENERAL_SETTINGS);
+  const stored = parseJson<Partial<GeneralSettings>>(
+    getLocalRegistry().getSetting(STORE_KEY),
+    DEFAULT_GENERAL_SETTINGS
+  );
   return normalizeSettings(stored);
 }
 
@@ -76,5 +77,5 @@ export function getGeneralSettings(): GeneralSettings {
  * @param input - Settings to store.
  */
 export function setGeneralSettings(input: GeneralSettings): void {
-  getStore().set(STORE_KEY, normalizeSettings(input));
+  getLocalRegistry().setSetting(STORE_KEY, JSON.stringify(normalizeSettings(input)));
 }

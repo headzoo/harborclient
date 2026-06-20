@@ -44,6 +44,7 @@ In the **Add collection** modal you can:
 
 - **Create new** — enter a name and click **Create**
 - **Import from file** — pick a HarborClient `.json` export (same as **File → Import**)
+- **Accept invite** — paste an invite token to connect to a shared remote collection (see [Sharing collections](#sharing-collections))
 
 ## Renaming and deleting
 
@@ -187,6 +188,45 @@ Common validation errors:
 | `request N has an invalid body type` | `body_type` is not `none`, `json`, `text`, `multipart`, or `urlencoded` |
 | `request N is missing a name` | Request name is blank |
 
+## Sharing collections
+
+Use **Export/Import** when you want a portable snapshot of a collection — a `.json` file you can version, email, or archive. Use **invites** when you want another HarborClient user to connect to the same **live** collection on a remote database. Invited collections stay in sync with the shared backend; changes from other users appear when data is reloaded (for example, after restarting the app). See [Settings → Databases](/settings#databases) for how remote backends work.
+
+### Sending an invite
+
+| Step | Action |
+| --- | --- |
+| 1 | Ensure the collection is stored on a **remote** database (Firestore, MySQL, or PostgreSQL), not SQLite |
+| 2 | Open the collection row menu → **Invite** |
+| 3 | Copy the generated token and send it to the recipient over a trusted channel |
+
+HarborClient opens an **Invite to collection** modal and generates a token for the selected collection. Click **Copy** to put the token on the clipboard.
+
+The **Invite** menu item is hidden for collections stored in SQLite — only remote databases can be shared this way.
+
+The token embeds **database connection credentials**. Treat it like a secret and share it only with people who should have access to that database and collection.
+
+Tell recipients they must **restart HarborClient** after accepting the invite.
+
+### Accepting an invite
+
+| Step | Action |
+| --- | --- |
+| 1 | Click the sidebar **+** button (or **File → New Collection**) |
+| 2 | In **Add collection**, open the **Accept invite** tab |
+| 3 | Paste the token and click **Accept** |
+| 4 | Restart HarborClient |
+
+On success, HarborClient shows a **Shared connection added** toast. The new connection appears under [Settings → Databases](/settings#databases), and the shared collection appears in the sidebar. When a collection is stored on a non-active database, its row shows a connection badge with the database name.
+
+Accepting an invite is **not** the same as import — it adds a live database connection and registers the shared collection, not a new local copy from a `.json` file.
+
+If the token is invalid, HarborClient shows an alert with a descriptive error (for example, malformed token, unsupported version, or missing connection).
+
+### Invite vs manual database setup
+
+Teammates can also share access by configuring the same remote database manually in [Settings → Databases](/settings#databases). Invites bundle the connection details and collection mapping in one step so the recipient does not have to enter credentials by hand.
+
 ## How collections affect sends
 
 When you send a request, HarborClient determines which collection applies:
@@ -246,6 +286,7 @@ HarborClient does not currently support:
 - Merging an import into an existing collection
 - Renaming a collection inline in the sidebar (use Collection Settings)
 - A save prompt when closing Collection Settings with unsaved edits (only navigation away while dirty warns you)
+- Sharing SQLite-backed collections via invite (use Export/Import or move the collection to a remote database first)
 
 ## What's next
 

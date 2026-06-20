@@ -1,14 +1,14 @@
 # Settings
 
-HarborClient application settings control appearance and where collections, requests, and environments are stored. Open settings from **File → Settings** or **Cmd/Ctrl+,**.
+HarborClient application settings control appearance, HTTP request defaults, and the database connections where collections, requests, and environments are stored. Open settings from **File → Settings** or **Cmd/Ctrl+,**.
 
-The settings panel has a sidebar with five sections: **General**, **SQLite**, **Firestore**, **MySQL**, and **PostgreSQL**. Backend-specific sections configure connection details for each provider; **General → Database provider** selects which backend is active.
+The settings panel has a sidebar with two sections: **General** and **Databases**. General covers appearance and request defaults; Databases manages the named database connections that hold your data.
 
-Connection and provider settings are stored in electron-store on your machine. Collections, requests, and environments live in the active database backend.
+Appearance, request defaults, and connection definitions are stored in electron-store on your machine. Collections, requests, and environments live in the database connections you configure.
 
 ## General
 
-### Appearance
+### Theme
 
 Choose how HarborClient looks:
 
@@ -18,40 +18,52 @@ Choose how HarborClient looks:
 | **Dark** | Always use the dark theme |
 | **System** | Match your operating system preference |
 
-Theme changes apply immediately and do not require a restart.
+Theme changes apply immediately and do not require a restart or a save.
 
-### Database provider
+### Request defaults
 
-Select where HarborClient stores collections, requests, and environments:
-
-| Provider | Description |
-| --- | --- |
-| **SQLite** | Local database file in app user data (default) |
-| **Firestore** | Remote cloud storage via Firebase |
-| **MySQL** | Remote storage on a MySQL server |
-| **PostgreSQL** | Remote storage on a PostgreSQL server |
-
-Changing the provider requires restarting HarborClient. Configure the connection details for your chosen provider in the matching settings section (**SQLite**, **Firestore**, **MySQL**, or **PostgreSQL**) before restarting.
-
-When you use a remote backend such as Firestore, MySQL, or PostgreSQL, multiple HarborClient instances can point at the same database to share collections, environments, and saved requests across your team. Changes from other users appear when you reload data (for example, after restarting the app or refreshing collections); HarborClient does not live-sync in the background.
-
-## SQLite
-
-SQLite is the default local backend. The database file lives in HarborClient app user data at `{userData}/{dbFilename}` (default filename: `harborclient.db`).
+Control how HarborClient sends requests and handles responses:
 
 | Field | Description |
 | --- | --- |
-| **Database filename** | Filename of the primary database file within user data |
-| **Legacy database filename** | Filename of an older database file used for one-time migration (default: `harbor-client.db`) |
-| **Legacy data directory** | Legacy application data directory name under app data (default: `harbor-client`) |
+| **Request timeout (ms)** | Abort a request after this many milliseconds. Set to `0` to disable the limit. |
+| **Max response size (MB)** | Stop reading a response larger than this size. Set to `0` to disable the limit. |
+| **SSL certificate verification** | When enabled, reject requests with invalid TLS certificates. |
 
-Click **Save**, then restart HarborClient for changes to take effect.
+Click **Save** to apply request defaults.
 
-On first launch, HarborClient may copy an existing database from the legacy path if the primary file does not exist yet.
+## Databases
 
-## Firestore
+The **Databases** section lists every named database connection. The **active** database is used for new collections and imports. Individual collections can be moved to other databases from collection settings.
 
-Firestore stores collections, requests, and environments in a shared Firebase project. Use this backend when you want cloud-backed storage or team access to the same data.
+All configured databases are opened at launch, so shared collections from any connection are available immediately.
+
+### Managing connections
+
+| Action | Description |
+| --- | --- |
+| **Add database** | Create a new connection. Choose a name and type, then configure its connection details. |
+| **Set active** | Mark a connection as the active database for new data. |
+| **Edit** | Change a connection's name and connection details. The type cannot be changed after creation. |
+| **Delete** | Remove a connection. The last remaining connection cannot be deleted, and the last remaining SQLite connection cannot be deleted. Deleting the active database promotes another connection to active after restart. |
+
+Connection changes take effect after restarting HarborClient.
+
+### Connection types
+
+Each connection has a name and one of the following types. The type is chosen when the connection is created and is fixed afterward.
+
+#### SQLite
+
+A local database file stored in the HarborClient application data directory. This is the default type.
+
+| Field | Description |
+| --- | --- |
+| **Database filename** | Filename of the database file within the application data directory |
+
+#### Firestore
+
+Stores data in a shared Firebase project. Use this type for cloud-backed storage or team access to the same data.
 
 | Field | Description |
 | --- | --- |
@@ -62,13 +74,9 @@ Firestore stores collections, requests, and environments in a shared Firebase pr
 | **Email** | Email for Firebase Auth sign-in |
 | **Password** | Password for Firebase Auth sign-in |
 
-Click **Save**, then restart HarborClient. Select **Firestore** as the database provider in **General** before restarting.
+#### MySQL
 
-If Firestore initialization fails at startup (for example, incomplete settings or a connection error), HarborClient falls back to SQLite and logs the error to the console.
-
-## MySQL
-
-MySQL stores collections, requests, and environments on a remote MySQL server. Use this backend for self-hosted or team-shared storage.
+Stores data on a remote MySQL server. Use this type for self-hosted or team-shared storage.
 
 | Field | Description | Default |
 | --- | --- | --- |
@@ -78,13 +86,9 @@ MySQL stores collections, requests, and environments on a remote MySQL server. U
 | **Password** | MySQL password | (empty) |
 | **Database** | MySQL database name | (empty) |
 
-Click **Save**, then restart HarborClient. Select **MySQL** as the database provider in **General** before restarting.
+#### PostgreSQL
 
-If MySQL initialization fails at startup, HarborClient falls back to SQLite and logs the error to the console.
-
-## PostgreSQL
-
-PostgreSQL stores collections, requests, and environments on a remote PostgreSQL server. Use this backend for self-hosted or team-shared storage.
+Stores data on a remote PostgreSQL server. Use this type for self-hosted or team-shared storage.
 
 | Field | Description | Default |
 | --- | --- | --- |
@@ -94,9 +98,7 @@ PostgreSQL stores collections, requests, and environments on a remote PostgreSQL
 | **Password** | PostgreSQL password | (empty) |
 | **Database** | PostgreSQL database name | (empty) |
 
-Click **Save**, then restart HarborClient. Select **PostgreSQL** as the database provider in **General** before restarting.
-
-If PostgreSQL initialization fails at startup, HarborClient falls back to SQLite and logs the error to the console.
+When you use a remote type such as Firestore, MySQL, or PostgreSQL, multiple HarborClient instances can point at the same database to share collections, environments, and saved requests across your team. Changes from other users appear when you reload data (for example, after restarting the app or refreshing collections); HarborClient does not live-sync in the background.
 
 ## What's next
 

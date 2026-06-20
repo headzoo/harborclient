@@ -1,5 +1,5 @@
 import { useEffect, useState, type JSX } from 'react';
-import type { Collection, SavedRequest } from '#/shared/types';
+import type { Collection, DatabaseProvider, SavedRequest } from '#/shared/types';
 import { RowActionsMenu } from '#/renderer/src/components/RowActionsMenu';
 import { METHOD_CLASSES, sourceRow } from '#/renderer/src/ui/shared/classes';
 
@@ -28,6 +28,11 @@ interface Props {
    * Display names for database connections keyed by connection id.
    */
   connectionNamesById: Record<string, string>;
+
+  /**
+   * Database provider types keyed by connection id.
+   */
+  connectionTypesById: Record<string, DatabaseProvider>;
 
   /**
    * ID of the request loaded in the editor, if any.
@@ -60,6 +65,11 @@ interface Props {
   onExportCollection: (id: number) => Promise<void> | void;
 
   /**
+   * Opens the invite modal for a collection.
+   */
+  onInviteCollection: (collectionId: number, collectionName: string) => void;
+
+  /**
    * Creates a new saved request in a collection.
    */
   onNewRequestInCollection: (id: number) => Promise<void> | void;
@@ -84,12 +94,14 @@ export function Collections({
   selectedCollectionId,
   primaryConnectionId,
   connectionNamesById,
+  connectionTypesById,
   activeRequestId,
   onSelectCollection,
   onExpandCollection,
   onConfigureCollection,
   onDeleteCollection,
   onExportCollection,
+  onInviteCollection,
   onNewRequestInCollection,
   onLoadRequest,
   onDeleteRequest
@@ -147,6 +159,8 @@ export function Collections({
         const loaded = collectionRequests != null;
         const collectionConnectionId = collection.connectionId ?? primaryConnectionId;
         const connectionName = connectionNamesById[collectionConnectionId];
+        const connectionType = connectionTypesById[collectionConnectionId];
+        const canInvite = connectionType != null && connectionType !== 'sqlite';
 
         return (
           <div key={collection.id}>
@@ -189,6 +203,14 @@ export function Collections({
                     label: 'Export',
                     onSelect: () => void onExportCollection(collection.id)
                   },
+                  ...(canInvite
+                    ? [
+                        {
+                          label: 'Invite',
+                          onSelect: () => onInviteCollection(collection.id, collection.name)
+                        }
+                      ]
+                    : []),
                   {
                     label: 'Delete',
                     variant: 'danger',

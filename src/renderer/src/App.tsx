@@ -20,6 +20,7 @@ import {
   dispatchNewRequest,
   importCollection,
   initializeStore,
+  refreshCollections,
   refreshRequests,
   saveRequest,
   updateCollection,
@@ -36,7 +37,12 @@ import { field, primaryButton, secondaryButton } from '#/renderer/src/ui/shared/
 const isMac = window.platform === 'darwin';
 
 type CollectionModalMode = 'create' | 'create-and-save' | null;
-type CollectionModalTab = 'create' | 'import';
+type CollectionModalTab = 'create' | 'import' | 'invite';
+
+interface PendingInvite {
+  collectionId: number;
+  collectionName: string;
+}
 
 /**
  * Root application layout: sidebar, request editor, and response viewer.
@@ -54,6 +60,11 @@ export default function App(): JSX.Element {
   const [collectionModal, setCollectionModal] = useState<CollectionModalMode>(null);
   const [collectionModalTab, setCollectionModalTab] = useState<CollectionModalTab>('create');
   const [newCollectionName, setNewCollectionName] = useState('');
+  const [inviteTokenInput, setInviteTokenInput] = useState('');
+  const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
+  const [inviteToken, setInviteToken] = useState('');
+  const [inviteTokenLoading, setInviteTokenLoading] = useState(false);
+  const [inviteTokenError, setInviteTokenError] = useState<string | null>(null);
   const [quitPrompt, setQuitPrompt] = useState<string[] | null>(null);
   const [configuringCollectionId, setConfiguringCollectionId] = useState<number | null>(null);
   const [collectionSettingsDirty, setCollectionSettingsDirty] = useState(false);
@@ -179,6 +190,38 @@ export default function App(): JSX.Element {
   }, [selectedCollectionId, dispatch]);
 
   /**
+   * Opens the invite modal and loads a JWT for the collection's database connection.
+   */
+  const handleInviteCollection = useCallback(
+    async (collectionId: number, collectionName: string): Promise<void> => {
+      setPendingInvite({ collectionId, collectionName });
+      setInviteToken('');
+      setInviteTokenError(null);
+      setInviteTokenLoading(true);
+
+      try {
+        const token = await window.api.createInviteToken(collectionId);
+        setInviteToken(token);
+      } catch (err) {
+        setInviteTokenError(err instanceof Error ? err.message : 'Failed to create invite token');
+      } finally {
+        setInviteTokenLoading(false);
+      }
+    },
+    []
+  );
+
+  /**
+   * Closes the invite modal and clears token state.
+   */
+  const closeInviteModal = useCallback((): void => {
+    setPendingInvite(null);
+    setInviteToken('');
+    setInviteTokenError(null);
+    setInviteTokenLoading(false);
+  }, []);
+
+  /**
    * Creates a collection, optionally saving the current draft into it.
    */
   const handleCollectionModalSubmit = async (): Promise<void> => {
@@ -222,11 +265,32 @@ export default function App(): JSX.Element {
   }, [dispatch]);
 
   /**
+   * Accepts an invite JWT and adds the embedded database connection.
+   */
+  const handleAcceptInvite = useCallback(async (): Promise<void> => {
+    const token = inviteTokenInput.trim();
+    if (!token) return;
+
+    try {
+      await window.api.acceptInvite(token);
+      await dispatch(refreshCollections());
+      toast.success('Shared connection added');
+      setCollectionModal(null);
+      setNewCollectionName('');
+      setInviteTokenInput('');
+      setCollectionModalTab('create');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to accept invite');
+    }
+  }, [dispatch, inviteTokenInput]);
+
+  /**
    * Closes the collection modal.
    */
   const closeCollectionModal = (): void => {
     setCollectionModal(null);
     setNewCollectionName('');
+    setInviteTokenInput('');
     setCollectionModalTab('create');
   };
 
@@ -327,6 +391,9 @@ export default function App(): JSX.Element {
               setEnvironmentSettingsDirty(false);
               setConfiguringEnvironmentId(id);
             }}
+            onInviteCollection={(collectionId, collectionName) => {
+              void handleInviteCollection(collectionId, collectionName);
+            }}
             onLoadRequest={handleLoadRequest}
           />
         )}
@@ -414,7 +481,7 @@ export default function App(): JSX.Element {
           onClick={closeCollectionModal}
         >
           <div
-            className="w-96 rounded-lg border border-separator bg-surface p-4 shadow-xl"
+            className="w-[32rem] rounded-lg border border-separator bg-surface p-4 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">
@@ -434,12 +501,42 @@ export default function App(): JSX.Element {
                 className="mb-3"
                 tabs={[
                   { value: 'create', label: 'Create new' },
-                  { value: 'import', label: 'Import from file' }
+                  { value: 'import', label: 'Import from file' },
+                  { value: 'invite', label: 'Accept invite' }
                 ]}
               />
             )}
 
-            {collectionModalTab === 'create' || !showImportTab ? (
+            {collectionModalTab === 'invite' && showImportTab ? (
+              <>
+                <p className="mb-3 text-[12px] text-muted">
+                  Paste an invite token to add a shared database connection. Restart HarborClient
+                  after accepting to load collections from that database.
+                </p>
+                <textarea
+                  className={`${field} min-h-28 w-full resize-y font-mono text-[12px]`}
+                  autoFocus
+                  placeholder="Paste invite token"
+                  value={inviteTokenInput}
+                  onChange={(e) => setInviteTokenInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') closeCollectionModal();
+                  }}
+                />
+                <div className="mt-4 flex justify-end gap-2">
+                  <button className={secondaryButton} onClick={closeCollectionModal}>
+                    Cancel
+                  </button>
+                  <button
+                    className={primaryButton}
+                    onClick={() => void handleAcceptInvite()}
+                    disabled={!inviteTokenInput.trim()}
+                  >
+                    Accept
+                  </button>
+                </div>
+              </>
+            ) : collectionModalTab === 'create' || !showImportTab ? (
               <>
                 <input
                   className={`${field} w-full`}
@@ -481,6 +578,53 @@ export default function App(): JSX.Element {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {pendingInvite && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => closeInviteModal()}
+        >
+          <div
+            className="w-[32rem] rounded-lg border border-separator bg-surface p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">Invite to collection</h2>
+            <p className="mb-3 text-[12px] text-muted">
+              Share this token so others can connect to &ldquo;{pendingInvite.collectionName}
+              &rdquo;. They must restart HarborClient after accepting the invite.
+            </p>
+            {inviteTokenLoading ? (
+              <p className="text-[12px] text-muted">Generating invite token…</p>
+            ) : inviteTokenError ? (
+              <p className="text-[12px] text-danger">{inviteTokenError}</p>
+            ) : (
+              <textarea
+                className={`${field} min-h-28 w-full resize-y font-mono text-[12px]`}
+                readOnly
+                value={inviteToken}
+                onFocus={(e) => e.target.select()}
+              />
+            )}
+            <div className="mt-4 flex justify-end gap-2">
+              <button className={secondaryButton} onClick={closeInviteModal}>
+                Close
+              </button>
+              <button
+                className={primaryButton}
+                disabled={!inviteToken || inviteTokenLoading}
+                onClick={() => {
+                  void navigator.clipboard.writeText(inviteToken).then(
+                    () => toast.success('Invite token copied'),
+                    () => toast.error('Failed to copy invite token')
+                  );
+                }}
+              >
+                Copy
+              </button>
+            </div>
           </div>
         </div>
       )}

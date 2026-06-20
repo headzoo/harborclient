@@ -1,14 +1,16 @@
 import { randomUUID } from 'crypto';
-import Store from 'electron-store';
+import { getLocalRegistry } from '#/main/db/localRegistryInstance';
 import { assignSlotForNewConnection } from '#/main/settings/databaseSlots';
 import type {
   DatabaseConnection,
-  DatabaseProvider,
   FirestoreSettings,
   MySqlSettings,
   PostgresSettings,
   SqliteSettings
 } from '#/shared/types';
+
+const CONNECTIONS_KEY = 'databaseConnections';
+const ACTIVE_ID_KEY = 'activeDatabaseId';
 
 const DEFAULT_SQLITE_SETTINGS: SqliteSettings = {
   dbFilename: 'harborclient.db',
@@ -41,28 +43,37 @@ const DEFAULT_POSTGRES_SETTINGS: PostgresSettings = {
   database: ''
 };
 
-type LegacySettingsStore = {
-  provider?: DatabaseProvider;
-  sqlite?: SqliteSettings;
-  firestore?: FirestoreSettings;
-  mysql?: MySqlSettings;
-  postgres?: PostgresSettings;
-  databaseConnections?: DatabaseConnection[];
-  activeDatabaseId?: string;
-};
-
-let store: Store<LegacySettingsStore> | null = null;
+/**
+ * Parses a JSON string, returning a fallback value on failure.
+ *
+ * @param value - JSON string to parse.
+ * @param fallback - Value returned when parsing fails or value is empty.
+ */
+function parseJson<T>(value: string | undefined, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
 
 /**
- * Returns the lazy electron-store instance for database connection settings.
+ * Persists the connection list to the local registry.
+ *
+ * @param connections - Connections to store.
  */
-function getStore(): Store<LegacySettingsStore> {
-  if (!store) {
-    store = new Store<LegacySettingsStore>({
-      name: 'settings'
-    });
-  }
-  return store;
+function persistConnections(connections: DatabaseConnection[]): void {
+  getLocalRegistry().setSetting(CONNECTIONS_KEY, JSON.stringify(connections));
+}
+
+/**
+ * Persists the active connection id to the local registry.
+ *
+ * @param id - Active connection id.
+ */
+function persistActiveId(id: string): void {
+  getLocalRegistry().setSetting(ACTIVE_ID_KEY, id);
 }
 
 /**
@@ -181,95 +192,70 @@ function normalizeConnection(conn: DatabaseConnection): DatabaseConnection {
 }
 
 /**
- * Parses a legacy provider value.
- *
- * @param provider - Raw stored provider.
- * @returns Valid database provider.
- */
-function parseLegacyProvider(provider: DatabaseProvider | undefined): DatabaseProvider {
-  if (provider === 'firestore') return 'firestore';
-  if (provider === 'mysql') return 'mysql';
-  if (provider === 'postgres') return 'postgres';
-  return 'sqlite';
-}
-
-/**
  * Creates default connections for each provider type.
  *
- * @param sqlite - Legacy SQLite settings.
- * @param firestore - Legacy Firestore settings.
- * @param mysql - Legacy MySQL settings.
- * @param postgres - Legacy PostgreSQL settings.
  * @returns Default connection list.
  */
-function createDefaultConnections(
-  sqlite: SqliteSettings,
-  firestore: FirestoreSettings,
-  mysql: MySqlSettings,
-  postgres: PostgresSettings
-): DatabaseConnection[] {
+function createDefaultConnections(): DatabaseConnection[] {
   return [
-    normalizeConnection({ id: randomUUID(), name: 'SQLite', type: 'sqlite', settings: sqlite }),
+    normalizeConnection({
+      id: randomUUID(),
+      name: 'SQLite',
+      type: 'sqlite',
+      settings: DEFAULT_SQLITE_SETTINGS
+    }),
     normalizeConnection({
       id: randomUUID(),
       name: 'Firestore',
       type: 'firestore',
-      settings: firestore
+      settings: DEFAULT_FIRESTORE_SETTINGS
     }),
-    normalizeConnection({ id: randomUUID(), name: 'MySQL', type: 'mysql', settings: mysql }),
+    normalizeConnection({
+      id: randomUUID(),
+      name: 'MySQL',
+      type: 'mysql',
+      settings: DEFAULT_MYSQL_SETTINGS
+    }),
     normalizeConnection({
       id: randomUUID(),
       name: 'PostgreSQL',
       type: 'postgres',
-      settings: postgres
+      settings: DEFAULT_POSTGRES_SETTINGS
     })
   ];
 }
 
 /**
- * Migrates legacy per-type settings into the connection list when needed.
+ * Ensures default connections exist in the local registry when empty.
  *
  * @returns Normalized connections and active id.
  */
-function ensureConnectionsMigrated(): { connections: DatabaseConnection[]; activeId: string } {
-  const settingsStore = getStore();
-  const existing = settingsStore.get('databaseConnections');
+function ensureConnectionsSeeded(): { connections: DatabaseConnection[]; activeId: string } {
+  const registry = getLocalRegistry();
+  const stored = parseJson<DatabaseConnection[]>(
+    registry.getSetting(CONNECTIONS_KEY),
+    []
+  );
 
-  if (Array.isArray(existing) && existing.length > 0) {
-    const connections = existing.map((conn) => normalizeConnection(conn));
-    const activeId = settingsStore.get('activeDatabaseId', connections[0].id);
+  if (stored.length > 0) {
+    const connections = stored.map((conn) => normalizeConnection(conn));
+    const activeId = registry.getSetting(ACTIVE_ID_KEY) ?? connections[0].id;
     const activeExists = connections.some((conn) => conn.id === activeId);
     const resolvedActiveId = activeExists
       ? activeId
       : (connections.find((conn) => conn.type === 'sqlite') ?? connections[0]).id;
 
-    settingsStore.set('databaseConnections', connections);
-    settingsStore.set('activeDatabaseId', resolvedActiveId);
+    persistConnections(connections);
+    persistActiveId(resolvedActiveId);
     return { connections, activeId: resolvedActiveId };
   }
 
-  const legacyProvider = parseLegacyProvider(settingsStore.get('provider'));
-  const sqlite = normalizeSqliteSettings(
-    settingsStore.get('sqlite', DEFAULT_SQLITE_SETTINGS) ?? DEFAULT_SQLITE_SETTINGS
-  );
-  const firestore = normalizeFirestoreSettings(
-    settingsStore.get('firestore', DEFAULT_FIRESTORE_SETTINGS) ?? DEFAULT_FIRESTORE_SETTINGS
-  );
-  const mysql = normalizeMySqlSettings(
-    settingsStore.get('mysql', DEFAULT_MYSQL_SETTINGS) ?? DEFAULT_MYSQL_SETTINGS
-  );
-  const postgres = normalizePostgresSettings(
-    settingsStore.get('postgres', DEFAULT_POSTGRES_SETTINGS) ?? DEFAULT_POSTGRES_SETTINGS
-  );
-
-  const connections = createDefaultConnections(sqlite, firestore, mysql, postgres);
+  const connections = createDefaultConnections();
   const activeConnection =
-    connections.find((conn) => conn.type === legacyProvider) ??
-    connections.find((conn) => conn.type === 'sqlite') ??
-    connections[0];
+    connections.find((conn) => conn.type === 'sqlite') ?? connections[0];
 
-  settingsStore.set('databaseConnections', connections);
-  settingsStore.set('activeDatabaseId', activeConnection.id);
+  persistConnections(connections);
+  persistActiveId(activeConnection.id);
   return { connections, activeId: activeConnection.id };
 }
 
@@ -279,7 +265,7 @@ function ensureConnectionsMigrated(): { connections: DatabaseConnection[]; activ
  * @returns All persisted connections.
  */
 export function listDatabaseConnections(): DatabaseConnection[] {
-  return ensureConnectionsMigrated().connections;
+  return ensureConnectionsSeeded().connections;
 }
 
 /**
@@ -288,7 +274,7 @@ export function listDatabaseConnections(): DatabaseConnection[] {
  * @returns Active connection id.
  */
 export function getActiveDatabaseId(): string {
-  return ensureConnectionsMigrated().activeId;
+  return ensureConnectionsSeeded().activeId;
 }
 
 /**
@@ -297,7 +283,7 @@ export function getActiveDatabaseId(): string {
  * @returns Active connection configuration.
  */
 export function getActiveDatabaseConnection(): DatabaseConnection {
-  const { connections, activeId } = ensureConnectionsMigrated();
+  const { connections, activeId } = ensureConnectionsSeeded();
   const active = connections.find((conn) => conn.id === activeId);
   if (active) return active;
   return connections.find((conn) => conn.type === 'sqlite') ?? connections[0];
@@ -313,7 +299,38 @@ export function setActiveDatabaseId(id: string): void {
   if (!connections.some((conn) => conn.id === id)) {
     throw new Error(`Unknown database connection: ${id}`);
   }
-  getStore().set('activeDatabaseId', id);
+  persistActiveId(id);
+}
+
+/**
+ * Compares two flat settings objects for value equality.
+ *
+ * @param a - First settings object.
+ * @param b - Second settings object.
+ */
+function settingsEqual(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  return aKeys.every((key) => a[key] === b[key]);
+}
+
+/**
+ * Finds an existing connection with the same type and settings as the input.
+ *
+ * @param input - Connection to match; its id is ignored.
+ * @returns The matching stored connection, or undefined when none match.
+ */
+export function findMatchingConnection(input: DatabaseConnection): DatabaseConnection | undefined {
+  const normalized = normalizeConnection(input);
+  return listDatabaseConnections().find(
+    (conn) =>
+      conn.type === normalized.type &&
+      settingsEqual(
+        conn.settings as unknown as Record<string, unknown>,
+        normalized.settings as unknown as Record<string, unknown>
+      )
+  );
 }
 
 /**
@@ -331,12 +348,12 @@ export function saveDatabaseConnection(input: DatabaseConnection): DatabaseConne
     connections[index] = normalized;
   } else {
     connections.push(normalized);
-    getStore().set('databaseConnections', connections);
+    persistConnections(connections);
     assignSlotForNewConnection(normalized.id);
     return connections;
   }
 
-  getStore().set('databaseConnections', connections);
+  persistConnections(connections);
   return connections;
 }
 
@@ -365,17 +382,26 @@ export function deleteDatabaseConnection(id: string): DatabaseConnection[] {
     throw new Error('At least one database connection must remain.');
   }
 
+  const target = connections.find((conn) => conn.id === id);
+  if (!target) {
+    throw new Error(`Unknown database connection: ${id}`);
+  }
+
+  if (target.type === 'sqlite' && connections.filter((conn) => conn.type === 'sqlite').length <= 1) {
+    throw new Error('At least one SQLite database connection must remain.');
+  }
+
   const nextConnections = connections.filter((conn) => conn.id !== id);
   if (nextConnections.length === connections.length) {
     throw new Error(`Unknown database connection: ${id}`);
   }
 
-  getStore().set('databaseConnections', nextConnections);
+  persistConnections(nextConnections);
 
   const activeId = getActiveDatabaseId();
   if (activeId === id) {
     const fallback = nextConnections.find((conn) => conn.type === 'sqlite') ?? nextConnections[0];
-    getStore().set('activeDatabaseId', fallback.id);
+    persistActiveId(fallback.id);
   }
 
   return nextConnections;
