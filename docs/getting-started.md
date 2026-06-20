@@ -80,6 +80,8 @@ chmod +x harborclient-{version}.AppImage
 
 ## What's next
 
+- [Making requests](/requests) — build, send, and inspect HTTP requests.
+- [Collections](/collections) — organize saved requests and share variables, headers, and scripts.
 - [Features](/features) — overview of the request builder, collections, tabs, and response viewer.
 - [Environments](/environments) — define variable groups and switch between them while testing APIs.
 - [Request scripts](/request-scripts) — run JavaScript before or after requests to set variables and write tests.

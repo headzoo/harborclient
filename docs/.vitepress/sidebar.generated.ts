@@ -40,6 +40,124 @@ export const sidebar: DefaultTheme.SidebarItem[] =
     "collapsed": false
   },
   {
+    "text": "Collections",
+    "link": "/collections",
+    "items": [
+      {
+        "text": "Sidebar guide",
+        "link": "/collections#sidebar-guide"
+      },
+      {
+        "text": "Creating collections",
+        "link": "/collections#creating-collections"
+      },
+      {
+        "text": "Renaming and deleting",
+        "link": "/collections#renaming-and-deleting"
+      },
+      {
+        "text": "Collection Settings",
+        "link": "/collections#collection-settings"
+      },
+      {
+        "text": "Working with saved requests",
+        "link": "/collections#working-with-saved-requests"
+      },
+      {
+        "text": "Import and export",
+        "link": "/collections#import-and-export"
+      },
+      {
+        "text": "How collections affect sends",
+        "link": "/collections#how-collections-affect-sends"
+      },
+      {
+        "text": "Storage and backup",
+        "link": "/collections#storage-and-backup"
+      },
+      {
+        "text": "Keyboard shortcuts",
+        "link": "/collections#keyboard-shortcuts"
+      },
+      {
+        "text": "Limitations",
+        "link": "/collections#limitations"
+      },
+      {
+        "text": "What's next",
+        "link": "/collections#whats-next"
+      }
+    ],
+    "collapsed": false
+  },
+  {
+    "text": "Making requests",
+    "link": "/requests",
+    "items": [
+      {
+        "text": "The request editor",
+        "link": "/requests#the-request-editor"
+      },
+      {
+        "text": "Query parameters",
+        "link": "/requests#query-parameters"
+      },
+      {
+        "text": "Headers",
+        "link": "/requests#headers"
+      },
+      {
+        "text": "Request body",
+        "link": "/requests#request-body"
+      },
+      {
+        "text": "Variables in requests",
+        "link": "/requests#variables-in-requests"
+      },
+      {
+        "text": "Collection context",
+        "link": "/requests#collection-context"
+      },
+      {
+        "text": "Scripts at a glance",
+        "link": "/requests#scripts-at-a-glance"
+      },
+      {
+        "text": "Sending a request",
+        "link": "/requests#sending-a-request"
+      },
+      {
+        "text": "Reading the response",
+        "link": "/requests#reading-the-response"
+      },
+      {
+        "text": "Console",
+        "link": "/requests#console"
+      },
+      {
+        "text": "Tabs, collections, and saving",
+        "link": "/requests#tabs-collections-and-saving"
+      },
+      {
+        "text": "Authentication",
+        "link": "/requests#authentication"
+      },
+      {
+        "text": "Keyboard shortcuts",
+        "link": "/requests#keyboard-shortcuts"
+      },
+      {
+        "text": "Limitations",
+        "link": "/requests#limitations"
+      },
+      {
+        "text": "What's next",
+        "link": "/requests#whats-next"
+      }
+    ],
+    "collapsed": false
+  },
+  {
     "text": "Request scripts",
     "link": "/request-scripts",
     "items": [
