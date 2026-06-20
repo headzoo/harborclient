@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Refactor app dependency installation script for improved compatibility and error handling. (`0b77c39`)
+
 ## 1.3.1 - 2026-06-20
 
 - Update electron-builder configuration and package scripts for improved dependency management. (`b38f7d3`)

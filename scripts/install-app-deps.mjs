@@ -1,31 +1,54 @@
-import { spawnSync } from 'node:child_process'
+import { createRequire } from 'node:module'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-process.env.npm_config_build_from_source = 'true'
-
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const electronBuilder = path.join(
-  projectRoot,
-  'node_modules',
-  '.bin',
-  process.platform === 'win32' ? 'electron-builder.cmd' : 'electron-builder'
-)
+const isDarwin = process.platform === 'darwin'
+const isWindows = process.platform === 'win32'
+const ivmDir = path.join(projectRoot, 'node_modules', 'isolated-vm')
 
-const result = spawnSync(electronBuilder, ['install-app-deps'], {
-  stdio: 'inherit',
-  env: process.env,
-  shell: process.platform === 'win32'
+const require = getElectronRebuildRequire()
+const { rebuild } = require('@electron/rebuild')
+const electronVersion = require('electron/package.json').version
+
+await rebuild({
+  buildPath: projectRoot,
+  electronVersion,
+  buildFromSource: isDarwin,
+  useElectronClang: isWindows
 })
 
-if (result.status !== 0) {
-  process.exit(result.status ?? 1)
+pruneIsolatedVmPackagingArtifacts(ivmDir, { removePrebuilds: isDarwin })
+
+function getElectronRebuildRequire() {
+  const candidates = [
+    path.join(projectRoot, 'node_modules/@electron/rebuild/package.json'),
+    ...findPnpmElectronRebuildPackageJsons()
+  ]
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return createRequire(candidate)
+    }
+  }
+
+  throw new Error('Could not find @electron/rebuild')
 }
 
-pruneIsolatedVmPackagingArtifacts(path.join(projectRoot, 'node_modules', 'isolated-vm'))
+function findPnpmElectronRebuildPackageJsons() {
+  const pnpmDir = path.join(projectRoot, 'node_modules/.pnpm')
+  if (!fs.existsSync(pnpmDir)) return []
 
-function pruneIsolatedVmPackagingArtifacts(ivmDir) {
+  return fs
+    .readdirSync(pnpmDir)
+    .filter((entry) => entry.startsWith('@electron+rebuild@'))
+    .map((entry) =>
+      path.join(pnpmDir, entry, 'node_modules/@electron/rebuild/package.json')
+    )
+}
+
+function pruneIsolatedVmPackagingArtifacts(ivmDir, { removePrebuilds }) {
   if (!fs.existsSync(ivmDir)) return
 
   for (const entry of fs.readdirSync(ivmDir)) {
@@ -33,6 +56,8 @@ function pruneIsolatedVmPackagingArtifacts(ivmDir) {
       fs.rmSync(path.join(ivmDir, entry), { force: true })
     }
   }
+
+  if (!removePrebuilds) return
 
   const prebuildsDir = path.join(ivmDir, 'prebuilds')
   if (fs.existsSync(prebuildsDir)) {
