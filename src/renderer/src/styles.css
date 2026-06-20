@@ -135,4 +135,23 @@
   .app-no-drag {
     -webkit-app-region: no-drag;
   }
+
+  body.app-busy,
+  body.app-busy * {
+    cursor: progress !important;
+  }
+
+  .busy-progress-bar {
+    animation: busy-progress-slide 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes busy-progress-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(400%);
+  }
 }

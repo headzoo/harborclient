@@ -2,10 +2,7 @@ import { useEffect, useMemo, useState, type JSX } from 'react';
 import type { KeyValue, Variable } from '#/shared/types';
 import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
 import { emptyKeyValue } from '#/renderer/src/store/drafts';
-import {
-  buildRuntimeVars,
-  substituteWithMap
-} from '#/renderer/src/store/scriptOrchestration';
+import { buildRuntimeVars, substituteWithMap } from '#/renderer/src/store/scriptOrchestration';
 
 interface Props {
   /**
@@ -49,25 +46,29 @@ export function CookiesEditor({ url, variables }: Props): JSX.Element {
   }, [url, variables]);
 
   const [rows, setRows] = useState<KeyValue[]>([emptyKeyValue()]);
-  const [loading, setLoading] = useState(false);
+  const [loadedHost, setLoadedHost] = useState<string | null>(null);
+  const loading = host !== null && loadedHost !== host;
 
   useEffect(() => {
-    if (!host) {
-      setRows([emptyKeyValue()]);
-      return;
-    }
+    if (!host) return;
 
     let cancelled = false;
-    setLoading(true);
 
-    void window.api.getCookies(host).then((cookies) => {
-      if (cancelled) return;
-      setRows(cookies.length ? cookies : [emptyKeyValue()]);
-    }).finally(() => {
-      if (!cancelled) {
-        setLoading(false);
-      }
-    });
+    void window.api
+      .getCookies(host)
+      .then((cookies) => {
+        if (cancelled) return;
+        setRows(cookies.length ? cookies : [emptyKeyValue()]);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setRows([emptyKeyValue()]);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadedHost(host);
+        }
+      });
 
     return () => {
       cancelled = true;
@@ -86,9 +87,7 @@ export function CookiesEditor({ url, variables }: Props): JSX.Element {
   };
 
   if (!host) {
-    return (
-      <p className="text-[13px] text-muted">Enter a valid URL to manage cookies.</p>
-    );
+    return <p className="text-[13px] text-muted">Enter a valid URL to manage cookies.</p>;
   }
 
   return (

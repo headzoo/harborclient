@@ -7,6 +7,9 @@ export const selectCollections = (state: RootState): Collection[] => state.colle
 export const selectRequestsByCollection = (
   state: RootState
 ): RootState['collections']['requestsByCollection'] => state.collections.requestsByCollection;
+export const selectFoldersByCollection = (
+  state: RootState
+): RootState['collections']['foldersByCollection'] => state.collections.foldersByCollection;
 export const selectSelectedCollectionId = (
   state: RootState
 ): RootState['collections']['selectedCollectionId'] => state.collections.selectedCollectionId;

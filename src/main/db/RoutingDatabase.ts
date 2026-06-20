@@ -8,6 +8,7 @@ import type {
   DatabaseConnection,
   DatabaseProvider,
   Environment,
+  Folder,
   KeyValue,
   SaveRequestInput,
   SavedRequest,
@@ -224,11 +225,14 @@ export class RoutingDatabase implements IDatabase {
     const entry = this.requireEntry(input.collection_id);
     const backend = this.requireBackendByConnectionId(entry.connectionId);
     const localRequestId = input.id != null ? decodeGlobalId(input.id).localId : undefined;
+    const localFolderId =
+      input.folder_id != null ? decodeGlobalId(input.folder_id).localId : input.folder_id;
 
     const saved = await backend.db.saveRequest({
       ...input,
       id: localRequestId,
-      collection_id: entry.providerCollectionId
+      collection_id: entry.providerCollectionId,
+      folder_id: localFolderId ?? null
     });
     return this.toGlobalRequest(saved, backend, input.collection_id);
   }
@@ -243,6 +247,70 @@ export class RoutingDatabase implements IDatabase {
       throw new Error(`Database backend for slot ${slot} is unavailable.`);
     }
     await backend.db.deleteRequest(localId);
+  }
+
+  async listFolders(collectionId: number): Promise<Folder[]> {
+    const entry = this.requireEntry(collectionId);
+    const backend = this.requireBackendByConnectionId(entry.connectionId);
+    const folders = await backend.db.listFolders(entry.providerCollectionId);
+    return folders.map((folder) => this.toGlobalFolder(folder, backend, collectionId));
+  }
+
+  async createFolder(collectionId: number, name: string): Promise<Folder> {
+    const entry = this.requireEntry(collectionId);
+    const backend = this.requireBackendByConnectionId(entry.connectionId);
+    const created = await backend.db.createFolder(entry.providerCollectionId, name);
+    return this.toGlobalFolder(created, backend, collectionId);
+  }
+
+  async renameFolder(id: number, name: string): Promise<Folder> {
+    const { slot, localId } = decodeGlobalId(id);
+    const backend = this.bySlot.get(slot);
+    if (!backend) {
+      throw new Error(`Database backend for slot ${slot} is unavailable.`);
+    }
+    const updated = await backend.db.renameFolder(localId, name);
+    const entry = this.findEntryForBackendCollection(backend.connectionId, updated.collection_id);
+    const globalCollectionId = entry?.id ?? updated.collection_id;
+    return this.toGlobalFolder(updated, backend, globalCollectionId);
+  }
+
+  async deleteFolder(id: number): Promise<void> {
+    const { slot, localId } = decodeGlobalId(id);
+    const backend = this.bySlot.get(slot);
+    if (!backend) {
+      throw new Error(`Database backend for slot ${slot} is unavailable.`);
+    }
+    await backend.db.deleteFolder(localId);
+  }
+
+  async reorderFolders(collectionId: number, orderedFolderIds: number[]): Promise<void> {
+    const entry = this.requireEntry(collectionId);
+    const backend = this.requireBackendByConnectionId(entry.connectionId);
+    const localIds = orderedFolderIds.map((folderId) => decodeGlobalId(folderId).localId);
+    await backend.db.reorderFolders(entry.providerCollectionId, localIds);
+  }
+
+  async reorderRequests(
+    collectionId: number,
+    folderId: number | null,
+    orderedRequestIds: number[]
+  ): Promise<void> {
+    const entry = this.requireEntry(collectionId);
+    const backend = this.requireBackendByConnectionId(entry.connectionId);
+    const localFolderId = folderId != null ? decodeGlobalId(folderId).localId : null;
+    const localRequestIds = orderedRequestIds.map((requestId) => decodeGlobalId(requestId).localId);
+    await backend.db.reorderRequests(entry.providerCollectionId, localFolderId, localRequestIds);
+  }
+
+  async moveRequest(requestId: number, folderId: number | null, index: number): Promise<void> {
+    const { slot, localId } = decodeGlobalId(requestId);
+    const backend = this.bySlot.get(slot);
+    if (!backend) {
+      throw new Error(`Database backend for slot ${slot} is unavailable.`);
+    }
+    const localFolderId = folderId != null ? decodeGlobalId(folderId).localId : null;
+    await backend.db.moveRequest(localId, localFolderId, index);
   }
 
   /**
@@ -311,6 +379,7 @@ export class RoutingDatabase implements IDatabase {
     }
 
     const requests = await sourceBackend.db.listRequests(entry.providerCollectionId);
+    const folders = await sourceBackend.db.listFolders(entry.providerCollectionId);
 
     const created = await targetBackend.db.createCollection(record.name);
     const updated = await targetBackend.db.updateCollection(
@@ -322,13 +391,32 @@ export class RoutingDatabase implements IDatabase {
       record.post_request_script
     );
 
+    const folderIdMap = new Map<number, number>();
+    const sortedFolders = [...folders].sort(
+      (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)
+    );
+    for (const folder of sortedFolders) {
+      const createdFolder = await targetBackend.db.createFolder(updated.id, folder.name);
+      folderIdMap.set(folder.id, createdFolder.id);
+    }
+    if (sortedFolders.length > 0) {
+      await targetBackend.db.reorderFolders(
+        updated.id,
+        sortedFolders.map((folder) => folderIdMap.get(folder.id)!)
+      );
+    }
+
     const sortedRequests = [...requests].sort(
       (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)
     );
 
     for (const request of sortedRequests) {
+      const targetFolderId =
+        request.folder_id != null ? (folderIdMap.get(request.folder_id) ?? null) : null;
+
       await targetBackend.db.saveRequest({
         collection_id: updated.id,
+        folder_id: targetFolderId,
         name: request.name,
         method: request.method,
         url: request.url,
@@ -569,8 +657,33 @@ export class RoutingDatabase implements IDatabase {
     return {
       ...request,
       id: encodeGlobalId(backend.slot, request.id),
+      collection_id: globalCollectionId,
+      folder_id: request.folder_id != null ? encodeGlobalId(backend.slot, request.folder_id) : null
+    };
+  }
+
+  private toGlobalFolder(
+    folder: Folder,
+    backend: MountedBackend,
+    globalCollectionId: number
+  ): Folder {
+    return {
+      ...folder,
+      id: encodeGlobalId(backend.slot, folder.id),
       collection_id: globalCollectionId
     };
+  }
+
+  private findEntryForBackendCollection(
+    connectionId: string,
+    providerCollectionId: number
+  ): CollectionRegistryEntry | undefined {
+    return this.registry
+      .listRegistry()
+      .find(
+        (entry) =>
+          entry.connectionId === connectionId && entry.providerCollectionId === providerCollectionId
+      );
   }
 
   private resolveDefaultDataBackend(): MountedBackend {

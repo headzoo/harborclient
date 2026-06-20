@@ -13,6 +13,7 @@ import type {
   Collection,
   CollectionExport,
   Environment,
+  Folder,
   HttpMethod,
   KeyValue,
   SaveRequestInput,
@@ -97,6 +98,22 @@ function rowToEnvironment(row: Record<string, unknown>): Environment {
 }
 
 /**
+ * Maps a raw SQLite row to a Folder object.
+ *
+ * @param row - Database row from the folders table.
+ * @returns Normalized folder.
+ */
+function rowToFolder(row: Record<string, unknown>): Folder {
+  return {
+    id: row.id as number,
+    collection_id: row.collection_id as number,
+    name: row.name as string,
+    sort_order: row.sort_order as number,
+    created_at: row.created_at as string
+  };
+}
+
+/**
  * Maps a raw SQLite row to a SavedRequest object.
  *
  * @param row - Database row from the requests table.
@@ -116,6 +133,7 @@ function rowToRequest(row: Record<string, unknown>): SavedRequest {
     pre_request_script: (row.pre_request_script as string) ?? '',
     post_request_script: (row.post_request_script as string) ?? '',
     comment: (row.comment as string) ?? '',
+    folder_id: row.folder_id != null ? (row.folder_id as number) : null,
     sort_order: row.sort_order as number,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string
@@ -199,6 +217,15 @@ export class SqliteDatabase implements IDatabase {
       variables TEXT NOT NULL DEFAULT '[]',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS folders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      collection_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (collection_id) REFERENCES collections(id) ON DELETE CASCADE
+    );
   `);
 
     const columns = this.#db.prepare('PRAGMA table_info(collections)').all() as Array<{
@@ -239,6 +266,10 @@ export class SqliteDatabase implements IDatabase {
     const hasRequestComment = requestColumns.some((col) => col.name === 'comment');
     if (!hasRequestComment) {
       this.#db.exec("ALTER TABLE requests ADD COLUMN comment TEXT NOT NULL DEFAULT ''");
+    }
+    const hasFolderId = requestColumns.some((col) => col.name === 'folder_id');
+    if (!hasFolderId) {
+      this.#db.exec('ALTER TABLE requests ADD COLUMN folder_id INTEGER');
     }
   }
 
@@ -352,13 +383,14 @@ export class SqliteDatabase implements IDatabase {
     const preRequestScript = input.pre_request_script ?? '';
     const postRequestScript = input.post_request_script ?? '';
     const comment = input.comment ?? '';
+    const folderId = input.folder_id ?? null;
     const now = new Date().toISOString();
 
     if (input.id) {
       const result = this.getDb()
         .prepare(
           `UPDATE requests SET
-          collection_id = ?, name = ?, method = ?, url = ?,
+          collection_id = ?, folder_id = ?, name = ?, method = ?, url = ?,
           headers = ?, params = ?, body = ?, body_type = ?,
           pre_request_script = ?, post_request_script = ?, comment = ?,
           updated_at = ?
@@ -366,6 +398,7 @@ export class SqliteDatabase implements IDatabase {
         )
         .run(
           input.collection_id,
+          folderId,
           input.name.trim(),
           input.method,
           input.url,
@@ -388,19 +421,21 @@ export class SqliteDatabase implements IDatabase {
 
     const maxOrder = this.getDb()
       .prepare(
-        'SELECT COALESCE(MAX(sort_order), -1) as max_order FROM requests WHERE collection_id = ?'
+        `SELECT COALESCE(MAX(sort_order), -1) as max_order FROM requests
+         WHERE collection_id = ? AND ((? IS NULL AND folder_id IS NULL) OR folder_id = ?)`
       )
-      .get(input.collection_id) as { max_order: number };
+      .get(input.collection_id, folderId, folderId) as { max_order: number };
 
     const result = this.getDb()
       .prepare(
         `INSERT INTO requests (
-        collection_id, name, method, url, headers, params, body, body_type,
+        collection_id, folder_id, name, method, url, headers, params, body, body_type,
         pre_request_script, post_request_script, comment, sort_order, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         input.collection_id,
+        folderId,
         input.name.trim(),
         input.method,
         input.url,
@@ -427,6 +462,154 @@ export class SqliteDatabase implements IDatabase {
     this.getDb().prepare('DELETE FROM requests WHERE id = ?').run(id);
   }
 
+  async listFolders(collectionId: number): Promise<Folder[]> {
+    const rows = this.getDb()
+      .prepare('SELECT * FROM folders WHERE collection_id = ? ORDER BY sort_order ASC, name ASC')
+      .all(collectionId) as Record<string, unknown>[];
+
+    return rows.map(rowToFolder);
+  }
+
+  async createFolder(collectionId: number, name: string): Promise<Folder> {
+    const maxOrder = this.getDb()
+      .prepare(
+        'SELECT COALESCE(MAX(sort_order), -1) as max_order FROM folders WHERE collection_id = ?'
+      )
+      .get(collectionId) as { max_order: number };
+
+    const result = this.getDb()
+      .prepare('INSERT INTO folders (collection_id, name, sort_order) VALUES (?, ?, ?)')
+      .run(collectionId, name.trim(), maxOrder.max_order + 1);
+
+    const row = this.getDb()
+      .prepare('SELECT * FROM folders WHERE id = ?')
+      .get(result.lastInsertRowid) as Record<string, unknown>;
+
+    return rowToFolder(row);
+  }
+
+  async renameFolder(id: number, name: string): Promise<Folder> {
+    const result = this.getDb()
+      .prepare('UPDATE folders SET name = ? WHERE id = ?')
+      .run(name.trim(), id);
+
+    if (result.changes === 0) throw new Error('Folder not found');
+
+    const row = this.getDb().prepare('SELECT * FROM folders WHERE id = ?').get(id) as
+      | Record<string, unknown>
+      | undefined;
+
+    if (!row) throw new Error('Folder not found');
+    return rowToFolder(row);
+  }
+
+  async deleteFolder(id: number): Promise<void> {
+    const database = this.getDb();
+    const deleteRequests = database.transaction((folderId: number) => {
+      database.prepare('DELETE FROM requests WHERE folder_id = ?').run(folderId);
+      database.prepare('DELETE FROM folders WHERE id = ?').run(folderId);
+    });
+    deleteRequests(id);
+  }
+
+  async reorderFolders(collectionId: number, orderedFolderIds: number[]): Promise<void> {
+    const reorder = this.getDb().transaction((ids: number[]) => {
+      const stmt = this.getDb().prepare(
+        'UPDATE folders SET sort_order = ? WHERE id = ? AND collection_id = ?'
+      );
+      ids.forEach((folderId, index) => {
+        stmt.run(index, folderId, collectionId);
+      });
+    });
+    reorder(orderedFolderIds);
+  }
+
+  async reorderRequests(
+    collectionId: number,
+    folderId: number | null,
+    orderedRequestIds: number[]
+  ): Promise<void> {
+    const reorder = this.getDb().transaction((ids: number[]) => {
+      const stmt = this.getDb().prepare(
+        'UPDATE requests SET sort_order = ?, folder_id = ? WHERE id = ? AND collection_id = ?'
+      );
+      ids.forEach((requestId, index) => {
+        stmt.run(index, folderId, requestId, collectionId);
+      });
+    });
+    reorder(orderedRequestIds);
+  }
+
+  async moveRequest(requestId: number, folderId: number | null, index: number): Promise<void> {
+    const database = this.getDb();
+    const row = database.prepare('SELECT * FROM requests WHERE id = ?').get(requestId) as
+      | Record<string, unknown>
+      | undefined;
+
+    if (!row) throw new Error('Request not found');
+
+    const request = rowToRequest(row);
+    const collectionId = request.collection_id;
+    const oldFolderId = request.folder_id;
+
+    if (folderId != null) {
+      const folderRow = database
+        .prepare('SELECT collection_id FROM folders WHERE id = ?')
+        .get(folderId) as { collection_id: number } | undefined;
+      if (!folderRow || folderRow.collection_id !== collectionId) {
+        throw new Error('Folder not found');
+      }
+    }
+
+    const listInContainer = (targetFolderId: number | null): SavedRequest[] => {
+      const rows = database
+        .prepare(
+          `SELECT * FROM requests WHERE collection_id = ?
+           AND ((? IS NULL AND folder_id IS NULL) OR folder_id = ?)
+           ORDER BY sort_order ASC, name ASC`
+        )
+        .all(collectionId, targetFolderId, targetFolderId) as Record<string, unknown>[];
+      return rows.map(rowToRequest);
+    };
+
+    const reindexContainer = (targetFolderId: number | null, orderedIds: number[]): void => {
+      const updateSort = database.prepare('UPDATE requests SET sort_order = ? WHERE id = ?');
+      const updateFolder =
+        targetFolderId == null
+          ? database.prepare('UPDATE requests SET folder_id = NULL WHERE id = ?')
+          : database.prepare('UPDATE requests SET folder_id = ? WHERE id = ?');
+
+      orderedIds.forEach((id, sortIndex) => {
+        if (targetFolderId == null) {
+          updateFolder.run(id);
+        } else {
+          updateFolder.run(targetFolderId, id);
+        }
+        updateSort.run(sortIndex, id);
+      });
+    };
+
+    if (oldFolderId === folderId) {
+      const siblings = listInContainer(folderId)
+        .map((item) => item.id)
+        .filter((id) => id !== requestId);
+      siblings.splice(index, 0, requestId);
+      reindexContainer(folderId, siblings);
+      return;
+    }
+
+    const oldIds = listInContainer(oldFolderId)
+      .map((item) => item.id)
+      .filter((id) => id !== requestId);
+    reindexContainer(oldFolderId, oldIds);
+
+    const newIds = listInContainer(folderId)
+      .map((item) => item.id)
+      .filter((id) => id !== requestId);
+    newIds.splice(index, 0, requestId);
+    reindexContainer(folderId, newIds);
+  }
+
   async exportCollectionData(id: number): Promise<CollectionExport> {
     const row = this.getDb()
       .prepare(
@@ -444,6 +627,14 @@ export class SqliteDatabase implements IDatabase {
 
     if (!row) throw new Error('Collection not found');
 
+    const folders = (await this.listFolders(id)).map(({ name, sort_order }) => ({
+      name,
+      sort_order
+    }));
+    const folderNameById = new Map(
+      (await this.listFolders(id)).map((folder) => [folder.id, folder.name])
+    );
+
     const requests = (await this.listRequests(id)).map(
       ({
         name,
@@ -456,7 +647,8 @@ export class SqliteDatabase implements IDatabase {
         pre_request_script,
         post_request_script,
         comment,
-        sort_order
+        sort_order,
+        folder_id
       }) => ({
         name,
         method,
@@ -468,7 +660,8 @@ export class SqliteDatabase implements IDatabase {
         pre_request_script,
         post_request_script,
         comment,
-        sort_order
+        sort_order,
+        folder_name: folder_id != null ? (folderNameById.get(folder_id) ?? null) : null
       })
     );
 
@@ -476,12 +669,13 @@ export class SqliteDatabase implements IDatabase {
     const headers = parseJson<KeyValue[]>(row.headers, []);
 
     return {
-      formatVersion: 1,
+      formatVersion: 2,
       name: row.name,
       variables: maskVariablesForExport(variables),
       headers,
       pre_request_script: row.pre_request_script ?? '',
       post_request_script: row.post_request_script ?? '',
+      folders,
       requests
     };
   }
@@ -505,16 +699,30 @@ export class SqliteDatabase implements IDatabase {
         );
 
       const collectionId = Number(collectionResult.lastInsertRowid);
+      const folderIdByName = new Map<string, number>();
+
+      for (const folder of payload.folders ?? []) {
+        const folderResult = database
+          .prepare('INSERT INTO folders (collection_id, name, sort_order) VALUES (?, ?, ?)')
+          .run(collectionId, folder.name, folder.sort_order);
+        folderIdByName.set(folder.name, Number(folderResult.lastInsertRowid));
+      }
+
       const insertRequest = database.prepare(
         `INSERT INTO requests (
-        collection_id, name, method, url, headers, params, body, body_type,
+        collection_id, folder_id, name, method, url, headers, params, body, body_type,
         pre_request_script, post_request_script, comment, sort_order, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       );
 
       for (const request of payload.requests) {
+        const folderName = request.folder_name ?? null;
+        const folderId =
+          folderName != null && folderName.trim() ? (folderIdByName.get(folderName) ?? null) : null;
+
         insertRequest.run(
           collectionId,
+          folderId,
           request.name,
           request.method,
           request.url,

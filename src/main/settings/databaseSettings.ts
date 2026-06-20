@@ -232,10 +232,7 @@ function createDefaultConnections(): DatabaseConnection[] {
  */
 function ensureConnectionsSeeded(): { connections: DatabaseConnection[]; activeId: string } {
   const registry = getLocalRegistry();
-  const stored = parseJson<DatabaseConnection[]>(
-    registry.getSetting(CONNECTIONS_KEY),
-    []
-  );
+  const stored = parseJson<DatabaseConnection[]>(registry.getSetting(CONNECTIONS_KEY), []);
 
   if (stored.length > 0) {
     const connections = stored.map((conn) => normalizeConnection(conn));
@@ -251,8 +248,7 @@ function ensureConnectionsSeeded(): { connections: DatabaseConnection[]; activeI
   }
 
   const connections = createDefaultConnections();
-  const activeConnection =
-    connections.find((conn) => conn.type === 'sqlite') ?? connections[0];
+  const activeConnection = connections.find((conn) => conn.type === 'sqlite') ?? connections[0];
 
   persistConnections(connections);
   persistActiveId(activeConnection.id);
@@ -387,7 +383,10 @@ export function deleteDatabaseConnection(id: string): DatabaseConnection[] {
     throw new Error(`Unknown database connection: ${id}`);
   }
 
-  if (target.type === 'sqlite' && connections.filter((conn) => conn.type === 'sqlite').length <= 1) {
+  if (
+    target.type === 'sqlite' &&
+    connections.filter((conn) => conn.type === 'sqlite').length <= 1
+  ) {
     throw new Error('At least one SQLite database connection must remain.');
   }
 

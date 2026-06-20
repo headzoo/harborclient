@@ -22,7 +22,10 @@ function parseJson<T>(value: string | undefined, fallback: T): T {
  * Reads persisted cookies keyed by hostname.
  */
 function getJarMap(): Record<string, KeyValue[]> {
-  const stored = parseJson<Record<string, KeyValue[]>>(getLocalRegistry().getSetting(STORE_KEY), {});
+  const stored = parseJson<Record<string, KeyValue[]>>(
+    getLocalRegistry().getSetting(STORE_KEY),
+    {}
+  );
   if (!stored || typeof stored !== 'object') {
     return {};
   }

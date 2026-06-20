@@ -4,6 +4,7 @@ import type {
   Collection,
   CollectionExportResult,
   Environment,
+  Folder,
   KeyValue,
   SavedRequest,
   ScriptRequestContext,
@@ -22,6 +23,7 @@ import {
 import { cloneDraft, draftFromSaved } from '#/renderer/src/store/drafts';
 import {
   setCollections,
+  setFoldersForCollection,
   setRequestsForCollection,
   setSelectedCollectionId
 } from '#/renderer/src/store/slices/collectionsSlice';
@@ -55,6 +57,24 @@ export const refreshCollections = createAsyncThunk<
   }
   return data;
 });
+
+export const refreshFolders = createAsyncThunk<
+  Awaited<ReturnType<typeof window.api.listFolders>>,
+  number,
+  ThunkApiConfig
+>('collections/refreshFolders', async (collectionId, { dispatch }) => {
+  const data = await window.api.listFolders(collectionId);
+  dispatch(setFoldersForCollection({ collectionId, folders: data }));
+  return data;
+});
+
+export const refreshCollectionContents = createAsyncThunk<void, number, ThunkApiConfig>(
+  'collections/refreshContents',
+  async (collectionId, { dispatch }) => {
+    await dispatch(refreshFolders(collectionId));
+    await dispatch(refreshRequests(collectionId));
+  }
+);
 
 export const refreshRequests = createAsyncThunk<
   Awaited<ReturnType<typeof window.api.listRequests>>,
@@ -166,7 +186,7 @@ export const importCollection = createAsyncThunk<Collection | null, void, ThunkA
 
     await dispatch(refreshCollections());
     dispatch(setSelectedCollectionId(collection.id));
-    await dispatch(refreshRequests(collection.id));
+    await dispatch(refreshCollectionContents(collection.id));
     return collection;
   }
 );
@@ -218,6 +238,7 @@ export const saveRequest = createAsyncThunk<SavedRequest, number | undefined, Th
     const saved = await window.api.saveRequest({
       id: shouldUpdate ? currentDraft.id : undefined,
       collection_id: targetId,
+      folder_id: currentDraft.folder_id ?? null,
       name: currentDraft.name,
       method: currentDraft.method,
       url: currentDraft.url,
@@ -251,6 +272,96 @@ export const deleteRequest = createAsyncThunk<void, number, ThunkApiConfig>(
   }
 );
 
+export const createFolder = createAsyncThunk<
+  Folder,
+  { collectionId: number; name: string },
+  ThunkApiConfig
+>('collections/createFolder', async ({ collectionId, name }, { dispatch }) => {
+  const folder = await window.api.createFolder(collectionId, name);
+  await dispatch(refreshFolders(collectionId));
+  return folder;
+});
+
+export const renameFolder = createAsyncThunk<
+  Folder,
+  { id: number; collectionId: number; name: string },
+  ThunkApiConfig
+>('collections/renameFolder', async ({ id, collectionId, name }, { dispatch }) => {
+  const folder = await window.api.renameFolder(id, name);
+  await dispatch(refreshFolders(collectionId));
+  return folder;
+});
+
+export const deleteFolder = createAsyncThunk<
+  void,
+  { id: number; collectionId: number; requestIds: number[] },
+  ThunkApiConfig
+>('collections/deleteFolder', async ({ id, collectionId, requestIds }, { dispatch }) => {
+  for (const requestId of requestIds) {
+    await window.api.deleteRequestEditorTab(String(requestId));
+    dispatch(closeTabsForRequest(requestId));
+  }
+  await window.api.deleteFolder(id);
+  await dispatch(refreshCollectionContents(collectionId));
+});
+
+export const reorderFolders = createAsyncThunk<
+  void,
+  { collectionId: number; orderedFolderIds: number[] },
+  ThunkApiConfig
+>('collections/reorderFolders', async ({ collectionId, orderedFolderIds }, { dispatch }) => {
+  await window.api.reorderFolders(collectionId, orderedFolderIds);
+  await dispatch(refreshFolders(collectionId));
+});
+
+export const reorderRequests = createAsyncThunk<
+  void,
+  { collectionId: number; folderId: number | null; orderedRequestIds: number[] },
+  ThunkApiConfig
+>(
+  'collections/reorderRequests',
+  async ({ collectionId, folderId, orderedRequestIds }, { dispatch }) => {
+    await window.api.reorderRequests(collectionId, folderId, orderedRequestIds);
+    await dispatch(refreshRequests(collectionId));
+  }
+);
+
+export const moveRequestToFolder = createAsyncThunk<
+  void,
+  { collectionId: number; requestId: number; folderId: number | null; index: number },
+  ThunkApiConfig
+>('collections/moveRequest', async ({ collectionId, requestId, folderId, index }, { dispatch }) => {
+  await window.api.moveRequest(requestId, folderId, index);
+  await dispatch(refreshRequests(collectionId));
+});
+
+export const newRequestInFolder = createAsyncThunk<
+  SavedRequest,
+  { collectionId: number; folderId: number },
+  ThunkApiConfig
+>('tabs/newRequestInFolder', async ({ collectionId, folderId }, { dispatch }) => {
+  dispatch(setSelectedCollectionId(collectionId));
+
+  const saved = await window.api.saveRequest({
+    collection_id: collectionId,
+    folder_id: folderId,
+    name: 'Untitled Request',
+    method: 'GET',
+    url: '',
+    headers: [],
+    params: [],
+    body: '',
+    body_type: 'none',
+    pre_request_script: '',
+    post_request_script: '',
+    comment: ''
+  });
+
+  dispatch(openTabWithDraft(draftFromSaved(saved)));
+  await dispatch(refreshCollectionContents(collectionId));
+  return saved;
+});
+
 export const newRequestInCollection = createAsyncThunk<SavedRequest, number, ThunkApiConfig>(
   'tabs/newRequestInCollection',
   async (collectionId, { dispatch }) => {
@@ -271,7 +382,7 @@ export const newRequestInCollection = createAsyncThunk<SavedRequest, number, Thu
     });
 
     dispatch(openTabWithDraft(draftFromSaved(saved)));
-    await dispatch(refreshRequests(collectionId));
+    await dispatch(refreshCollectionContents(collectionId));
     return saved;
   }
 );

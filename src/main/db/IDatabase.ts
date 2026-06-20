@@ -2,6 +2,7 @@ import type {
   Collection,
   CollectionExport,
   Environment,
+  Folder,
   KeyValue,
   SaveRequestInput,
   SavedRequest,
@@ -113,6 +114,69 @@ export interface IDatabase {
    * @param id - Request ID to delete.
    */
   deleteRequest(id: number): Promise<void>;
+
+  /**
+   * Lists all folders in a collection.
+   *
+   * @param collectionId - Collection to query.
+   * @returns Folders ordered by sort_order then name.
+   */
+  listFolders(collectionId: number): Promise<Folder[]>;
+
+  /**
+   * Creates a new folder in a collection.
+   *
+   * @param collectionId - Collection to add the folder to.
+   * @param name - Display name for the folder.
+   * @returns The newly created folder.
+   */
+  createFolder(collectionId: number, name: string): Promise<Folder>;
+
+  /**
+   * Renames a folder.
+   *
+   * @param id - Folder ID to rename.
+   * @param name - New display name.
+   * @returns The updated folder.
+   */
+  renameFolder(id: number, name: string): Promise<Folder>;
+
+  /**
+   * Deletes a folder and all requests inside it.
+   *
+   * @param id - Folder ID to delete.
+   */
+  deleteFolder(id: number): Promise<void>;
+
+  /**
+   * Reorders folders within a collection.
+   *
+   * @param collectionId - Collection containing the folders.
+   * @param orderedFolderIds - Folder IDs in desired order.
+   */
+  reorderFolders(collectionId: number, orderedFolderIds: number[]): Promise<void>;
+
+  /**
+   * Reorders requests within a folder or at collection root.
+   *
+   * @param collectionId - Collection containing the requests.
+   * @param folderId - Folder ID, or null for root-level requests.
+   * @param orderedRequestIds - Request IDs in desired order.
+   */
+  reorderRequests(
+    collectionId: number,
+    folderId: number | null,
+    orderedRequestIds: number[]
+  ): Promise<void>;
+
+  /**
+   * Moves a request to another folder or collection root at a given index.
+   *
+   * @param requestId - Request ID to move.
+   * @param folderId - Destination folder ID, or null for collection root.
+   * @param index - Zero-based position within the destination container.
+   */
+  moveRequest(requestId: number, folderId: number | null, index: number): Promise<void>;
 
   /**
    * Builds a portable export payload for a collection and its requests.

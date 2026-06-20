@@ -21,7 +21,7 @@ import {
   importCollection,
   initializeStore,
   refreshCollections,
-  refreshRequests,
+  refreshCollectionContents,
   saveRequest,
   updateCollection,
   updateEnvironment
@@ -30,6 +30,7 @@ import { Configuration } from '#/renderer/src/ui/Sidebar/Configuration';
 import { Sidebar } from '#/renderer/src/ui/Sidebar';
 import { Request } from '#/renderer/src/ui/Request';
 import { TitleBar } from '#/renderer/src/ui/TitleBar';
+import { BusyIndicator } from '#/renderer/src/ui/shared/BusyIndicator';
 import { Footer } from '#/renderer/src/ui/Footer';
 import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
 import { field, primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
@@ -91,13 +92,14 @@ export default function App(): JSX.Element {
     initializeStore(dispatch);
   }, [dispatch]);
 
-  useEffect(() => {
-    if (selectedCollectionId) {
-      void dispatch(refreshRequests(selectedCollectionId));
-    }
-  }, [dispatch, selectedCollectionId]);
-
   const activeCollectionId = draft.collection_id ?? selectedCollectionId;
+
+  useEffect(() => {
+    if (activeCollectionId != null) {
+      void dispatch(refreshCollectionContents(activeCollectionId));
+    }
+  }, [dispatch, activeCollectionId]);
+
   const activeCollection =
     activeCollectionId != null
       ? collections.find((c: Collection) => c.id === activeCollectionId)
@@ -368,6 +370,7 @@ export default function App(): JSX.Element {
 
   return (
     <div className={`flex h-screen flex-col overflow-hidden ${isMac ? 'platform-darwin' : ''}`}>
+      <BusyIndicator />
       <TitleBar />
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
         {sidebarVisible && (

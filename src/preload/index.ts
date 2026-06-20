@@ -6,6 +6,7 @@ import type {
   DatabaseConnection,
   EditorTab,
   Environment,
+  Folder,
   GeneralSettings,
   MenuActionId,
   SaveRequestInput,
@@ -171,6 +172,38 @@ function saveRequest(req: SaveRequestInput): Promise<SavedRequest> {
  */
 function deleteRequest(id: number): Promise<void> {
   return ipcRenderer.invoke('requests:delete', id);
+}
+
+function listFolders(collectionId: number): Promise<Folder[]> {
+  return ipcRenderer.invoke('folders:list', collectionId);
+}
+
+function createFolder(collectionId: number, name: string): Promise<Folder> {
+  return ipcRenderer.invoke('folders:create', collectionId, name);
+}
+
+function renameFolder(id: number, name: string): Promise<Folder> {
+  return ipcRenderer.invoke('folders:rename', id, name);
+}
+
+function deleteFolder(id: number): Promise<void> {
+  return ipcRenderer.invoke('folders:delete', id);
+}
+
+function reorderFolders(collectionId: number, orderedFolderIds: number[]): Promise<void> {
+  return ipcRenderer.invoke('folders:reorder', collectionId, orderedFolderIds);
+}
+
+function reorderRequests(
+  collectionId: number,
+  folderId: number | null,
+  orderedRequestIds: number[]
+): Promise<void> {
+  return ipcRenderer.invoke('requests:reorder', collectionId, folderId, orderedRequestIds);
+}
+
+function moveRequest(requestId: number, folderId: number | null, index: number): Promise<void> {
+  return ipcRenderer.invoke('requests:move', requestId, folderId, index);
 }
 
 /**
@@ -409,6 +442,13 @@ const api: Api = {
   listRequests,
   saveRequest,
   deleteRequest,
+  listFolders,
+  createFolder,
+  renameFolder,
+  deleteFolder,
+  reorderFolders,
+  reorderRequests,
+  moveRequest,
   sendRequest,
   cancelRequest,
   getCookies,

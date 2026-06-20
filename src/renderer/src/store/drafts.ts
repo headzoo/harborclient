@@ -11,6 +11,7 @@ import type {
 export interface RequestDraft {
   id?: number;
   collection_id?: number;
+  folder_id?: number | null;
   name: string;
   method: HttpMethod;
   url: string;
@@ -171,6 +172,7 @@ export function draftFromSaved(req: SavedRequest): RequestDraft {
   return {
     id: req.id,
     collection_id: req.collection_id,
+    folder_id: req.folder_id,
     name: req.name,
     method: req.method,
     url: req.url,

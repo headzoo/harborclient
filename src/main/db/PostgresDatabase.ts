@@ -10,6 +10,7 @@ import type {
   Collection,
   CollectionExport,
   Environment,
+  Folder,
   HttpMethod,
   KeyValue,
   PostgresSettings,
@@ -86,9 +87,20 @@ function rowToRequest(row: QueryResultRow): SavedRequest {
     pre_request_script: (row.pre_request_script as string) ?? '',
     post_request_script: (row.post_request_script as string) ?? '',
     comment: (row.comment as string) ?? '',
+    folder_id: row.folder_id != null ? (row.folder_id as number) : null,
     sort_order: row.sort_order as number,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string
+  };
+}
+
+function rowToFolder(row: QueryResultRow): Folder {
+  return {
+    id: row.id as number,
+    collection_id: row.collection_id as number,
+    name: row.name as string,
+    sort_order: row.sort_order as number,
+    created_at: row.created_at as string
   };
 }
 
@@ -185,6 +197,21 @@ export class PostgresDatabase implements IDatabase {
 
     await this.#pool.query(`
       ALTER TABLE requests ADD COLUMN IF NOT EXISTS comment TEXT NOT NULL DEFAULT ''
+    `);
+
+    await this.#pool.query(`
+      ALTER TABLE requests ADD COLUMN IF NOT EXISTS folder_id INT NULL
+    `);
+
+    await this.#pool.query(`
+      CREATE TABLE IF NOT EXISTS folders (
+        id SERIAL PRIMARY KEY,
+        collection_id INT NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        sort_order INT NOT NULL DEFAULT 0,
+        created_at VARCHAR(64) NOT NULL,
+        FOREIGN KEY (collection_id) REFERENCES collections(id) ON DELETE CASCADE
+      )
     `);
   }
 
@@ -301,18 +328,20 @@ export class PostgresDatabase implements IDatabase {
     const preRequestScript = input.pre_request_script ?? '';
     const postRequestScript = input.post_request_script ?? '';
     const comment = input.comment ?? '';
+    const folderId = input.folder_id ?? null;
     const now = new Date().toISOString();
 
     if (input.id) {
       const result = await this.getPool().query(
         `UPDATE requests SET
-          collection_id = $1, name = $2, method = $3, url = $4,
-          headers = $5, params = $6, body = $7, body_type = $8,
-          pre_request_script = $9, post_request_script = $10, comment = $11,
-          updated_at = $12
-        WHERE id = $13`,
+          collection_id = $1, folder_id = $2, name = $3, method = $4, url = $5,
+          headers = $6, params = $7, body = $8, body_type = $9,
+          pre_request_script = $10, post_request_script = $11, comment = $12,
+          updated_at = $13
+        WHERE id = $14`,
         [
           input.collection_id,
+          folderId,
           input.name.trim(),
           input.method,
           input.url,
@@ -338,19 +367,21 @@ export class PostgresDatabase implements IDatabase {
     }
 
     const maxResult = await this.getPool().query(
-      'SELECT COALESCE(MAX(sort_order), -1) AS max_order FROM requests WHERE collection_id = $1',
-      [input.collection_id]
+      `SELECT COALESCE(MAX(sort_order), -1) AS max_order FROM requests
+       WHERE collection_id = $1 AND (($2::int IS NULL AND folder_id IS NULL) OR folder_id = $2)`,
+      [input.collection_id, folderId]
     );
     const maxOrder = (maxResult.rows[0]?.max_order as number) ?? -1;
 
     const result = await this.getPool().query(
       `INSERT INTO requests (
-        collection_id, name, method, url, headers, params, body, body_type,
+        collection_id, folder_id, name, method, url, headers, params, body, body_type,
         pre_request_script, post_request_script, comment, sort_order, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING *`,
       [
         input.collection_id,
+        folderId,
         input.name.trim(),
         input.method,
         input.url,
@@ -376,6 +407,159 @@ export class PostgresDatabase implements IDatabase {
     await this.getPool().query('DELETE FROM requests WHERE id = $1', [id]);
   }
 
+  async listFolders(collectionId: number): Promise<Folder[]> {
+    const result = await this.getPool().query(
+      'SELECT * FROM folders WHERE collection_id = $1 ORDER BY sort_order ASC, name ASC',
+      [collectionId]
+    );
+    return result.rows.map(rowToFolder);
+  }
+
+  async createFolder(collectionId: number, name: string): Promise<Folder> {
+    const createdAt = new Date().toISOString();
+    const maxResult = await this.getPool().query(
+      'SELECT COALESCE(MAX(sort_order), -1) AS max_order FROM folders WHERE collection_id = $1',
+      [collectionId]
+    );
+    const maxOrder = (maxResult.rows[0]?.max_order as number) ?? -1;
+
+    const result = await this.getPool().query(
+      `INSERT INTO folders (collection_id, name, sort_order, created_at)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [collectionId, name.trim(), maxOrder + 1, createdAt]
+    );
+
+    const row = result.rows[0];
+    if (!row) throw new Error('Folder not found after insert');
+    return rowToFolder(row);
+  }
+
+  async renameFolder(id: number, name: string): Promise<Folder> {
+    const result = await this.getPool().query(
+      'UPDATE folders SET name = $1 WHERE id = $2 RETURNING *',
+      [name.trim(), id]
+    );
+    const row = result.rows[0];
+    if (!row) throw new Error('Folder not found');
+    return rowToFolder(row);
+  }
+
+  async deleteFolder(id: number): Promise<void> {
+    const client = await this.getPool().connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('DELETE FROM requests WHERE folder_id = $1', [id]);
+      await client.query('DELETE FROM folders WHERE id = $1', [id]);
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  async reorderFolders(collectionId: number, orderedFolderIds: number[]): Promise<void> {
+    const client = await this.getPool().connect();
+    try {
+      await client.query('BEGIN');
+      for (let index = 0; index < orderedFolderIds.length; index++) {
+        await client.query(
+          'UPDATE folders SET sort_order = $1 WHERE id = $2 AND collection_id = $3',
+          [index, orderedFolderIds[index], collectionId]
+        );
+      }
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  async reorderRequests(
+    collectionId: number,
+    folderId: number | null,
+    orderedRequestIds: number[]
+  ): Promise<void> {
+    const client = await this.getPool().connect();
+    try {
+      await client.query('BEGIN');
+      for (let index = 0; index < orderedRequestIds.length; index++) {
+        await client.query(
+          'UPDATE requests SET sort_order = $1, folder_id = $2 WHERE id = $3 AND collection_id = $4',
+          [index, folderId, orderedRequestIds[index], collectionId]
+        );
+      }
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  async moveRequest(requestId: number, folderId: number | null, index: number): Promise<void> {
+    const pool = this.getPool();
+    const requestResult = await pool.query('SELECT * FROM requests WHERE id = $1', [requestId]);
+    const requestRow = requestResult.rows[0];
+    if (!requestRow) throw new Error('Request not found');
+
+    const request = rowToRequest(requestRow);
+    const collectionId = request.collection_id;
+    const oldFolderId = request.folder_id;
+
+    if (folderId != null) {
+      const folderResult = await pool.query('SELECT collection_id FROM folders WHERE id = $1', [
+        folderId
+      ]);
+      const folderRow = folderResult.rows[0];
+      if (!folderRow || folderRow.collection_id !== collectionId) {
+        throw new Error('Folder not found');
+      }
+    }
+
+    const listInContainer = async (targetFolderId: number | null): Promise<number[]> => {
+      const result = await pool.query(
+        `SELECT id FROM requests WHERE collection_id = $1
+         AND (($2::int IS NULL AND folder_id IS NULL) OR folder_id = $2)
+         ORDER BY sort_order ASC, name ASC`,
+        [collectionId, targetFolderId]
+      );
+      return result.rows.map((row) => row.id as number);
+    };
+
+    const reindexContainer = async (
+      targetFolderId: number | null,
+      orderedIds: number[]
+    ): Promise<void> => {
+      for (let sortIndex = 0; sortIndex < orderedIds.length; sortIndex++) {
+        await pool.query('UPDATE requests SET sort_order = $1, folder_id = $2 WHERE id = $3', [
+          sortIndex,
+          targetFolderId,
+          orderedIds[sortIndex]
+        ]);
+      }
+    };
+
+    if (oldFolderId === folderId) {
+      const siblings = (await listInContainer(folderId)).filter((id) => id !== requestId);
+      siblings.splice(index, 0, requestId);
+      await reindexContainer(folderId, siblings);
+      return;
+    }
+
+    const oldIds = (await listInContainer(oldFolderId)).filter((id) => id !== requestId);
+    await reindexContainer(oldFolderId, oldIds);
+
+    const newIds = (await listInContainer(folderId)).filter((id) => id !== requestId);
+    newIds.splice(index, 0, requestId);
+    await reindexContainer(folderId, newIds);
+  }
+
   async exportCollectionData(id: number): Promise<CollectionExport> {
     const result = await this.getPool().query(
       'SELECT name, variables, headers, pre_request_script, post_request_script FROM collections WHERE id = $1',
@@ -384,6 +568,10 @@ export class PostgresDatabase implements IDatabase {
 
     const row = result.rows[0];
     if (!row) throw new Error('Collection not found');
+
+    const folderRecords = await this.listFolders(id);
+    const folders = folderRecords.map(({ name, sort_order }) => ({ name, sort_order }));
+    const folderNameById = new Map(folderRecords.map((folder) => [folder.id, folder.name]));
 
     const requests = (await this.listRequests(id)).map(
       ({
@@ -397,7 +585,8 @@ export class PostgresDatabase implements IDatabase {
         pre_request_script,
         post_request_script,
         comment,
-        sort_order
+        sort_order,
+        folder_id
       }) => ({
         name,
         method,
@@ -409,7 +598,8 @@ export class PostgresDatabase implements IDatabase {
         pre_request_script,
         post_request_script,
         comment,
-        sort_order
+        sort_order,
+        folder_name: folder_id != null ? (folderNameById.get(folder_id) ?? null) : null
       })
     );
 
@@ -419,12 +609,13 @@ export class PostgresDatabase implements IDatabase {
     const headers = parseJson<KeyValue[]>(row.headers as string, []);
 
     return {
-      formatVersion: 1,
+      formatVersion: 2,
       name: row.name as string,
       variables: maskVariablesForExport(variables),
       headers,
       pre_request_script: (row.pre_request_script as string) ?? '',
       post_request_script: (row.post_request_script as string) ?? '',
+      folders,
       requests
     };
   }
@@ -452,15 +643,31 @@ export class PostgresDatabase implements IDatabase {
       );
 
       const collectionId = collectionResult.rows[0]?.id as number;
+      const folderIdByName = new Map<string, number>();
+
+      for (const folder of exportData.folders ?? []) {
+        const folderResult = await client.query(
+          `INSERT INTO folders (collection_id, name, sort_order, created_at)
+           VALUES ($1, $2, $3, $4)
+           RETURNING id`,
+          [collectionId, folder.name, folder.sort_order, now]
+        );
+        folderIdByName.set(folder.name, folderResult.rows[0]?.id as number);
+      }
 
       for (const request of exportData.requests) {
+        const folderName = request.folder_name ?? null;
+        const folderId =
+          folderName != null && folderName.trim() ? (folderIdByName.get(folderName) ?? null) : null;
+
         await client.query(
           `INSERT INTO requests (
-            collection_id, name, method, url, headers, params, body, body_type,
+            collection_id, folder_id, name, method, url, headers, params, body, body_type,
             pre_request_script, post_request_script, comment, sort_order, created_at, updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
           [
             collectionId,
+            folderId,
             request.name,
             request.method,
             request.url,

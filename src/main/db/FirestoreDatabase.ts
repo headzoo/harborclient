@@ -29,6 +29,7 @@ import type {
   CollectionExport,
   Environment,
   FirestoreSettings,
+  Folder,
   HttpMethod,
   KeyValue,
   SaveRequestInput,
@@ -103,9 +104,21 @@ function docToRequest(id: number, data: Record<string, unknown>): SavedRequest {
     post_request_script:
       typeof data.post_request_script === 'string' ? data.post_request_script : '',
     comment: typeof data.comment === 'string' ? data.comment : '',
+    folder_id:
+      typeof data.folder_id === 'number' ? data.folder_id : data.folder_id === null ? null : null,
     sort_order: typeof data.sort_order === 'number' ? data.sort_order : 0,
     created_at: typeof data.created_at === 'string' ? data.created_at : new Date().toISOString(),
     updated_at: typeof data.updated_at === 'string' ? data.updated_at : new Date().toISOString()
+  };
+}
+
+function docToFolder(id: number, data: Record<string, unknown>): Folder {
+  return {
+    id,
+    collection_id: typeof data.collection_id === 'number' ? data.collection_id : 0,
+    name: typeof data.name === 'string' ? data.name : '',
+    sort_order: typeof data.sort_order === 'number' ? data.sort_order : 0,
+    created_at: typeof data.created_at === 'string' ? data.created_at : new Date().toISOString()
   };
 }
 
@@ -225,10 +238,16 @@ export class FirestoreDatabase implements IDatabase {
     const requestsSnap = await getDocs(
       query(collection(firestore, 'requests'), where('collection_id', '==', id))
     );
+    const foldersSnap = await getDocs(
+      query(collection(firestore, 'folders'), where('collection_id', '==', id))
+    );
 
     const batch = writeBatch(firestore);
     for (const requestDoc of requestsSnap.docs) {
       batch.delete(requestDoc.ref);
+    }
+    for (const folderDoc of foldersSnap.docs) {
+      batch.delete(folderDoc.ref);
     }
     batch.delete(doc(firestore, 'collections', String(id)));
     await batch.commit();
@@ -306,6 +325,7 @@ export class FirestoreDatabase implements IDatabase {
         const data = {
           ...existing,
           collection_id: input.collection_id,
+          folder_id: input.folder_id ?? null,
           name: input.name.trim(),
           method: input.method,
           url: input.url,
@@ -324,16 +344,20 @@ export class FirestoreDatabase implements IDatabase {
       }
     }
 
+    const folderId = input.folder_id ?? null;
     const existingRequests = await this.listRequests(input.collection_id);
-    const maxOrder = existingRequests.reduce(
-      (max, request) => Math.max(max, request.sort_order),
-      -1
-    );
+    const maxOrder = existingRequests
+      .filter(
+        (request) =>
+          (folderId == null && request.folder_id == null) || request.folder_id === folderId
+      )
+      .reduce((max, request) => Math.max(max, request.sort_order), -1);
     const id = await this.nextId('requests');
     const createdAt = now;
     const data = {
       id,
       collection_id: input.collection_id,
+      folder_id: folderId,
       name: input.name.trim(),
       method: input.method,
       url: input.url,
@@ -357,12 +381,155 @@ export class FirestoreDatabase implements IDatabase {
     await deleteDoc(doc(this.getFirestore(), 'requests', String(id)));
   }
 
+  async listFolders(collectionId: number): Promise<Folder[]> {
+    const snap = await getDocs(
+      query(collection(this.getFirestore(), 'folders'), where('collection_id', '==', collectionId))
+    );
+
+    return snap.docs
+      .map((document) =>
+        docToFolder(Number(document.id), document.data() as Record<string, unknown>)
+      )
+      .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
+  }
+
+  async createFolder(collectionId: number, name: string): Promise<Folder> {
+    const existing = await this.listFolders(collectionId);
+    const maxOrder = existing.reduce((max, folder) => Math.max(max, folder.sort_order), -1);
+    const id = await this.nextId('folders');
+    const createdAt = new Date().toISOString();
+    const data = {
+      id,
+      collection_id: collectionId,
+      name: name.trim(),
+      sort_order: maxOrder + 1,
+      created_at: createdAt
+    };
+
+    await setDoc(doc(this.getFirestore(), 'folders', String(id)), data);
+    return docToFolder(id, data);
+  }
+
+  async renameFolder(id: number, name: string): Promise<Folder> {
+    const ref = doc(this.getFirestore(), 'folders', String(id));
+    const snap = await getDoc(ref);
+    if (!snap.exists()) throw new Error('Folder not found');
+
+    const existing = snap.data() as Record<string, unknown>;
+    await updateDoc(ref, { name: name.trim() });
+    return docToFolder(id, { ...existing, name: name.trim() });
+  }
+
+  async deleteFolder(id: number): Promise<void> {
+    const firestore = this.getFirestore();
+    const requestsSnap = await getDocs(
+      query(collection(firestore, 'requests'), where('folder_id', '==', id))
+    );
+
+    const batch = writeBatch(firestore);
+    for (const requestDoc of requestsSnap.docs) {
+      batch.delete(requestDoc.ref);
+    }
+    batch.delete(doc(firestore, 'folders', String(id)));
+    await batch.commit();
+  }
+
+  async reorderFolders(collectionId: number, orderedFolderIds: number[]): Promise<void> {
+    const firestore = this.getFirestore();
+    const batch = writeBatch(firestore);
+    orderedFolderIds.forEach((folderId, index) => {
+      batch.update(doc(firestore, 'folders', String(folderId)), {
+        sort_order: index,
+        collection_id: collectionId
+      });
+    });
+    await batch.commit();
+  }
+
+  async reorderRequests(
+    collectionId: number,
+    folderId: number | null,
+    orderedRequestIds: number[]
+  ): Promise<void> {
+    const firestore = this.getFirestore();
+    const batch = writeBatch(firestore);
+    orderedRequestIds.forEach((requestId, index) => {
+      batch.update(doc(firestore, 'requests', String(requestId)), {
+        sort_order: index,
+        folder_id: folderId,
+        collection_id: collectionId
+      });
+    });
+    await batch.commit();
+  }
+
+  async moveRequest(requestId: number, folderId: number | null, index: number): Promise<void> {
+    const firestore = this.getFirestore();
+    const ref = doc(firestore, 'requests', String(requestId));
+    const snap = await getDoc(ref);
+    if (!snap.exists()) throw new Error('Request not found');
+
+    const request = docToRequest(requestId, snap.data() as Record<string, unknown>);
+    const collectionId = request.collection_id;
+    const oldFolderId = request.folder_id;
+
+    if (folderId != null) {
+      const folderSnap = await getDoc(doc(firestore, 'folders', String(folderId)));
+      if (!folderSnap.exists()) throw new Error('Folder not found');
+      const folderData = folderSnap.data() as Record<string, unknown>;
+      if (folderData.collection_id !== collectionId) throw new Error('Folder not found');
+    }
+
+    const listInContainer = async (targetFolderId: number | null): Promise<number[]> => {
+      const all = await this.listRequests(collectionId);
+      return all
+        .filter(
+          (item) =>
+            (targetFolderId == null && item.folder_id == null) || item.folder_id === targetFolderId
+        )
+        .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name))
+        .map((item) => item.id);
+    };
+
+    const reindexContainer = async (
+      targetFolderId: number | null,
+      orderedIds: number[]
+    ): Promise<void> => {
+      const batch = writeBatch(firestore);
+      orderedIds.forEach((id, sortIndex) => {
+        batch.update(doc(firestore, 'requests', String(id)), {
+          sort_order: sortIndex,
+          folder_id: targetFolderId
+        });
+      });
+      await batch.commit();
+    };
+
+    if (oldFolderId === folderId) {
+      const siblings = (await listInContainer(folderId)).filter((id) => id !== requestId);
+      siblings.splice(index, 0, requestId);
+      await reindexContainer(folderId, siblings);
+      return;
+    }
+
+    const oldIds = (await listInContainer(oldFolderId)).filter((id) => id !== requestId);
+    await reindexContainer(oldFolderId, oldIds);
+
+    const newIds = (await listInContainer(folderId)).filter((id) => id !== requestId);
+    newIds.splice(index, 0, requestId);
+    await reindexContainer(folderId, newIds);
+  }
+
   async exportCollectionData(id: number): Promise<CollectionExport> {
     const snap = await getDoc(doc(this.getFirestore(), 'collections', String(id)));
     if (!snap.exists()) throw new Error('Collection not found');
 
     const data = snap.data() as Record<string, unknown>;
     const collectionRecord = docToCollection(id, data);
+    const folderRecords = await this.listFolders(id);
+    const folders = folderRecords.map(({ name, sort_order }) => ({ name, sort_order }));
+    const folderNameById = new Map(folderRecords.map((folder) => [folder.id, folder.name]));
+
     const requests = (await this.listRequests(id)).map(
       ({
         name,
@@ -375,7 +542,8 @@ export class FirestoreDatabase implements IDatabase {
         pre_request_script,
         post_request_script,
         comment,
-        sort_order
+        sort_order,
+        folder_id
       }) => ({
         name,
         method,
@@ -387,17 +555,19 @@ export class FirestoreDatabase implements IDatabase {
         pre_request_script,
         post_request_script,
         comment,
-        sort_order
+        sort_order,
+        folder_name: folder_id != null ? (folderNameById.get(folder_id) ?? null) : null
       })
     );
 
     return {
-      formatVersion: 1,
+      formatVersion: 2,
       name: collectionRecord.name,
       variables: maskVariablesForExport(collectionRecord.variables),
       headers: collectionRecord.headers,
       pre_request_script: collectionRecord.pre_request_script,
       post_request_script: collectionRecord.post_request_script,
+      folders,
       requests
     };
   }
@@ -420,11 +590,29 @@ export class FirestoreDatabase implements IDatabase {
 
     await setDoc(doc(firestore, 'collections', String(id)), collectionData);
 
+    const folderIdByName = new Map<string, number>();
+    for (const folder of exportData.folders ?? []) {
+      const folderId = await this.nextId('folders');
+      await setDoc(doc(firestore, 'folders', String(folderId)), {
+        id: folderId,
+        collection_id: id,
+        name: folder.name,
+        sort_order: folder.sort_order,
+        created_at: now
+      });
+      folderIdByName.set(folder.name, folderId);
+    }
+
     for (const request of exportData.requests) {
       const requestId = await this.nextId('requests');
+      const folderName = request.folder_name ?? null;
+      const folderId =
+        folderName != null && folderName.trim() ? (folderIdByName.get(folderName) ?? null) : null;
+
       await setDoc(doc(firestore, 'requests', String(requestId)), {
         id: requestId,
         collection_id: id,
+        folder_id: folderId,
         name: request.name,
         method: request.method,
         url: request.url,

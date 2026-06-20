@@ -46,6 +46,11 @@ interface Props {
   collectionName?: string;
 
   /**
+   * Name of the folder this request belongs to, for display as a breadcrumb segment.
+   */
+  folderName?: string;
+
+  /**
    * Opens collection settings to edit variables.
    */
   onEditVariables?: () => void;
@@ -62,6 +67,7 @@ export function Editor({
   sending,
   variables,
   collectionName,
+  folderName,
   onEditVariables
 }: Props): JSX.Element {
   const showBody = draft.method !== 'GET' && draft.method !== 'HEAD';
@@ -81,6 +87,7 @@ export function Editor({
       <Name
         name={draft.name}
         collectionName={collectionName}
+        folderName={folderName}
         onNameChange={(name) => update({ name })}
       />
 

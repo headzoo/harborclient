@@ -61,12 +61,7 @@ function withTrailingRow(parts: FormDataPart[]): FormDataPart[] {
 /**
  * Editable table of multipart form parts with text and file field types.
  */
-export function FormDataEditor({
-  parts,
-  onChange,
-  variables,
-  onEditVariable
-}: Props): JSX.Element {
+export function FormDataEditor({ parts, onChange, variables, onEditVariable }: Props): JSX.Element {
   const rows = useMemo(() => withTrailingRow(parts), [parts]);
 
   /**

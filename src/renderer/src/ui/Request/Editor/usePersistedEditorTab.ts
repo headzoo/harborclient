@@ -38,7 +38,10 @@ interface Result {
 export function usePersistedEditorTab({ draft, tabId, showBody }: Options): Result {
   const [tab, setTabState] = useState<EditorTab>('params');
   const tabRef = useRef(tab);
-  tabRef.current = tab;
+
+  useEffect(() => {
+    tabRef.current = tab;
+  }, [tab]);
 
   const storageKey = requestEditorTabKey(draft, tabId);
   const previousDraftIdRef = useRef(draft.id);

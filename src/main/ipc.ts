@@ -158,6 +158,32 @@ export function registerIpcHandlers(db: IDatabase): void {
 
   ipcMain.handle('requests:delete', (_event, id: number) => db.deleteRequest(id));
 
+  ipcMain.handle('folders:list', (_event, collectionId: number) => db.listFolders(collectionId));
+
+  ipcMain.handle('folders:create', (_event, collectionId: number, name: string) =>
+    db.createFolder(collectionId, name)
+  );
+
+  ipcMain.handle('folders:rename', (_event, id: number, name: string) => db.renameFolder(id, name));
+
+  ipcMain.handle('folders:delete', (_event, id: number) => db.deleteFolder(id));
+
+  ipcMain.handle('folders:reorder', (_event, collectionId: number, orderedFolderIds: number[]) =>
+    db.reorderFolders(collectionId, orderedFolderIds)
+  );
+
+  ipcMain.handle(
+    'requests:reorder',
+    (_event, collectionId: number, folderId: number | null, orderedRequestIds: number[]) =>
+      db.reorderRequests(collectionId, folderId, orderedRequestIds)
+  );
+
+  ipcMain.handle(
+    'requests:move',
+    (_event, requestId: number, folderId: number | null, index: number) =>
+      db.moveRequest(requestId, folderId, index)
+  );
+
   ipcMain.handle('http:send', async (_event, req: SendRequestInput, requestId?: string) => {
     const controller = new AbortController();
     if (requestId) {

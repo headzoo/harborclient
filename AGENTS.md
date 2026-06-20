@@ -1,3 +1,13 @@
+## Linting
+
+After making code changes, always run:
+
+```bash
+pnpm lint
+```
+
+Fix any reported issues before finishing the task.
+
 ## Changelog
 
 `CHANGELOG.md` is kept up to date automatically by the `post-commit` hook in

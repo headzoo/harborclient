@@ -328,7 +328,7 @@ describeSqlite('SqliteDatabase import and export', () => {
     const exported = await db.exportCollectionData(collection.id);
 
     expect(exported).toEqual({
-      formatVersion: 1,
+      formatVersion: 2,
       name: 'Export Me',
       variables: [
         { key: 'shared', value: 'visible', defaultValue: '', share: true },
@@ -337,6 +337,7 @@ describeSqlite('SqliteDatabase import and export', () => {
       headers: [{ key: 'X-Header', value: '1', enabled: true }],
       pre_request_script: 'pre script',
       post_request_script: 'post script',
+      folders: [],
       requests: [
         {
           name: 'Get Users',
@@ -349,7 +350,8 @@ describeSqlite('SqliteDatabase import and export', () => {
           pre_request_script: 'req pre',
           post_request_script: 'req post',
           comment: 'Request notes',
-          sort_order: 0
+          sort_order: 0,
+          folder_name: null
         }
       ]
     });
@@ -399,7 +401,7 @@ describeSqlite('SqliteDatabase import and export', () => {
       'Invalid collection file: expected a JSON object'
     );
     await expect(
-      db.importCollectionData({ formatVersion: 2, name: 'Bad', requests: [] })
+      db.importCollectionData({ formatVersion: 3, name: 'Bad', requests: [] })
     ).rejects.toThrow('Invalid collection file: unsupported format version');
     await expect(
       db.importCollectionData({ formatVersion: 1, name: '   ', requests: [] })
@@ -418,6 +420,89 @@ describeSqlite('SqliteDatabase import and export', () => {
         requests: [{ name: 'X', method: 'GET', body_type: 'xml' }]
       })
     ).rejects.toThrow('Invalid collection file: request 1 has an invalid body type');
+  });
+});
+
+describeSqlite('SqliteDatabase folders', () => {
+  it('createFolder and listFolders return ordered folders', async () => {
+    const { db } = await createTestDb();
+    const collection = await db.createCollection('Folders');
+
+    const alpha = await db.createFolder(collection.id, 'Alpha');
+    const beta = await db.createFolder(collection.id, 'Beta');
+
+    expect(alpha.sort_order).toBe(0);
+    expect(beta.sort_order).toBe(1);
+    expect((await db.listFolders(collection.id)).map((folder) => folder.name)).toEqual([
+      'Alpha',
+      'Beta'
+    ]);
+  });
+
+  it('saveRequest stores folder_id and scopes sort_order per folder', async () => {
+    const { db } = await createTestDb();
+    const collection = await db.createCollection('Folders');
+    const folder = await db.createFolder(collection.id, 'API');
+
+    const root = await db.saveRequest(baseRequestInput(collection.id, { name: 'Root' }));
+    const inFolder = await db.saveRequest(
+      baseRequestInput(collection.id, { name: 'In Folder', folder_id: folder.id })
+    );
+
+    expect(root.folder_id).toBeNull();
+    expect(root.sort_order).toBe(0);
+    expect(inFolder.folder_id).toBe(folder.id);
+    expect(inFolder.sort_order).toBe(0);
+  });
+
+  it('moveRequest moves a request between folder and root', async () => {
+    const { db } = await createTestDb();
+    const collection = await db.createCollection('Folders');
+    const folder = await db.createFolder(collection.id, 'API');
+    const request = await db.saveRequest(
+      baseRequestInput(collection.id, { name: 'Move Me', folder_id: folder.id })
+    );
+
+    await db.moveRequest(request.id, null, 0);
+
+    const requests = await db.listRequests(collection.id);
+    const moved = requests.find((item) => item.id === request.id);
+    expect(moved?.folder_id).toBeNull();
+    expect(moved?.sort_order).toBe(0);
+  });
+
+  it('deleteFolder removes folder and contained requests', async () => {
+    const { db } = await createTestDb();
+    const collection = await db.createCollection('Folders');
+    const folder = await db.createFolder(collection.id, 'Temp');
+    await db.saveRequest(baseRequestInput(collection.id, { folder_id: folder.id }));
+
+    await db.deleteFolder(folder.id);
+
+    expect(await db.listFolders(collection.id)).toEqual([]);
+    expect(await db.listRequests(collection.id)).toEqual([]);
+  });
+
+  it('export and import preserve folders', async () => {
+    const { db } = await createTestDb();
+    const collection = await db.createCollection('Export Folders');
+    const folder = await db.createFolder(collection.id, 'Auth');
+    await db.saveRequest(
+      baseRequestInput(collection.id, { name: 'Login', folder_id: folder.id, method: 'POST' })
+    );
+
+    const exported = await db.exportCollectionData(collection.id);
+    expect(exported.formatVersion).toBe(2);
+    expect(exported.folders).toEqual([{ name: 'Auth', sort_order: 0 }]);
+    expect(exported.requests[0]?.folder_name).toBe('Auth');
+
+    const imported = await db.importCollectionData(exported);
+    const importedFolders = await db.listFolders(imported.id);
+    const importedRequests = await db.listRequests(imported.id);
+
+    expect(importedFolders).toHaveLength(1);
+    expect(importedRequests).toHaveLength(1);
+    expect(importedRequests[0]?.folder_id).toBe(importedFolders[0]?.id);
   });
 });
 

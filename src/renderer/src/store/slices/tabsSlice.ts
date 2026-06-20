@@ -61,6 +61,8 @@ const tabsSlice = createSlice({
       const existing = state.tabs.find((t) => t.draft.id === req.id);
       if (existing) {
         state.activeTabId = existing.tabId;
+        existing.draft.collection_id = req.collection_id;
+        existing.draft.folder_id = req.folder_id;
         return;
       }
 

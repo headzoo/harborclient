@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type JSX } from 'react';
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import type { Variable } from '#/shared/types';
 import { isTabDirty } from '#/renderer/src/store/drafts';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
@@ -7,6 +7,8 @@ import {
   selectActiveTabId,
   selectCollections,
   selectDraft,
+  selectFoldersByCollection,
+  selectRequestsByCollection,
   selectEnvironments,
   selectResponse,
   selectSelectedCollectionId,
@@ -21,7 +23,7 @@ import {
   setActiveTab
 } from '#/renderer/src/store/slices/tabsSlice';
 import { setActiveEnvironmentId } from '#/renderer/src/store/slices/environmentsSlice';
-import { sendRequest, cancelRequest } from '#/renderer/src/store/thunks';
+import { sendRequest, cancelRequest, refreshCollectionContents } from '#/renderer/src/store/thunks';
 import { ResizeHandle, useResizable } from '#/renderer/src/components/Resizable';
 import { primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
 import { Editor } from './Editor';
@@ -70,6 +72,8 @@ export function Request({ onEditVariables }: Props): JSX.Element {
   const environments = useAppSelector(selectEnvironments);
   const activeEnvironmentId = useAppSelector(selectActiveEnvironmentId);
   const collections = useAppSelector(selectCollections);
+  const foldersByCollection = useAppSelector(selectFoldersByCollection);
+  const requestsByCollection = useAppSelector(selectRequestsByCollection);
   const selectedCollectionId = useAppSelector(selectSelectedCollectionId);
 
   const [closeTabPrompt, setCloseTabPrompt] = useState<CloseTabPrompt | null>(null);
@@ -96,6 +100,28 @@ export function Request({ onEditVariables }: Props): JSX.Element {
     [activeCollection, activeEnvironment]
   );
   const activeCollectionName = activeCollection?.name;
+  const activeFolderId = useMemo(() => {
+    if (activeCollectionId == null) return null;
+    if (draft.id != null) {
+      const saved = (requestsByCollection[activeCollectionId] ?? []).find(
+        (request) => request.id === draft.id
+      );
+      if (saved) return saved.folder_id;
+    }
+    return draft.folder_id ?? null;
+  }, [draft.folder_id, draft.id, activeCollectionId, requestsByCollection]);
+  const activeFolderName = useMemo(() => {
+    if (activeFolderId == null || activeCollectionId == null) return undefined;
+    const folders = foldersByCollection[activeCollectionId] ?? [];
+    return folders.find((folder) => folder.id === activeFolderId)?.name;
+  }, [activeFolderId, activeCollectionId, foldersByCollection]);
+
+  useEffect(() => {
+    if (activeCollectionId == null) return;
+    if (foldersByCollection[activeCollectionId] === undefined) {
+      void dispatch(refreshCollectionContents(activeCollectionId));
+    }
+  }, [activeCollectionId, foldersByCollection, dispatch]);
 
   /**
    * Closes a tab, prompting when it has unsaved changes.
@@ -131,6 +157,7 @@ export function Request({ onEditVariables }: Props): JSX.Element {
           sending={sending}
           variables={activeVariables}
           collectionName={activeCollectionName}
+          folderName={activeFolderName}
           onEditVariables={onEditVariables}
         />
       </div>

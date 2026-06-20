@@ -14,19 +14,34 @@ The sidebar is the main place to browse and manage collections.
 - **Select** (click the collection name) — highlights the row and loads its saved requests. If the collection was collapsed, it expands automatically.
 - **Settings** — double-click the collection name to open Collection Settings.
 
-### Saved requests
+### Saved requests and folders
 
-When a collection is expanded, its saved requests appear indented below the collection name. Each row shows the HTTP method badge and request name.
+When a collection is expanded, **folders** (if any) appear first, followed by root-level saved requests. Click a folder's chevron to expand or collapse the requests inside it.
+
+Each request row shows the HTTP method badge and request name.
 
 - Click a request to open it in a tab. If the request is already open, HarborClient focuses that tab.
 - The currently open saved request is highlighted in the sidebar.
-- If a collection has no saved requests, **No saved requests** is shown.
+- If a collection has no folders or requests, **No saved requests** is shown.
+
+### Organizing with folders
+
+Use **New Folder** in a collection's row menu to create a folder. Folder actions:
+
+| Action | How |
+| --- | --- |
+| **New Request** | Row menu on the folder — creates a saved request inside the folder |
+| **Rename** | Row menu → **Rename** |
+| **Delete** | Row menu → **Delete** — removes the folder and all requests inside it |
+
+Drag and drop to reorder folders, reorder requests within a folder or at the collection root, and move requests between folders and the root. While dragging a request, the target folder or collection root is highlighted so you can see where it will land. You can also use **Move to …** in a request's row menu.
 
 ### Empty state and ordering
 
 - When you have no collections, the sidebar shows **No collections yet**.
 - Collections are listed alphabetically by name.
-- Saved requests are ordered by their sort position, then by name.
+- Folders are ordered by drag-and-drop position within the collection.
+- Saved requests are ordered by their position within a folder or at the collection root, then by name.
 
 ### Selection persistence
 

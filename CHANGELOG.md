@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(folders): implement folder management for collections. (`511353e`)
 - feat(collections): enhance sharing functionality and documentation. (`bf2bb93`)
 - feat(database): implement routing database and collection management. (`ce10e8a`)
 - feat(database): enhance database connection management. (`c868deb`)

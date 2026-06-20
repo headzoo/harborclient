@@ -159,6 +159,36 @@ export interface Collection {
 }
 
 /**
+ * A folder for organizing requests within a collection (single level).
+ */
+export interface Folder {
+  /**
+   * Unique database ID.
+   */
+  id: number;
+
+  /**
+   * ID of the collection this folder belongs to.
+   */
+  collection_id: number;
+
+  /**
+   * Display name shown in the sidebar.
+   */
+  name: string;
+
+  /**
+   * Position among sibling folders for sidebar ordering.
+   */
+  sort_order: number;
+
+  /**
+   * ISO 8601 timestamp when the folder was created.
+   */
+  created_at: string;
+}
+
+/**
  * A saved HTTP request belonging to a collection.
  */
 export interface SavedRequest {
@@ -221,6 +251,11 @@ export interface SavedRequest {
    * Free-form notes for this request.
    */
   comment: string;
+
+  /**
+   * ID of the folder containing this request, or null when at collection root.
+   */
+  folder_id: number | null;
 
   /**
    * Position within the collection for sidebar ordering.
@@ -296,6 +331,26 @@ export interface ExportedRequest {
    * Position within the collection for sidebar ordering.
    */
   sort_order: number;
+
+  /**
+   * Name of the folder containing this request; null or omitted for collection root.
+   */
+  folder_name?: string | null;
+}
+
+/**
+ * Portable folder shape for collection export/import (no database IDs).
+ */
+export interface ExportedFolder {
+  /**
+   * Display name for the folder.
+   */
+  name: string;
+
+  /**
+   * Position among sibling folders for sidebar ordering.
+   */
+  sort_order: number;
 }
 
 /**
@@ -305,7 +360,7 @@ export interface CollectionExport {
   /**
    * Export schema version for forward compatibility.
    */
-  formatVersion: 1;
+  formatVersion: 1 | 2;
 
   /**
    * Display name for the collection.
@@ -331,6 +386,11 @@ export interface CollectionExport {
    * JavaScript run after every request in this collection.
    */
   post_request_script: string;
+
+  /**
+   * Folders for organizing requests; present in format version 2 exports.
+   */
+  folders?: ExportedFolder[];
 
   /**
    * Saved requests belonging to the collection.
@@ -416,6 +476,11 @@ export interface SaveRequestInput {
    * Free-form notes for this request.
    */
   comment: string;
+
+  /**
+   * ID of the folder containing this request, or null when at collection root.
+   */
+  folder_id?: number | null;
 }
 
 /**
@@ -883,6 +948,69 @@ export interface Api {
    * @param id - Request ID to delete.
    */
   deleteRequest: (id: number) => Promise<void>;
+
+  /**
+   * Lists folders in a collection.
+   *
+   * @param collectionId - Collection to query.
+   * @returns Folders ordered by sort_order then name.
+   */
+  listFolders: (collectionId: number) => Promise<Folder[]>;
+
+  /**
+   * Creates a new folder in a collection.
+   *
+   * @param collectionId - Collection to add the folder to.
+   * @param name - Display name for the folder.
+   * @returns The newly created folder.
+   */
+  createFolder: (collectionId: number, name: string) => Promise<Folder>;
+
+  /**
+   * Renames a folder.
+   *
+   * @param id - Folder ID to rename.
+   * @param name - New display name.
+   * @returns The updated folder.
+   */
+  renameFolder: (id: number, name: string) => Promise<Folder>;
+
+  /**
+   * Deletes a folder and all requests inside it.
+   *
+   * @param id - Folder ID to delete.
+   */
+  deleteFolder: (id: number) => Promise<void>;
+
+  /**
+   * Reorders folders within a collection.
+   *
+   * @param collectionId - Collection containing the folders.
+   * @param orderedFolderIds - Folder IDs in desired order.
+   */
+  reorderFolders: (collectionId: number, orderedFolderIds: number[]) => Promise<void>;
+
+  /**
+   * Reorders requests within a folder or at collection root.
+   *
+   * @param collectionId - Collection containing the requests.
+   * @param folderId - Folder ID, or null for root-level requests.
+   * @param orderedRequestIds - Request IDs in desired order.
+   */
+  reorderRequests: (
+    collectionId: number,
+    folderId: number | null,
+    orderedRequestIds: number[]
+  ) => Promise<void>;
+
+  /**
+   * Moves a request to another folder or collection root at a given index.
+   *
+   * @param requestId - Request ID to move.
+   * @param folderId - Destination folder ID, or null for collection root.
+   * @param index - Zero-based position within the destination container.
+   */
+  moveRequest: (requestId: number, folderId: number | null, index: number) => Promise<void>;
 
   /**
    * Sends an HTTP request via the main process.

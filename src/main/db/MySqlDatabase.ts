@@ -10,6 +10,7 @@ import type {
   Collection,
   CollectionExport,
   Environment,
+  Folder,
   HttpMethod,
   KeyValue,
   MySqlSettings,
@@ -86,9 +87,20 @@ function rowToRequest(row: RowDataPacket): SavedRequest {
     pre_request_script: (row.pre_request_script as string) ?? '',
     post_request_script: (row.post_request_script as string) ?? '',
     comment: (row.comment as string) ?? '',
+    folder_id: row.folder_id != null ? (row.folder_id as number) : null,
     sort_order: row.sort_order as number,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string
+  };
+}
+
+function rowToFolder(row: RowDataPacket): Folder {
+  return {
+    id: row.id as number,
+    collection_id: row.collection_id as number,
+    name: row.name as string,
+    sort_order: row.sort_order as number,
+    created_at: row.created_at as string
   };
 }
 
@@ -185,7 +197,22 @@ export class MySqlDatabase implements IDatabase {
     `);
 
     await this.#pool.execute(`
+      CREATE TABLE IF NOT EXISTS folders (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        collection_id INT NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        sort_order INT NOT NULL DEFAULT 0,
+        created_at VARCHAR(64) NOT NULL,
+        FOREIGN KEY (collection_id) REFERENCES collections(id) ON DELETE CASCADE
+      )
+    `);
+
+    await this.#pool.execute(`
       ALTER TABLE requests ADD COLUMN IF NOT EXISTS comment LONGTEXT NOT NULL DEFAULT ''
+    `);
+
+    await this.#pool.execute(`
+      ALTER TABLE requests ADD COLUMN IF NOT EXISTS folder_id INT NULL
     `);
   }
 
@@ -310,18 +337,20 @@ export class MySqlDatabase implements IDatabase {
     const preRequestScript = input.pre_request_script ?? '';
     const postRequestScript = input.post_request_script ?? '';
     const comment = input.comment ?? '';
+    const folderId = input.folder_id ?? null;
     const now = new Date().toISOString();
 
     if (input.id) {
       const [result] = await this.getPool().execute<ResultSetHeader>(
         `UPDATE requests SET
-          collection_id = ?, name = ?, method = ?, url = ?,
+          collection_id = ?, folder_id = ?, name = ?, method = ?, url = ?,
           headers = ?, params = ?, body = ?, body_type = ?,
           pre_request_script = ?, post_request_script = ?, comment = ?,
           updated_at = ?
         WHERE id = ?`,
         [
           input.collection_id,
+          folderId,
           input.name.trim(),
           input.method,
           input.url,
@@ -348,18 +377,20 @@ export class MySqlDatabase implements IDatabase {
     }
 
     const [maxRows] = await this.getPool().execute<RowDataPacket[]>(
-      'SELECT COALESCE(MAX(sort_order), -1) AS max_order FROM requests WHERE collection_id = ?',
-      [input.collection_id]
+      `SELECT COALESCE(MAX(sort_order), -1) AS max_order FROM requests
+       WHERE collection_id = ? AND ((? IS NULL AND folder_id IS NULL) OR folder_id = ?)`,
+      [input.collection_id, folderId, folderId]
     );
     const maxOrder = (maxRows[0]?.max_order as number) ?? -1;
 
     const [result] = await this.getPool().execute<ResultSetHeader>(
       `INSERT INTO requests (
-        collection_id, name, method, url, headers, params, body, body_type,
+        collection_id, folder_id, name, method, url, headers, params, body, body_type,
         pre_request_script, post_request_script, comment, sort_order, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         input.collection_id,
+        folderId,
         input.name.trim(),
         input.method,
         input.url,
@@ -390,6 +421,171 @@ export class MySqlDatabase implements IDatabase {
     await this.getPool().execute('DELETE FROM requests WHERE id = ?', [id]);
   }
 
+  async listFolders(collectionId: number): Promise<Folder[]> {
+    const [rows] = await this.getPool().execute<RowDataPacket[]>(
+      'SELECT * FROM folders WHERE collection_id = ? ORDER BY sort_order ASC, name ASC',
+      [collectionId]
+    );
+    return rows.map(rowToFolder);
+  }
+
+  async createFolder(collectionId: number, name: string): Promise<Folder> {
+    const createdAt = new Date().toISOString();
+    const [maxRows] = await this.getPool().execute<RowDataPacket[]>(
+      'SELECT COALESCE(MAX(sort_order), -1) AS max_order FROM folders WHERE collection_id = ?',
+      [collectionId]
+    );
+    const maxOrder = (maxRows[0]?.max_order as number) ?? -1;
+
+    const [result] = await this.getPool().execute<ResultSetHeader>(
+      'INSERT INTO folders (collection_id, name, sort_order, created_at) VALUES (?, ?, ?, ?)',
+      [collectionId, name.trim(), maxOrder + 1, createdAt]
+    );
+
+    const [rows] = await this.getPool().execute<RowDataPacket[]>(
+      'SELECT * FROM folders WHERE id = ?',
+      [result.insertId]
+    );
+    const row = rows[0];
+    if (!row) throw new Error('Folder not found after insert');
+    return rowToFolder(row);
+  }
+
+  async renameFolder(id: number, name: string): Promise<Folder> {
+    const [result] = await this.getPool().execute<ResultSetHeader>(
+      'UPDATE folders SET name = ? WHERE id = ?',
+      [name.trim(), id]
+    );
+    if (result.affectedRows === 0) throw new Error('Folder not found');
+
+    const [rows] = await this.getPool().execute<RowDataPacket[]>(
+      'SELECT * FROM folders WHERE id = ?',
+      [id]
+    );
+    const row = rows[0];
+    if (!row) throw new Error('Folder not found');
+    return rowToFolder(row);
+  }
+
+  async deleteFolder(id: number): Promise<void> {
+    const connection = await this.getPool().getConnection();
+    try {
+      await connection.beginTransaction();
+      await connection.execute('DELETE FROM requests WHERE folder_id = ?', [id]);
+      await connection.execute('DELETE FROM folders WHERE id = ?', [id]);
+      await connection.commit();
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
+  }
+
+  async reorderFolders(collectionId: number, orderedFolderIds: number[]): Promise<void> {
+    const connection = await this.getPool().getConnection();
+    try {
+      await connection.beginTransaction();
+      for (let index = 0; index < orderedFolderIds.length; index++) {
+        await connection.execute(
+          'UPDATE folders SET sort_order = ? WHERE id = ? AND collection_id = ?',
+          [index, orderedFolderIds[index], collectionId]
+        );
+      }
+      await connection.commit();
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
+  }
+
+  async reorderRequests(
+    collectionId: number,
+    folderId: number | null,
+    orderedRequestIds: number[]
+  ): Promise<void> {
+    const connection = await this.getPool().getConnection();
+    try {
+      await connection.beginTransaction();
+      for (let index = 0; index < orderedRequestIds.length; index++) {
+        await connection.execute(
+          'UPDATE requests SET sort_order = ?, folder_id = ? WHERE id = ? AND collection_id = ?',
+          [index, folderId, orderedRequestIds[index], collectionId]
+        );
+      }
+      await connection.commit();
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
+  }
+
+  async moveRequest(requestId: number, folderId: number | null, index: number): Promise<void> {
+    const pool = this.getPool();
+    const [requestRows] = await pool.execute<RowDataPacket[]>(
+      'SELECT * FROM requests WHERE id = ?',
+      [requestId]
+    );
+    const requestRow = requestRows[0];
+    if (!requestRow) throw new Error('Request not found');
+
+    const request = rowToRequest(requestRow);
+    const collectionId = request.collection_id;
+    const oldFolderId = request.folder_id;
+
+    if (folderId != null) {
+      const [folderRows] = await pool.execute<RowDataPacket[]>(
+        'SELECT collection_id FROM folders WHERE id = ?',
+        [folderId]
+      );
+      const folderRow = folderRows[0];
+      if (!folderRow || folderRow.collection_id !== collectionId) {
+        throw new Error('Folder not found');
+      }
+    }
+
+    const listInContainer = async (targetFolderId: number | null): Promise<number[]> => {
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        `SELECT id FROM requests WHERE collection_id = ?
+         AND ((? IS NULL AND folder_id IS NULL) OR folder_id = ?)
+         ORDER BY sort_order ASC, name ASC`,
+        [collectionId, targetFolderId, targetFolderId]
+      );
+      return rows.map((row) => row.id as number);
+    };
+
+    const reindexContainer = async (
+      targetFolderId: number | null,
+      orderedIds: number[]
+    ): Promise<void> => {
+      for (let sortIndex = 0; sortIndex < orderedIds.length; sortIndex++) {
+        await pool.execute('UPDATE requests SET sort_order = ?, folder_id = ? WHERE id = ?', [
+          sortIndex,
+          targetFolderId,
+          orderedIds[sortIndex]
+        ]);
+      }
+    };
+
+    if (oldFolderId === folderId) {
+      const siblings = (await listInContainer(folderId)).filter((id) => id !== requestId);
+      siblings.splice(index, 0, requestId);
+      await reindexContainer(folderId, siblings);
+      return;
+    }
+
+    const oldIds = (await listInContainer(oldFolderId)).filter((id) => id !== requestId);
+    await reindexContainer(oldFolderId, oldIds);
+
+    const newIds = (await listInContainer(folderId)).filter((id) => id !== requestId);
+    newIds.splice(index, 0, requestId);
+    await reindexContainer(folderId, newIds);
+  }
+
   async exportCollectionData(id: number): Promise<CollectionExport> {
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
       'SELECT name, variables, headers, pre_request_script, post_request_script FROM collections WHERE id = ?',
@@ -398,6 +594,10 @@ export class MySqlDatabase implements IDatabase {
 
     const row = rows[0];
     if (!row) throw new Error('Collection not found');
+
+    const folderRecords = await this.listFolders(id);
+    const folders = folderRecords.map(({ name, sort_order }) => ({ name, sort_order }));
+    const folderNameById = new Map(folderRecords.map((folder) => [folder.id, folder.name]));
 
     const requests = (await this.listRequests(id)).map(
       ({
@@ -411,7 +611,8 @@ export class MySqlDatabase implements IDatabase {
         pre_request_script,
         post_request_script,
         comment,
-        sort_order
+        sort_order,
+        folder_id
       }) => ({
         name,
         method,
@@ -423,7 +624,8 @@ export class MySqlDatabase implements IDatabase {
         pre_request_script,
         post_request_script,
         comment,
-        sort_order
+        sort_order,
+        folder_name: folder_id != null ? (folderNameById.get(folder_id) ?? null) : null
       })
     );
 
@@ -433,12 +635,13 @@ export class MySqlDatabase implements IDatabase {
     const headers = parseJson<KeyValue[]>(row.headers as string, []);
 
     return {
-      formatVersion: 1,
+      formatVersion: 2,
       name: row.name as string,
       variables: maskVariablesForExport(variables),
       headers,
       pre_request_script: (row.pre_request_script as string) ?? '',
       post_request_script: (row.post_request_script as string) ?? '',
+      folders,
       requests
     };
   }
@@ -465,15 +668,29 @@ export class MySqlDatabase implements IDatabase {
       );
 
       const collectionId = collectionResult.insertId;
+      const folderIdByName = new Map<string, number>();
+
+      for (const folder of exportData.folders ?? []) {
+        const [folderResult] = await connection.execute<ResultSetHeader>(
+          'INSERT INTO folders (collection_id, name, sort_order, created_at) VALUES (?, ?, ?, ?)',
+          [collectionId, folder.name, folder.sort_order, now]
+        );
+        folderIdByName.set(folder.name, folderResult.insertId);
+      }
 
       for (const request of exportData.requests) {
+        const folderName = request.folder_name ?? null;
+        const folderId =
+          folderName != null && folderName.trim() ? (folderIdByName.get(folderName) ?? null) : null;
+
         await connection.execute(
           `INSERT INTO requests (
-            collection_id, name, method, url, headers, params, body, body_type,
+            collection_id, folder_id, name, method, url, headers, params, body, body_type,
             pre_request_script, post_request_script, comment, sort_order, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             collectionId,
+            folderId,
             request.name,
             request.method,
             request.url,

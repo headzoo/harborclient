@@ -1,14 +1,16 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { Collection, SavedRequest } from '#/shared/types';
+import type { Collection, Folder, SavedRequest } from '#/shared/types';
 
 export interface CollectionsState {
   collections: Collection[];
+  foldersByCollection: Record<number, Folder[]>;
   requestsByCollection: Record<number, SavedRequest[]>;
   selectedCollectionId: number | null;
 }
 
 const initialState: CollectionsState = {
   collections: [],
+  foldersByCollection: {},
   requestsByCollection: {},
   selectedCollectionId: null
 };
@@ -28,10 +30,20 @@ const collectionsSlice = createSlice({
       action: PayloadAction<{ collectionId: number; requests: SavedRequest[] }>
     ) {
       state.requestsByCollection[action.payload.collectionId] = action.payload.requests;
+    },
+    setFoldersForCollection(
+      state,
+      action: PayloadAction<{ collectionId: number; folders: Folder[] }>
+    ) {
+      state.foldersByCollection[action.payload.collectionId] = action.payload.folders;
     }
   }
 });
 
-export const { setSelectedCollectionId, setCollections, setRequestsForCollection } =
-  collectionsSlice.actions;
+export const {
+  setSelectedCollectionId,
+  setCollections,
+  setRequestsForCollection,
+  setFoldersForCollection
+} = collectionsSlice.actions;
 export default collectionsSlice.reducer;

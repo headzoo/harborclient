@@ -189,6 +189,7 @@ describe('draftFromSaved', () => {
       pre_request_script: '',
       post_request_script: '',
       comment: '',
+      folder_id: null,
       sort_order: 0,
       created_at: '2026-01-01T00:00:00.000Z',
       updated_at: '2026-01-01T00:00:00.000Z'
@@ -197,6 +198,7 @@ describe('draftFromSaved', () => {
     expect(draftFromSaved(saved)).toEqual({
       id: 1,
       collection_id: 10,
+      folder_id: null,
       name: 'Saved',
       method: 'PUT',
       url: 'https://api.example.com',
@@ -224,6 +226,7 @@ describe('draftFromSaved', () => {
       pre_request_script: '',
       post_request_script: '',
       comment: '',
+      folder_id: null,
       sort_order: 0,
       created_at: '2026-01-01T00:00:00.000Z',
       updated_at: '2026-01-01T00:00:00.000Z'

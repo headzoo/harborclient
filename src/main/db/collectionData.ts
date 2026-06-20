@@ -63,7 +63,7 @@ export function validateCollectionExport(data: unknown): CollectionExport {
 
   const record = data as Record<string, unknown>;
   const formatVersion = record.formatVersion;
-  if (formatVersion !== 1) {
+  if (formatVersion !== 1 && formatVersion !== 2) {
     throw new Error('Invalid collection file: unsupported format version');
   }
 
@@ -88,6 +88,23 @@ export function validateCollectionExport(data: unknown): CollectionExport {
     typeof record.pre_request_script === 'string' ? record.pre_request_script : '';
   const postRequestScript =
     typeof record.post_request_script === 'string' ? record.post_request_script : '';
+
+  const folders = Array.isArray(record.folders)
+    ? record.folders.map((item, index) => {
+        if (!item || typeof item !== 'object') {
+          throw new Error(`Invalid collection file: folder ${index + 1} is malformed`);
+        }
+        const folder = item as Record<string, unknown>;
+        const folderName = typeof folder.name === 'string' ? folder.name.trim() : '';
+        if (!folderName) {
+          throw new Error(`Invalid collection file: folder ${index + 1} is missing a name`);
+        }
+        return {
+          name: folderName,
+          sort_order: typeof folder.sort_order === 'number' ? folder.sort_order : index
+        };
+      })
+    : [];
 
   const requests = record.requests.map((item, index) => {
     if (!item || typeof item !== 'object') {
@@ -122,17 +139,24 @@ export function validateCollectionExport(data: unknown): CollectionExport {
       post_request_script:
         typeof req.post_request_script === 'string' ? req.post_request_script : '',
       comment: typeof req.comment === 'string' ? req.comment : '',
-      sort_order: typeof req.sort_order === 'number' ? req.sort_order : index
+      sort_order: typeof req.sort_order === 'number' ? req.sort_order : index,
+      folder_name:
+        typeof req.folder_name === 'string'
+          ? req.folder_name.trim() || null
+          : req.folder_name === null
+            ? null
+            : undefined
     } satisfies ExportedRequest;
   });
 
   return {
-    formatVersion: 1,
+    formatVersion,
     name,
     variables,
     headers,
     pre_request_script: preRequestScript,
     post_request_script: postRequestScript,
+    folders: formatVersion === 2 ? folders : undefined,
     requests
   };
 }

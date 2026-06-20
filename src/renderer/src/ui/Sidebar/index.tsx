@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type JSX } from 'react';
+import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { DatabaseConnection, SavedRequest } from '#/shared/types';
 import { ResizeHandle, useResizable } from '#/renderer/src/components/Resizable';
@@ -8,6 +8,7 @@ import {
   selectCollections,
   selectDraft,
   selectEnvironments,
+  selectFoldersByCollection,
   selectRequestsByCollection,
   selectSelectedCollectionId
 } from '#/renderer/src/store/selectors';
@@ -15,12 +16,19 @@ import { setSelectedCollectionId } from '#/renderer/src/store/slices/collections
 import { setActiveEnvironmentId } from '#/renderer/src/store/slices/environmentsSlice';
 import {
   createEnvironment,
+  createFolder,
   deleteCollection,
   deleteEnvironment,
+  deleteFolder,
   deleteRequest,
   exportCollection,
+  moveRequestToFolder,
   newRequestInCollection,
-  refreshRequests
+  newRequestInFolder,
+  refreshCollectionContents,
+  renameFolder,
+  reorderFolders,
+  reorderRequests
 } from '#/renderer/src/store/thunks';
 import { field, primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
 import { Collections } from './Collections';
@@ -66,6 +74,7 @@ export function Sidebar({
 }: Props): JSX.Element {
   const dispatch = useAppDispatch();
   const collections = useAppSelector(selectCollections);
+  const foldersByCollection = useAppSelector(selectFoldersByCollection);
   const requestsByCollection = useAppSelector(selectRequestsByCollection);
   const selectedCollectionId = useAppSelector(selectSelectedCollectionId);
   const draft = useAppSelector(selectDraft);
@@ -76,6 +85,12 @@ export function Sidebar({
   const [environmentsExpanded, setEnvironmentsExpanded] = useState(true);
   const [showEnvironmentModal, setShowEnvironmentModal] = useState(false);
   const [newEnvironmentName, setNewEnvironmentName] = useState('');
+  const [folderModal, setFolderModal] = useState<{
+    mode: 'create' | 'rename';
+    collectionId: number;
+    folderId?: number;
+    name: string;
+  } | null>(null);
   const [databaseConnections, setDatabaseConnections] = useState<DatabaseConnection[]>([]);
   const [primaryConnectionId, setPrimaryConnectionId] = useState('');
   const { size: width, onResizeStart } = useResizable({
@@ -117,9 +132,43 @@ export function Sidebar({
     [databaseConnections]
   );
 
+  const handleExpandCollection = useCallback(
+    (id: number) => {
+      void dispatch(refreshCollectionContents(id));
+    },
+    [dispatch]
+  );
+
   const closeEnvironmentModal = (): void => {
     setShowEnvironmentModal(false);
     setNewEnvironmentName('');
+  };
+
+  const closeFolderModal = (): void => {
+    setFolderModal(null);
+  };
+
+  /**
+   * Creates or renames a folder from the modal form.
+   */
+  const handleFolderModalSubmit = async (): Promise<void> => {
+    if (!folderModal) return;
+    const name = folderModal.name.trim();
+    if (!name) return;
+
+    const { mode, collectionId, folderId } = folderModal;
+    try {
+      if (mode === 'create') {
+        await dispatch(createFolder({ collectionId, name })).unwrap();
+        toast.success('Folder created');
+      } else if (folderId != null) {
+        await dispatch(renameFolder({ id: folderId, collectionId, name })).unwrap();
+        toast.success('Folder renamed');
+      }
+      closeFolderModal();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to save folder');
+    }
   };
 
   /**
@@ -150,6 +199,7 @@ export function Sidebar({
           >
             <Collections
               collections={collections}
+              foldersByCollection={foldersByCollection}
               requestsByCollection={requestsByCollection}
               selectedCollectionId={selectedCollectionId}
               primaryConnectionId={primaryConnectionId}
@@ -157,7 +207,7 @@ export function Sidebar({
               connectionTypesById={connectionTypesById}
               activeRequestId={draft.id}
               onSelectCollection={(id) => dispatch(setSelectedCollectionId(id))}
-              onExpandCollection={(id) => void dispatch(refreshRequests(id))}
+              onExpandCollection={handleExpandCollection}
               onConfigureCollection={onConfigureCollection}
               onDeleteCollection={async (id) => {
                 await dispatch(deleteCollection(id));
@@ -169,12 +219,54 @@ export function Sidebar({
                 }
               }}
               onInviteCollection={onInviteCollection}
+              onNewFolder={(collectionId) => {
+                setFolderModal({ mode: 'create', collectionId, name: '' });
+              }}
               onNewRequestInCollection={async (id) => {
                 try {
                   await dispatch(newRequestInCollection(id)).unwrap();
                 } catch (err) {
                   alert(err instanceof Error ? err.message : 'Failed to create request');
                 }
+              }}
+              onNewRequestInFolder={async (collectionId, folderId) => {
+                try {
+                  await dispatch(newRequestInFolder({ collectionId, folderId })).unwrap();
+                } catch (err) {
+                  alert(err instanceof Error ? err.message : 'Failed to create request');
+                }
+              }}
+              onRenameFolder={(id, collectionId) => {
+                const folders = foldersByCollection[collectionId] ?? [];
+                const folder = folders.find((item) => item.id === id);
+                setFolderModal({
+                  mode: 'rename',
+                  collectionId,
+                  folderId: id,
+                  name: folder?.name ?? ''
+                });
+              }}
+              onDeleteFolder={async (id, collectionId, requestIds) => {
+                const count = requestIds.length;
+                const message =
+                  count > 0
+                    ? `Delete this folder and ${count} request${count === 1 ? '' : 's'} inside it?`
+                    : 'Delete this folder?';
+                if (!confirm(message)) return;
+                try {
+                  await dispatch(deleteFolder({ id, collectionId, requestIds })).unwrap();
+                } catch (err) {
+                  alert(err instanceof Error ? err.message : 'Failed to delete folder');
+                }
+              }}
+              onReorderFolders={async (collectionId, orderedFolderIds) => {
+                await dispatch(reorderFolders({ collectionId, orderedFolderIds }));
+              }}
+              onReorderRequests={async (collectionId, folderId, orderedRequestIds) => {
+                await dispatch(reorderRequests({ collectionId, folderId, orderedRequestIds }));
+              }}
+              onMoveRequest={async (collectionId, requestId, folderId, index) => {
+                await dispatch(moveRequestToFolder({ collectionId, requestId, folderId, index }));
               }}
               onLoadRequest={onLoadRequest}
               onDeleteRequest={async (id) => {
@@ -210,6 +302,50 @@ export function Sidebar({
         onResizeStart={onResizeStart}
         ariaLabel="Resize sidebar"
       />
+
+      {folderModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={closeFolderModal}
+        >
+          <div
+            className="w-96 rounded-lg border border-separator bg-surface p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">
+              {folderModal.mode === 'create' ? 'New folder' : 'Rename folder'}
+            </h2>
+            <input
+              className={`${field} mt-3 w-full`}
+              type="text"
+              autoFocus
+              placeholder="Folder name"
+              value={folderModal.name}
+              onChange={(e) =>
+                setFolderModal((current) =>
+                  current ? { ...current, name: e.target.value } : current
+                )
+              }
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void handleFolderModalSubmit();
+                if (e.key === 'Escape') closeFolderModal();
+              }}
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <button className={secondaryButton} onClick={closeFolderModal}>
+                Cancel
+              </button>
+              <button
+                className={primaryButton}
+                onClick={() => void handleFolderModalSubmit()}
+                disabled={!folderModal.name.trim()}
+              >
+                {folderModal.mode === 'create' ? 'Create' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showEnvironmentModal && (
         <div

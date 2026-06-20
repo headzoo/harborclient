@@ -12,15 +12,74 @@ interface Props {
   collectionName?: string;
 
   /**
+   * Name of the folder this request belongs to, for display as a breadcrumb segment.
+   */
+  folderName?: string;
+
+  /**
    * Called when the request name changes.
    */
   onNameChange: (name: string) => void;
 }
 
+interface BreadcrumbPrefixProps {
+  /**
+   * Collection segment for the breadcrumb.
+   */
+  collectionName?: string;
+
+  /**
+   * Folder segment for the breadcrumb.
+   */
+  folderName?: string;
+
+  /**
+   * When true, uses compact separators for inline edit mode.
+   */
+  compact?: boolean;
+}
+
 /**
- * Inline-editable request name with optional collection breadcrumb.
+ * Renders collection and optional folder breadcrumb segments.
  */
-export function Name({ name, collectionName, onNameChange }: Props): JSX.Element {
+function BreadcrumbPrefix({
+  collectionName,
+  folderName,
+  compact = false
+}: BreadcrumbPrefixProps): JSX.Element | null {
+  if (!collectionName && !folderName) return null;
+
+  const segmentClass = compact
+    ? 'shrink-0 text-[15px] font-normal text-muted'
+    : 'font-normal text-muted';
+  const separator = compact ? (
+    <span className={segmentClass}>&gt;</span>
+  ) : (
+    <span className={segmentClass}> &gt; </span>
+  );
+
+  return (
+    <>
+      {collectionName && (
+        <>
+          <span className={segmentClass}>{collectionName}</span>
+          {separator}
+        </>
+      )}
+      {folderName && (
+        <>
+          <span className={segmentClass}>{folderName}</span>
+          {separator}
+        </>
+      )}
+    </>
+  );
+}
+
+/**
+ * Inline-editable request name with optional collection and folder breadcrumb.
+ */
+export function Name({ name, collectionName, folderName, onNameChange }: Props): JSX.Element {
   const [editingName, setEditingName] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -35,12 +94,7 @@ export function Name({ name, collectionName, onNameChange }: Props): JSX.Element
     <div className="mb-2">
       {editingName ? (
         <div className="flex min-w-0 max-w-xs items-center gap-1">
-          {collectionName && (
-            <>
-              <span className="shrink-0 text-[15px] font-normal text-muted">{collectionName}</span>
-              <span className="shrink-0 text-[15px] font-normal text-muted">&gt;</span>
-            </>
-          )}
+          <BreadcrumbPrefix collectionName={collectionName} folderName={folderName} compact />
           <input
             ref={nameInputRef}
             className="min-w-0 flex-1 border-none bg-transparent p-0 text-[15px] font-semibold text-text outline-none app-no-drag"
@@ -62,12 +116,7 @@ export function Name({ name, collectionName, onNameChange }: Props): JSX.Element
           className="min-w-0 max-w-xs cursor-text border-none bg-transparent p-0 text-left text-[15px] font-semibold text-text hover:opacity-80 app-no-drag"
           onClick={() => setEditingName(true)}
         >
-          {collectionName && (
-            <>
-              <span className="font-normal text-muted">{collectionName}</span>
-              <span className="font-normal text-muted"> &gt; </span>
-            </>
-          )}
+          <BreadcrumbPrefix collectionName={collectionName} folderName={folderName} />
           {name ? name : <span className="text-muted">Request name</span>}
         </button>
       )}

@@ -1,8 +1,10 @@
 import { configureStore } from '@reduxjs/toolkit';
+import { busyMiddleware } from '#/renderer/src/store/busyMiddleware';
 import collectionsReducer from '#/renderer/src/store/slices/collectionsSlice';
 import environmentsReducer from '#/renderer/src/store/slices/environmentsSlice';
 import tabsReducer from '#/renderer/src/store/slices/tabsSlice';
 import consoleReducer from '#/renderer/src/store/slices/consoleSlice';
+import uiReducer from '#/renderer/src/store/slices/uiSlice';
 import { persistActiveEnvironmentId, persistTabs } from '#/renderer/src/store/persistence';
 
 export const store = configureStore({
@@ -10,8 +12,10 @@ export const store = configureStore({
     collections: collectionsReducer,
     environments: environmentsReducer,
     tabs: tabsReducer,
-    console: consoleReducer
-  }
+    console: consoleReducer,
+    ui: uiReducer
+  },
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(busyMiddleware)
 });
 
 export type RootState = ReturnType<typeof store.getState>;
