@@ -54,8 +54,5 @@ export const DEFAULT_POSTGRES_SETTINGS: PostgresSettings = {
 
 export const SETTINGS_SECTIONS: Array<{ value: SettingsSection; label: string }> = [
   { value: 'general', label: 'General' },
-  { value: 'sqlite', label: 'SQLite' },
-  { value: 'firestore', label: 'Firestore' },
-  { value: 'mysql', label: 'MySQL' },
-  { value: 'postgres', label: 'PostgreSQL' }
+  { value: 'databases', label: 'Databases' }
 ];

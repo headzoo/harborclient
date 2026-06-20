@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- refactor(settings): consolidate database section in sidebar. (`8a67c90`)
 - refactor(install-app-deps): improve native module build process. (`447a021`)
 - feat(database): add MySQL and PostgreSQL support. (`93425a7`)
 

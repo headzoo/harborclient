@@ -2,12 +2,9 @@ import { useState, type JSX } from 'react';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faXmark } from '#/renderer/src/fontawesome';
 import { iconButton } from '#/renderer/src/ui/shared/classes';
-import { FirestoreSection } from './FirestoreSection';
+import { DatabasesSection } from './DatabasesSection';
 import { GeneralSection } from './GeneralSection';
-import { MySqlSection } from './MySqlSection';
-import { PostgresSection } from './PostgresSection';
 import { SettingsSidebar } from './SettingsSidebar';
-import { SqliteSection } from './SqliteSection';
 import type { SettingsSection } from './types';
 
 interface Props {
@@ -42,10 +39,7 @@ export function Settings({ onClose }: Props): JSX.Element {
 
         <div className="flex-1 overflow-y-auto p-6">
           {section === 'general' && <GeneralSection />}
-          {section === 'sqlite' && <SqliteSection />}
-          {section === 'firestore' && <FirestoreSection />}
-          {section === 'mysql' && <MySqlSection />}
-          {section === 'postgres' && <PostgresSection />}
+          {section === 'databases' && <DatabasesSection />}
         </div>
       </div>
     </div>

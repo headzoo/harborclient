@@ -1,4 +1,4 @@
 /**
  * Settings sidebar section identifiers.
  */
-export type SettingsSection = 'general' | 'sqlite' | 'firestore' | 'mysql' | 'postgres';
+export type SettingsSection = 'general' | 'databases';
