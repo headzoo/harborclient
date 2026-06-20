@@ -1,6 +1,7 @@
 import type {
   DatabaseProvider,
   FirestoreSettings,
+  GeneralSettings,
   MySqlSettings,
   PostgresSettings,
   SqliteSettings,
@@ -13,6 +14,12 @@ export const THEME_OPTIONS: Array<{ value: ThemeSource; label: string }> = [
   { value: 'dark', label: 'Dark' },
   { value: 'system', label: 'System' }
 ];
+
+export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
+  requestTimeoutMs: 30000,
+  maxResponseSizeMb: 50,
+  verifySsl: true
+};
 
 export const PROVIDER_OPTIONS: Array<{ value: DatabaseProvider; label: string }> = [
   { value: 'sqlite', label: 'SQLite' },

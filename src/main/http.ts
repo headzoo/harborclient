@@ -1,4 +1,12 @@
-import type { BodyType, KeyValue, SendRequestInput, SendResult, SentRequest } from '#/shared/types';
+import type {
+  BodyType,
+  GeneralSettings,
+  KeyValue,
+  SendRequestInput,
+  SendResult,
+  SentRequest
+} from '#/shared/types';
+import { DEFAULT_GENERAL_SETTINGS } from '#/main/settings/generalSettings';
 
 /**
  * Appends enabled query parameters to a base URL.
@@ -59,14 +67,119 @@ export function buildHeaders(headers: KeyValue[], bodyType: BodyType): Record<st
 }
 
 /**
+ * Combines optional cancel and timeout signals for fetch.
+ *
+ * @param signal - Optional user cancel signal.
+ * @param timeoutMs - Request timeout in milliseconds; 0 disables timeout.
+ */
+function buildEffectiveSignal(signal: AbortSignal | undefined, timeoutMs: number): AbortSignal | undefined {
+  const signals: AbortSignal[] = [];
+  if (signal) {
+    signals.push(signal);
+  }
+  if (timeoutMs > 0) {
+    signals.push(AbortSignal.timeout(timeoutMs));
+  }
+
+  if (signals.length === 0) {
+    return undefined;
+  }
+  if (signals.length === 1) {
+    return signals[0];
+  }
+  return AbortSignal.any(signals);
+}
+
+/**
+ * Reads a response body, enforcing an optional max size in megabytes.
+ *
+ * @param response - Fetch response to read.
+ * @param maxResponseSizeMb - Maximum body size in MB; 0 disables the limit.
+ */
+async function readResponseBody(
+  response: Response,
+  maxResponseSizeMb: number
+): Promise<{ body: string; sizeBytes: number } | { error: string }> {
+  const maxBytes = maxResponseSizeMb > 0 ? maxResponseSizeMb * 1024 * 1024 : 0;
+
+  if (maxBytes === 0 || !response.body) {
+    const body = await response.text();
+    return { body, sizeBytes: new TextEncoder().encode(body).length };
+  }
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+    if (value) {
+      totalBytes += value.length;
+      if (totalBytes > maxBytes) {
+        await reader.cancel();
+        return { error: `Response exceeded max size of ${maxResponseSizeMb} MB` };
+      }
+      chunks.push(value);
+    }
+  }
+
+  const combined = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    combined.set(chunk, offset);
+    offset += chunk.length;
+  }
+
+  const body = new TextDecoder().decode(combined);
+  return { body, sizeBytes: totalBytes };
+}
+
+/**
+ * Maps fetch errors to user-facing messages.
+ *
+ * @param err - Thrown fetch error.
+ * @param timeoutMs - Configured request timeout in milliseconds.
+ */
+function mapFetchError(err: unknown, timeoutMs: number): string {
+  if (err instanceof Error && err.name === 'AbortError') {
+    return 'Request canceled';
+  }
+  if (err instanceof Error && err.name === 'TimeoutError') {
+    return `Request timed out after ${timeoutMs} ms`;
+  }
+  if (err instanceof Error) {
+    return err.message;
+  }
+  return 'Unknown error';
+}
+
+/**
+ * Restores NODE_TLS_REJECT_UNAUTHORIZED after a request that disabled verification.
+ *
+ * @param previousValue - Prior env value before the request.
+ */
+function restoreTlsRejectUnauthorized(previousValue: string | undefined): void {
+  if (previousValue === undefined) {
+    delete process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+    return;
+  }
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = previousValue;
+}
+
+/**
  * Executes an HTTP request via fetch and returns timing and response metadata.
  *
  * @param input - Method, URL, headers, params, body, and body type.
+ * @param settings - General request settings for timeout, size limits, and SSL verification.
  * @param signal - Optional abort signal to cancel the in-flight request.
  * @returns Response status, headers, body, timing, and size; error field on failure.
  */
 export async function executeRequest(
   input: SendRequestInput,
+  settings: GeneralSettings = DEFAULT_GENERAL_SETTINGS,
   signal?: AbortSignal
 ): Promise<SendResult> {
   const url = buildUrl(input.url, input.params);
@@ -101,12 +214,18 @@ export async function executeRequest(
   }
 
   const start = performance.now();
+  const previousTlsReject = process.env.NODE_TLS_REJECT_UNAUTHORIZED;
+  const effectiveSignal = buildEffectiveSignal(signal, settings.requestTimeoutMs);
+
+  if (!settings.verifySsl) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  }
 
   try {
     const init: RequestInit = {
       method: input.method,
       headers,
-      signal
+      signal: effectiveSignal
     };
 
     if (input.bodyType !== 'none' && input.method !== 'GET' && input.method !== 'HEAD') {
@@ -114,32 +233,38 @@ export async function executeRequest(
     }
 
     const response = await fetch(url, init);
-    const body = await response.text();
+    const bodyResult = await readResponseBody(response, settings.maxResponseSizeMb);
     const timeMs = Math.round(performance.now() - start);
-    const sizeBytes = new TextEncoder().encode(body).length;
 
     const responseHeaders: Record<string, string> = {};
     response.headers.forEach((value, key) => {
       responseHeaders[key] = value;
     });
 
+    if ('error' in bodyResult) {
+      return {
+        status: 0,
+        statusText: 'Error',
+        headers: responseHeaders,
+        body: '',
+        timeMs,
+        sizeBytes: 0,
+        error: bodyResult.error,
+        request
+      };
+    }
+
     return {
       status: response.status,
       statusText: response.statusText,
       headers: responseHeaders,
-      body,
+      body: bodyResult.body,
       timeMs,
-      sizeBytes,
+      sizeBytes: bodyResult.sizeBytes,
       request
     };
   } catch (err) {
     const timeMs = Math.round(performance.now() - start);
-    const message =
-      err instanceof Error && err.name === 'AbortError'
-        ? 'Request canceled'
-        : err instanceof Error
-          ? err.message
-          : 'Unknown error';
 
     return {
       status: 0,
@@ -148,8 +273,12 @@ export async function executeRequest(
       body: '',
       timeMs,
       sizeBytes: 0,
-      error: message,
+      error: mapFetchError(err, settings.requestTimeoutMs),
       request
     };
+  } finally {
+    if (!settings.verifySsl) {
+      restoreTlsRejectUnauthorized(previousTlsReject);
+    }
   }
 }

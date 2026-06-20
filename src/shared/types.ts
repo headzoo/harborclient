@@ -527,6 +527,26 @@ export type ThemeSource = 'light' | 'dark' | 'system';
 export type DatabaseProvider = 'sqlite' | 'firestore' | 'mysql' | 'postgres';
 
 /**
+ * General application settings for HTTP request execution.
+ */
+export interface GeneralSettings {
+  /**
+   * Request timeout in milliseconds; 0 disables the timeout.
+   */
+  requestTimeoutMs: number;
+
+  /**
+   * Maximum response body size in megabytes; 0 disables the limit.
+   */
+  maxResponseSizeMb: number;
+
+  /**
+   * When true, TLS certificates are verified for HTTPS requests.
+   */
+  verifySsl: boolean;
+}
+
+/**
  * Firebase Firestore connection settings.
  */
 export interface FirestoreSettings {
@@ -814,6 +834,18 @@ export interface Api {
    * @param theme - Theme source to apply.
    */
   setTheme: (theme: ThemeSource) => Promise<void>;
+
+  /**
+   * Returns persisted general request settings.
+   */
+  getGeneralSettings: () => Promise<GeneralSettings>;
+
+  /**
+   * Persists general request settings.
+   *
+   * @param settings - General configuration to store.
+   */
+  setGeneralSettings: (settings: GeneralSettings) => Promise<void>;
 
   /**
    * Returns persisted SQLite path and legacy migration settings.

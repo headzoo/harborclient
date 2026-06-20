@@ -13,10 +13,12 @@ import {
   setMySqlSettings,
   setPostgresSettings
 } from '#/main/settings/databaseSettings';
+import { getGeneralSettings, setGeneralSettings } from '#/main/settings/generalSettings';
 import { getSqliteSettings, setSqliteSettings } from '#/main/settings/sqliteSettings';
 import type {
   DatabaseProvider,
   FirestoreSettings,
+  GeneralSettings,
   MySqlSettings,
   PostgresSettings,
   SaveRequestInput,
@@ -129,7 +131,8 @@ export function registerIpcHandlers(db: IDatabase): void {
     }
 
     try {
-      return await executeRequest(req, controller.signal);
+      const settings = getGeneralSettings();
+      return await executeRequest(req, settings, controller.signal);
     } finally {
       if (requestId) {
         activeRequests.delete(requestId);
@@ -150,6 +153,12 @@ export function registerIpcHandlers(db: IDatabase): void {
   ipcMain.handle('theme:set', async (_event, theme: ThemeSource) => {
     nativeTheme.themeSource = theme;
     await db.setSetting(THEME_SETTING_KEY, theme);
+  });
+
+  ipcMain.handle('general:getSettings', () => getGeneralSettings());
+
+  ipcMain.handle('general:setSettings', (_event, settings: GeneralSettings) => {
+    setGeneralSettings(settings);
   });
 
   ipcMain.handle('sqlite:getSettings', () => getSqliteSettings());

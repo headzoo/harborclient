@@ -6,6 +6,7 @@ import type {
   DatabaseProvider,
   Environment,
   FirestoreSettings,
+  GeneralSettings,
   MenuActionId,
   MySqlSettings,
   PostgresSettings,
@@ -233,6 +234,22 @@ function setTheme(theme: ThemeSource): Promise<void> {
 }
 
 /**
+ * Returns persisted general request settings.
+ */
+function getGeneralSettings(): Promise<GeneralSettings> {
+  return ipcRenderer.invoke('general:getSettings');
+}
+
+/**
+ * Persists general request settings.
+ *
+ * @param settings - General configuration to store.
+ */
+function setGeneralSettings(settings: GeneralSettings): Promise<void> {
+  return ipcRenderer.invoke('general:setSettings', settings);
+}
+
+/**
  * Returns persisted SQLite path and legacy migration settings.
  */
 function getSqliteSettings(): Promise<SqliteSettings> {
@@ -356,6 +373,8 @@ const api: Api = {
   getAppVersion,
   getTheme,
   setTheme,
+  getGeneralSettings,
+  setGeneralSettings,
   getSqliteSettings,
   setSqliteSettings,
   getDatabaseProvider,
