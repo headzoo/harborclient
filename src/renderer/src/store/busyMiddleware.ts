@@ -13,10 +13,12 @@ function parseAsyncActionType(actionType: string): { thunkType: string; phase: A
   return { thunkType: match[1], phase: match[2] as AsyncPhase };
 }
 
-function isAsyncThunkAction(action: UnknownAction): action is UnknownAction & {
+function isAsyncThunkAction(action: unknown): action is UnknownAction & {
   meta: { requestId: string };
 } {
-  return typeof action.meta === 'object' && action.meta != null && 'requestId' in action.meta;
+  if (typeof action !== 'object' || action === null) return false;
+  const meta = (action as UnknownAction).meta;
+  return typeof meta === 'object' && meta != null && 'requestId' in meta;
 }
 
 /**

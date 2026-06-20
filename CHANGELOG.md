@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- fix(busyMiddleware): improve type checking for async thunk actions. (`9a8a832`)
 - refactor(sidebar): improve formatting and readability of collection options. (`f2f1b79`)
 - feat(folders): implement folder management for collections. (`511353e`)
 - feat(collections): enhance sharing functionality and documentation. (`bf2bb93`)
