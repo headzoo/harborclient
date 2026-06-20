@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Refactor state management and enhance component integration. (`032b2e1`)
 - Refactor ConsolePanel and enhance AppShell functionality. (`a7c0cdf`)
 - Refactor Request and ConsolePanel components for improved UI and functionality. (`4adfc0e`)
 - Enhance UI components with resizable features and code cleanup. (`c735424`)

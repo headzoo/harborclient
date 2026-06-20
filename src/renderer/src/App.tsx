@@ -1,9 +1,30 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import logoUrl from '@images/logo-square.png';
-import type { SavedRequest } from '#/shared/types';
+import type { Collection, Environment, SavedRequest } from '#/shared/types';
 import { getDirtyTabs } from '#/renderer/src/store/drafts';
-import { StoreProvider, useStore } from '#/renderer/src/store/StoreContext';
+import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
+import {
+  selectActiveEnvironmentId,
+  selectCollections,
+  selectConsoleEntries,
+  selectDraft,
+  selectEnvironments,
+  selectSelectedCollectionId,
+  selectTabs
+} from '#/renderer/src/store/selectors';
+import { clearConsole } from '#/renderer/src/store/slices/consoleSlice';
+import {
+  createCollection,
+  dispatchLoadRequest,
+  dispatchNewRequest,
+  importCollection,
+  initializeStore,
+  refreshRequests,
+  saveRequest,
+  updateCollection,
+  updateEnvironment
+} from '#/renderer/src/store/thunks';
 import { Configuration } from '#/renderer/src/ui/Sidebar/Configuration';
 import { Sidebar } from '#/renderer/src/ui/Sidebar';
 import { Request } from '#/renderer/src/ui/Request';
@@ -21,19 +42,15 @@ type CollectionModalTab = 'create' | 'import';
  * Root application layout: sidebar, request editor, and response viewer.
  */
 export default function App(): JSX.Element {
-  return (
-    <StoreProvider>
-      <AppShell />
-    </StoreProvider>
-  );
-}
+  const dispatch = useAppDispatch();
+  const collections: Collection[] = useAppSelector(selectCollections);
+  const environments: Environment[] = useAppSelector(selectEnvironments);
+  const selectedCollectionId = useAppSelector(selectSelectedCollectionId);
+  const activeEnvironmentId = useAppSelector(selectActiveEnvironmentId);
+  const draft = useAppSelector(selectDraft);
+  const consoleEntries = useAppSelector(selectConsoleEntries);
+  const tabs = useAppSelector(selectTabs);
 
-/**
- * Main application shell.
- */
-function AppShell(): JSX.Element {
-  const store = useStore();
-  const { selectedCollectionId, saveRequest } = store;
   const [collectionModal, setCollectionModal] = useState<CollectionModalMode>(null);
   const [collectionModalTab, setCollectionModalTab] = useState<CollectionModalTab>('create');
   const [newCollectionName, setNewCollectionName] = useState('');
@@ -51,21 +68,31 @@ function AppShell(): JSX.Element {
   const [appVersion, setAppVersion] = useState('');
 
   /**
-   * Ref to store.tabs to avoid unnecessary re-renders.
+   * Ref to tabs to avoid unnecessary re-renders.
    */
-  const tabsRef = useRef(store.tabs);
+  const tabsRef = useRef(tabs);
   useEffect(() => {
-    tabsRef.current = store.tabs;
+    tabsRef.current = tabs;
   });
 
-  const activeCollectionId = store.draft.collection_id ?? store.selectedCollectionId;
+  useEffect(() => {
+    initializeStore(dispatch);
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (selectedCollectionId) {
+      void dispatch(refreshRequests(selectedCollectionId));
+    }
+  }, [dispatch, selectedCollectionId]);
+
+  const activeCollectionId = draft.collection_id ?? selectedCollectionId;
   const activeCollection =
     activeCollectionId != null
-      ? store.collections.find((c) => c.id === activeCollectionId)
+      ? collections.find((c: Collection) => c.id === activeCollectionId)
       : undefined;
   const activeEnvironment =
-    store.activeEnvironmentId != null
-      ? store.environments.find((env) => env.id === store.activeEnvironmentId)
+    activeEnvironmentId != null
+      ? environments.find((env: Environment) => env.id === activeEnvironmentId)
       : undefined;
 
   /**
@@ -118,7 +145,7 @@ function AppShell(): JSX.Element {
       closeAppSettings();
       closeCollectionSettings();
       closeEnvironmentSettings();
-      store.loadRequest(req);
+      dispatchLoadRequest(dispatch, req);
     },
     [
       configuringCollectionId,
@@ -128,7 +155,7 @@ function AppShell(): JSX.Element {
       closeAppSettings,
       closeCollectionSettings,
       closeEnvironmentSettings,
-      store
+      dispatch
     ]
   );
 
@@ -143,12 +170,12 @@ function AppShell(): JSX.Element {
       return;
     }
     try {
-      await saveRequest();
+      await dispatch(saveRequest()).unwrap();
       toast.success('Request saved');
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to save request');
     }
-  }, [selectedCollectionId, saveRequest]);
+  }, [selectedCollectionId, dispatch]);
 
   /**
    * Creates a collection, optionally saving the current draft into it.
@@ -157,9 +184,9 @@ function AppShell(): JSX.Element {
     const name = newCollectionName.trim();
     if (!name) return;
     try {
-      const collection = await store.createCollection(name);
+      const collection = await dispatch(createCollection(name)).unwrap();
       if (collectionModal === 'create-and-save') {
-        await store.saveRequest(collection.id);
+        await dispatch(saveRequest(collection.id)).unwrap();
         toast.success('Request saved');
       }
       setCollectionModal(null);
@@ -181,7 +208,7 @@ function AppShell(): JSX.Element {
    */
   const handleImportCollection = useCallback(async (): Promise<void> => {
     try {
-      const collection = await store.importCollection();
+      const collection = await dispatch(importCollection()).unwrap();
       if (!collection) return;
 
       toast.success('Collection imported');
@@ -191,7 +218,7 @@ function AppShell(): JSX.Element {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to import collection');
     }
-  }, [store]);
+  }, [dispatch]);
 
   /**
    * Closes the collection modal.
@@ -209,7 +236,7 @@ function AppShell(): JSX.Element {
     const unsubscribe = window.api.onMenuAction((action) => {
       switch (action) {
         case 'new-request':
-          store.newRequest();
+          dispatchNewRequest(dispatch);
           break;
         case 'new-collection':
           setNewCollectionName('');
@@ -235,7 +262,7 @@ function AppShell(): JSX.Element {
       }
     });
     return unsubscribe;
-  }, [store, handleImportCollection, handleSave]);
+  }, [dispatch, handleImportCollection, handleSave]);
 
   /**
    * Gets the application version from the main process.
@@ -268,10 +295,10 @@ function AppShell(): JSX.Element {
 
   const showImportTab = collectionModal === 'create';
   const configuringCollection = configuringCollectionId
-    ? store.collections.find((c) => c.id === configuringCollectionId)
+    ? collections.find((c: Collection) => c.id === configuringCollectionId)
     : undefined;
   const configuringEnvironment = configuringEnvironmentId
-    ? store.environments.find((env) => env.id === configuringEnvironmentId)
+    ? environments.find((env: Environment) => env.id === configuringEnvironmentId)
     : undefined;
 
   return (
@@ -319,14 +346,16 @@ function AppShell(): JSX.Element {
                 postRequestScript
               ) => {
                 try {
-                  await store.updateCollection(
-                    id,
-                    name,
-                    variables,
-                    headers,
-                    preRequestScript,
-                    postRequestScript
-                  );
+                  await dispatch(
+                    updateCollection({
+                      id,
+                      name,
+                      variables,
+                      headers,
+                      preRequestScript,
+                      postRequestScript
+                    })
+                  ).unwrap();
                   toast.success('Collection updated');
                 } catch (err) {
                   alert(err instanceof Error ? err.message : 'Failed to update collection');
@@ -337,7 +366,7 @@ function AppShell(): JSX.Element {
               onEnvironmentDirtyChange={setEnvironmentSettingsDirty}
               onEnvironmentSave={async (id, name, variables) => {
                 try {
-                  await store.updateEnvironment(id, name, variables);
+                  await dispatch(updateEnvironment({ id, name, variables })).unwrap();
                   toast.success('Environment updated');
                 } catch (err) {
                   alert(err instanceof Error ? err.message : 'Failed to update environment');
@@ -353,13 +382,13 @@ function AppShell(): JSX.Element {
 
       <Footer
         consoleOpen={showConsole}
-        entryCount={store.consoleEntries.length}
+        entryCount={consoleEntries.length}
         onToggleConsole={() => {
           setShowConsole((open) => !open);
           setShowVariables(false);
         }}
-        entries={store.consoleEntries}
-        onClear={store.clearConsole}
+        entries={consoleEntries}
+        onClear={() => dispatch(clearConsole())}
         variablesOpen={showVariables}
         onToggleVariables={() => {
           setShowVariables((open) => !open);
@@ -475,7 +504,7 @@ function AppShell(): JSX.Element {
                   closeAppSettings();
                   closeCollectionSettings();
                   closeEnvironmentSettings();
-                  store.loadRequest(req);
+                  dispatchLoadRequest(dispatch, req);
                 }}
               >
                 Open without saving

@@ -1,7 +1,27 @@
 import { useMemo, useRef, useState, type JSX } from 'react';
 import type { Variable } from '#/shared/types';
 import { isTabDirty } from '#/renderer/src/store/drafts';
-import { useStore } from '#/renderer/src/store/StoreContext';
+import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
+import {
+  selectActiveEnvironmentId,
+  selectActiveTabId,
+  selectCollections,
+  selectDraft,
+  selectEnvironments,
+  selectResponse,
+  selectSelectedCollectionId,
+  selectSending,
+  selectTabs,
+  selectTestResults
+} from '#/renderer/src/store/selectors';
+import {
+  setActiveDraft,
+  closeTab,
+  newTab,
+  setActiveTab
+} from '#/renderer/src/store/slices/tabsSlice';
+import { setActiveEnvironmentId } from '#/renderer/src/store/slices/environmentsSlice';
+import { sendRequest } from '#/renderer/src/store/thunks';
 import { ResizeHandle, useResizable } from '#/renderer/src/components/Resizable';
 import { primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
 import { Editor } from './Editor';
@@ -40,7 +60,18 @@ function mergeVariables(collectionVars: Variable[], envVars: Variable[]): Variab
  * Request workspace: tab bar, editor, and response viewer.
  */
 export function Request({ onEditVariables }: Props): JSX.Element {
-  const store = useStore();
+  const dispatch = useAppDispatch();
+  const tabs = useAppSelector(selectTabs);
+  const activeTabId = useAppSelector(selectActiveTabId);
+  const draft = useAppSelector(selectDraft);
+  const response = useAppSelector(selectResponse);
+  const sending = useAppSelector(selectSending);
+  const testResults = useAppSelector(selectTestResults);
+  const environments = useAppSelector(selectEnvironments);
+  const activeEnvironmentId = useAppSelector(selectActiveEnvironmentId);
+  const collections = useAppSelector(selectCollections);
+  const selectedCollectionId = useAppSelector(selectSelectedCollectionId);
+
   const [closeTabPrompt, setCloseTabPrompt] = useState<CloseTabPrompt | null>(null);
   const splitRef = useRef<HTMLDivElement>(null);
   const { size: editorHeight, onResizeStart } = useResizable({
@@ -52,14 +83,12 @@ export function Request({ onEditVariables }: Props): JSX.Element {
     storageKey: 'hc.requestEditorHeight'
   });
 
-  const activeCollectionId = store.draft.collection_id ?? store.selectedCollectionId;
+  const activeCollectionId = draft.collection_id ?? selectedCollectionId;
   const activeCollection =
-    activeCollectionId != null
-      ? store.collections.find((c) => c.id === activeCollectionId)
-      : undefined;
+    activeCollectionId != null ? collections.find((c) => c.id === activeCollectionId) : undefined;
   const activeEnvironment =
-    store.activeEnvironmentId != null
-      ? store.environments.find((env) => env.id === store.activeEnvironmentId)
+    activeEnvironmentId != null
+      ? environments.find((env) => env.id === activeEnvironmentId)
       : undefined;
 
   const activeVariables = useMemo(
@@ -72,33 +101,33 @@ export function Request({ onEditVariables }: Props): JSX.Element {
    * Closes a tab, prompting when it has unsaved changes.
    */
   const handleCloseTab = (tabId: string): void => {
-    const tab = store.tabs.find((t) => t.tabId === tabId);
+    const tab = tabs.find((t) => t.tabId === tabId);
     if (tab && isTabDirty(tab)) {
       setCloseTabPrompt({ tabId, name: tab.draft.name });
       return;
     }
-    store.closeTab(tabId);
+    dispatch(closeTab(tabId));
   };
 
   return (
     <>
       <TabBar
-        tabs={store.tabs}
-        activeTabId={store.activeTabId}
-        environments={store.environments}
-        activeEnvironmentId={store.activeEnvironmentId}
-        onSelect={store.setActiveTab}
+        tabs={tabs}
+        activeTabId={activeTabId}
+        environments={environments}
+        activeEnvironmentId={activeEnvironmentId}
+        onSelect={(tabId) => dispatch(setActiveTab(tabId))}
         onClose={handleCloseTab}
-        onNew={store.newRequest}
-        onEnvironmentChange={store.setActiveEnvironmentId}
+        onNew={() => dispatch(newTab())}
+        onEnvironmentChange={(id) => dispatch(setActiveEnvironmentId(id))}
       />
       <div ref={splitRef} style={{ height: editorHeight }} className="shrink-0 overflow-auto">
         <Editor
-          key={`editor-${store.activeTabId}`}
-          draft={store.draft}
-          onChange={store.setDraft}
-          onSend={() => void store.sendRequest()}
-          sending={store.sending}
+          key={`editor-${activeTabId}`}
+          draft={draft}
+          onChange={(next) => dispatch(setActiveDraft(next))}
+          onSend={() => void dispatch(sendRequest())}
+          sending={sending}
           variables={activeVariables}
           collectionName={activeCollectionName}
           onEditVariables={onEditVariables}
@@ -110,10 +139,10 @@ export function Request({ onEditVariables }: Props): JSX.Element {
         ariaLabel="Resize request editor"
       />
       <Response
-        key={`response-${store.activeTabId}`}
-        response={store.response}
-        sending={store.sending}
-        testResults={store.testResults}
+        key={`response-${activeTabId}`}
+        response={response}
+        sending={sending}
+        testResults={testResults}
       />
 
       {closeTabPrompt && (
@@ -136,7 +165,7 @@ export function Request({ onEditVariables }: Props): JSX.Element {
               <button
                 className={primaryButton}
                 onClick={() => {
-                  store.closeTab(closeTabPrompt.tabId);
+                  dispatch(closeTab(closeTabPrompt.tabId));
                   setCloseTabPrompt(null);
                 }}
               >

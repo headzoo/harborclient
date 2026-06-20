@@ -62,10 +62,9 @@ export function VariablesPanel({
     onClose();
   }, [onClose]);
 
-  const contextLine = [
-    collectionName ?? 'No collection',
-    environmentName ?? 'No environment'
-  ].join(' · ');
+  const contextLine = [collectionName ?? 'No collection', environmentName ?? 'No environment'].join(
+    ' · '
+  );
 
   const panelClassName = [
     'absolute inset-x-0 bottom-full z-40 flex flex-col border-t border-separator bg-surface',

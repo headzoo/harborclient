@@ -12,9 +12,7 @@ export function VariableRow({ variable }: Props): JSX.Element {
   const { key, value, scope, overridden } = variable;
   const scopeLabel = scope === 'environment' ? 'Environment' : 'Collection';
   const scopeBadgeClass =
-    scope === 'environment'
-      ? 'bg-accent/15 text-accent'
-      : 'bg-selection text-muted';
+    scope === 'environment' ? 'bg-accent/15 text-accent' : 'bg-selection text-muted';
 
   return (
     <div
@@ -35,9 +33,7 @@ export function VariableRow({ variable }: Props): JSX.Element {
       >
         {scopeLabel}
       </span>
-      {overridden && (
-        <span className="shrink-0 text-[11px] text-muted">overridden</span>
-      )}
+      {overridden && <span className="shrink-0 text-[11px] text-muted">overridden</span>}
     </div>
   );
 }

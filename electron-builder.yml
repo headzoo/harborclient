@@ -13,8 +13,8 @@ files:
   - out/**/*
   - package.json
   - node_modules/better-sqlite3/**/*
-  - "!**/node_modules/**/*.tgz"
-  - "!**/node_modules/**/prebuilds/**"
+  - '!**/node_modules/**/*.tgz'
+  - '!**/node_modules/**/prebuilds/**'
 asarUnpack:
   - node_modules/better-sqlite3/**/*
   - node_modules/isolated-vm/**/*

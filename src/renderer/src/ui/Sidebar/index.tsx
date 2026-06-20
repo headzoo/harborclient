@@ -2,7 +2,26 @@ import { useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { SavedRequest } from '#/shared/types';
 import { ResizeHandle, useResizable } from '#/renderer/src/components/Resizable';
-import { useStore } from '#/renderer/src/store/StoreContext';
+import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
+import {
+  selectActiveEnvironmentId,
+  selectCollections,
+  selectDraft,
+  selectEnvironments,
+  selectRequestsByCollection,
+  selectSelectedCollectionId
+} from '#/renderer/src/store/selectors';
+import { setSelectedCollectionId } from '#/renderer/src/store/slices/collectionsSlice';
+import { setActiveEnvironmentId } from '#/renderer/src/store/slices/environmentsSlice';
+import {
+  createEnvironment,
+  deleteCollection,
+  deleteEnvironment,
+  deleteRequest,
+  exportCollection,
+  newRequestInCollection,
+  refreshRequests
+} from '#/renderer/src/store/thunks';
 import { field, primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
 import { Collections } from './Collections';
 import { Environments } from './Environments';
@@ -39,7 +58,14 @@ export function Sidebar({
   onConfigureEnvironment,
   onLoadRequest
 }: Props): JSX.Element {
-  const store = useStore();
+  const dispatch = useAppDispatch();
+  const collections = useAppSelector(selectCollections);
+  const requestsByCollection = useAppSelector(selectRequestsByCollection);
+  const selectedCollectionId = useAppSelector(selectSelectedCollectionId);
+  const draft = useAppSelector(selectDraft);
+  const environments = useAppSelector(selectEnvironments);
+  const activeEnvironmentId = useAppSelector(selectActiveEnvironmentId);
+
   const [collectionsExpanded, setCollectionsExpanded] = useState(true);
   const [environmentsExpanded, setEnvironmentsExpanded] = useState(true);
   const [showEnvironmentModal, setShowEnvironmentModal] = useState(false);
@@ -65,7 +91,7 @@ export function Sidebar({
     const name = newEnvironmentName.trim();
     if (!name) return;
     try {
-      await store.createEnvironment(name);
+      await dispatch(createEnvironment(name)).unwrap();
       toast.success('Environment created');
       closeEnvironmentModal();
     } catch (err) {
@@ -85,29 +111,33 @@ export function Sidebar({
             addLabel="Add Collection"
           >
             <Collections
-              collections={store.collections}
-              requestsByCollection={store.requestsByCollection}
-              selectedCollectionId={store.selectedCollectionId}
-              activeRequestId={store.draft.id}
-              onSelectCollection={store.setSelectedCollectionId}
-              onExpandCollection={store.refreshRequests}
+              collections={collections}
+              requestsByCollection={requestsByCollection}
+              selectedCollectionId={selectedCollectionId}
+              activeRequestId={draft.id}
+              onSelectCollection={(id) => dispatch(setSelectedCollectionId(id))}
+              onExpandCollection={(id) => void dispatch(refreshRequests(id))}
               onConfigureCollection={onConfigureCollection}
-              onDeleteCollection={store.deleteCollection}
+              onDeleteCollection={async (id) => {
+                await dispatch(deleteCollection(id));
+              }}
               onExportCollection={async (id) => {
-                const result = await store.exportCollection(id);
+                const result = await dispatch(exportCollection(id)).unwrap();
                 if (!result.canceled) {
                   toast.success('Collection exported');
                 }
               }}
               onNewRequestInCollection={async (id) => {
                 try {
-                  await store.newRequestInCollection(id);
+                  await dispatch(newRequestInCollection(id)).unwrap();
                 } catch (err) {
                   alert(err instanceof Error ? err.message : 'Failed to create request');
                 }
               }}
               onLoadRequest={onLoadRequest}
-              onDeleteRequest={store.deleteRequest}
+              onDeleteRequest={async (id) => {
+                await dispatch(deleteRequest(id));
+              }}
             />
           </Section>
 
@@ -122,11 +152,13 @@ export function Sidebar({
             addLabel="Add Environment"
           >
             <Environments
-              environments={store.environments}
-              activeEnvironmentId={store.activeEnvironmentId}
-              onSelectEnvironment={store.setActiveEnvironmentId}
+              environments={environments}
+              activeEnvironmentId={activeEnvironmentId}
+              onSelectEnvironment={(id) => dispatch(setActiveEnvironmentId(id))}
               onConfigureEnvironment={onConfigureEnvironment}
-              onDeleteEnvironment={store.deleteEnvironment}
+              onDeleteEnvironment={async (id) => {
+                await dispatch(deleteEnvironment(id));
+              }}
             />
           </Section>
         </div>
