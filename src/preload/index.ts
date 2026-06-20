@@ -352,6 +352,15 @@ function confirmClose(proceed: boolean): void {
   ipcRenderer.send('app:close-decision', proceed);
 }
 
+/**
+ * Opens a native file picker for one or more files via IPC.
+ *
+ * @returns Selected absolute file paths, or an empty array when canceled.
+ */
+function selectFiles(): Promise<string[]> {
+  return ipcRenderer.invoke('dialog:openFiles');
+}
+
 const api: Api = {
   listCollections,
   createCollection,
@@ -386,7 +395,8 @@ const api: Api = {
   getPostgresSettings,
   setPostgresSettings,
   onBeforeClose,
-  confirmClose
+  confirmClose,
+  selectFiles
 };
 
 contextBridge.exposeInMainWorld('api', api);

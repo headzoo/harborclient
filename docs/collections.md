@@ -184,7 +184,7 @@ Common validation errors:
 | `collection name is required` | Name is missing or blank |
 | `requests must be an array` | `requests` field is missing or wrong type |
 | `request N has an invalid method` | Method is not a supported HTTP method |
-| `request N has an invalid body type` | `body_type` is not `none`, `json`, or `text` |
+| `request N has an invalid body type` | `body_type` is not `none`, `json`, `text`, `multipart`, or `urlencoded` |
 | `request N is missing a name` | Request name is blank |
 
 ## How collections affect sends

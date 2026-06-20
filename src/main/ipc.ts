@@ -108,6 +108,23 @@ export function registerIpcHandlers(db: IDatabase): void {
     return db.importCollectionData(parsed);
   });
 
+  ipcMain.handle('dialog:openFiles', async () => {
+    const win = BrowserWindow.getFocusedWindow();
+    const dialogOptions = {
+      properties: ['openFile', 'multiSelections'] as Array<'openFile' | 'multiSelections'>,
+      filters: [{ name: 'All Files', extensions: ['*'] }]
+    };
+    const { canceled, filePaths } = win
+      ? await dialog.showOpenDialog(win, dialogOptions)
+      : await dialog.showOpenDialog(dialogOptions);
+
+    if (canceled || filePaths.length === 0) {
+      return [];
+    }
+
+    return filePaths;
+  });
+
   ipcMain.handle('environments:list', () => db.listEnvironments());
 
   ipcMain.handle('environments:create', (_event, name: string) => db.createEnvironment(name));

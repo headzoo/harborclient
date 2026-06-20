@@ -6,7 +6,42 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 
 /**
  * Request body content type.
  */
-export type BodyType = 'none' | 'json' | 'text';
+export type BodyType = 'none' | 'json' | 'text' | 'multipart' | 'urlencoded';
+
+/**
+ * Field type for a multipart/form-data part.
+ */
+export type FormDataPartType = 'text' | 'file';
+
+/**
+ * A single part in a multipart/form-data body.
+ */
+export interface FormDataPart {
+  /**
+   * Form field name.
+   */
+  key: string;
+
+  /**
+   * Text value when type is text; ignored for file parts.
+   */
+  value: string;
+
+  /**
+   * When false, the part is excluded when building the request.
+   */
+  enabled: boolean;
+
+  /**
+   * Whether this part is a text field or file upload.
+   */
+  type: FormDataPartType;
+
+  /**
+   * Absolute file paths for file parts; supports one or more files per field.
+   */
+  files: string[];
+}
 
 /**
  * A key-value pair with an enable toggle for headers and query params.
@@ -921,6 +956,13 @@ export interface Api {
    * @param proceed - True to allow close/quit, false to cancel.
    */
   confirmClose: (proceed: boolean) => void;
+
+  /**
+   * Opens a native file picker for one or more files.
+   *
+   * @returns Selected absolute file paths, or an empty array when canceled.
+   */
+  selectFiles: () => Promise<string[]>;
 }
 
 declare global {

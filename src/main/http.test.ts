@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { mkdtemp, writeFile } from 'fs/promises';
+import { join } from 'path';
+import { tmpdir } from 'os';
 import type { SendRequestInput } from '#/shared/types';
+import { serializeFormParts } from '#/shared/formData';
+import { serializeUrlEncodedParts } from '#/shared/urlencoded';
 import { buildHeaders, buildUrl, executeRequest } from '#/main/http';
 
 describe('buildUrl', () => {
@@ -89,6 +94,37 @@ describe('buildHeaders', () => {
     );
 
     expect(headers).toEqual({ 'content-type': 'application/xml' });
+  });
+
+  it('strips content-type for multipart body so fetch can set the boundary', () => {
+    const headers = buildHeaders(
+      [
+        { key: 'Content-Type', value: 'multipart/form-data', enabled: true },
+        { key: 'Authorization', value: 'Bearer token', enabled: true }
+      ],
+      'multipart'
+    );
+
+    expect(headers).toEqual({ Authorization: 'Bearer token' });
+  });
+
+  it('does not auto-add Content-Type for multipart body', () => {
+    expect(buildHeaders([], 'multipart')).toEqual({});
+  });
+
+  it('auto-adds application/x-www-form-urlencoded Content-Type for urlencoded body', () => {
+    expect(buildHeaders([], 'urlencoded')).toEqual({
+      'Content-Type': 'application/x-www-form-urlencoded'
+    });
+  });
+
+  it('respects an existing content-type header for urlencoded body', () => {
+    const headers = buildHeaders(
+      [{ key: 'Content-Type', value: 'text/plain', enabled: true }],
+      'urlencoded'
+    );
+
+    expect(headers).toEqual({ 'Content-Type': 'text/plain' });
   });
 
   it('request headers override collection headers when merged last-wins', () => {
@@ -234,6 +270,110 @@ describe('executeRequest', () => {
     expect(result.request).toMatchObject({
       method: 'GET',
       url: 'https://example.com'
+    });
+  });
+
+  it('sends multipart form-data with text and file parts', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'hc-multipart-'));
+    const filePath = join(tempDir, 'upload.txt');
+    await writeFile(filePath, 'hello file', 'utf-8');
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response('ok', { status: 200, statusText: 'OK' }));
+    globalThis.fetch = fetchMock;
+
+    const body = serializeFormParts([
+      { key: 'name', value: 'Ada', enabled: true, type: 'text', files: [] },
+      { key: 'file', value: '', enabled: true, type: 'file', files: [filePath] }
+    ]);
+
+    const result = await executeRequest({
+      ...baseInput,
+      method: 'POST',
+      body,
+      bodyType: 'multipart'
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(init.method).toBe('POST');
+    expect(init.body).toBeInstanceOf(FormData);
+    expect(init.headers).toEqual({});
+
+    const formData = init.body as FormData;
+    expect(formData.get('name')).toBe('Ada');
+    expect(formData.get('file')).toBeInstanceOf(Blob);
+
+    expect(result.request).toMatchObject({
+      method: 'POST',
+      body: `name: Ada\nfile: [upload.txt]`
+    });
+  });
+
+  it('returns an error when a multipart file cannot be read', async () => {
+    const body = serializeFormParts([
+      {
+        key: 'file',
+        value: '',
+        enabled: true,
+        type: 'file',
+        files: ['/tmp/does-not-exist-hc-multipart.txt']
+      }
+    ]);
+
+    const fetchMock = vi.fn();
+    globalThis.fetch = fetchMock;
+
+    const result = await executeRequest({
+      ...baseInput,
+      method: 'POST',
+      body,
+      bodyType: 'multipart'
+    });
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      status: 0,
+      statusText: 'Error',
+      error: 'Failed to read file: /tmp/does-not-exist-hc-multipart.txt'
+    });
+  });
+
+  it('sends application/x-www-form-urlencoded body from key-value rows', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response('ok', { status: 200, statusText: 'OK' }));
+    globalThis.fetch = fetchMock;
+
+    const body = serializeUrlEncodedParts([
+      { key: 'name', value: 'Ada Lovelace', enabled: true },
+      { key: 'disabled', value: 'ignored', enabled: false },
+      { key: '  ', value: 'blank key', enabled: true },
+      { key: 'tags', value: 'a&b=c', enabled: true }
+    ]);
+
+    const result = await executeRequest({
+      ...baseInput,
+      method: 'POST',
+      body,
+      bodyType: 'urlencoded'
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(init.method).toBe('POST');
+    expect(init.body).toBe('name=Ada+Lovelace&tags=a%26b%3Dc');
+    expect(init.headers).toEqual({ 'Content-Type': 'application/x-www-form-urlencoded' });
+
+    expect(result.request).toMatchObject({
+      method: 'POST',
+      body: 'name=Ada+Lovelace&tags=a%26b%3Dc',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
   });
 });

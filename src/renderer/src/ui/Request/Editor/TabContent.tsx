@@ -1,9 +1,9 @@
 import type { JSX } from 'react';
-import type { BodyType, Variable } from '#/shared/types';
+import type { Variable } from '#/shared/types';
 import { CodeEditor } from '#/renderer/src/components/CodeEditor';
 import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
 import type { RequestDraft } from '#/renderer/src/store/drafts';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { BodyEditor } from './BodyEditor';
 import type { EditorTab } from './types';
 
 interface Props {
@@ -73,30 +73,13 @@ export function TabContent({
       )}
 
       {tab === 'body' && showBody && (
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <label className="text-[13px] text-muted">Body type</label>
-            <select
-              className={field}
-              value={draft.body_type}
-              onChange={(e) => update({ body_type: e.target.value as BodyType })}
-            >
-              <option value="none">None</option>
-              <option value="json">JSON</option>
-              <option value="text">Text</option>
-            </select>
-          </div>
-          {draft.body_type !== 'none' && (
-            <CodeEditor
-              value={draft.body}
-              onChange={(body) => update({ body })}
-              language={draft.body_type === 'json' ? 'json' : 'text'}
-              placeholder={draft.body_type === 'json' ? '{\n  "key": "value"\n}' : 'Request body'}
-              variables={variables}
-              onEditVariable={onEditVariables}
-            />
-          )}
-        </div>
+        <BodyEditor
+          bodyType={draft.body_type}
+          body={draft.body}
+          update={update}
+          variables={variables}
+          onEditVariables={onEditVariables}
+        />
       )}
       {tab === 'pre' && (
         <CodeEditor

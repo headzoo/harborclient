@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(requests): add multipart and urlencoded body support. (`5cbc310`)
 - refactor(http): improve function formatting for readability. (`d1d1802`)
 - feat(settings): introduce general request settings management. (`e10f75c`)
 - refactor(settings): consolidate database section in sidebar. (`8a67c90`)

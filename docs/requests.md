@@ -72,8 +72,19 @@ The **Body** tab is available for all methods except GET and HEAD. Choose a body
 | **None** | No body is sent |
 | **JSON** | JSON code editor; HarborClient sets `Content-Type: application/json` automatically unless you already set `Content-Type` |
 | **Text** | Plain text editor; HarborClient sets `Content-Type: text/plain` automatically unless you already set `Content-Type` |
+| **Multipart Form** | Key/value rows where each field is **Text** or **File**; file fields support one or more uploads via a native file picker. HarborClient builds `multipart/form-data` at send time and lets the HTTP client set the boundary automatically. Any user-defined `Content-Type` header is ignored for this body type. |
+| **Form URL Encoded** | Key/value rows using the same editor as Params and Headers; HarborClient encodes enabled rows as `application/x-www-form-urlencoded` at send time and sets `Content-Type: application/x-www-form-urlencoded` automatically unless you already set `Content-Type` |
 
-Body text supports `{{variable}}` substitution. GET and HEAD requests never send a body, even if the Body tab has content.
+Body text supports `{{variable}}` substitution. For multipart and urlencoded requests, substitution runs over the stored JSON body, so placeholders in field values are resolved at send time. Multipart file paths are stored as absolute paths and are machine-specific.
+
+Example multipart fields:
+
+| Key | Type | Value |
+| --- | --- | --- |
+| name | Text | {{userName}} |
+| avatar | File | profile.png (chosen via file picker) |
+
+GET and HEAD requests never send a body, even if the Body tab has content.
 
 Example JSON body:
 
@@ -83,8 +94,6 @@ Example JSON body:
   "email": "ada@example.com"
 }
 ```
-
-HarborClient does **not** support form-data, multipart uploads, file attachments, or binary body types.
 
 ## Variables in requests
 
@@ -285,7 +294,6 @@ See [Request scripts](/request-scripts) for the full `hc.request.headers` API.
 
 HarborClient does not currently support:
 
-- Form-data, multipart, or file upload body types
 - A cookie jar or cookie editor
 - Redirect following controls, proxy settings, or custom SSL options in the UI
 - A dedicated authentication wizard (OAuth, Basic Auth, and similar)

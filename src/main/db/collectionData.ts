@@ -17,7 +17,7 @@ export const HTTP_METHODS = new Set<HttpMethod>([
   'OPTIONS'
 ]);
 
-export const BODY_TYPES = new Set<BodyType>(['none', 'json', 'text']);
+export const BODY_TYPES = new Set<BodyType>(['none', 'json', 'text', 'multipart', 'urlencoded']);
 
 /**
  * Coerces a partial or legacy variable record to the full Variable shape.
