@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- refactor(docs): improve formatting and clarity in TESTING.md. (`b0976c7`)
 - fix(docs): update file paths and enhance cookie management documentation. (`a594b80`)
 - fix(sidebar): update logo source for improved visibility. (`7d3af56`)
 - feat(tests): enhance test coverage and improve error handling. (`3ce12c2`)

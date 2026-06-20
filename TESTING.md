@@ -45,15 +45,15 @@ All gated backend suites **must pass in CI** — they must not be skipped when `
 
 There is no enforced line or branch coverage percentage. Expectations are qualitative and layer-based:
 
-| Layer | Expectation | Examples |
-| ----- | ----------- | -------- |
-| `src/shared/` | Test pure helpers and serializers | `formData.test.ts`, `urlencoded.test.ts` |
-| `src/main/` (HTTP, scripts, cookies) | Test edge cases and security-relevant behavior | `http/http.test.ts`, `cookieJar/cookieJar.test.ts`, `scripts/scripts.test.ts` |
-| `src/main/db/` | Every backend runs the contract suite; add backend-specific tests for migrations and routing | `SqliteDatabase.test.ts`, `RoutingDatabase.test.ts` |
-| `src/main/ipc/` | Every new or changed Zod schema gets parse/reject cases | `ipcSchemas.test.ts` |
-| `src/renderer/` (non-UI) | Redux slices, thunks with testable logic, persistence | `store/*.test.ts` |
-| `src/renderer/` (React `.tsx`) | Not required by Vitest; manual QA for UI changes | — |
-| IPC handler wiring (`ipc.ts`) | Indirectly covered via module tests; full E2E not required for every handler | — |
+| Layer                                | Expectation                                                                                  | Examples                                                                      |
+| ------------------------------------ | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `src/shared/`                        | Test pure helpers and serializers                                                            | `formData.test.ts`, `urlencoded.test.ts`                                      |
+| `src/main/` (HTTP, scripts, cookies) | Test edge cases and security-relevant behavior                                               | `http/http.test.ts`, `cookieJar/cookieJar.test.ts`, `scripts/scripts.test.ts` |
+| `src/main/db/`                       | Every backend runs the contract suite; add backend-specific tests for migrations and routing | `SqliteDatabase.test.ts`, `RoutingDatabase.test.ts`                           |
+| `src/main/ipc/`                      | Every new or changed Zod schema gets parse/reject cases                                      | `ipcSchemas.test.ts`                                                          |
+| `src/renderer/` (non-UI)             | Redux slices, thunks with testable logic, persistence                                        | `store/*.test.ts`                                                             |
+| `src/renderer/` (React `.tsx`)       | Not required by Vitest; manual QA for UI changes                                             | —                                                                             |
+| IPC handler wiring (`ipc.ts`)        | Indirectly covered via module tests; full E2E not required for every handler                 | —                                                                             |
 
 **Lower priority** (manual QA is acceptable): visual UI layout, window chrome, native menus.
 
@@ -74,19 +74,19 @@ Helpers live under `src/test/`:
 
 Optional local setup (defaults match CI):
 
-| Variable | Purpose |
-| -------- | ------- |
-| `HARBOR_TEST_MYSQL_HOST` | MySQL host (default `127.0.0.1`) |
-| `HARBOR_TEST_MYSQL_PORT` | MySQL port (default `3306`) |
-| `HARBOR_TEST_MYSQL_USER` | MySQL user (default `root`) |
-| `HARBOR_TEST_MYSQL_PASSWORD` | MySQL password (default `harborclient`) |
-| `HARBOR_TEST_MYSQL_DATABASE` | MySQL database (default `harborclient_test`) |
-| `HARBOR_TEST_POSTGRES_HOST` | PostgreSQL host (default `127.0.0.1`) |
-| `HARBOR_TEST_POSTGRES_PORT` | PostgreSQL port (default `5432`) |
-| `HARBOR_TEST_POSTGRES_USER` | PostgreSQL user (default `postgres`) |
-| `HARBOR_TEST_POSTGRES_PASSWORD` | PostgreSQL password (default `harborclient`) |
-| `HARBOR_TEST_POSTGRES_DATABASE` | PostgreSQL database (default `harborclient_test`) |
-| `FIRESTORE_EMULATOR_HOST` | Firestore emulator address (required for Firestore tests locally) |
+| Variable                        | Purpose                                                           |
+| ------------------------------- | ----------------------------------------------------------------- |
+| `HARBOR_TEST_MYSQL_HOST`        | MySQL host (default `127.0.0.1`)                                  |
+| `HARBOR_TEST_MYSQL_PORT`        | MySQL port (default `3306`)                                       |
+| `HARBOR_TEST_MYSQL_USER`        | MySQL user (default `root`)                                       |
+| `HARBOR_TEST_MYSQL_PASSWORD`    | MySQL password (default `harborclient`)                           |
+| `HARBOR_TEST_MYSQL_DATABASE`    | MySQL database (default `harborclient_test`)                      |
+| `HARBOR_TEST_POSTGRES_HOST`     | PostgreSQL host (default `127.0.0.1`)                             |
+| `HARBOR_TEST_POSTGRES_PORT`     | PostgreSQL port (default `5432`)                                  |
+| `HARBOR_TEST_POSTGRES_USER`     | PostgreSQL user (default `postgres`)                              |
+| `HARBOR_TEST_POSTGRES_PASSWORD` | PostgreSQL password (default `harborclient`)                      |
+| `HARBOR_TEST_POSTGRES_DATABASE` | PostgreSQL database (default `harborclient_test`)                 |
+| `FIRESTORE_EMULATOR_HOST`       | Firestore emulator address (required for Firestore tests locally) |
 
 ### `idatabaseContract.ts`
 
@@ -116,13 +116,13 @@ Follow patterns in existing tests such as `src/main/http/http.test.ts` and `src/
 
 Use this checklist when opening a PR:
 
-| Change | Required tests |
-| ------ | -------------- |
-| New or changed pure function / serializer | Colocated `*.test.ts` |
-| New IPC method | Zod schema + `ipcSchemas.test.ts`; module tests for delegated logic |
-| New `IDatabase` method | Extend `runIdatabaseContractSuite`; implement in all backends |
-| Bug fix | Regression test reproducing the bug |
-| HTTP, scripts, or import behavior change | Extend the relevant existing test file with the edge case |
+| Change                                    | Required tests                                                      |
+| ----------------------------------------- | ------------------------------------------------------------------- |
+| New or changed pure function / serializer | Colocated `*.test.ts`                                               |
+| New IPC method                            | Zod schema + `ipcSchemas.test.ts`; module tests for delegated logic |
+| New `IDatabase` method                    | Extend `runIdatabaseContractSuite`; implement in all backends       |
+| Bug fix                                   | Regression test reproducing the bug                                 |
+| HTTP, scripts, or import behavior change  | Extend the relevant existing test file with the edge case           |
 
 ## What we do not enforce
 
