@@ -29,6 +29,7 @@ export interface RequestTab {
   savedDraft: RequestDraft;
   response: SendResult | null;
   sending: boolean;
+  sendingRequestId: string | null;
   testResults: ScriptTestResult[];
 }
 
@@ -151,6 +152,7 @@ export function createTab(draft: RequestDraft = defaultDraft()): RequestTab {
     savedDraft: cloneDraft(initialDraft),
     response: null,
     sending: false,
+    sendingRequestId: null,
     testResults: []
   };
 }

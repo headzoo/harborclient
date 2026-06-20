@@ -167,10 +167,20 @@ function deleteRequest(id: number): Promise<void> {
  * Sends an HTTP request via IPC.
  *
  * @param req - Request configuration to execute.
+ * @param requestId - Optional ID used to cancel the in-flight request.
  * @returns Response metadata from the main process.
  */
-function sendRequest(req: SendRequestInput): Promise<SendResult> {
-  return ipcRenderer.invoke('http:send', req);
+function sendRequest(req: SendRequestInput, requestId?: string): Promise<SendResult> {
+  return ipcRenderer.invoke('http:send', req, requestId);
+}
+
+/**
+ * Cancels an in-flight HTTP request via IPC.
+ *
+ * @param requestId - ID passed to sendRequest when the request was started.
+ */
+function cancelRequest(requestId: string): Promise<void> {
+  return ipcRenderer.invoke('http:cancel', requestId);
 }
 
 /**
@@ -306,6 +316,7 @@ const api: Api = {
   saveRequest,
   deleteRequest,
   sendRequest,
+  cancelRequest,
   runScript,
   onMenuAction,
   getAppVersion,

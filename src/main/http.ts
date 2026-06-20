@@ -62,9 +62,13 @@ export function buildHeaders(headers: KeyValue[], bodyType: BodyType): Record<st
  * Executes an HTTP request via fetch and returns timing and response metadata.
  *
  * @param input - Method, URL, headers, params, body, and body type.
+ * @param signal - Optional abort signal to cancel the in-flight request.
  * @returns Response status, headers, body, timing, and size; error field on failure.
  */
-export async function executeRequest(input: SendRequestInput): Promise<SendResult> {
+export async function executeRequest(
+  input: SendRequestInput,
+  signal?: AbortSignal
+): Promise<SendResult> {
   const url = buildUrl(input.url, input.params);
   const headers = buildHeaders(input.headers, input.bodyType);
   const sentBody =
@@ -101,7 +105,8 @@ export async function executeRequest(input: SendRequestInput): Promise<SendResul
   try {
     const init: RequestInit = {
       method: input.method,
-      headers
+      headers,
+      signal
     };
 
     if (input.bodyType !== 'none' && input.method !== 'GET' && input.method !== 'HEAD') {
@@ -129,7 +134,12 @@ export async function executeRequest(input: SendRequestInput): Promise<SendResul
     };
   } catch (err) {
     const timeMs = Math.round(performance.now() - start);
-    const message = err instanceof Error ? err.message : 'Unknown error';
+    const message =
+      err instanceof Error && err.name === 'AbortError'
+        ? 'Request canceled'
+        : err instanceof Error
+          ? err.message
+          : 'Unknown error';
 
     return {
       status: 0,

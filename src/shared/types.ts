@@ -710,9 +710,17 @@ export interface Api {
    * Sends an HTTP request via the main process.
    *
    * @param req - Request configuration to execute.
+   * @param requestId - Optional ID used to cancel the in-flight request.
    * @returns Response metadata from the main process.
    */
-  sendRequest: (req: SendRequestInput) => Promise<SendResult>;
+  sendRequest: (req: SendRequestInput, requestId?: string) => Promise<SendResult>;
+
+  /**
+   * Cancels an in-flight HTTP request by ID.
+   *
+   * @param requestId - ID passed to sendRequest when the request was started.
+   */
+  cancelRequest: (requestId: string) => Promise<void>;
 
   /**
    * Runs a pre/post script in an isolated-vm sandbox.

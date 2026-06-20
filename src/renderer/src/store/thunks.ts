@@ -256,6 +256,7 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
     if (!activeTab) return;
 
     const tabId = activeTab.tabId;
+    const requestId = crypto.randomUUID();
     const currentDraft = activeTab.draft;
     const collectionId = currentDraft.collection_id ?? state.collections.selectedCollectionId;
     const collection = collectionId
@@ -317,10 +318,15 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
       }
     };
 
+    const isRequestStillActive = (): boolean => {
+      const tab = getState().tabs.tabs.find((t) => t.tabId === tabId);
+      return tab?.sendingRequestId === requestId;
+    };
+
     dispatch(
       updateTab({
         tabId,
-        updates: { sending: true, response: null, testResults: [] }
+        updates: { sending: true, response: null, testResults: [], sendingRequestId: requestId }
       })
     );
 
@@ -345,42 +351,66 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
       }));
       const body = substituteWithMap(scriptRequest.body, runtimeVars);
 
-      const result = await window.api.sendRequest({
-        method: scriptRequest.method,
-        url: resolvedUrl,
-        headers,
-        params,
-        body,
-        bodyType: scriptRequest.bodyType
-      });
+      const result = await window.api.sendRequest(
+        {
+          method: scriptRequest.method,
+          url: resolvedUrl,
+          headers,
+          params,
+          body,
+          bodyType: scriptRequest.bodyType
+        },
+        requestId
+      );
 
       await runScriptPhase('post', result);
 
-      dispatch(
-        updateTab({
-          tabId,
-          updates: { response: result, testResults: allTests }
-        })
-      );
-      dispatch(
-        addConsoleEntry({
-          id: crypto.randomUUID(),
-          timestamp: Date.now(),
-          requestName: currentDraft.name,
-          collectionName: collection?.name,
-          result,
-          logs: allLogs.length ? allLogs : undefined,
-          tests: allTests.length ? allTests : undefined,
-          scriptError: scriptErrors.length ? scriptErrors.join('\n') : undefined
-        })
-      );
+      if (isRequestStillActive()) {
+        dispatch(
+          updateTab({
+            tabId,
+            updates: { response: result, testResults: allTests }
+          })
+        );
+        dispatch(
+          addConsoleEntry({
+            id: crypto.randomUUID(),
+            timestamp: Date.now(),
+            requestName: currentDraft.name,
+            collectionName: collection?.name,
+            result,
+            logs: allLogs.length ? allLogs : undefined,
+            tests: allTests.length ? allTests : undefined,
+            scriptError: scriptErrors.length ? scriptErrors.join('\n') : undefined
+          })
+        );
 
-      if (scriptErrors.length) {
-        toast.error(`Script error: ${scriptErrors[0]}`);
+        if (scriptErrors.length) {
+          toast.error(`Script error: ${scriptErrors[0]}`);
+        }
       }
     } finally {
-      dispatch(updateTab({ tabId, updates: { sending: false } }));
+      if (isRequestStillActive()) {
+        dispatch(updateTab({ tabId, updates: { sending: false, sendingRequestId: null } }));
+      }
     }
+  }
+);
+
+export const cancelRequest = createAsyncThunk<void, void, ThunkApiConfig>(
+  'tabs/cancelRequest',
+  async (_, { dispatch, getState }) => {
+    const activeTab = selectActiveTab(getState());
+    if (!activeTab?.sendingRequestId) return;
+
+    const { tabId, sendingRequestId } = activeTab;
+    await window.api.cancelRequest(sendingRequestId);
+    dispatch(
+      updateTab({
+        tabId,
+        updates: { sending: false, sendingRequestId: null }
+      })
+    );
   }
 );
 

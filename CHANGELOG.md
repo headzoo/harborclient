@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Enhance HTTP request handling with cancellation support. (`07c7d14`)
 - Refactor state management and enhance component integration. (`032b2e1`)
 - Refactor ConsolePanel and enhance AppShell functionality. (`a7c0cdf`)
 - Refactor Request and ConsolePanel components for improved UI and functionality. (`4adfc0e`)

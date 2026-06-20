@@ -70,6 +70,7 @@ export function loadTabsFromStorage(): { tabs: RequestTab[]; activeTabId: string
         savedDraft: cloneDraft(savedDraft),
         response: null,
         sending: false,
+        sendingRequestId: null,
         testResults: []
       };
     });

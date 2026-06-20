@@ -21,7 +21,7 @@ import {
   setActiveTab
 } from '#/renderer/src/store/slices/tabsSlice';
 import { setActiveEnvironmentId } from '#/renderer/src/store/slices/environmentsSlice';
-import { sendRequest } from '#/renderer/src/store/thunks';
+import { sendRequest, cancelRequest } from '#/renderer/src/store/thunks';
 import { ResizeHandle, useResizable } from '#/renderer/src/components/Resizable';
 import { primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
 import { Editor } from './Editor';
@@ -143,6 +143,7 @@ export function Request({ onEditVariables }: Props): JSX.Element {
         response={response}
         sending={sending}
         testResults={testResults}
+        onCancel={() => void dispatch(cancelRequest())}
       />
 
       {closeTabPrompt && (

@@ -24,6 +24,8 @@ import type {
 
 const THEME_SETTING_KEY = 'theme';
 
+const activeRequests = new Map<string, AbortController>();
+
 /**
  * Validates and returns a theme source value.
  *
@@ -114,7 +116,24 @@ export function registerIpcHandlers(db: IDatabase): void {
 
   ipcMain.handle('requests:delete', (_event, id: number) => db.deleteRequest(id));
 
-  ipcMain.handle('http:send', (_event, req: SendRequestInput) => executeRequest(req));
+  ipcMain.handle('http:send', async (_event, req: SendRequestInput, requestId?: string) => {
+    const controller = new AbortController();
+    if (requestId) {
+      activeRequests.set(requestId, controller);
+    }
+
+    try {
+      return await executeRequest(req, controller.signal);
+    } finally {
+      if (requestId) {
+        activeRequests.delete(requestId);
+      }
+    }
+  });
+
+  ipcMain.handle('http:cancel', (_event, requestId: string) => {
+    activeRequests.get(requestId)?.abort();
+  });
 
   ipcMain.handle('scripts:run', (_event, input: ScriptRunInput) => runScript(input));
 
