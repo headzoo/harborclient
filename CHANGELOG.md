@@ -3,6 +3,9 @@
 ## Unreleased
 
 - feat(certificates): implement certificate management for invite security. (`9b3bbbc`)
+
+## 1.4.1 - 2026-06-20
+
 - fix(busyMiddleware): improve type checking for async thunk actions. (`9a8a832`)
 - refactor(sidebar): improve formatting and readability of collection options. (`f2f1b79`)
 - feat(folders): implement folder management for collections. (`511353e`)
