@@ -213,6 +213,11 @@ export interface SavedRequest {
   post_request_script: string;
 
   /**
+   * Free-form notes for this request.
+   */
+  comment: string;
+
+  /**
    * Position within the collection for sidebar ordering.
    */
   sort_order: number;
@@ -276,6 +281,11 @@ export interface ExportedRequest {
    * JavaScript run after the response is received.
    */
   post_request_script: string;
+
+  /**
+   * Free-form notes for this request.
+   */
+  comment: string;
 
   /**
    * Position within the collection for sidebar ordering.
@@ -396,6 +406,11 @@ export interface SaveRequestInput {
    * JavaScript run after the response is received.
    */
   post_request_script: string;
+
+  /**
+   * Free-form notes for this request.
+   */
+  comment: string;
 }
 
 /**
@@ -498,6 +513,11 @@ export interface SendResult {
   error?: string;
 
   /**
+   * Set-Cookie header values from the response; used by the cookie jar.
+   */
+  setCookieHeaders?: string[];
+
+  /**
    * The outgoing request as actually sent; omitted on older results.
    */
   request?: SentRequest;
@@ -564,7 +584,7 @@ export type DatabaseProvider = 'sqlite' | 'firestore' | 'mysql' | 'postgres';
 /**
  * Request editor tab identifiers.
  */
-export type EditorTab = 'params' | 'headers' | 'body' | 'pre' | 'post';
+export type EditorTab = 'params' | 'headers' | 'cookies' | 'body' | 'pre' | 'post' | 'comment';
 
 /**
  * General application settings for HTTP request execution.
@@ -841,6 +861,21 @@ export interface Api {
    * @param requestId - ID passed to sendRequest when the request was started.
    */
   cancelRequest: (requestId: string) => Promise<void>;
+
+  /**
+   * Returns cookies stored for a hostname.
+   *
+   * @param domain - Hostname to query.
+   */
+  getCookies: (domain: string) => Promise<KeyValue[]>;
+
+  /**
+   * Persists cookies for a hostname.
+   *
+   * @param domain - Hostname to update.
+   * @param cookies - Cookie rows to store.
+   */
+  setCookies: (domain: string, cookies: KeyValue[]) => Promise<void>;
 
   /**
    * Runs a pre/post script in an isolated-vm sandbox.

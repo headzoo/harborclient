@@ -188,6 +188,25 @@ function cancelRequest(requestId: string): Promise<void> {
 }
 
 /**
+ * Returns cookies stored for a hostname via IPC.
+ *
+ * @param domain - Hostname to query.
+ */
+function getCookies(domain: string): Promise<KeyValue[]> {
+  return ipcRenderer.invoke('cookies:getForDomain', domain);
+}
+
+/**
+ * Persists cookies for a hostname via IPC.
+ *
+ * @param domain - Hostname to update.
+ * @param cookies - Cookie rows to store.
+ */
+function setCookies(domain: string, cookies: KeyValue[]): Promise<void> {
+  return ipcRenderer.invoke('cookies:setForDomain', domain, cookies);
+}
+
+/**
  * Runs a pre/post script via IPC.
  *
  * @param input - Script source, phase, request/response context, and variables.
@@ -406,6 +425,8 @@ const api: Api = {
   deleteRequest,
   sendRequest,
   cancelRequest,
+  getCookies,
+  setCookies,
   runScript,
   onMenuAction,
   getAppVersion,

@@ -3,7 +3,9 @@ import type { Variable } from '#/shared/types';
 import { CodeEditor } from '#/renderer/src/components/CodeEditor';
 import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
 import type { RequestDraft } from '#/renderer/src/store/drafts';
+import { field } from '#/renderer/src/ui/shared/classes';
 import { BodyEditor } from './BodyEditor';
+import { CookiesEditor } from './CookiesEditor';
 import type { EditorTab } from './types';
 
 interface Props {
@@ -71,6 +73,7 @@ export function TabContent({
           onEditVariable={onEditVariables}
         />
       )}
+      {tab === 'cookies' && <CookiesEditor url={draft.url} variables={variables} />}
 
       {tab === 'body' && showBody && (
         <BodyEditor
@@ -105,6 +108,14 @@ export function TabContent({
           variables={variables}
           onEditVariable={onEditVariables}
           minHeight="200px"
+        />
+      )}
+      {tab === 'comment' && (
+        <textarea
+          className={`${field} w-full min-h-[200px] resize-y`}
+          value={draft.comment}
+          onChange={(event) => update({ comment: event.target.value })}
+          placeholder="Notes for this request"
         />
       )}
     </div>

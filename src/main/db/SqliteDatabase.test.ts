@@ -66,6 +66,7 @@ function baseRequestInput(
     body_type: 'none',
     pre_request_script: '',
     post_request_script: '',
+    comment: '',
     ...overrides
   };
 }
@@ -216,7 +217,8 @@ describeSqlite('SqliteDatabase requests', () => {
       body: '{"ok":true}',
       body_type: 'json',
       pre_request_script: 'pre',
-      post_request_script: 'post'
+      post_request_script: 'post',
+      comment: 'Some notes'
     });
 
     expect(updated.id).toBe(created.id);
@@ -227,6 +229,7 @@ describeSqlite('SqliteDatabase requests', () => {
     expect(updated.body_type).toBe('json');
     expect(updated.pre_request_script).toBe('pre');
     expect(updated.post_request_script).toBe('post');
+    expect(updated.comment).toBe('Some notes');
     expect((await db.listRequests(collection.id))[0]).toEqual(updated);
   });
 
@@ -317,7 +320,8 @@ describeSqlite('SqliteDatabase import and export', () => {
         method: 'GET',
         url: 'https://api.example.com/users',
         pre_request_script: 'req pre',
-        post_request_script: 'req post'
+        post_request_script: 'req post',
+        comment: 'Request notes'
       })
     );
 
@@ -344,6 +348,7 @@ describeSqlite('SqliteDatabase import and export', () => {
           body_type: 'none',
           pre_request_script: 'req pre',
           post_request_script: 'req post',
+          comment: 'Request notes',
           sort_order: 0
         }
       ]
@@ -372,6 +377,7 @@ describeSqlite('SqliteDatabase import and export', () => {
           body_type: 'none',
           pre_request_script: '',
           post_request_script: '',
+          comment: '',
           sort_order: 0
         }
       ]
@@ -520,5 +526,55 @@ describeSqlite('SqliteDatabase legacy migration', () => {
 
     expect(existsSync(join(userDataDir, 'harborclient.db'))).toBe(true);
     expect((await db.listCollections()).map((c) => c.name)).toEqual(['Local Legacy']);
+  });
+
+  it('adds comment column to legacy requests table on init', async () => {
+    const userDataDir = mkdtempSync(join(tmpdir(), 'harborclient-db-'));
+    const dbPath = join(userDataDir, 'harborclient.db');
+
+    const legacyDb = new Database(dbPath);
+    legacyDb.exec(`
+      CREATE TABLE collections (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        variables TEXT NOT NULL DEFAULT '[]',
+        headers TEXT NOT NULL DEFAULT '[]',
+        pre_request_script TEXT NOT NULL DEFAULT '',
+        post_request_script TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      CREATE TABLE requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        collection_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        method TEXT NOT NULL DEFAULT 'GET',
+        url TEXT NOT NULL DEFAULT '',
+        headers TEXT NOT NULL DEFAULT '[]',
+        params TEXT NOT NULL DEFAULT '[]',
+        body TEXT NOT NULL DEFAULT '',
+        body_type TEXT NOT NULL DEFAULT 'none',
+        pre_request_script TEXT NOT NULL DEFAULT '',
+        post_request_script TEXT NOT NULL DEFAULT '',
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+        FOREIGN KEY (collection_id) REFERENCES collections(id) ON DELETE CASCADE
+      );
+    `);
+    legacyDb.close();
+
+    const db = new SqliteDatabase(userDataDir, DEFAULT_TEST_SETTINGS);
+    cleanups.push(async () => {
+      await db.close();
+      rmSync(userDataDir, { recursive: true, force: true });
+    });
+
+    await db.init();
+
+    const collection = await db.createCollection('Migrated');
+    const saved = await db.saveRequest(
+      baseRequestInput(collection.id, { comment: 'Migrated comment' })
+    );
+    expect(saved.comment).toBe('Migrated comment');
   });
 });

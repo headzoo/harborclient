@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(cookies): enhance request handling with cookie management. (`063f472`)
 - chore(readme): streamline project description and documentation links. (`ad988d9`)
 - feat(requestEditor): implement tab management functionality. (`cc091b1`)
 - feat(requests): add multipart and urlencoded body support. (`5cbc310`)

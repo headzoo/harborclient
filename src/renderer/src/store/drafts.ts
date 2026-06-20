@@ -20,6 +20,7 @@ export interface RequestDraft {
   body_type: BodyType;
   pre_request_script: string;
   post_request_script: string;
+  comment: string;
 }
 
 /** Open request tab with draft, response, and in-flight state. */
@@ -43,7 +44,8 @@ export function normalizeDraft(draft: RequestDraft): RequestDraft {
   return {
     ...draft,
     pre_request_script: draft.pre_request_script ?? '',
-    post_request_script: draft.post_request_script ?? ''
+    post_request_script: draft.post_request_script ?? '',
+    comment: draft.comment ?? ''
   };
 }
 
@@ -77,6 +79,7 @@ export function normalizeDraftForCompare(draft: RequestDraft): string {
     body_type: draft.body_type,
     pre_request_script: draft.pre_request_script ?? '',
     post_request_script: draft.post_request_script ?? '',
+    comment: draft.comment ?? '',
     headers: draft.headers.filter((h) => h.key.trim() || h.value.trim()),
     params: draft.params.filter((p) => p.key.trim() || p.value.trim())
   };
@@ -135,7 +138,8 @@ export const defaultDraft = (): RequestDraft => ({
   body: '',
   body_type: 'none',
   pre_request_script: '',
-  post_request_script: ''
+  post_request_script: '',
+  comment: ''
 });
 
 /**
@@ -175,6 +179,7 @@ export function draftFromSaved(req: SavedRequest): RequestDraft {
     body: req.body,
     body_type: req.body_type,
     pre_request_script: req.pre_request_script ?? '',
-    post_request_script: req.post_request_script ?? ''
+    post_request_script: req.post_request_script ?? '',
+    comment: req.comment ?? ''
   };
 }

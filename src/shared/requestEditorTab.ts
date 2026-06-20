@@ -3,9 +3,11 @@ import type { EditorTab } from '#/shared/types';
 const EDITOR_TABS: ReadonlySet<EditorTab> = new Set([
   'params',
   'headers',
+  'cookies',
   'body',
   'pre',
-  'post'
+  'post',
+  'comment'
 ]);
 
 /**

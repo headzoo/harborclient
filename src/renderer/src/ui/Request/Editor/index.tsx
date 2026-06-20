@@ -102,9 +102,11 @@ export function Editor({
           tabs={[
             { value: 'params', label: 'Params' },
             { value: 'headers', label: 'Headers' },
+            { value: 'cookies', label: 'Cookies' },
             { value: 'body', label: 'Body', hidden: !showBody },
             { value: 'pre', label: 'PreRequest' },
-            { value: 'post', label: 'PostRequest' }
+            { value: 'post', label: 'PostRequest' },
+            { value: 'comment', label: 'Comment' }
           ]}
         />
       </div>

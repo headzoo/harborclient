@@ -121,6 +121,7 @@ export function validateCollectionExport(data: unknown): CollectionExport {
       pre_request_script: typeof req.pre_request_script === 'string' ? req.pre_request_script : '',
       post_request_script:
         typeof req.post_request_script === 'string' ? req.post_request_script : '',
+      comment: typeof req.comment === 'string' ? req.comment : '',
       sort_order: typeof req.sort_order === 'number' ? req.sort_order : index
     } satisfies ExportedRequest;
   });

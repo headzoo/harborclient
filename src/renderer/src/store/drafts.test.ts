@@ -24,7 +24,8 @@ const sampleDraft = (): RequestDraft => ({
   body: '{"ok":true}',
   body_type: 'json',
   pre_request_script: '',
-  post_request_script: ''
+  post_request_script: '',
+  comment: ''
 });
 
 describe('normalizeDraft', () => {
@@ -42,7 +43,8 @@ describe('normalizeDraft', () => {
     expect(normalizeDraft(legacy as RequestDraft)).toEqual({
       ...legacy,
       pre_request_script: '',
-      post_request_script: ''
+      post_request_script: '',
+      comment: ''
     });
   });
 });
@@ -146,7 +148,8 @@ describe('defaultDraft and emptyKeyValue', () => {
       body: '',
       body_type: 'none',
       pre_request_script: '',
-      post_request_script: ''
+      post_request_script: '',
+      comment: ''
     });
   });
 
@@ -185,6 +188,7 @@ describe('draftFromSaved', () => {
       body_type: 'text',
       pre_request_script: '',
       post_request_script: '',
+      comment: '',
       sort_order: 0,
       created_at: '2026-01-01T00:00:00.000Z',
       updated_at: '2026-01-01T00:00:00.000Z'
@@ -201,7 +205,8 @@ describe('draftFromSaved', () => {
       body: 'body',
       body_type: 'text',
       pre_request_script: '',
-      post_request_script: ''
+      post_request_script: '',
+      comment: ''
     });
   });
 
@@ -218,6 +223,7 @@ describe('draftFromSaved', () => {
       body_type: 'none',
       pre_request_script: '',
       post_request_script: '',
+      comment: '',
       sort_order: 0,
       created_at: '2026-01-01T00:00:00.000Z',
       updated_at: '2026-01-01T00:00:00.000Z'

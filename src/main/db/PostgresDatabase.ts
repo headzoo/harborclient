@@ -85,6 +85,7 @@ function rowToRequest(row: QueryResultRow): SavedRequest {
     body_type: row.body_type as BodyType,
     pre_request_script: (row.pre_request_script as string) ?? '',
     post_request_script: (row.post_request_script as string) ?? '',
+    comment: (row.comment as string) ?? '',
     sort_order: row.sort_order as number,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string
@@ -158,6 +159,7 @@ export class PostgresDatabase implements IDatabase {
         body_type VARCHAR(32) NOT NULL DEFAULT 'none',
         pre_request_script TEXT NOT NULL,
         post_request_script TEXT NOT NULL,
+        comment TEXT NOT NULL DEFAULT '',
         sort_order INT NOT NULL DEFAULT 0,
         created_at VARCHAR(64) NOT NULL,
         updated_at VARCHAR(64) NOT NULL,
@@ -179,6 +181,10 @@ export class PostgresDatabase implements IDatabase {
         variables TEXT NOT NULL,
         created_at VARCHAR(64) NOT NULL
       )
+    `);
+
+    await this.#pool.query(`
+      ALTER TABLE requests ADD COLUMN IF NOT EXISTS comment TEXT NOT NULL DEFAULT ''
     `);
   }
 
@@ -294,6 +300,7 @@ export class PostgresDatabase implements IDatabase {
     const params = JSON.stringify(input.params);
     const preRequestScript = input.pre_request_script ?? '';
     const postRequestScript = input.post_request_script ?? '';
+    const comment = input.comment ?? '';
     const now = new Date().toISOString();
 
     if (input.id) {
@@ -301,9 +308,9 @@ export class PostgresDatabase implements IDatabase {
         `UPDATE requests SET
           collection_id = $1, name = $2, method = $3, url = $4,
           headers = $5, params = $6, body = $7, body_type = $8,
-          pre_request_script = $9, post_request_script = $10,
-          updated_at = $11
-        WHERE id = $12`,
+          pre_request_script = $9, post_request_script = $10, comment = $11,
+          updated_at = $12
+        WHERE id = $13`,
         [
           input.collection_id,
           input.name.trim(),
@@ -315,6 +322,7 @@ export class PostgresDatabase implements IDatabase {
           input.body_type,
           preRequestScript,
           postRequestScript,
+          comment,
           now,
           input.id
         ]
@@ -338,8 +346,8 @@ export class PostgresDatabase implements IDatabase {
     const result = await this.getPool().query(
       `INSERT INTO requests (
         collection_id, name, method, url, headers, params, body, body_type,
-        pre_request_script, post_request_script, sort_order, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        pre_request_script, post_request_script, comment, sort_order, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *`,
       [
         input.collection_id,
@@ -352,6 +360,7 @@ export class PostgresDatabase implements IDatabase {
         input.body_type,
         preRequestScript,
         postRequestScript,
+        comment,
         maxOrder + 1,
         now,
         now
@@ -387,6 +396,7 @@ export class PostgresDatabase implements IDatabase {
         body_type,
         pre_request_script,
         post_request_script,
+        comment,
         sort_order
       }) => ({
         name,
@@ -398,6 +408,7 @@ export class PostgresDatabase implements IDatabase {
         body_type,
         pre_request_script,
         post_request_script,
+        comment,
         sort_order
       })
     );
@@ -446,8 +457,8 @@ export class PostgresDatabase implements IDatabase {
         await client.query(
           `INSERT INTO requests (
             collection_id, name, method, url, headers, params, body, body_type,
-            pre_request_script, post_request_script, sort_order, created_at, updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+            pre_request_script, post_request_script, comment, sort_order, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
           [
             collectionId,
             request.name,
@@ -459,6 +470,7 @@ export class PostgresDatabase implements IDatabase {
             request.body_type,
             request.pre_request_script,
             request.post_request_script,
+            request.comment,
             request.sort_order,
             now,
             now

@@ -1,7 +1,13 @@
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from 'electron';
 import { readFile, writeFile } from 'fs/promises';
 import type { IDatabase } from '#/main/db/IDatabase';
-import { executeRequest } from '#/main/http';
+import {
+  buildCookieHeader,
+  captureSetCookies,
+  getCookiesForDomain,
+  setCookiesForDomain
+} from '#/main/cookieJar';
+import { buildUrl, executeRequest } from '#/main/http';
 import { runScript } from '#/main/scripts';
 import {
   getDatabaseProvider,
@@ -155,7 +161,13 @@ export function registerIpcHandlers(db: IDatabase): void {
 
     try {
       const settings = getGeneralSettings();
-      return await executeRequest(req, settings, controller.signal);
+      const url = buildUrl(req.url, req.params);
+      const cookieHeader = buildCookieHeader(url) ?? undefined;
+      const result = await executeRequest(req, settings, controller.signal, cookieHeader);
+      if (result.request?.url) {
+        captureSetCookies(result.request.url, result.setCookieHeaders);
+      }
+      return result;
     } finally {
       if (requestId) {
         activeRequests.delete(requestId);
@@ -222,5 +234,11 @@ export function registerIpcHandlers(db: IDatabase): void {
 
   ipcMain.handle('requestEditor:deleteTab', (_event, key: string) => {
     deleteRequestEditorTab(key);
+  });
+
+  ipcMain.handle('cookies:getForDomain', (_event, domain: string) => getCookiesForDomain(domain));
+
+  ipcMain.handle('cookies:setForDomain', (_event, domain: string, cookies: KeyValue[]) => {
+    setCookiesForDomain(domain, cookies);
   });
 }

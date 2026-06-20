@@ -102,6 +102,7 @@ function docToRequest(id: number, data: Record<string, unknown>): SavedRequest {
     pre_request_script: typeof data.pre_request_script === 'string' ? data.pre_request_script : '',
     post_request_script:
       typeof data.post_request_script === 'string' ? data.post_request_script : '',
+    comment: typeof data.comment === 'string' ? data.comment : '',
     sort_order: typeof data.sort_order === 'number' ? data.sort_order : 0,
     created_at: typeof data.created_at === 'string' ? data.created_at : new Date().toISOString(),
     updated_at: typeof data.updated_at === 'string' ? data.updated_at : new Date().toISOString()
@@ -293,6 +294,7 @@ export class FirestoreDatabase implements IDatabase {
   async saveRequest(input: SaveRequestInput): Promise<SavedRequest> {
     const preRequestScript = input.pre_request_script ?? '';
     const postRequestScript = input.post_request_script ?? '';
+    const comment = input.comment ?? '';
     const now = new Date().toISOString();
     const firestore = this.getFirestore();
 
@@ -313,6 +315,7 @@ export class FirestoreDatabase implements IDatabase {
           body_type: input.body_type,
           pre_request_script: preRequestScript,
           post_request_script: postRequestScript,
+          comment,
           updated_at: now
         };
 
@@ -340,6 +343,7 @@ export class FirestoreDatabase implements IDatabase {
       body_type: input.body_type,
       pre_request_script: preRequestScript,
       post_request_script: postRequestScript,
+      comment,
       sort_order: maxOrder + 1,
       created_at: createdAt,
       updated_at: now
@@ -370,6 +374,7 @@ export class FirestoreDatabase implements IDatabase {
         body_type,
         pre_request_script,
         post_request_script,
+        comment,
         sort_order
       }) => ({
         name,
@@ -381,6 +386,7 @@ export class FirestoreDatabase implements IDatabase {
         body_type,
         pre_request_script,
         post_request_script,
+        comment,
         sort_order
       })
     );
@@ -428,6 +434,7 @@ export class FirestoreDatabase implements IDatabase {
         body_type: request.body_type,
         pre_request_script: request.pre_request_script,
         post_request_script: request.post_request_script,
+        comment: request.comment,
         sort_order: request.sort_order,
         created_at: now,
         updated_at: now

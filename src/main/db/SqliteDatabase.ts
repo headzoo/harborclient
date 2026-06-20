@@ -115,6 +115,7 @@ function rowToRequest(row: Record<string, unknown>): SavedRequest {
     body_type: row.body_type as BodyType,
     pre_request_script: (row.pre_request_script as string) ?? '',
     post_request_script: (row.post_request_script as string) ?? '',
+    comment: (row.comment as string) ?? '',
     sort_order: row.sort_order as number,
     created_at: row.created_at as string,
     updated_at: row.updated_at as string
@@ -180,6 +181,7 @@ export class SqliteDatabase implements IDatabase {
       body_type TEXT NOT NULL DEFAULT 'none',
       pre_request_script TEXT NOT NULL DEFAULT '',
       post_request_script TEXT NOT NULL DEFAULT '',
+      comment TEXT NOT NULL DEFAULT '',
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -233,6 +235,10 @@ export class SqliteDatabase implements IDatabase {
     const hasRequestPostScript = requestColumns.some((col) => col.name === 'post_request_script');
     if (!hasRequestPostScript) {
       this.#db.exec("ALTER TABLE requests ADD COLUMN post_request_script TEXT NOT NULL DEFAULT ''");
+    }
+    const hasRequestComment = requestColumns.some((col) => col.name === 'comment');
+    if (!hasRequestComment) {
+      this.#db.exec("ALTER TABLE requests ADD COLUMN comment TEXT NOT NULL DEFAULT ''");
     }
   }
 
@@ -345,6 +351,7 @@ export class SqliteDatabase implements IDatabase {
     const params = JSON.stringify(input.params);
     const preRequestScript = input.pre_request_script ?? '';
     const postRequestScript = input.post_request_script ?? '';
+    const comment = input.comment ?? '';
     const now = new Date().toISOString();
 
     if (input.id) {
@@ -353,7 +360,7 @@ export class SqliteDatabase implements IDatabase {
           `UPDATE requests SET
           collection_id = ?, name = ?, method = ?, url = ?,
           headers = ?, params = ?, body = ?, body_type = ?,
-          pre_request_script = ?, post_request_script = ?,
+          pre_request_script = ?, post_request_script = ?, comment = ?,
           updated_at = ?
         WHERE id = ?`
         )
@@ -368,6 +375,7 @@ export class SqliteDatabase implements IDatabase {
           input.body_type,
           preRequestScript,
           postRequestScript,
+          comment,
           now,
           input.id
         );
@@ -388,8 +396,8 @@ export class SqliteDatabase implements IDatabase {
       .prepare(
         `INSERT INTO requests (
         collection_id, name, method, url, headers, params, body, body_type,
-        pre_request_script, post_request_script, sort_order, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        pre_request_script, post_request_script, comment, sort_order, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         input.collection_id,
@@ -402,6 +410,7 @@ export class SqliteDatabase implements IDatabase {
         input.body_type,
         preRequestScript,
         postRequestScript,
+        comment,
         maxOrder.max_order + 1,
         now
       );
@@ -446,6 +455,7 @@ export class SqliteDatabase implements IDatabase {
         body_type,
         pre_request_script,
         post_request_script,
+        comment,
         sort_order
       }) => ({
         name,
@@ -457,6 +467,7 @@ export class SqliteDatabase implements IDatabase {
         body_type,
         pre_request_script,
         post_request_script,
+        comment,
         sort_order
       })
     );
@@ -497,8 +508,8 @@ export class SqliteDatabase implements IDatabase {
       const insertRequest = database.prepare(
         `INSERT INTO requests (
         collection_id, name, method, url, headers, params, body, body_type,
-        pre_request_script, post_request_script, sort_order, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        pre_request_script, post_request_script, comment, sort_order, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       );
 
       for (const request of payload.requests) {
@@ -513,6 +524,7 @@ export class SqliteDatabase implements IDatabase {
           request.body_type,
           request.pre_request_script,
           request.post_request_script,
+          request.comment,
           request.sort_order,
           now
         );

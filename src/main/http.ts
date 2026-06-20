@@ -258,15 +258,21 @@ function restoreTlsRejectUnauthorized(previousValue: string | undefined): void {
  * @param input - Method, URL, headers, params, body, and body type.
  * @param settings - General request settings for timeout, size limits, and SSL verification.
  * @param signal - Optional abort signal to cancel the in-flight request.
+ * @param cookieHeader - Optional Cookie header value from the cookie jar.
  * @returns Response status, headers, body, timing, and size; error field on failure.
  */
 export async function executeRequest(
   input: SendRequestInput,
   settings: GeneralSettings = DEFAULT_GENERAL_SETTINGS,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  cookieHeader?: string
 ): Promise<SendResult> {
   const url = buildUrl(input.url, input.params);
   const headers = buildHeaders(input.headers, input.bodyType);
+  const hasCookieHeader = Object.keys(headers).some((key) => key.toLowerCase() === 'cookie');
+  if (cookieHeader && !hasCookieHeader) {
+    headers.Cookie = cookieHeader;
+  }
   const shouldSendBody =
     input.bodyType !== 'none' && input.method !== 'GET' && input.method !== 'HEAD';
   const sentBody = shouldSendBody
@@ -341,6 +347,8 @@ export async function executeRequest(
     }
 
     const response = await fetch(url, init);
+    const setCookieHeaders =
+      typeof response.headers.getSetCookie === 'function' ? response.headers.getSetCookie() : [];
     const bodyResult = await readResponseBody(response, settings.maxResponseSizeMb);
     const timeMs = Math.round(performance.now() - start);
 
@@ -358,6 +366,7 @@ export async function executeRequest(
         timeMs,
         sizeBytes: 0,
         error: bodyResult.error,
+        setCookieHeaders,
         request
       };
     }
@@ -369,6 +378,7 @@ export async function executeRequest(
       body: bodyResult.body,
       timeMs,
       sizeBytes: bodyResult.sizeBytes,
+      setCookieHeaders,
       request
     };
   } catch (err) {

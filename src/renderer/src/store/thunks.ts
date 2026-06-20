@@ -201,7 +201,8 @@ export const saveRequest = createAsyncThunk<SavedRequest, number | undefined, Th
       body: currentDraft.body,
       body_type: currentDraft.body_type,
       pre_request_script: currentDraft.pre_request_script ?? '',
-      post_request_script: currentDraft.post_request_script ?? ''
+      post_request_script: currentDraft.post_request_script ?? '',
+      comment: currentDraft.comment ?? ''
     });
 
     const savedDraft = cloneDraft(draftFromSaved(saved));
@@ -240,7 +241,8 @@ export const newRequestInCollection = createAsyncThunk<SavedRequest, number, Thu
       body: '',
       body_type: 'none',
       pre_request_script: '',
-      post_request_script: ''
+      post_request_script: '',
+      comment: ''
     });
 
     dispatch(openTabWithDraft(draftFromSaved(saved)));
