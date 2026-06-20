@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Refactor UI component imports and remove unused classes. (`af56f8a`)
 - Refactor app dependency installation script for improved compatibility and error handling. (`0b77c39`)
 
 ## 1.3.1 - 2026-06-20

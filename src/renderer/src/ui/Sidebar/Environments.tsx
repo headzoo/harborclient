@@ -1,7 +1,7 @@
 import { useState, type JSX } from 'react';
 import type { Environment } from '#/shared/types';
 import { RowActionsMenu } from '#/renderer/src/components/RowActionsMenu';
-import { sourceRow } from '#/renderer/src/ui/classes';
+import { sourceRow } from '#/renderer/src/ui/shared/classes';
 
 interface Props {
   /**

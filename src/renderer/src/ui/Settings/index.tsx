@@ -1,7 +1,7 @@
 import { useState, type JSX } from 'react';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faXmark } from '#/renderer/src/fontawesome';
-import { iconButton } from '#/renderer/src/ui/classes';
+import { iconButton } from '#/renderer/src/ui/shared/classes';
 import { FirestoreSection } from './FirestoreSection';
 import { GeneralSection } from './GeneralSection';
 import { SettingsSidebar } from './SettingsSidebar';

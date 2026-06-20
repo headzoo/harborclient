@@ -15,7 +15,7 @@ import { TitleBar } from '#/renderer/src/ui/TitleBar';
 import { Footer } from '#/renderer/src/ui/Footer';
 import { ConsolePanel } from '#/renderer/src/ui/ConsolePanel';
 import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
-import { field, primaryButton, secondaryButton } from '#/renderer/src/ui/classes';
+import { field, primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
 
 const isMac = window.platform === 'darwin';
 

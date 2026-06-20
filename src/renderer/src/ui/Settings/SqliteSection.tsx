@@ -1,6 +1,6 @@
 import { useEffect, useState, type JSX } from 'react';
 import type { SqliteSettings } from '#/shared/types';
-import { field, primaryButton } from '#/renderer/src/ui/classes';
+import { field, primaryButton } from '#/renderer/src/ui/shared/classes';
 import { DEFAULT_SQLITE_SETTINGS } from './constants';
 
 /**

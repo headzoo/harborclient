@@ -1,7 +1,7 @@
 import { useEffect, useRef, type JSX } from 'react';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faBars } from '#/renderer/src/fontawesome';
-import { iconButton } from '#/renderer/src/ui/classes';
+import { iconButton } from '#/renderer/src/ui/shared/classes';
 
 type MenuItem = {
   label: string;

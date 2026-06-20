@@ -1,5 +1,5 @@
 import type { JSX, ReactNode } from 'react';
-import { segment, segmentGroup } from '#/renderer/src/ui/classes';
+import { segment, segmentGroup } from '#/renderer/src/ui/shared/classes';
 
 export interface TabItem<T extends string> {
   /**

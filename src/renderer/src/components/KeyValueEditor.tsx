@@ -3,7 +3,7 @@ import type { KeyValue, Variable } from '#/shared/types';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { VariableInput } from '#/renderer/src/components/VariableInput';
 import { faXmark } from '#/renderer/src/fontawesome';
-import { field, iconButtonDanger } from '#/renderer/src/ui/classes';
+import { field, iconButtonDanger } from '#/renderer/src/ui/shared/classes';
 
 interface Props {
   /**

@@ -1,6 +1,6 @@
 import { useEffect, useState, type JSX } from 'react';
 import type { DatabaseProvider, ThemeSource } from '#/shared/types';
-import { field } from '#/renderer/src/ui/classes';
+import { field } from '#/renderer/src/ui/shared/classes';
 import { PROVIDER_OPTIONS, THEME_OPTIONS } from './constants';
 
 /**

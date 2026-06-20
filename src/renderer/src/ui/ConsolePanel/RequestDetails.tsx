@@ -1,18 +1,16 @@
 import type { JSX } from 'react';
 import type { SendResult } from '#/shared/types';
 import { CodeEditor } from '#/renderer/src/components/CodeEditor';
-import { bodyLanguage, formatBody } from './responseFormatUtils';
+import { bodyLanguage, formatBody } from '#/renderer/src/ui/shared/responseFormatUtils';
+import { SectionTitle } from './SectionTitle';
 
 const detailRow =
   'grid grid-cols-[180px_1fr] gap-3 px-2.5 py-1.5 border-t border-separator first:border-t-0';
 
 /**
  * Renders a key-value detail row for inspector-style panels.
- *
- * @param label - Field label shown in the left column.
- * @param value - Field value shown in the right column.
  */
-export function DetailRow({ label, value }: { label: string; value: string }): JSX.Element {
+function DetailRow({ label, value }: { label: string; value: string }): JSX.Element {
   return (
     <div className={detailRow}>
       <span className="break-words text-[13px] font-medium">{label}</span>
@@ -21,27 +19,14 @@ export function DetailRow({ label, value }: { label: string; value: string }): J
   );
 }
 
-/**
- * Renders a section heading for inspector-style panels.
- *
- * @param title - Section title.
- */
-export function SectionTitle({ title }: { title: string }): JSX.Element {
-  return (
-    <h3 className="m-0 mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted">
-      {title}
-    </h3>
-  );
-}
-
-interface RequestDetailsProps {
+interface Props {
   result: SendResult;
 }
 
 /**
  * Renders expandable request/response inspector details for a send result.
  */
-export function RequestDetails({ result }: RequestDetailsProps): JSX.Element {
+export function RequestDetails({ result }: Props): JSX.Element {
   const formattedRequestBody = result.request ? formatBody(result.request.body) : '';
   const formattedResponseBody = formatBody(result.body);
   const requestBodyLanguage = result.request

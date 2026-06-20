@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import type { Collection, KeyValue, Variable } from '#/shared/types';
-import { CodeEditor } from '#/renderer/src/components/CodeEditor';
-import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
-import { VariableTable } from '#/renderer/src/components/VariableTable';
 import { cleanVariables } from '#/renderer/src/components/variableUtils';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
 import { emptyKeyValue } from '#/renderer/src/store/drafts';
 import { faXmark } from '#/renderer/src/fontawesome';
-import { field, iconButton, primaryButton, secondaryButton } from './classes';
-
-type SettingsTab = 'general' | 'variables' | 'headers' | 'pre' | 'post';
+import { iconButton, primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
+import { GeneralSection } from './GeneralSection';
+import { HeadersSection } from './HeadersSection';
+import { ScriptSection } from './ScriptSection';
+import { cleanHeaders, serializeCollectionForm } from './serialize';
+import type { SettingsTab } from './types';
+import { VariablesSection } from './VariablesSection';
 
 interface Props {
   /**
@@ -47,24 +48,6 @@ interface Props {
    */
   onDirtyChange?: (dirty: boolean) => void;
 }
-
-const cleanHeaders = (headers: KeyValue[]): KeyValue[] =>
-  headers.filter((h) => h.key.trim() || h.value.trim());
-
-const serializeCollectionForm = (
-  name: string,
-  variables: Variable[],
-  headers: KeyValue[],
-  preRequestScript: string,
-  postRequestScript: string
-): string =>
-  JSON.stringify({
-    name: name.trim(),
-    variables: cleanVariables(variables),
-    headers: cleanHeaders(headers),
-    pre_request_script: preRequestScript,
-    post_request_script: postRequestScript
-  });
 
 /**
  * Full-area collection settings with tabbed sections.
@@ -163,84 +146,42 @@ function CollectionSettingsForm({
         </div>
 
         {tab === 'general' && (
-          <div className="mb-6">
-            <label className="mb-1 block text-[13px] text-muted">Name</label>
-            <input
-              className={`${field} w-full`}
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void handleSave();
-                if (e.key === 'Escape') onClose();
-              }}
-            />
-          </div>
+          <GeneralSection
+            name={name}
+            onNameChange={setName}
+            onSave={() => void handleSave()}
+            onClose={onClose}
+          />
         )}
 
-        {tab === 'variables' && (
-          <div className="mb-6">
-            <VariableTable
-              variables={variables}
-              onChange={setVariables}
-              description={`Use variables in request URLs with {{variable}} syntax. When value is empty, the default is used. Values are omitted from export unless Share is checked.`}
-            />
-          </div>
-        )}
+        {tab === 'variables' && <VariablesSection variables={variables} onChange={setVariables} />}
 
         {tab === 'headers' && (
-          <div className="mb-6">
-            <p className="mb-3 text-[12px] text-muted">
-              These headers are sent with every request in this collection. Header values support{' '}
-              {'{{variable}}'} syntax. Request-level headers override collection headers with the
-              same name.
-            </p>
-            <KeyValueEditor
-              rows={headers}
-              onChange={setHeaders}
-              placeholderKey="header"
-              placeholderValue="value"
-              variables={variables}
-            />
-          </div>
+          <HeadersSection headers={headers} variables={variables} onChange={setHeaders} />
         )}
 
         {tab === 'pre' && (
-          <div className="mb-6">
-            <p className="mb-3 text-[12px] text-muted">
-              Runs before every request in this collection, before the request-level pre-request
-              script. Supports {'{{variable}}'} syntax.
-            </p>
-            <CodeEditor
-              value={preRequestScript}
-              onChange={setPreRequestScript}
-              language="javascript"
-              scriptPhase="pre"
-              placeholder="// hc.variables.set('token', 'abc');"
-              variables={variables}
-              minHeight="240px"
-            />
-          </div>
+          <ScriptSection
+            phase="pre"
+            description="Runs before every request in this collection, before the request-level pre-request script. Supports {{variable}} syntax."
+            placeholder="// hc.variables.set('token', 'abc');"
+            value={preRequestScript}
+            onChange={setPreRequestScript}
+            variables={variables}
+          />
         )}
 
         {tab === 'post' && (
-          <div className="mb-6">
-            <p className="mb-3 text-[12px] text-muted">
-              Runs after every request in this collection, after the request-level post-request
-              script. Supports {'{{variable}}'} syntax.
-            </p>
-            <CodeEditor
-              value={postRequestScript}
-              onChange={setPostRequestScript}
-              language="javascript"
-              scriptPhase="post"
-              placeholder={
-                '// hc.test("status is 200", () => {\n//   hc.expect(hc.response.code).to.equal(200);\n// });'
-              }
-              variables={variables}
-              minHeight="240px"
-            />
-          </div>
+          <ScriptSection
+            phase="post"
+            description="Runs after every request in this collection, after the request-level post-request script. Supports {{variable}} syntax."
+            placeholder={
+              '// hc.test("status is 200", () => {\n//   hc.expect(hc.response.code).to.equal(200);\n// });'
+            }
+            value={postRequestScript}
+            onChange={setPostRequestScript}
+            variables={variables}
+          />
         )}
 
         <div className="flex justify-end gap-2">

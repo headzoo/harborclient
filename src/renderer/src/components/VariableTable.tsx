@@ -2,7 +2,7 @@ import type { JSX } from 'react';
 import type { Variable } from '#/shared/types';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faPlus, faXmark } from '#/renderer/src/fontawesome';
-import { field, iconButtonDanger, toolbarButton } from '#/renderer/src/ui/classes';
+import { field, iconButtonDanger, toolbarButton } from '#/renderer/src/ui/shared/classes';
 
 const emptyVariable = (): Variable => ({ key: '', value: '', defaultValue: '', share: false });
 

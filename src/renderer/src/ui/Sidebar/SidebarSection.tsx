@@ -1,7 +1,7 @@
 import type { JSX, ReactNode } from 'react';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faPlus } from '#/renderer/src/fontawesome';
-import { toolbarButton } from '#/renderer/src/ui/classes';
+import { toolbarButton } from '#/renderer/src/ui/shared/classes';
 
 interface Props {
   /**

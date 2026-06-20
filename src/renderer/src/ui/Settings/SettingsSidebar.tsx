@@ -1,5 +1,5 @@
 import type { JSX } from 'react';
-import { sourceRow } from '#/renderer/src/ui/classes';
+import { sourceRow } from '#/renderer/src/ui/shared/classes';
 import { SETTINGS_SECTIONS } from './constants';
 import type { SettingsSection } from './types';
 

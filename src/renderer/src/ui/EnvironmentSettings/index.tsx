@@ -4,7 +4,13 @@ import { VariableTable } from '#/renderer/src/components/VariableTable';
 import { cleanVariables } from '#/renderer/src/components/variableUtils';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faXmark } from '#/renderer/src/fontawesome';
-import { field, iconButton, primaryButton, secondaryButton } from './classes';
+import {
+  field,
+  iconButton,
+  primaryButton,
+  secondaryButton
+} from '#/renderer/src/ui/shared/classes';
+import { serializeEnvironmentForm } from './serialize';
 
 interface Props {
   /**
@@ -31,12 +37,6 @@ interface Props {
    */
   onDirtyChange?: (dirty: boolean) => void;
 }
-
-const serializeEnvironmentForm = (name: string, variables: Variable[]): string =>
-  JSON.stringify({
-    name: name.trim(),
-    variables: cleanVariables(variables)
-  });
 
 /**
  * Full-area environment settings with name and variables.

@@ -1,7 +1,7 @@
 import { useEffect, useState, type JSX } from 'react';
 import type { Collection, SavedRequest } from '#/shared/types';
 import { RowActionsMenu } from '#/renderer/src/components/RowActionsMenu';
-import { METHOD_CLASSES, sourceRow } from '#/renderer/src/ui/classes';
+import { METHOD_CLASSES, sourceRow } from '#/renderer/src/ui/shared/classes';
 
 interface Props {
   /**
