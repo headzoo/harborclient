@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.4.2 - 2026-06-20
+
 - feat(certificates): implement certificate management for invite security. (`9b3bbbc`)
 
 ## 1.4.1 - 2026-06-20
