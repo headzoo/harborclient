@@ -7,6 +7,8 @@ import type {
   Environment,
   FirestoreSettings,
   MenuActionId,
+  MySqlSettings,
+  PostgresSettings,
   SaveRequestInput,
   SavedRequest,
   ScriptRunInput,
@@ -279,6 +281,38 @@ function setFirestoreSettings(settings: FirestoreSettings): Promise<void> {
 }
 
 /**
+ * Returns persisted MySQL connection settings.
+ */
+function getMySqlSettings(): Promise<MySqlSettings> {
+  return ipcRenderer.invoke('mysql:getSettings');
+}
+
+/**
+ * Persists MySQL connection settings.
+ *
+ * @param settings - MySQL configuration to store.
+ */
+function setMySqlSettings(settings: MySqlSettings): Promise<void> {
+  return ipcRenderer.invoke('mysql:setSettings', settings);
+}
+
+/**
+ * Returns persisted PostgreSQL connection settings.
+ */
+function getPostgresSettings(): Promise<PostgresSettings> {
+  return ipcRenderer.invoke('postgres:getSettings');
+}
+
+/**
+ * Persists PostgreSQL connection settings.
+ *
+ * @param settings - PostgreSQL configuration to store.
+ */
+function setPostgresSettings(settings: PostgresSettings): Promise<void> {
+  return ipcRenderer.invoke('postgres:setSettings', settings);
+}
+
+/**
  * Subscribes to window close and app quit attempts from the main process.
  *
  * @param callback - Handler invoked when the user tries to close or quit.
@@ -328,6 +362,10 @@ const api: Api = {
   setDatabaseProvider,
   getFirestoreSettings,
   setFirestoreSettings,
+  getMySqlSettings,
+  setMySqlSettings,
+  getPostgresSettings,
+  setPostgresSettings,
   onBeforeClose,
   confirmClose
 };

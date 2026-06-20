@@ -524,7 +524,7 @@ export type ThemeSource = 'light' | 'dark' | 'system';
 /**
  * Active database backend for collections and requests.
  */
-export type DatabaseProvider = 'sqlite' | 'firestore';
+export type DatabaseProvider = 'sqlite' | 'firestore' | 'mysql' | 'postgres';
 
 /**
  * Firebase Firestore connection settings.
@@ -559,6 +559,66 @@ export interface FirestoreSettings {
    * Password for Firebase Auth sign-in.
    */
   password: string;
+}
+
+/**
+ * MySQL connection settings.
+ */
+export interface MySqlSettings {
+  /**
+   * MySQL server hostname.
+   */
+  host: string;
+
+  /**
+   * MySQL server port.
+   */
+  port: number;
+
+  /**
+   * MySQL username.
+   */
+  user: string;
+
+  /**
+   * MySQL password.
+   */
+  password: string;
+
+  /**
+   * MySQL database name.
+   */
+  database: string;
+}
+
+/**
+ * PostgreSQL connection settings.
+ */
+export interface PostgresSettings {
+  /**
+   * PostgreSQL server hostname.
+   */
+  host: string;
+
+  /**
+   * PostgreSQL server port.
+   */
+  port: number;
+
+  /**
+   * PostgreSQL username.
+   */
+  user: string;
+
+  /**
+   * PostgreSQL password.
+   */
+  password: string;
+
+  /**
+   * PostgreSQL database name.
+   */
+  database: string;
 }
 
 /**
@@ -790,6 +850,30 @@ export interface Api {
    * @param settings - Firestore configuration to store.
    */
   setFirestoreSettings: (settings: FirestoreSettings) => Promise<void>;
+
+  /**
+   * Returns persisted MySQL connection settings.
+   */
+  getMySqlSettings: () => Promise<MySqlSettings>;
+
+  /**
+   * Persists MySQL connection settings (applied on restart).
+   *
+   * @param settings - MySQL configuration to store.
+   */
+  setMySqlSettings: (settings: MySqlSettings) => Promise<void>;
+
+  /**
+   * Returns persisted PostgreSQL connection settings.
+   */
+  getPostgresSettings: () => Promise<PostgresSettings>;
+
+  /**
+   * Persists PostgreSQL connection settings (applied on restart).
+   *
+   * @param settings - PostgreSQL configuration to store.
+   */
+  setPostgresSettings: (settings: PostgresSettings) => Promise<void>;
 
   /**
    * Subscribes to window close and app quit attempts from the main process.

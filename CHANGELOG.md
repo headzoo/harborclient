@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(database): add MySQL and PostgreSQL support. (`93425a7`)
+
 ## 1.4.0 - 2026-06-20
 
 - Enhance HTTP request handling with cancellation support. (`07c7d14`)

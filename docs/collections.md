@@ -218,8 +218,11 @@ For the full send pipeline and response handling, see [Making requests](/request
 
 Collections and saved requests are stored in your chosen database backend:
 
-- **SQLite (default)** — `{userData}/harborclient.db`. The database filename can be changed in **Settings → SQLite** (restart required).
-- **Firestore** — cloud storage when selected in **Settings → General** (restart required).
+- **SQLite (default)** — `{userData}/harborclient.db`. The database filename can be changed in [Settings → SQLite](/settings#sqlite) (restart required).
+- **Firestore** — cloud storage when selected in [Settings → General](/settings#general) (restart required).
+- **MySQL** — remote storage when selected in [Settings → General](/settings#general) (restart required).
+
+See [Settings](/settings) for full configuration details.
 
 Open tab drafts are stored separately in browser `localStorage`. The selected collection in the sidebar is not persisted.
 

@@ -85,3 +85,4 @@ chmod +x harborclient-{version}.AppImage
 - [Features](/features) — overview of the request builder, collections, tabs, and response viewer.
 - [Environments](/environments) — define variable groups and switch between them while testing APIs.
 - [Request scripts](/request-scripts) — run JavaScript before or after requests to set variables and write tests.
+- [Settings](/settings) — configure appearance, database provider, and backend connection details.

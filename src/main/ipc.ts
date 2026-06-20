@@ -6,13 +6,19 @@ import { runScript } from '#/main/scripts';
 import {
   getDatabaseProvider,
   getFirestoreSettings,
+  getMySqlSettings,
+  getPostgresSettings,
   setDatabaseProvider,
-  setFirestoreSettings
+  setFirestoreSettings,
+  setMySqlSettings,
+  setPostgresSettings
 } from '#/main/settings/databaseSettings';
 import { getSqliteSettings, setSqliteSettings } from '#/main/settings/sqliteSettings';
 import type {
   DatabaseProvider,
   FirestoreSettings,
+  MySqlSettings,
+  PostgresSettings,
   SaveRequestInput,
   ScriptRunInput,
   SendRequestInput,
@@ -162,5 +168,17 @@ export function registerIpcHandlers(db: IDatabase): void {
 
   ipcMain.handle('firestore:setSettings', (_event, settings: FirestoreSettings) => {
     setFirestoreSettings(settings);
+  });
+
+  ipcMain.handle('mysql:getSettings', () => getMySqlSettings());
+
+  ipcMain.handle('mysql:setSettings', (_event, settings: MySqlSettings) => {
+    setMySqlSettings(settings);
+  });
+
+  ipcMain.handle('postgres:getSettings', () => getPostgresSettings());
+
+  ipcMain.handle('postgres:setSettings', (_event, settings: PostgresSettings) => {
+    setPostgresSettings(settings);
   });
 }

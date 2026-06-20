@@ -23,10 +23,12 @@ export const docsNav = [
   { kind: 'overview', title: 'Home' },
   { kind: 'page', slug: 'features', title: 'Features', maxDepth: 2 },
   { kind: 'page', slug: 'getting-started', title: 'Getting started', maxDepth: 2 },
+  { kind: 'page', slug: 'settings', title: 'Settings', maxDepth: 2 },
   { kind: 'page', slug: 'collections', title: 'Collections', maxDepth: 2 },
   { kind: 'page', slug: 'requests', title: 'Making requests', maxDepth: 2 },
   { kind: 'page', slug: 'request-scripts', title: 'Request scripts', maxDepth: 2 },
   { kind: 'page', slug: 'environments', title: 'Environments', maxDepth: 2 },
+  
 ];
 
 /** Slugs of canonical overview pages committed under docs/<slug>/index.md. */

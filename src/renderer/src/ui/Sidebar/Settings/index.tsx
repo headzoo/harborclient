@@ -4,6 +4,8 @@ import { faXmark } from '#/renderer/src/fontawesome';
 import { iconButton } from '#/renderer/src/ui/shared/classes';
 import { FirestoreSection } from './FirestoreSection';
 import { GeneralSection } from './GeneralSection';
+import { MySqlSection } from './MySqlSection';
+import { PostgresSection } from './PostgresSection';
 import { SettingsSidebar } from './SettingsSidebar';
 import { SqliteSection } from './SqliteSection';
 import type { SettingsSection } from './types';
@@ -42,6 +44,8 @@ export function Settings({ onClose }: Props): JSX.Element {
           {section === 'general' && <GeneralSection />}
           {section === 'sqlite' && <SqliteSection />}
           {section === 'firestore' && <FirestoreSection />}
+          {section === 'mysql' && <MySqlSection />}
+          {section === 'postgres' && <PostgresSection />}
         </div>
       </div>
     </div>

@@ -95,7 +95,8 @@ export function GeneralSection(): JSX.Element {
       <div>
         <h2 className="m-0 mb-1 text-[13px] font-medium text-text">Database provider</h2>
         <p className="mb-3 text-[12px] text-muted">
-          Choose whether collections and requests are stored in SQLite or Firestore.
+          Choose whether collections and requests are stored in SQLite, Firestore, MySQL, or
+          PostgreSQL.
         </p>
 
         <label className="flex flex-col gap-1">

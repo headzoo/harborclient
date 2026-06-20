@@ -61,5 +61,8 @@ Environment records are stored alongside collections and requests:
 
 - **SQLite** — `environments` table in `{userData}/harborclient.db`
 - **Firestore** — `environments` collection when using the Firestore database provider
+- **MySQL** — `environments` table when using the MySQL database provider
+
+See [Settings](/settings) for database provider and connection configuration.
 
 The active environment ID is stored in browser `localStorage` under `harborclient.activeEnvironmentId`, not in the database.

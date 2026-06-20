@@ -40,6 +40,37 @@ export const sidebar: DefaultTheme.SidebarItem[] =
     "collapsed": false
   },
   {
+    "text": "Settings",
+    "link": "/settings",
+    "items": [
+      {
+        "text": "General",
+        "link": "/settings#general"
+      },
+      {
+        "text": "SQLite",
+        "link": "/settings#sqlite"
+      },
+      {
+        "text": "Firestore",
+        "link": "/settings#firestore"
+      },
+      {
+        "text": "MySQL",
+        "link": "/settings#mysql"
+      },
+      {
+        "text": "PostgreSQL",
+        "link": "/settings#postgresql"
+      },
+      {
+        "text": "What's next",
+        "link": "/settings#whats-next"
+      }
+    ],
+    "collapsed": false
+  },
+  {
     "text": "Collections",
     "link": "/collections",
     "items": [

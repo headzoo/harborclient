@@ -1,6 +1,8 @@
 import type {
   DatabaseProvider,
   FirestoreSettings,
+  MySqlSettings,
+  PostgresSettings,
   SqliteSettings,
   ThemeSource
 } from '#/shared/types';
@@ -14,7 +16,9 @@ export const THEME_OPTIONS: Array<{ value: ThemeSource; label: string }> = [
 
 export const PROVIDER_OPTIONS: Array<{ value: DatabaseProvider; label: string }> = [
   { value: 'sqlite', label: 'SQLite' },
-  { value: 'firestore', label: 'Firestore' }
+  { value: 'firestore', label: 'Firestore' },
+  { value: 'mysql', label: 'MySQL' },
+  { value: 'postgres', label: 'PostgreSQL' }
 ];
 
 export const DEFAULT_SQLITE_SETTINGS: SqliteSettings = {
@@ -32,8 +36,26 @@ export const DEFAULT_FIRESTORE_SETTINGS: FirestoreSettings = {
   password: ''
 };
 
+export const DEFAULT_MYSQL_SETTINGS: MySqlSettings = {
+  host: '127.0.0.1',
+  port: 3306,
+  user: '',
+  password: '',
+  database: ''
+};
+
+export const DEFAULT_POSTGRES_SETTINGS: PostgresSettings = {
+  host: '127.0.0.1',
+  port: 5432,
+  user: '',
+  password: '',
+  database: ''
+};
+
 export const SETTINGS_SECTIONS: Array<{ value: SettingsSection; label: string }> = [
   { value: 'general', label: 'General' },
   { value: 'sqlite', label: 'SQLite' },
-  { value: 'firestore', label: 'Firestore' }
+  { value: 'firestore', label: 'Firestore' },
+  { value: 'mysql', label: 'MySQL' },
+  { value: 'postgres', label: 'PostgreSQL' }
 ];

@@ -1,10 +1,15 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, shell } from 'electron';
 import windowStateKeeper from 'electron-window-state';
 import { join } from 'path';
-import { FirestoreDatabase, SqliteDatabase } from '#/main/db';
+import { FirestoreDatabase, MySqlDatabase, PostgresDatabase, SqliteDatabase } from '#/main/db';
 import type { IDatabase } from '#/main/db/IDatabase';
 import { registerIpcHandlers } from '#/main/ipc';
-import { getDatabaseProvider, getFirestoreSettings } from '#/main/settings/databaseSettings';
+import {
+  getDatabaseProvider,
+  getFirestoreSettings,
+  getMySqlSettings,
+  getPostgresSettings
+} from '#/main/settings/databaseSettings';
 import { getSqliteSettings } from '#/main/settings/sqliteSettings';
 import { buildMenu } from '#/main/menu';
 import type { ThemeSource } from '#/shared/types';
@@ -36,6 +41,26 @@ async function createDatabase(): Promise<IDatabase> {
       return firestoreDb;
     } catch (err) {
       console.error('Firestore init failed, falling back to SQLite:', err);
+    }
+  }
+
+  if (provider === 'mysql') {
+    try {
+      const mysqlDb = new MySqlDatabase(getMySqlSettings());
+      await mysqlDb.init();
+      return mysqlDb;
+    } catch (err) {
+      console.error('MySQL init failed, falling back to SQLite:', err);
+    }
+  }
+
+  if (provider === 'postgres') {
+    try {
+      const postgresDb = new PostgresDatabase(getPostgresSettings());
+      await postgresDb.init();
+      return postgresDb;
+    } catch (err) {
+      console.error('PostgreSQL init failed, falling back to SQLite:', err);
     }
   }
 
