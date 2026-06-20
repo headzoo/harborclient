@@ -8,7 +8,7 @@ interface Props {
 /**
  * Script test results list for the Tests tab.
  */
-export function ResponseTests({ testResults }: Props): JSX.Element {
+export function Tests({ testResults }: Props): JSX.Element {
   return (
     <div className="overflow-hidden rounded-md border border-separator">
       {testResults.map((test, index) => (

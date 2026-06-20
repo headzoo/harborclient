@@ -2,9 +2,9 @@ import { useState, type JSX } from 'react';
 import type { Variable } from '#/shared/types';
 import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
 import type { RequestDraft } from '#/renderer/src/store/drafts';
-import { RequestName } from './RequestName';
-import { RequestTabContent } from './RequestTabContent';
-import { RequestUrlBar } from './RequestUrlBar';
+import { Name } from './Name';
+import { TabContent } from './TabContent';
+import { UrlBar } from './UrlBar';
 import type { EditorTab } from './types';
 
 interface Props {
@@ -49,7 +49,7 @@ interface Props {
 /**
  * Request builder: method, URL, params, headers, body, and send action.
  */
-export function RequestEditor({
+export function Editor({
   draft,
   onChange,
   onSend,
@@ -73,13 +73,13 @@ export function RequestEditor({
 
   return (
     <div className="p-3">
-      <RequestName
+      <Name
         name={draft.name}
         collectionName={collectionName}
         onNameChange={(name) => update({ name })}
       />
 
-      <RequestUrlBar
+      <UrlBar
         method={draft.method}
         url={draft.url}
         variables={variables}
@@ -104,7 +104,7 @@ export function RequestEditor({
         />
       </div>
 
-      <RequestTabContent
+      <TabContent
         tab={tab}
         draft={draft}
         showBody={showBody}

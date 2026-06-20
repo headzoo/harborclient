@@ -68,7 +68,7 @@ export function TabBar({
   onEnvironmentChange
 }: Props): JSX.Element {
   return (
-    <div className="flex shrink-0 items-end gap-0 overflow-x-auto border-b border-separator bg-sidebar px-2 pt-1 app-no-drag">
+    <div className="flex shrink-0 items-end gap-0 overflow-x-auto border-b border-separator bg-sidebar px-2 py-1 app-no-drag">
       {tabs.map((tab) => (
         <TabItem
           key={tab.tabId}

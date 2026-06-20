@@ -49,7 +49,7 @@ interface Props {
 /**
  * Method selector, URL input, and Send button.
  */
-export function RequestUrlBar({
+export function UrlBar({
   method,
   url,
   variables,

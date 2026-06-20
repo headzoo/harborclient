@@ -14,7 +14,7 @@ interface Props {
 /**
  * A single expandable console log entry.
  */
-export function ConsoleEntryRow({ entry, expanded, onToggle }: Props): JSX.Element {
+export function EntryRow({ entry, expanded, onToggle }: Props): JSX.Element {
   const { result } = entry;
   const method = result.request?.method ?? 'GET';
   const methodClass = METHOD_CLASSES[method.toLowerCase()] ?? METHOD_CLASSES.get;

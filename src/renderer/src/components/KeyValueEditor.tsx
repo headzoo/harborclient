@@ -39,7 +39,9 @@ interface Props {
   onEditVariable?: () => void;
 }
 
-const rowGrid = 'grid grid-cols-[24px_1fr_1fr_28px] items-center gap-1.5';
+const thClass =
+  'border-r border-b border-separator px-1.5 py-1 text-left text-[11px] font-medium uppercase tracking-wide text-muted last:border-r-0';
+const tdClass = 'border-r border-b border-separator p-1.5 last:border-r-0';
 
 /**
  * Editable table of key-value rows with enable toggles for headers and params.
@@ -81,49 +83,63 @@ export function KeyValueEditor({
   };
 
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className={`${rowGrid} text-[11px] font-medium uppercase tracking-wide text-muted`}>
-        <span />
-        <span>Key</span>
-        <span>Value</span>
-        <span />
-      </div>
-      {rows.map((row, index) => (
-        <div className={`${rowGrid} group`} key={index}>
-          <input
-            type="checkbox"
-            className="app-no-drag"
-            checked={row.enabled}
-            onChange={(e) => updateRow(index, { enabled: e.target.checked })}
-            title="Enable"
-          />
-          <input
-            type="text"
-            className={field}
-            value={row.key}
-            placeholder={placeholderKey}
-            onChange={(e) => updateRow(index, { key: e.target.value })}
-          />
-          <div className="min-w-0 overflow-hidden rounded-md border border-separator bg-control shadow-[inset_0_0.5px_1px_rgba(0,0,0,0.06)]">
-            <VariableInput
-              className="app-no-drag"
-              value={row.value}
-              onChange={(value) => updateRow(index, { value })}
-              variables={variables}
-              placeholder={placeholderValue}
-              onEditVariable={onEditVariable}
-            />
-          </div>
-          <button
-            type="button"
-            className={iconButtonDanger}
-            onClick={() => removeRow(index)}
-            title="Remove"
-          >
-            <FaIcon icon={faXmark} className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      ))}
+    <div className="overflow-hidden rounded-md border border-separator">
+      <table className="w-full border-collapse">
+        <thead>
+          <tr>
+            <th className={`${thClass} w-6 p-0`} />
+            <th className={thClass}>Key</th>
+            <th className={thClass}>Value</th>
+            <th className={`${thClass} w-7 p-0`} />
+          </tr>
+        </thead>
+        <tbody className="[&_tr:last-child_td]:border-b-0">
+          {rows.map((row, index) => (
+            <tr className="group" key={index}>
+              <td className={`${tdClass} w-6 p-1 text-center`}>
+                <input
+                  type="checkbox"
+                  className="app-no-drag"
+                  checked={row.enabled}
+                  onChange={(e) => updateRow(index, { enabled: e.target.checked })}
+                  title="Enable"
+                />
+              </td>
+              <td className={tdClass}>
+                <input
+                  type="text"
+                  className={`${field} w-full`}
+                  value={row.key}
+                  placeholder={placeholderKey}
+                  onChange={(e) => updateRow(index, { key: e.target.value })}
+                />
+              </td>
+              <td className={tdClass}>
+                <div className="min-w-0 w-full overflow-hidden rounded-md border border-separator bg-control shadow-[inset_0_0.5px_1px_rgba(0,0,0,0.06)]">
+                  <VariableInput
+                    className="app-no-drag"
+                    value={row.value}
+                    onChange={(value) => updateRow(index, { value })}
+                    variables={variables}
+                    placeholder={placeholderValue}
+                    onEditVariable={onEditVariable}
+                  />
+                </div>
+              </td>
+              <td className={`${tdClass} w-7 p-1 text-center`}>
+                <button
+                  type="button"
+                  className={iconButtonDanger}
+                  onClick={() => removeRow(index)}
+                  title="Remove"
+                >
+                  <FaIcon icon={faXmark} className="h-3.5 w-3.5" />
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

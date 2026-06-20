@@ -4,8 +4,8 @@ import { isTabDirty } from '#/renderer/src/store/drafts';
 import { useStore } from '#/renderer/src/store/StoreContext';
 import { ResizeHandle, useResizable } from '#/renderer/src/components/Resizable';
 import { primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
-import { RequestEditor } from './RequestEditor';
-import { ResponseViewer } from './ResponseViewer';
+import { Editor } from './Editor';
+import { Response } from './Response';
 import { TabBar } from './TabBar';
 
 interface Props {
@@ -93,7 +93,7 @@ export function Request({ onEditVariables }: Props): JSX.Element {
         onEnvironmentChange={store.setActiveEnvironmentId}
       />
       <div ref={splitRef} style={{ height: editorHeight }} className="shrink-0 overflow-auto">
-        <RequestEditor
+        <Editor
           key={`editor-${store.activeTabId}`}
           draft={store.draft}
           onChange={store.setDraft}
@@ -109,7 +109,7 @@ export function Request({ onEditVariables }: Props): JSX.Element {
         onResizeStart={onResizeStart}
         ariaLabel="Resize request editor"
       />
-      <ResponseViewer
+      <Response
         key={`response-${store.activeTabId}`}
         response={store.response}
         sending={store.sending}

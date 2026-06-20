@@ -17,7 +17,7 @@ export function EnvironmentSelect({
   onEnvironmentChange
 }: Props): JSX.Element {
   return (
-    <div className="ms-auto flex shrink-0 self-stretch items-center px-2">
+    <div className="ms-auto flex shrink-0 self-stretch items-center">
       <select
         className={`${field} max-w-[180px] cursor-pointer py-1 text-[13px] app-no-drag`}
         value={activeEnvironmentId ?? ''}

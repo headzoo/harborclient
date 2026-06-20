@@ -6,7 +6,7 @@ import { useStore } from '#/renderer/src/store/StoreContext';
 import { field, primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
 import { Collections } from './Collections';
 import { Environments } from './Environments';
-import { SidebarSection } from './SidebarSection';
+import { Section } from './Section';
 
 interface Props {
   /**
@@ -77,7 +77,7 @@ export function Sidebar({
     <>
       <aside className="flex shrink-0 flex-col bg-sidebar" style={{ width }}>
         <div className="flex-1 overflow-y-auto px-2 pb-3">
-          <SidebarSection
+          <Section
             title="Collections"
             expanded={collectionsExpanded}
             onToggle={() => setCollectionsExpanded((open) => !open)}
@@ -109,9 +109,9 @@ export function Sidebar({
               onLoadRequest={onLoadRequest}
               onDeleteRequest={store.deleteRequest}
             />
-          </SidebarSection>
+          </Section>
 
-          <SidebarSection
+          <Section
             title="Environments"
             expanded={environmentsExpanded}
             onToggle={() => setEnvironmentsExpanded((open) => !open)}
@@ -128,7 +128,7 @@ export function Sidebar({
               onConfigureEnvironment={onConfigureEnvironment}
               onDeleteEnvironment={store.deleteEnvironment}
             />
-          </SidebarSection>
+          </Section>
         </div>
       </aside>
       <ResizeHandle

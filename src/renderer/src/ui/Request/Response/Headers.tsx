@@ -7,7 +7,7 @@ interface Props {
 /**
  * Response headers key/value table.
  */
-export function ResponseHeaders({ headers }: Props): JSX.Element {
+export function Headers({ headers }: Props): JSX.Element {
   return (
     <div className="overflow-hidden rounded-md border border-separator">
       {Object.entries(headers).length === 0 ? (

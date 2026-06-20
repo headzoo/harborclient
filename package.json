@@ -33,7 +33,8 @@
     "docs:build": "pnpm docs:build:nav && vitepress build docs",
     "docs:build:nav": "node scripts/sync-docs-assets.mjs && node scripts/build-docs-nav.mjs && node scripts/assert-docs-slugs.mjs",
     "docs:preview": "pnpm docs:build && vitepress preview docs",
-    "docs:serve": "pnpm docs:build:nav && concurrently --kill-others --prefixColors=auto -n nav,vp \"node scripts/watch-docs-nav.mjs\" \"vitepress dev docs\""
+    "docs:serve": "pnpm docs:build:nav && concurrently --kill-others --prefixColors=auto -n nav,vp \"node scripts/watch-docs-nav.mjs\" \"vitepress dev docs\"",
+    "kill": "pkill -f \"harborclient/node_modules/.pnpm/electron\""
   },
   "packageManager": "pnpm@10.17.1",
   "dependencies": {

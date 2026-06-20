@@ -8,8 +8,8 @@ import {
   formatBody,
   formatBytes
 } from '#/renderer/src/ui/shared/responseFormatUtils';
-import { ResponseHeaders } from './ResponseHeaders';
-import { ResponseTests } from './ResponseTests';
+import { Headers } from './Headers';
+import { Tests } from './Tests';
 import type { ViewerTab } from './types';
 
 interface Props {
@@ -32,7 +32,7 @@ interface Props {
 /**
  * Displays HTTP response status, timing, body, headers, and script test results.
  */
-export function ResponseViewer({ response, sending, testResults }: Props): JSX.Element {
+export function Response({ response, sending, testResults }: Props): JSX.Element {
   const [tab, setTab] = useState<ViewerTab>('body');
 
   const formattedBody = useMemo(() => (response ? formatBody(response.body) : ''), [response]);
@@ -115,8 +115,8 @@ export function ResponseViewer({ response, sending, testResults }: Props): JSX.E
             language={responseBodyLanguage}
           />
         )}
-        {effectiveTab === 'headers' && <ResponseHeaders headers={response.headers} />}
-        {effectiveTab === 'tests' && hasTests && <ResponseTests testResults={testResults} />}
+        {effectiveTab === 'headers' && <Headers headers={response.headers} />}
+        {effectiveTab === 'tests' && hasTests && <Tests testResults={testResults} />}
       </div>
     </div>
   );

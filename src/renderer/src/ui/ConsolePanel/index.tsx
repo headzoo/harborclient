@@ -4,7 +4,7 @@ import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { ResizeHandle, useResizable } from '#/renderer/src/components/Resizable';
 import { faXmark } from '#/renderer/src/fontawesome';
 import { secondaryButton } from '#/renderer/src/ui/shared/classes';
-import { ConsoleEntryRow } from './ConsoleEntryRow';
+import { EntryRow } from './EntryRow';
 import { DEFAULT_HEIGHT, MIN_HEIGHT } from './constants';
 
 interface Props {
@@ -112,7 +112,7 @@ export function ConsolePanel({ entries, open, onClose, onClear }: Props): JSX.El
           </div>
         ) : (
           entries.map((entry) => (
-            <ConsoleEntryRow
+            <EntryRow
               key={entry.id}
               entry={entry}
               expanded={effectiveExpandedId === entry.id}

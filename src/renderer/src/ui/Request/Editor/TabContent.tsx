@@ -41,7 +41,7 @@ interface Props {
 /**
  * Tab panel content for params, headers, body, and scripts.
  */
-export function RequestTabContent({
+export function TabContent({
   tab,
   draft,
   showBody,

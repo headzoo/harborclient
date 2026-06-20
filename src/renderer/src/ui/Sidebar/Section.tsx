@@ -38,7 +38,7 @@ interface Props {
 /**
  * Collapsible sidebar section with optional add action.
  */
-export function SidebarSection({
+export function Section({
   title,
   expanded,
   onToggle,

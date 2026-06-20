@@ -20,7 +20,7 @@ interface Props {
 /**
  * Inline-editable request name with optional collection breadcrumb.
  */
-export function RequestName({ name, collectionName, onNameChange }: Props): JSX.Element {
+export function Name({ name, collectionName, onNameChange }: Props): JSX.Element {
   const [editingName, setEditingName] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
