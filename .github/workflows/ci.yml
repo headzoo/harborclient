@@ -48,6 +48,12 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
+      - name: Set up JDK 21 for Firebase emulators
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
       - name: Configure Font Awesome registry auth
         env:
           FONTAWESOME_PACKAGE_TOKEN: ${{ secrets.FONTAWESOME_PACKAGE_TOKEN }}
