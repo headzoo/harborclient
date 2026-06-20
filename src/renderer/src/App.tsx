@@ -1,16 +1,12 @@
 import { useCallback, useEffect, useRef, useState, type JSX } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import logoUrl from '@images/logo-square.png';
-import type { SavedRequest, Variable } from '#/shared/types';
-import { useAppStore } from '#/renderer/src/store';
-import { getDirtyTabs, isTabDirty } from '#/renderer/src/store/drafts';
-import { CollectionSettings } from '#/renderer/src/ui/CollectionSettings';
-import { EnvironmentSettings } from '#/renderer/src/ui/EnvironmentSettings';
-import { Settings } from '#/renderer/src/ui/Settings';
+import type { SavedRequest } from '#/shared/types';
+import { getDirtyTabs } from '#/renderer/src/store/drafts';
+import { StoreProvider, useStore } from '#/renderer/src/store/StoreContext';
+import { Configuration } from '#/renderer/src/ui/Sidebar/Configuration';
 import { Sidebar } from '#/renderer/src/ui/Sidebar';
-import { TabBar } from '#/renderer/src/ui/TabBar';
-import { RequestEditor } from '#/renderer/src/ui/RequestEditor';
-import { ResponseViewer } from '#/renderer/src/ui/ResponseViewer';
+import { Request } from '#/renderer/src/ui/Request';
 import { TitleBar } from '#/renderer/src/ui/TitleBar';
 import { Footer } from '#/renderer/src/ui/Footer';
 import { ConsolePanel } from '#/renderer/src/ui/ConsolePanel';
@@ -22,48 +18,31 @@ const isMac = window.platform === 'darwin';
 type CollectionModalMode = 'create' | 'create-and-save' | null;
 type CollectionModalTab = 'create' | 'import';
 
-interface CloseTabPrompt {
-  tabId: string;
-  name: string;
-}
-
-/**
- * Merges collection and environment variables; environment wins on duplicate keys.
- *
- * @param collectionVars - Collection-scoped variables.
- * @param envVars - Environment-scoped variables.
- * @returns Combined variable list for editor highlighting.
- */
-function mergeVariables(collectionVars: Variable[], envVars: Variable[]): Variable[] {
-  const map = new Map<string, Variable>();
-  for (const variable of collectionVars) {
-    const key = variable.key.trim();
-    if (key) map.set(key, variable);
-  }
-  for (const variable of envVars) {
-    const key = variable.key.trim();
-    if (key) map.set(key, variable);
-  }
-  return Array.from(map.values());
-}
-
 /**
  * Root application layout: sidebar, request editor, and response viewer.
  */
 export default function App(): JSX.Element {
-  const store = useAppStore();
+  return (
+    <StoreProvider>
+      <AppShell />
+    </StoreProvider>
+  );
+}
+
+/**
+ * Main application shell.
+ */
+function AppShell(): JSX.Element {
+  const store = useStore();
   const { selectedCollectionId, saveRequest } = store;
   const [collectionModal, setCollectionModal] = useState<CollectionModalMode>(null);
   const [collectionModalTab, setCollectionModalTab] = useState<CollectionModalTab>('create');
   const [newCollectionName, setNewCollectionName] = useState('');
-  const [closeTabPrompt, setCloseTabPrompt] = useState<CloseTabPrompt | null>(null);
   const [quitPrompt, setQuitPrompt] = useState<string[] | null>(null);
   const [configuringCollectionId, setConfiguringCollectionId] = useState<number | null>(null);
   const [collectionSettingsDirty, setCollectionSettingsDirty] = useState(false);
   const [configuringEnvironmentId, setConfiguringEnvironmentId] = useState<number | null>(null);
   const [environmentSettingsDirty, setEnvironmentSettingsDirty] = useState(false);
-  const [showEnvironmentModal, setShowEnvironmentModal] = useState(false);
-  const [newEnvironmentName, setNewEnvironmentName] = useState('');
   const [pendingLoadRequest, setPendingLoadRequest] = useState<SavedRequest | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
@@ -78,21 +57,10 @@ export default function App(): JSX.Element {
   });
 
   const activeCollectionId = store.draft.collection_id ?? store.selectedCollectionId;
-  const activeCollection =
-    activeCollectionId != null
-      ? store.collections.find((c) => c.id === activeCollectionId)
-      : undefined;
-  const activeEnvironment =
-    store.activeEnvironmentId != null
-      ? store.environments.find((env) => env.id === store.activeEnvironmentId)
-      : undefined;
-  const activeVariables = mergeVariables(
-    activeCollection?.variables ?? [],
-    activeEnvironment?.variables ?? []
-  );
-  const activeCollectionName = activeCollection?.name;
 
-  /** Opens the active collection's settings to edit variables. */
+  /**
+   * Opens the active collection's settings to edit variables. 
+   */
   const handleEditVariables = useCallback((): void => {
     if (activeCollectionId == null) return;
     setShowSettings(false);
@@ -102,18 +70,24 @@ export default function App(): JSX.Element {
     setConfiguringCollectionId(activeCollectionId);
   }, [activeCollectionId]);
 
-  /** Closes application settings. */
+  /**
+   * Closes application settings.
+   */
   const closeAppSettings = useCallback((): void => {
     setShowSettings(false);
   }, []);
 
-  /** Closes collection settings and clears dirty tracking. */
+  /**
+   * Closes collection settings and clears dirty tracking.
+   */
   const closeCollectionSettings = useCallback((): void => {
     setConfiguringCollectionId(null);
     setCollectionSettingsDirty(false);
   }, []);
 
-  /** Closes environment settings and clears dirty tracking. */
+  /**
+   * Closes environment settings and clears dirty tracking.
+   */
   const closeEnvironmentSettings = useCallback((): void => {
     setConfiguringEnvironmentId(null);
     setEnvironmentSettingsDirty(false);
@@ -209,32 +183,18 @@ export default function App(): JSX.Element {
     }
   }, [store]);
 
+  /**
+   * Closes the collection modal.
+   */
   const closeCollectionModal = (): void => {
     setCollectionModal(null);
     setNewCollectionName('');
     setCollectionModalTab('create');
   };
 
-  const closeEnvironmentModal = (): void => {
-    setShowEnvironmentModal(false);
-    setNewEnvironmentName('');
-  };
-
   /**
-   * Creates an environment from the modal form.
+   * Handles menu actions from the main process.
    */
-  const handleEnvironmentModalSubmit = async (): Promise<void> => {
-    const name = newEnvironmentName.trim();
-    if (!name) return;
-    try {
-      await store.createEnvironment(name);
-      toast.success('Environment created');
-      closeEnvironmentModal();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to create environment');
-    }
-  };
-
   useEffect(() => {
     const unsubscribe = window.api.onMenuAction((action) => {
       switch (action) {
@@ -267,6 +227,9 @@ export default function App(): JSX.Element {
     return unsubscribe;
   }, [store, handleImportCollection, handleSave]);
 
+  /**
+   * Gets the application version from the main process.
+   */
   useEffect(() => {
     if (!showAbout) return;
     let cancelled = false;
@@ -278,6 +241,9 @@ export default function App(): JSX.Element {
     };
   }, [showAbout]);
 
+  /**
+   * Handles before-close events from the main process.
+   */
   useEffect(() => {
     const unsubscribe = window.api.onBeforeClose(() => {
       const dirtyTabs = getDirtyTabs(tabsRef.current);
@@ -289,20 +255,6 @@ export default function App(): JSX.Element {
     });
     return unsubscribe;
   }, []);
-
-  /**
-   * Closes a tab, prompting when it has unsaved changes.
-   *
-   * @param tabId - Tab to close.
-   */
-  const handleCloseTab = (tabId: string): void => {
-    const tab = store.tabs.find((t) => t.tabId === tabId);
-    if (tab && isTabDirty(tab)) {
-      setCloseTabPrompt({ tabId, name: tab.draft.name });
-      return;
-    }
-    store.closeTab(tabId);
-  };
 
   const showImportTab = collectionModal === 'create';
   const configuringCollection = configuringCollectionId
@@ -318,23 +270,10 @@ export default function App(): JSX.Element {
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
         {showSidebar && (
           <Sidebar
-            collections={store.collections}
-            environments={store.environments}
-            requestsByCollection={store.requestsByCollection}
-            selectedCollectionId={store.selectedCollectionId}
-            activeEnvironmentId={store.activeEnvironmentId}
-            activeRequestId={store.draft.id}
-            onSelectCollection={store.setSelectedCollectionId}
-            onSelectEnvironment={store.setActiveEnvironmentId}
-            onExpandCollection={store.refreshRequests}
             onAddCollection={() => {
               setNewCollectionName('');
               setCollectionModalTab('create');
               setCollectionModal('create');
-            }}
-            onAddEnvironment={() => {
-              setNewEnvironmentName('');
-              setShowEnvironmentModal(true);
             }}
             onConfigureCollection={(id) => {
               setShowSettings(false);
@@ -350,34 +289,25 @@ export default function App(): JSX.Element {
               setEnvironmentSettingsDirty(false);
               setConfiguringEnvironmentId(id);
             }}
-            onDeleteCollection={store.deleteCollection}
-            onDeleteEnvironment={store.deleteEnvironment}
-            onExportCollection={async (id) => {
-              const result = await store.exportCollection(id);
-              if (!result.canceled) {
-                toast.success('Collection exported');
-              }
-            }}
-            onNewRequestInCollection={async (id) => {
-              try {
-                await store.newRequestInCollection(id);
-              } catch (err) {
-                alert(err instanceof Error ? err.message : 'Failed to create request');
-              }
-            }}
             onLoadRequest={handleLoadRequest}
-            onDeleteRequest={store.deleteRequest}
           />
         )}
 
         <main className="flex min-w-0 flex-1 flex-col bg-surface">
-          {showSettings ? (
-            <Settings onClose={closeAppSettings} />
-          ) : configuringCollection ? (
-            <CollectionSettings
+          {showSettings || configuringCollection || configuringEnvironment ? (
+            <Configuration
+              showSettings={showSettings}
+              onCloseAppSettings={closeAppSettings}
               collection={configuringCollection}
-              onDirtyChange={setCollectionSettingsDirty}
-              onSave={async (id, name, variables, headers, preRequestScript, postRequestScript) => {
+              onCollectionDirtyChange={setCollectionSettingsDirty}
+              onCollectionSave={async (
+                id,
+                name,
+                variables,
+                headers,
+                preRequestScript,
+                postRequestScript
+              ) => {
                 try {
                   await store.updateCollection(
                     id,
@@ -392,13 +322,10 @@ export default function App(): JSX.Element {
                   alert(err instanceof Error ? err.message : 'Failed to update collection');
                 }
               }}
-              onClose={closeCollectionSettings}
-            />
-          ) : configuringEnvironment ? (
-            <EnvironmentSettings
+              onCloseCollectionSettings={closeCollectionSettings}
               environment={configuringEnvironment}
-              onDirtyChange={setEnvironmentSettingsDirty}
-              onSave={async (id, name, variables) => {
+              onEnvironmentDirtyChange={setEnvironmentSettingsDirty}
+              onEnvironmentSave={async (id, name, variables) => {
                 try {
                   await store.updateEnvironment(id, name, variables);
                   toast.success('Environment updated');
@@ -406,37 +333,10 @@ export default function App(): JSX.Element {
                   alert(err instanceof Error ? err.message : 'Failed to update environment');
                 }
               }}
-              onClose={closeEnvironmentSettings}
+              onCloseEnvironmentSettings={closeEnvironmentSettings}
             />
           ) : (
-            <>
-              <TabBar
-                tabs={store.tabs}
-                activeTabId={store.activeTabId}
-                environments={store.environments}
-                activeEnvironmentId={store.activeEnvironmentId}
-                onSelect={store.setActiveTab}
-                onClose={handleCloseTab}
-                onNew={store.newRequest}
-                onEnvironmentChange={store.setActiveEnvironmentId}
-              />
-              <RequestEditor
-                key={`editor-${store.activeTabId}`}
-                draft={store.draft}
-                onChange={store.setDraft}
-                onSend={() => void store.sendRequest()}
-                sending={store.sending}
-                variables={activeVariables}
-                collectionName={activeCollectionName}
-                onEditVariables={handleEditVariables}
-              />
-              <ResponseViewer
-                key={`response-${store.activeTabId}`}
-                response={store.response}
-                sending={store.sending}
-                testResults={store.testResults}
-              />
-            </>
+            <Request onEditVariables={handleEditVariables} />
           )}
         </main>
 
@@ -533,44 +433,6 @@ export default function App(): JSX.Element {
         </div>
       )}
 
-      {showEnvironmentModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onClick={closeEnvironmentModal}
-        >
-          <div
-            className="w-96 rounded-lg border border-separator bg-surface p-4 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">New environment</h2>
-            <input
-              className={`${field} mt-3 w-full`}
-              type="text"
-              autoFocus
-              placeholder="Environment name"
-              value={newEnvironmentName}
-              onChange={(e) => setNewEnvironmentName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void handleEnvironmentModalSubmit();
-                if (e.key === 'Escape') closeEnvironmentModal();
-              }}
-            />
-            <div className="mt-4 flex justify-end gap-2">
-              <button className={secondaryButton} onClick={closeEnvironmentModal}>
-                Cancel
-              </button>
-              <button
-                className={primaryButton}
-                onClick={() => void handleEnvironmentModalSubmit()}
-                disabled={!newEnvironmentName.trim()}
-              >
-                Create
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {pendingLoadRequest && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
@@ -600,37 +462,6 @@ export default function App(): JSX.Element {
                 }}
               >
                 Open without saving
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {closeTabPrompt && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onClick={() => setCloseTabPrompt(null)}
-        >
-          <div
-            className="w-96 rounded-lg border border-separator bg-surface p-4 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">Unsaved changes</h2>
-            <p className="mb-4 text-[12px] text-muted">
-              &ldquo;{closeTabPrompt.name}&rdquo; has unsaved changes. Close without saving?
-            </p>
-            <div className="flex justify-end gap-2">
-              <button className={secondaryButton} onClick={() => setCloseTabPrompt(null)}>
-                Cancel
-              </button>
-              <button
-                className={primaryButton}
-                onClick={() => {
-                  store.closeTab(closeTabPrompt.tabId);
-                  setCloseTabPrompt(null);
-                }}
-              >
-                Close without saving
               </button>
             </div>
           </div>
