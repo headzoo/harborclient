@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- refactor(http): improve function formatting for readability. (`d1d1802`)
 - feat(settings): introduce general request settings management. (`e10f75c`)
 - refactor(settings): consolidate database section in sidebar. (`8a67c90`)
 - refactor(install-app-deps): improve native module build process. (`447a021`)

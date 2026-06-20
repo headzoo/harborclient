@@ -72,7 +72,10 @@ export function buildHeaders(headers: KeyValue[], bodyType: BodyType): Record<st
  * @param signal - Optional user cancel signal.
  * @param timeoutMs - Request timeout in milliseconds; 0 disables timeout.
  */
-function buildEffectiveSignal(signal: AbortSignal | undefined, timeoutMs: number): AbortSignal | undefined {
+function buildEffectiveSignal(
+  signal: AbortSignal | undefined,
+  timeoutMs: number
+): AbortSignal | undefined {
   const signals: AbortSignal[] = [];
   if (signal) {
     signals.push(signal);
