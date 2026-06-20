@@ -4,7 +4,7 @@ sidebar: false
 outline: false
 
 hero:
-  tagline: Build, send, and inspect HTTP requests with collections, tabs, and local persistence.
+  tagline: The free API client that keeps your work private—no accounts, no subscriptions, no lock-in.
   actions:
     - theme: brand
       text: Download
