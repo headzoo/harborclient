@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- refactor(sidebar): improve formatting and readability of collection options. (`f2f1b79`)
 - feat(folders): implement folder management for collections. (`511353e`)
 - feat(collections): enhance sharing functionality and documentation. (`bf2bb93`)
 - feat(database): implement routing database and collection management. (`ce10e8a`)

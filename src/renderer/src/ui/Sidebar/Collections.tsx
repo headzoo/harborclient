@@ -211,15 +211,15 @@ function RequestRow({
   const moveItems =
     folders.length > 0
       ? [
-        {
-          label: 'Move to collection root',
-          onSelect: () => onMoveRequest(req.id, null)
-        },
-        ...folders.map((folder) => ({
-          label: `Move to ${folder.name}`,
-          onSelect: () => onMoveRequest(req.id, folder.id)
-        }))
-      ]
+          {
+            label: 'Move to collection root',
+            onSelect: () => onMoveRequest(req.id, null)
+          },
+          ...folders.map((folder) => ({
+            label: `Move to ${folder.name}`,
+            onSelect: () => onMoveRequest(req.id, folder.id)
+          }))
+        ]
       : [];
 
   return (
@@ -550,11 +550,11 @@ export function Collections({
                   { label: 'Export', onSelect: () => void onExportCollection(collection.id) },
                   ...(canInvite
                     ? [
-                      {
-                        label: 'Invite',
-                        onSelect: () => onInviteCollection(collection.id, collection.name)
-                      }
-                    ]
+                        {
+                          label: 'Invite',
+                          onSelect: () => onInviteCollection(collection.id, collection.name)
+                        }
+                      ]
                     : []),
                   {
                     label: 'Delete',
@@ -735,8 +735,8 @@ export function Collections({
 
                 <DragOverlay>
                   {dragCollectionId === collection.id &&
-                    activeDragKind === 'request' &&
-                    activeDragRequest ? (
+                  activeDragKind === 'request' &&
+                  activeDragRequest ? (
                     <div className="flex items-center gap-1.5 rounded border border-separator bg-surface px-2 py-1 shadow-md">
                       <span
                         className={`shrink-0 rounded px-1 py-px text-[10px] font-semibold ${METHOD_CLASSES[activeDragRequest.method.toLowerCase()] ?? 'bg-info text-white'}`}
