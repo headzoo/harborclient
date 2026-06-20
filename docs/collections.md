@@ -34,18 +34,18 @@ Use **New Folder** in a collection's row menu to create a folder. Folder actions
 | **Rename** | Row menu → **Rename** |
 | **Delete** | Row menu → **Delete** — removes the folder and all requests inside it |
 
-Drag and drop to reorder folders, reorder requests within a folder or at the collection root, and move requests between folders and the root. While dragging a request, the target folder or collection root is highlighted so you can see where it will land. You can also use **Move to …** in a request's row menu.
+Drag and drop to reorder collections, folders, and requests within a folder or at the collection root, and move requests between folders and the root. While dragging a request, the target folder or collection root is highlighted so you can see where it will land. You can also use **Move to …** in a request's row menu.
 
 ### Empty state and ordering
 
 - When you have no collections, the sidebar shows **No collections yet**.
-- Collections are listed alphabetically by name.
+- Collections are ordered by drag-and-drop position in the sidebar.
 - Folders are ordered by drag-and-drop position within the collection.
 - Saved requests are ordered by their position within a folder or at the collection root, then by name.
 
 ### Selection persistence
 
-The highlighted collection in the sidebar is remembered for the current session only — it is not restored after you restart the app. When HarborClient starts and collections exist, the first collection (alphabetically) is selected automatically.
+The highlighted collection in the sidebar is remembered for the current session only — it is not restored after you restart the app. When HarborClient starts and collections exist, the first collection in the sidebar order is selected automatically.
 
 ## Creating collections
 
@@ -74,6 +74,14 @@ Choose **Delete** from the collection row menu (visible on hover). HarborClient 
 ### Delete a saved request
 
 Choose **Delete** from the request row menu. Confirm the dialog to remove the request from the collection.
+
+### Duplicate a saved request
+
+Choose **Duplicate** from the request row menu. HarborClient creates a copy in the same folder (or at the collection root) named `{name} (copy)`, places it directly below the original, and opens the copy in a new tab. The original request is unchanged.
+
+### Duplicate a collection
+
+Choose **Duplicate** from the collection row menu. HarborClient creates a copy named `{name} (copy)` on the same database, placed directly below the original in the sidebar. The copy includes collection settings (variables, headers, and scripts), all folders, and all saved requests. The original collection is unchanged.
 
 ## Collection Settings
 
@@ -292,18 +300,6 @@ To back up a collection, use **Export** to save a portable JSON file. Deleting a
 | New collection | Cmd/Ctrl+Shift+N |
 | Save request | Cmd/Ctrl+S |
 | Import collection | **File → Import** (no keyboard shortcut) |
-
-## Limitations
-
-HarborClient does not currently support:
-
-- Drag-and-drop reordering of collections or requests
-- Duplicating a collection or request from the sidebar
-- Moving a request between collections (saving to a different collection creates a copy)
-- Merging an import into an existing collection
-- Renaming a collection inline in the sidebar (use Collection Settings)
-- A save prompt when closing Collection Settings with unsaved edits (only navigation away while dirty warns you)
-- Sharing SQLite-backed collections via invite (use Export/Import or move the collection to a remote database first)
 
 ## What's next
 

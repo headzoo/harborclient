@@ -138,6 +138,30 @@ export const deleteCollection = createAsyncThunk<void, number, ThunkApiConfig>(
   }
 );
 
+/** Deep-copies a collection and places the duplicate directly below the original. */
+export const duplicateCollection = createAsyncThunk<Collection, number, ThunkApiConfig>(
+  'collections/duplicate',
+  async (id, { dispatch, getState }) => {
+    const created = await window.api.duplicateCollection(id);
+    await dispatch(refreshCollections());
+
+    const collections = getState().collections.collections;
+    const sourceIndex = collections.findIndex((item) => item.id === id);
+    if (sourceIndex >= 0) {
+      const orderedIds = collections.map((item) => item.id);
+      orderedIds.splice(sourceIndex + 1, 0, created.id);
+      const dedupedIds = orderedIds.filter(
+        (collectionId, index) => orderedIds.indexOf(collectionId) === index
+      );
+      await dispatch(reorderCollections({ orderedCollectionIds: dedupedIds }));
+    }
+
+    dispatch(setSelectedCollectionId(created.id));
+    await dispatch(refreshCollectionContents(created.id));
+    return created;
+  }
+);
+
 /** Exports a collection to a user-chosen file path. */
 export const exportCollection = createAsyncThunk<CollectionExportResult, number, ThunkApiConfig>(
   'collections/export',
@@ -159,6 +183,16 @@ export const importCollection = createAsyncThunk<Collection | null, void, ThunkA
     return collection;
   }
 );
+
+/** Persists a new sidebar order for collections. */
+export const reorderCollections = createAsyncThunk<
+  void,
+  { orderedCollectionIds: number[] },
+  ThunkApiConfig
+>('collections/reorderCollections', async ({ orderedCollectionIds }, { dispatch }) => {
+  await window.api.reorderCollections(orderedCollectionIds);
+  await dispatch(refreshCollections());
+});
 
 /** Creates a folder inside a collection. */
 export const createFolder = createAsyncThunk<

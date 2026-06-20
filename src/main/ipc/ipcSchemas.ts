@@ -192,6 +192,7 @@ export const ipcArgSchemas = {
   ]),
   environmentUpdate: z.tuple([dbId, name, z.array(variable)]),
   collectionMove: z.tuple([dbId, connectionId]),
+  collectionReorder: z.tuple([z.array(dbId)]),
   folderCreate: z.tuple([dbId, name]),
   folderRename: z.tuple([dbId, name]),
   folderReorder: z.tuple([dbId, z.array(dbId)]),

@@ -37,6 +37,7 @@ import {
 import type { AppDispatch, ThunkApiConfig } from '#/renderer/src/store/redux';
 import { selectActiveTab } from '#/renderer/src/store/selectors';
 import {
+  moveRequestToFolder,
   refreshCollectionContents,
   refreshRequests
 } from '#/renderer/src/store/thunks/collections';
@@ -121,6 +122,49 @@ export const newRequestInFolder = createAsyncThunk<
   await dispatch(refreshCollectionContents(collectionId));
   return saved;
 });
+
+/** Duplicates a saved request in the same collection/folder and opens it in a tab. */
+export const duplicateRequest = createAsyncThunk<SavedRequest, SavedRequest, ThunkApiConfig>(
+  'tabs/duplicateRequest',
+  async (req, { dispatch, getState }) => {
+    dispatch(setSelectedCollectionId(req.collection_id));
+
+    const requests = getState().collections.requestsByCollection[req.collection_id] ?? [];
+    const folderId = req.folder_id ?? null;
+    const siblings = requests.filter((r) => (r.folder_id ?? null) === folderId);
+    const sourceIndex = siblings.findIndex((r) => r.id === req.id);
+
+    const saved = await window.api.saveRequest({
+      collection_id: req.collection_id,
+      folder_id: folderId,
+      name: `${req.name} (copy)`,
+      method: req.method,
+      url: req.url,
+      headers: req.headers,
+      params: req.params,
+      body: req.body,
+      body_type: req.body_type,
+      pre_request_script: req.pre_request_script ?? '',
+      post_request_script: req.post_request_script ?? '',
+      comment: req.comment ?? ''
+    });
+
+    if (sourceIndex >= 0) {
+      await dispatch(
+        moveRequestToFolder({
+          collectionId: req.collection_id,
+          requestId: saved.id,
+          folderId,
+          index: sourceIndex + 1
+        })
+      ).unwrap();
+    }
+
+    dispatch(openTabWithDraft(draftFromSaved(saved)));
+    await dispatch(refreshCollectionContents(req.collection_id));
+    return saved;
+  }
+);
 
 /** Creates a new saved request at the collection root and opens it in a tab. */
 export const newRequestInCollection = createAsyncThunk<SavedRequest, number, ThunkApiConfig>(
@@ -237,9 +281,9 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
       const resolvedUrl = substituteWithMap(scriptRequest.url, runtimeVars);
       const collectionHeaders = collection
         ? (collection.headers ?? []).map((header) => ({
-            ...header,
-            value: substituteWithMap(header.value, runtimeVars)
-          }))
+          ...header,
+          value: substituteWithMap(header.value, runtimeVars)
+        }))
         : [];
       const draftHeaders = scriptRequest.headers.map((header) => ({
         ...header,

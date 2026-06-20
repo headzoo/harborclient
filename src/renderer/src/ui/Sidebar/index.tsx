@@ -21,12 +21,15 @@ import {
   deleteEnvironment,
   deleteFolder,
   deleteRequest,
+  duplicateCollection,
+  duplicateRequest,
   exportCollection,
   moveRequestToFolder,
   newRequestInCollection,
   newRequestInFolder,
   refreshCollectionContents,
   renameFolder,
+  reorderCollections,
   reorderFolders,
   reorderRequests
 } from '#/renderer/src/store/thunks';
@@ -218,6 +221,14 @@ export function Sidebar({
                   toast.success('Collection exported');
                 }
               }}
+              onDuplicateCollection={async (id) => {
+                try {
+                  await dispatch(duplicateCollection(id)).unwrap();
+                  toast.success('Collection duplicated');
+                } catch (err) {
+                  alert(err instanceof Error ? err.message : 'Failed to duplicate collection');
+                }
+              }}
               onInviteCollection={onInviteCollection}
               onNewFolder={(collectionId) => {
                 setFolderModal({ mode: 'create', collectionId, name: '' });
@@ -259,6 +270,9 @@ export function Sidebar({
                   alert(err instanceof Error ? err.message : 'Failed to delete folder');
                 }
               }}
+              onReorderCollections={async (orderedCollectionIds) => {
+                await dispatch(reorderCollections({ orderedCollectionIds }));
+              }}
               onReorderFolders={async (collectionId, orderedFolderIds) => {
                 await dispatch(reorderFolders({ collectionId, orderedFolderIds }));
               }}
@@ -271,6 +285,13 @@ export function Sidebar({
               onLoadRequest={onLoadRequest}
               onDeleteRequest={async (id) => {
                 await dispatch(deleteRequest(id));
+              }}
+              onDuplicateRequest={async (req) => {
+                try {
+                  await dispatch(duplicateRequest(req)).unwrap();
+                } catch (err) {
+                  alert(err instanceof Error ? err.message : 'Failed to duplicate request');
+                }
               }}
             />
           </Section>

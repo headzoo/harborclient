@@ -4,7 +4,7 @@ sidebar: false
 outline: false
 
 hero:
-  tagline: The free API client that keeps your work private—no accounts, no subscriptions, no lock-in.
+  tagline: The free API client that keeps your work private - no accounts, no subscriptions, no lock-in.
   actions:
     - theme: brand
       text: Download
@@ -28,5 +28,15 @@ features:
     details: Define global variable groups and switch between them from the TabBar. Environment variables override collection variables with the same key.
   - title: Scripts and tests
     details: Pre- and post-request JavaScript at the collection or request level. Modify requests, and test responses.
+  - title: Folders and drag-and-drop
+    details: Organize saved requests into folders, reorder them, and move requests between folders with drag-and-drop.
+  - title: Variable substitution
+    details: Use {{variable}} placeholders in URLs, headers, params, body, and scripts. Hover any token to preview its resolved value.
+  - title: Cross-platform desktop app
+    details: A native Electron app for macOS, Windows, and Linux—no browser or web service required.
+  - title: Encrypted invites
+    details: Share live remote collections with signed, encrypted invite tokens backed by RSA key pairs you manage under Certificates.
+  - title: Tabbed workspace
+    details: Open multiple requests side by side. Each tab keeps its own draft, response, and unsaved-changes indicator.
 
 ---

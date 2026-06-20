@@ -1,5 +1,5 @@
 import type { MountedBackend, RoutingInternals } from '#/main/db/routingInternals';
-import type { Collection } from '#/shared/types';
+import type { Collection, Folder, SavedRequest } from '#/shared/types';
 
 const COLLECTION_MOVE_PENDING_KEY = 'collection_move_pending';
 
@@ -41,8 +41,8 @@ export class MoveCoordinator {
       const sourceBackend = this.internals.getBackend(entry.connectionId);
       const record = sourceBackend
         ? (await sourceBackend.db.listCollections()).find(
-            (item) => item.id === entry.providerCollectionId
-          )
+          (item) => item.id === entry.providerCollectionId
+        )
         : undefined;
       return this.internals.buildCollection(entry, record);
     }
@@ -76,44 +76,7 @@ export class MoveCoordinator {
       );
       targetProviderCollectionId = updated.id;
 
-      const folderIdMap = new Map<number, number>();
-      const sortedFolders = [...folders].sort(
-        (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)
-      );
-      for (const folder of sortedFolders) {
-        const createdFolder = await targetBackend.db.createFolder(updated.id, folder.name);
-        folderIdMap.set(folder.id, createdFolder.id);
-      }
-      if (sortedFolders.length > 0) {
-        await targetBackend.db.reorderFolders(
-          updated.id,
-          sortedFolders.map((folder) => folderIdMap.get(folder.id)!)
-        );
-      }
-
-      const sortedRequests = [...requests].sort(
-        (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)
-      );
-
-      for (const request of sortedRequests) {
-        const targetFolderId =
-          request.folder_id != null ? (folderIdMap.get(request.folder_id) ?? null) : null;
-
-        await targetBackend.db.saveRequest({
-          collection_id: updated.id,
-          folder_id: targetFolderId,
-          name: request.name,
-          method: request.method,
-          url: request.url,
-          headers: request.headers,
-          params: request.params,
-          body: request.body,
-          body_type: request.body_type,
-          pre_request_script: request.pre_request_script,
-          post_request_script: request.post_request_script,
-          comment: request.comment
-        });
-      }
+      await copyCollectionContents(targetBackend, updated.id, folders, requests);
 
       const updatedEntry = this.internals.registry.updateRegistryEntry(globalCollectionId, {
         name: record.name,
@@ -150,6 +113,46 @@ export class MoveCoordinator {
       }
       throw err;
     }
+  }
+
+  /**
+   * Deep-copies a collection into a new collection on the same backend.
+   *
+   * @param globalCollectionId - Registry (global) collection id to duplicate.
+   * @returns The newly created collection with a new global id.
+   */
+  async duplicateCollection(globalCollectionId: number): Promise<Collection> {
+    const entry = this.internals.requireEntry(globalCollectionId);
+    const backend = this.internals.requireBackendByConnectionId(entry.connectionId);
+
+    const sourceCollections = await backend.db.listCollections();
+    const record = sourceCollections.find((item) => item.id === entry.providerCollectionId);
+    if (!record) {
+      throw new Error(`Collection not found: ${globalCollectionId}`);
+    }
+
+    const folders = await backend.db.listFolders(entry.providerCollectionId);
+    const requests = await backend.db.listRequests(entry.providerCollectionId);
+
+    const created = await backend.db.createCollection(`${record.name} (copy)`);
+    const updated = await backend.db.updateCollection(
+      created.id,
+      `${record.name} (copy)`,
+      record.variables,
+      record.headers,
+      record.pre_request_script,
+      record.post_request_script
+    );
+
+    await copyCollectionContents(backend, updated.id, folders, requests);
+
+    const newEntry = this.internals.registry.addRegistryEntry({
+      name: updated.name,
+      connectionId: entry.connectionId,
+      providerCollectionId: updated.id
+    });
+
+    return this.internals.buildCollection(newEntry, updated);
   }
 
   /**
@@ -269,5 +272,59 @@ export class MoveCoordinator {
     } catch (cleanupErr) {
       console.warn('Failed to clean up partial move target collection:', cleanupErr);
     }
+  }
+}
+
+/**
+ * Recreates folders and saved requests inside a target provider collection.
+ *
+ * @param targetBackend - Backend that owns the destination collection.
+ * @param targetCollectionId - Provider-local id of the destination collection.
+ * @param folders - Source folders to copy (provider-local ids).
+ * @param requests - Source requests to copy (provider-local ids).
+ */
+async function copyCollectionContents(
+  targetBackend: MountedBackend,
+  targetCollectionId: number,
+  folders: Folder[],
+  requests: SavedRequest[]
+): Promise<void> {
+  const folderIdMap = new Map<number, number>();
+  const sortedFolders = [...folders].sort(
+    (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)
+  );
+  for (const folder of sortedFolders) {
+    const createdFolder = await targetBackend.db.createFolder(targetCollectionId, folder.name);
+    folderIdMap.set(folder.id, createdFolder.id);
+  }
+  if (sortedFolders.length > 0) {
+    await targetBackend.db.reorderFolders(
+      targetCollectionId,
+      sortedFolders.map((folder) => folderIdMap.get(folder.id)!)
+    );
+  }
+
+  const sortedRequests = [...requests].sort(
+    (a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name)
+  );
+
+  for (const request of sortedRequests) {
+    const targetFolderId =
+      request.folder_id != null ? (folderIdMap.get(request.folder_id) ?? null) : null;
+
+    await targetBackend.db.saveRequest({
+      collection_id: targetCollectionId,
+      folder_id: targetFolderId,
+      name: request.name,
+      method: request.method,
+      url: request.url,
+      headers: request.headers,
+      params: request.params,
+      body: request.body,
+      body_type: request.body_type,
+      pre_request_script: request.pre_request_script,
+      post_request_script: request.post_request_script,
+      comment: request.comment
+    });
   }
 }

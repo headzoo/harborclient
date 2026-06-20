@@ -953,6 +953,14 @@ export interface Api {
   deleteCollection: (id: number) => Promise<void>;
 
   /**
+   * Deep-copies a collection into a new collection on the same backend.
+   *
+   * @param id - Global collection ID to duplicate.
+   * @returns The newly created collection.
+   */
+  duplicateCollection: (id: number) => Promise<Collection>;
+
+  /**
    * Exports a collection to a JSON file via a native save dialog.
    *
    * @param id - Collection ID to export.
@@ -975,6 +983,13 @@ export interface Api {
    * @returns The collection in its new backend with a new global id.
    */
   moveCollection: (id: number, targetConnectionId: string) => Promise<Collection>;
+
+  /**
+   * Reorders collections in the sidebar.
+   *
+   * @param orderedCollectionIds - Global collection ids in desired order.
+   */
+  reorderCollections: (orderedCollectionIds: number[]) => Promise<void>;
 
   /**
    * Lists all environments.

@@ -294,7 +294,6 @@ See [Request scripts](/request-scripts) for the full `hc.request.headers` API.
 
 HarborClient does not currently support:
 
-- A cookie jar or cookie editor
 - Redirect following controls, proxy settings, or custom SSL options in the UI
 - A dedicated authentication wizard (OAuth, Basic Auth, and similar)
 - Persisted request history beyond the session Console

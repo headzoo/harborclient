@@ -46,12 +46,14 @@ interface Props {
   onConfigureCollection: (id: number) => void;
   onDeleteCollection: (id: number) => Promise<void>;
   onExportCollection: (id: number) => Promise<void> | void;
+  onDuplicateCollection: (id: number) => Promise<void> | void;
   onInviteCollection: (collectionId: number, collectionName: string) => void;
   onNewFolder: (collectionId: number) => Promise<void> | void;
   onNewRequestInCollection: (id: number) => Promise<void> | void;
   onNewRequestInFolder: (collectionId: number, folderId: number) => Promise<void> | void;
   onRenameFolder: (id: number, collectionId: number) => Promise<void> | void;
   onDeleteFolder: (id: number, collectionId: number, requestIds: number[]) => Promise<void> | void;
+  onReorderCollections: (orderedCollectionIds: number[]) => Promise<void> | void;
   onReorderFolders: (collectionId: number, orderedFolderIds: number[]) => Promise<void> | void;
   onReorderRequests: (
     collectionId: number,
@@ -66,6 +68,7 @@ interface Props {
   ) => Promise<void> | void;
   onLoadRequest: (req: SavedRequest) => void;
   onDeleteRequest: (id: number) => Promise<void>;
+  onDuplicateRequest: (req: SavedRequest) => Promise<void>;
 }
 
 type DragKind = 'folder' | 'request';
@@ -73,6 +76,10 @@ type DragKind = 'folder' | 'request';
 interface ParsedDragId {
   kind: DragKind;
   id: number;
+}
+
+function collectionDragId(collectionId: number): string {
+  return `collection:${collectionId}`;
 }
 
 function folderDragId(folderId: number): string {
@@ -97,6 +104,17 @@ function parseDragId(value: string): ParsedDragId | null {
   const id = Number(idValue);
   if (!Number.isFinite(id)) return null;
   return { kind, id };
+}
+
+/**
+ * Parses a collection drag id into its numeric collection id.
+ *
+ * @returns The collection id, or null when the value is not a collection drag id.
+ */
+function parseCollectionDragId(value: string): number | null {
+  if (!value.startsWith('collection:')) return null;
+  const id = Number(value.slice('collection:'.length));
+  return Number.isFinite(id) ? id : null;
 }
 
 function parseDropTarget(value: string): { folderId: number | null; collectionId?: number } | null {
@@ -195,6 +213,7 @@ interface RequestRowProps {
   folders: Folder[];
   onLoadRequest: (req: SavedRequest) => void;
   onDeleteRequest: (id: number) => Promise<void>;
+  onDuplicateRequest: (req: SavedRequest) => Promise<void>;
   onMoveRequest: (requestId: number, folderId: number | null) => void;
 }
 
@@ -206,20 +225,21 @@ function RequestRow({
   folders,
   onLoadRequest,
   onDeleteRequest,
+  onDuplicateRequest,
   onMoveRequest
 }: RequestRowProps): JSX.Element {
   const moveItems =
     folders.length > 0
       ? [
-          {
-            label: 'Move to collection root',
-            onSelect: () => onMoveRequest(req.id, null)
-          },
-          ...folders.map((folder) => ({
-            label: `Move to ${folder.name}`,
-            onSelect: () => onMoveRequest(req.id, folder.id)
-          }))
-        ]
+        {
+          label: 'Move to collection root',
+          onSelect: () => onMoveRequest(req.id, null)
+        },
+        ...folders.map((folder) => ({
+          label: `Move to ${folder.name}`,
+          onSelect: () => onMoveRequest(req.id, folder.id)
+        }))
+      ]
       : [];
 
   return (
@@ -241,6 +261,10 @@ function RequestRow({
         onOpenChange={onOpenChange}
         items={[
           ...moveItems,
+          {
+            label: 'Duplicate',
+            onSelect: () => void onDuplicateRequest(req)
+          },
           {
             label: 'Delete',
             variant: 'danger' as const,
@@ -273,17 +297,20 @@ export function Collections({
   onConfigureCollection,
   onDeleteCollection,
   onExportCollection,
+  onDuplicateCollection,
   onInviteCollection,
   onNewFolder,
   onNewRequestInCollection,
   onNewRequestInFolder,
   onRenameFolder,
   onDeleteFolder,
+  onReorderCollections,
   onReorderFolders,
   onReorderRequests,
   onMoveRequest,
   onLoadRequest,
-  onDeleteRequest
+  onDeleteRequest,
+  onDuplicateRequest
 }: Props): JSX.Element {
   const [expandedCollectionIds, setExpandedCollectionIds] = useState<Set<number>>(new Set());
   const [expandedFolderIds, setExpandedFolderIds] = useState<Set<number>>(new Set());
@@ -292,6 +319,7 @@ export function Collections({
   const [activeDragKind, setActiveDragKind] = useState<DragKind | null>(null);
   const [activeDragRequest, setActiveDragRequest] = useState<SavedRequest | null>(null);
   const [activeDragFolder, setActiveDragFolder] = useState<Folder | null>(null);
+  const [activeDragCollection, setActiveDragCollection] = useState<Collection | null>(null);
   const [dragCollectionId, setDragCollectionId] = useState<number | null>(null);
   const [dropTargetFolderId, setDropTargetFolderId] = useState<number | null | undefined>(
     undefined
@@ -309,6 +337,13 @@ export function Collections({
     setActiveDragFolder(null);
     setDragCollectionId(null);
     setDropTargetFolderId(undefined);
+  };
+
+  /**
+   * Clears drag state for collection-row reordering at the sidebar root.
+   */
+  const clearCollectionDragState = (): void => {
+    setActiveDragCollection(null);
   };
 
   if (selectedCollectionId !== prevSelectedId) {
@@ -362,6 +397,36 @@ export function Collections({
       }),
     [collections, foldersByCollection, requestsByCollection]
   );
+
+  const collectionIds = useMemo(
+    () => collections.map((collection) => collectionDragId(collection.id)),
+    [collections]
+  );
+
+  const handleCollectionDragStart = (event: DragStartEvent): void => {
+    const collectionId = parseCollectionDragId(String(event.active.id));
+    if (collectionId == null) return;
+    const collection = collections.find((item) => item.id === collectionId) ?? null;
+    setActiveDragCollection(collection);
+  };
+
+  const handleCollectionDragEnd = async (event: DragEndEvent): Promise<void> => {
+    const { active, over } = event;
+    clearCollectionDragState();
+    if (!over) return;
+
+    const activeId = parseCollectionDragId(String(active.id));
+    const overId = parseCollectionDragId(String(over.id));
+    if (activeId == null || overId == null || activeId === overId) return;
+
+    const ids = collections.map((collection) => collection.id);
+    const oldIndex = ids.findIndex((id) => id === activeId);
+    const newIndex = ids.findIndex((id) => id === overId);
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    const nextOrder = arrayMove(ids, oldIndex, newIndex);
+    await onReorderCollections(nextOrder);
+  };
 
   const handleDragEnd = async (event: DragEndEvent, collectionId: number): Promise<void> => {
     const { active, over } = event;
@@ -482,282 +547,306 @@ export function Collections({
   };
 
   return (
-    <div className="flex flex-col gap-0.5">
-      {collections.length === 0 && (
-        <div className="px-2 py-1.5 text-[13px] text-muted">No collections yet</div>
-      )}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragStart={handleCollectionDragStart}
+      onDragEnd={(event) => void handleCollectionDragEnd(event)}
+      onDragCancel={clearCollectionDragState}
+    >
+      <div className="flex flex-col gap-0.5">
+        {collections.length === 0 && (
+          <div className="px-2 py-1.5 text-[13px] text-muted">No collections yet</div>
+        )}
 
-      {collectionTrees.map(({ collection, folders, rootRequests }) => {
-        const expanded = expandedCollectionIds.has(collection.id);
-        const selected = selectedCollectionId === collection.id;
-        const loaded =
-          requestsByCollection[collection.id] != null && foldersByCollection[collection.id] != null;
-        const collectionConnectionId = collection.connectionId ?? primaryConnectionId;
-        const connectionName = connectionNamesById[collectionConnectionId];
-        const connectionType = connectionTypesById[collectionConnectionId];
-        const canInvite = connectionType != null && connectionType !== 'sqlite';
-        const folderIds = folders.map((folder) => folderDragId(folder.id));
-        const rootRequestIds = rootRequests.map((req) => requestDragId(req.id));
-        const isRequestDragInCollection =
-          activeDragKind === 'request' &&
-          dragCollectionId === collection.id &&
-          dropTargetFolderId !== undefined;
-        const isDraggingRequestHere =
-          activeDragKind === 'request' && dragCollectionId === collection.id;
-        const rootDropHighlight =
-          isRequestDragInCollection && dropTargetFolderId === null
-            ? dropTargetHighlightClass
-            : undefined;
+        <SortableContext items={collectionIds} strategy={verticalListSortingStrategy}>
+          {collectionTrees.map(({ collection, folders, rootRequests }) => {
+            const expanded = expandedCollectionIds.has(collection.id);
+            const selected = selectedCollectionId === collection.id;
+            const loaded =
+              requestsByCollection[collection.id] != null && foldersByCollection[collection.id] != null;
+            const collectionConnectionId = collection.connectionId ?? primaryConnectionId;
+            const connectionName = connectionNamesById[collectionConnectionId];
+            const connectionType = connectionTypesById[collectionConnectionId];
+            const canInvite = connectionType != null && connectionType !== 'sqlite';
+            const folderIds = folders.map((folder) => folderDragId(folder.id));
+            const rootRequestIds = rootRequests.map((req) => requestDragId(req.id));
+            const isRequestDragInCollection =
+              activeDragKind === 'request' &&
+              dragCollectionId === collection.id &&
+              dropTargetFolderId !== undefined;
+            const isDraggingRequestHere =
+              activeDragKind === 'request' && dragCollectionId === collection.id;
+            const rootDropHighlight =
+              isRequestDragInCollection && dropTargetFolderId === null
+                ? dropTargetHighlightClass
+                : undefined;
 
-        return (
-          <div key={collection.id}>
-            <div className={sourceRow(selected)}>
-              <button
-                className="inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-[10px] text-muted hover:text-text app-no-drag"
-                onClick={() => toggleCollection(collection.id)}
-                aria-label={expanded ? 'Collapse' : 'Expand'}
-              >
-                {expanded ? '▼' : '▶'}
-              </button>
-              <button
-                className="min-w-0 flex-1 cursor-pointer truncate border-none bg-transparent py-0.5 text-left text-[13px] text-inherit app-no-drag"
-                onClick={() => onSelectCollection(collection.id)}
-                onDoubleClick={() => onConfigureCollection(collection.id)}
-              >
-                <span className="inline-flex min-w-0 items-center gap-1.5">
-                  <span className="truncate">{collection.name}</span>
-                  {connectionName != null && (
-                    <span
-                      className="shrink-0 rounded bg-info/15 px-1.5 py-0.5 text-[10px] font-medium text-info"
-                      title={`Stored in ${connectionName}`}
-                    >
-                      {connectionName}
-                    </span>
-                  )}
-                </span>
-              </button>
-              <RowActionsMenu
-                menuId={`collection-${collection.id}`}
-                openMenuId={openMenuId}
-                onOpenChange={setOpenMenuId}
-                items={[
-                  { label: 'Settings', onSelect: () => onConfigureCollection(collection.id) },
-                  { label: 'New Folder', onSelect: () => void onNewFolder(collection.id) },
-                  {
-                    label: 'New Request',
-                    onSelect: () => void onNewRequestInCollection(collection.id)
-                  },
-                  { label: 'Export', onSelect: () => void onExportCollection(collection.id) },
-                  ...(canInvite
-                    ? [
-                        {
-                          label: 'Invite',
-                          onSelect: () => onInviteCollection(collection.id, collection.name)
-                        }
-                      ]
-                    : []),
-                  {
-                    label: 'Delete',
-                    variant: 'danger',
-                    onSelect: () => {
-                      if (confirm(`Delete collection "${collection.name}"?`)) {
-                        void onDeleteCollection(collection.id);
-                      }
-                    }
-                  }
-                ]}
-              />
-            </div>
-
-            {expanded && (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={collectionCollisionDetection}
-                onDragStart={(event) => handleDragStart(event, collection.id)}
-                onDragOver={(event) => handleDragOver(event, collection.id)}
-                onDragEnd={(event) => void handleDragEnd(event, collection.id)}
-                onDragCancel={clearDragState}
-              >
-                <div className="ml-4 flex flex-col gap-0.5 py-0.5">
-                  {loaded && folders.length === 0 && rootRequests.length === 0 && (
-                    <div className="px-2 py-1 text-[12px] text-muted">No saved requests</div>
-                  )}
-
-                  <DropZone
-                    id={dropRootId(collection.id)}
-                    className={
-                      [
-                        rootDropHighlight,
-                        isDraggingRequestHere && rootRequests.length === 0 ? 'min-h-8' : undefined
-                      ]
-                        .filter(Boolean)
-                        .join(' ') || undefined
-                    }
+            return (
+              <div key={collection.id}>
+                <SortableRow id={collectionDragId(collection.id)} className={sourceRow(selected)}>
+                  <button
+                    className="inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-[10px] text-muted hover:text-text app-no-drag"
+                    onClick={() => toggleCollection(collection.id)}
+                    aria-label={expanded ? 'Collapse' : 'Expand'}
                   >
-                    {isRequestDragInCollection && dropTargetFolderId === null && (
-                      <div className="px-2 pb-0.5 text-[11px] text-info">
-                        Drop at collection root
-                      </div>
-                    )}
-                    {isDraggingRequestHere && rootRequests.length === 0 && (
-                      <div className="px-2 py-1.5 text-[12px] text-muted">Collection root</div>
-                    )}
-                    <SortableContext items={rootRequestIds} strategy={verticalListSortingStrategy}>
-                      <div className="flex flex-col gap-0.5">
-                        {rootRequests.map((req) => (
-                          <RequestRow
-                            key={req.id}
-                            req={req}
-                            activeRequestId={activeRequestId}
-                            openMenuId={openMenuId}
-                            onOpenChange={setOpenMenuId}
-                            folders={folders}
-                            onLoadRequest={onLoadRequest}
-                            onDeleteRequest={onDeleteRequest}
-                            onMoveRequest={(requestId, folderId) => {
-                              const targetList =
-                                folderId == null
-                                  ? getRootRequests(collection.id)
-                                  : getFolderRequests(collection.id, folderId);
-                              void onMoveRequest(
-                                collection.id,
-                                requestId,
-                                folderId,
-                                targetList.length
-                              );
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </SortableContext>
-                  </DropZone>
-
-                  <SortableContext items={folderIds} strategy={verticalListSortingStrategy}>
-                    {folders.map((folder) => {
-                      const folderExpanded = expandedFolderIds.has(folder.id);
-                      const folderRequests = getFolderRequests(collection.id, folder.id);
-                      const folderRequestIds = folderRequests.map((req) => requestDragId(req.id));
-                      const folderHighlighted =
-                        isRequestDragInCollection && dropTargetFolderId === folder.id;
-
-                      return (
-                        <div
-                          key={folder.id}
-                          className={folderHighlighted ? dropTargetHighlightClass : undefined}
+                    {expanded ? '▼' : '▶'}
+                  </button>
+                  <button
+                    className="min-w-0 flex-1 cursor-pointer truncate border-none bg-transparent py-0.5 text-left text-[13px] text-inherit app-no-drag"
+                    onClick={() => onSelectCollection(collection.id)}
+                    onDoubleClick={() => onConfigureCollection(collection.id)}
+                  >
+                    <span className="inline-flex min-w-0 items-center gap-1.5">
+                      <span className="truncate">{collection.name}</span>
+                      {connectionName != null && (
+                        <span
+                          className="shrink-0 rounded bg-info/15 px-1.5 py-0.5 text-[10px] font-medium text-info"
+                          title={`Stored in ${connectionName}`}
                         >
-                          <DropZone id={dropFolderId(folder.id)}>
-                            <SortableRow id={folderDragId(folder.id)} className={sourceRow(false)}>
-                              <button
-                                className="inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-[10px] text-muted hover:text-text app-no-drag"
-                                onClick={() => toggleFolder(folder.id)}
-                                aria-label={folderExpanded ? 'Collapse folder' : 'Expand folder'}
-                              >
-                                {folderExpanded ? '▼' : '▶'}
-                              </button>
-                              <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
-                                {folder.name}
-                                {folderHighlighted && (
-                                  <span className="ml-1.5 text-[11px] font-normal text-info">
-                                    Drop here
-                                  </span>
-                                )}
-                              </span>
-                              <RowActionsMenu
-                                menuId={`folder-${folder.id}`}
+                          {connectionName}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                  <RowActionsMenu
+                    menuId={`collection-${collection.id}`}
+                    openMenuId={openMenuId}
+                    onOpenChange={setOpenMenuId}
+                    items={[
+                      { label: 'Settings', onSelect: () => onConfigureCollection(collection.id) },
+                      { label: 'New Folder', onSelect: () => void onNewFolder(collection.id) },
+                      {
+                        label: 'New Request',
+                        onSelect: () => void onNewRequestInCollection(collection.id)
+                      },
+                      { label: 'Export', onSelect: () => void onExportCollection(collection.id) },
+                      {
+                        label: 'Duplicate',
+                        onSelect: () => void onDuplicateCollection(collection.id)
+                      },
+                      ...(canInvite
+                        ? [
+                          {
+                            label: 'Invite',
+                            onSelect: () => onInviteCollection(collection.id, collection.name)
+                          }
+                        ]
+                        : []),
+                      {
+                        label: 'Delete',
+                        variant: 'danger',
+                        onSelect: () => {
+                          if (confirm(`Delete collection "${collection.name}"?`)) {
+                            void onDeleteCollection(collection.id);
+                          }
+                        }
+                      }
+                    ]}
+                  />
+                </SortableRow>
+
+                {expanded && (
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={collectionCollisionDetection}
+                    onDragStart={(event) => handleDragStart(event, collection.id)}
+                    onDragOver={(event) => handleDragOver(event, collection.id)}
+                    onDragEnd={(event) => void handleDragEnd(event, collection.id)}
+                    onDragCancel={clearDragState}
+                  >
+                    <div className="ml-4 flex flex-col gap-0.5 py-0.5">
+                      {loaded && folders.length === 0 && rootRequests.length === 0 && (
+                        <div className="px-2 py-1 text-[12px] text-muted">No saved requests</div>
+                      )}
+
+                      <DropZone
+                        id={dropRootId(collection.id)}
+                        className={
+                          [
+                            rootDropHighlight,
+                            isDraggingRequestHere && rootRequests.length === 0 ? 'min-h-8' : undefined
+                          ]
+                            .filter(Boolean)
+                            .join(' ') || undefined
+                        }
+                      >
+                        {isRequestDragInCollection && dropTargetFolderId === null && (
+                          <div className="px-2 pb-0.5 text-[11px] text-info">
+                            Drop at collection root
+                          </div>
+                        )}
+                        {isDraggingRequestHere && rootRequests.length === 0 && (
+                          <div className="px-2 py-1.5 text-[12px] text-muted">Collection root</div>
+                        )}
+                        <SortableContext items={rootRequestIds} strategy={verticalListSortingStrategy}>
+                          <div className="flex flex-col gap-0.5">
+                            {rootRequests.map((req) => (
+                              <RequestRow
+                                key={req.id}
+                                req={req}
+                                activeRequestId={activeRequestId}
                                 openMenuId={openMenuId}
                                 onOpenChange={setOpenMenuId}
-                                items={[
-                                  {
-                                    label: 'New Request',
-                                    onSelect: () =>
-                                      void onNewRequestInFolder(collection.id, folder.id)
-                                  },
-                                  {
-                                    label: 'Rename',
-                                    onSelect: () => void onRenameFolder(folder.id, collection.id)
-                                  },
-                                  {
-                                    label: 'Delete',
-                                    variant: 'danger',
-                                    onSelect: () =>
-                                      void onDeleteFolder(
-                                        folder.id,
-                                        collection.id,
-                                        folderRequests.map((req) => req.id)
-                                      )
-                                  }
-                                ]}
+                                folders={folders}
+                                onLoadRequest={onLoadRequest}
+                                onDeleteRequest={onDeleteRequest}
+                                onDuplicateRequest={onDuplicateRequest}
+                                onMoveRequest={(requestId, folderId) => {
+                                  const targetList =
+                                    folderId == null
+                                      ? getRootRequests(collection.id)
+                                      : getFolderRequests(collection.id, folderId);
+                                  void onMoveRequest(
+                                    collection.id,
+                                    requestId,
+                                    folderId,
+                                    targetList.length
+                                  );
+                                }}
                               />
-                            </SortableRow>
-                          </DropZone>
+                            ))}
+                          </div>
+                        </SortableContext>
+                      </DropZone>
 
-                          {folderExpanded && (
-                            <div className="ml-4 flex flex-col gap-0.5 py-0.5">
-                              <SortableContext
-                                items={folderRequestIds}
-                                strategy={verticalListSortingStrategy}
-                              >
-                                {folderRequests.map((req) => (
-                                  <RequestRow
-                                    key={req.id}
-                                    req={req}
-                                    activeRequestId={activeRequestId}
+                      <SortableContext items={folderIds} strategy={verticalListSortingStrategy}>
+                        {folders.map((folder) => {
+                          const folderExpanded = expandedFolderIds.has(folder.id);
+                          const folderRequests = getFolderRequests(collection.id, folder.id);
+                          const folderRequestIds = folderRequests.map((req) => requestDragId(req.id));
+                          const folderHighlighted =
+                            isRequestDragInCollection && dropTargetFolderId === folder.id;
+
+                          return (
+                            <div
+                              key={folder.id}
+                              className={folderHighlighted ? dropTargetHighlightClass : undefined}
+                            >
+                              <DropZone id={dropFolderId(folder.id)}>
+                                <SortableRow id={folderDragId(folder.id)} className={sourceRow(false)}>
+                                  <button
+                                    className="inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-[10px] text-muted hover:text-text app-no-drag"
+                                    onClick={() => toggleFolder(folder.id)}
+                                    aria-label={folderExpanded ? 'Collapse folder' : 'Expand folder'}
+                                  >
+                                    {folderExpanded ? '▼' : '▶'}
+                                  </button>
+                                  <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
+                                    {folder.name}
+                                    {folderHighlighted && (
+                                      <span className="ml-1.5 text-[11px] font-normal text-info">
+                                        Drop here
+                                      </span>
+                                    )}
+                                  </span>
+                                  <RowActionsMenu
+                                    menuId={`folder-${folder.id}`}
                                     openMenuId={openMenuId}
                                     onOpenChange={setOpenMenuId}
-                                    folders={folders}
-                                    onLoadRequest={onLoadRequest}
-                                    onDeleteRequest={onDeleteRequest}
-                                    onMoveRequest={(requestId, folderId) => {
-                                      const targetList =
-                                        folderId == null
-                                          ? getRootRequests(collection.id)
-                                          : getFolderRequests(collection.id, folderId);
-                                      void onMoveRequest(
-                                        collection.id,
-                                        requestId,
-                                        folderId,
-                                        targetList.length
-                                      );
-                                    }}
+                                    items={[
+                                      {
+                                        label: 'New Request',
+                                        onSelect: () =>
+                                          void onNewRequestInFolder(collection.id, folder.id)
+                                      },
+                                      {
+                                        label: 'Rename',
+                                        onSelect: () => void onRenameFolder(folder.id, collection.id)
+                                      },
+                                      {
+                                        label: 'Delete',
+                                        variant: 'danger',
+                                        onSelect: () =>
+                                          void onDeleteFolder(
+                                            folder.id,
+                                            collection.id,
+                                            folderRequests.map((req) => req.id)
+                                          )
+                                      }
+                                    ]}
                                   />
-                                ))}
-                              </SortableContext>
-                              {folderRequests.length === 0 && (
-                                <div className="px-2 py-1 text-[12px] text-muted">Empty folder</div>
+                                </SortableRow>
+                              </DropZone>
+
+                              {folderExpanded && (
+                                <div className="ml-4 flex flex-col gap-0.5 py-0.5">
+                                  <SortableContext
+                                    items={folderRequestIds}
+                                    strategy={verticalListSortingStrategy}
+                                  >
+                                    {folderRequests.map((req) => (
+                                      <RequestRow
+                                        key={req.id}
+                                        req={req}
+                                        activeRequestId={activeRequestId}
+                                        openMenuId={openMenuId}
+                                        onOpenChange={setOpenMenuId}
+                                        folders={folders}
+                                        onLoadRequest={onLoadRequest}
+                                        onDeleteRequest={onDeleteRequest}
+                                        onDuplicateRequest={onDuplicateRequest}
+                                        onMoveRequest={(requestId, folderId) => {
+                                          const targetList =
+                                            folderId == null
+                                              ? getRootRequests(collection.id)
+                                              : getFolderRequests(collection.id, folderId);
+                                          void onMoveRequest(
+                                            collection.id,
+                                            requestId,
+                                            folderId,
+                                            targetList.length
+                                          );
+                                        }}
+                                      />
+                                    ))}
+                                  </SortableContext>
+                                  {folderRequests.length === 0 && (
+                                    <div className="px-2 py-1 text-[12px] text-muted">Empty folder</div>
+                                  )}
+                                </div>
                               )}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </SortableContext>
-                </div>
+                          );
+                        })}
+                      </SortableContext>
+                    </div>
 
-                <DragOverlay>
-                  {dragCollectionId === collection.id &&
-                  activeDragKind === 'request' &&
-                  activeDragRequest ? (
-                    <div className="flex items-center gap-1.5 rounded border border-separator bg-surface px-2 py-1 shadow-md">
-                      <span
-                        className={`shrink-0 rounded px-1 py-px text-[10px] font-semibold ${METHOD_CLASSES[activeDragRequest.method.toLowerCase()] ?? 'bg-info text-white'}`}
-                      >
-                        {activeDragRequest.method}
-                      </span>
-                      <span className="truncate text-[13px]">{activeDragRequest.name}</span>
-                    </div>
-                  ) : dragCollectionId === collection.id &&
-                    activeDragKind === 'folder' &&
-                    activeDragFolder ? (
-                    <div className="rounded border border-separator bg-surface px-2 py-1 text-[13px] font-medium shadow-md">
-                      {activeDragFolder.name}
-                    </div>
-                  ) : null}
-                </DragOverlay>
-              </DndContext>
-            )}
+                    <DragOverlay>
+                      {dragCollectionId === collection.id &&
+                        activeDragKind === 'request' &&
+                        activeDragRequest ? (
+                        <div className="flex items-center gap-1.5 rounded border border-separator bg-surface px-2 py-1 shadow-md">
+                          <span
+                            className={`shrink-0 rounded px-1 py-px text-[10px] font-semibold ${METHOD_CLASSES[activeDragRequest.method.toLowerCase()] ?? 'bg-info text-white'}`}
+                          >
+                            {activeDragRequest.method}
+                          </span>
+                          <span className="truncate text-[13px]">{activeDragRequest.name}</span>
+                        </div>
+                      ) : dragCollectionId === collection.id &&
+                        activeDragKind === 'folder' &&
+                        activeDragFolder ? (
+                        <div className="rounded border border-separator bg-surface px-2 py-1 text-[13px] font-medium shadow-md">
+                          {activeDragFolder.name}
+                        </div>
+                      ) : null}
+                    </DragOverlay>
+                  </DndContext>
+                )}
+              </div>
+            );
+          })}
+        </SortableContext>
+      </div>
+
+      <DragOverlay>
+        {activeDragCollection ? (
+          <div className="rounded border border-separator bg-surface px-2 py-1 text-[13px] font-medium shadow-md">
+            {activeDragCollection.name}
           </div>
-        );
-      })}
-    </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }

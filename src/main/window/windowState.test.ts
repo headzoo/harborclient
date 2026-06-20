@@ -1,6 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { fitWindowStateToDisplays, type SavedWindowState } from '#/main/window/windowState';
 import type { Display } from 'electron';
+
+// `windowState` imports `electron` at module load, whose entry point throws
+// outside an Electron runtime. Stub it so the pure geometry helpers can be
+// unit-tested under the Node-based vitest runner. The factory is hoisted above
+// the imports above, so the static import already resolves to this stub.
+vi.mock('electron', () => ({
+  app: { getPath: () => '' },
+  BrowserWindow: class { },
+  screen: { getAllDisplays: () => [] }
+}));
 
 function display(workArea: Display['workArea']): Display {
   return { workArea } as Display;

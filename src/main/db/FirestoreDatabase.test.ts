@@ -1,4 +1,3 @@
-import * as firestore from 'firebase/firestore';
 import { afterAll, afterEach, expect, it, vi } from 'vitest';
 import { FirestoreDatabase } from '#/main/db/FirestoreDatabase';
 import {
@@ -86,8 +85,16 @@ describeFirestore('FirestoreDatabase import and ID allocation', () => {
 
   it('nextId dispenses IDs from cached blocks instead of one transaction per insert', async () => {
     const { db } = await createTestDb();
-    const transactionSpy = vi.spyOn(firestore, 'runTransaction');
-    transactionSpy.mockClear();
+    // `runTransaction` is a non-configurable ESM export and cannot be spied on,
+    // so count calls to the sole caller instead: each block allocation runs
+    // exactly one Firestore transaction.
+    const allocateIdsSpy = vi.spyOn(
+      FirestoreDatabase.prototype as unknown as {
+        allocateIds: (counterName: string, count: number) => Promise<number[]>;
+      },
+      'allocateIds'
+    );
+    allocateIdsSpy.mockClear();
 
     const collection = await db.createCollection('Block Allocation');
     for (let index = 0; index < 51; index += 1) {
@@ -111,8 +118,8 @@ describeFirestore('FirestoreDatabase import and ID allocation', () => {
 
     expect(requests).toHaveLength(51);
     expect(new Set(requestIds).size).toBe(51);
-    expect(transactionSpy.mock.calls.length).toBeLessThan(10);
-    transactionSpy.mockRestore();
+    expect(allocateIdsSpy.mock.calls.length).toBeLessThan(10);
+    allocateIdsSpy.mockRestore();
   });
 });
 

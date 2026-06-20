@@ -81,6 +81,16 @@ function deleteCollection(id: number): Promise<void> {
 }
 
 /**
+ * Deep-copies a collection into a new collection on the same backend via IPC.
+ *
+ * @param id - Global collection ID to duplicate.
+ * @returns The newly created collection.
+ */
+function duplicateCollection(id: number): Promise<Collection> {
+  return ipcRenderer.invoke('collections:duplicate', id);
+}
+
+/**
  * Exports a collection to a JSON file via IPC.
  *
  * @param id - Collection ID to export.
@@ -107,6 +117,15 @@ function importCollection(): Promise<Collection | null> {
  */
 function moveCollection(id: number, targetConnectionId: string): Promise<Collection> {
   return ipcRenderer.invoke('collections:move', id, targetConnectionId);
+}
+
+/**
+ * Persists a new sidebar order for collections via IPC.
+ *
+ * @param orderedCollectionIds - Global collection ids in desired order.
+ */
+function reorderCollections(orderedCollectionIds: number[]): Promise<void> {
+  return ipcRenderer.invoke('collections:reorder', orderedCollectionIds);
 }
 
 /**
@@ -500,9 +519,11 @@ const api: Api = {
   createCollection,
   updateCollection,
   deleteCollection,
+  duplicateCollection,
   exportCollection,
   importCollection,
   moveCollection,
+  reorderCollections,
   listEnvironments,
   createEnvironment,
   updateEnvironment,

@@ -136,6 +136,26 @@ describeSqlite('RoutingDatabase collections', () => {
       'Could not load collections from "SQLite A": Connection refused'
     ]);
   });
+
+  it('reorderCollections updates listCollections order', async () => {
+    const { router } = await createRoutingFixture();
+    const first = await router.createCollection('First');
+    const second = await router.createCollection('Second');
+    const third = await router.createCollection('Third');
+
+    expect((await router.listCollections()).map((collection) => collection.name)).toEqual([
+      'First',
+      'Second',
+      'Third'
+    ]);
+
+    await router.reorderCollections([third.id, first.id, second.id]);
+    expect((await router.listCollections()).map((collection) => collection.name)).toEqual([
+      'Third',
+      'First',
+      'Second'
+    ]);
+  });
 });
 
 describeSqlite('RoutingDatabase global ids', () => {
@@ -231,6 +251,56 @@ describeSqlite('RoutingDatabase moveCollection', () => {
     const moved = await router.moveCollection(collection.id, CONN_A.id);
     expect(moved.id).toBe(collection.id);
     expect(moved.connectionId).toBe(CONN_A.id);
+  });
+});
+
+describeSqlite('RoutingDatabase duplicateCollection', () => {
+  it('copies collection settings, folders, and requests on the same backend', async () => {
+    const { router, registry, backendA } = await createRoutingFixture();
+    const collection = await router.createCollection('Source API');
+    await router.updateCollection(
+      collection.id,
+      'Source API',
+      [{ key: 'baseUrl', value: 'https://api.example.com', defaultValue: '', share: true }],
+      [{ key: 'Accept', value: 'application/json', enabled: true }],
+      'console.log("pre")',
+      'console.log("post")'
+    );
+    const folder = await router.createFolder(collection.id, 'Auth');
+    await router.saveRequest(
+      baseRequestInput(collection.id, { name: 'Login', folder_id: folder.id, method: 'POST' })
+    );
+    await router.saveRequest(baseRequestInput(collection.id, { name: 'Health' }));
+
+    const duplicated = await router.duplicateCollection(collection.id);
+
+    expect(duplicated.id).not.toBe(collection.id);
+    expect(duplicated.name).toBe('Source API (copy)');
+    expect(duplicated.connectionId).toBe(CONN_A.id);
+    expect(duplicated.variables).toEqual([
+      { key: 'baseUrl', value: 'https://api.example.com', defaultValue: '', share: true }
+    ]);
+    expect(duplicated.headers).toEqual([
+      { key: 'Accept', value: 'application/json', enabled: true }
+    ]);
+    expect(duplicated.pre_request_script).toBe('console.log("pre")');
+    expect(duplicated.post_request_script).toBe('console.log("post")');
+
+    expect(registry.listRegistry()).toHaveLength(2);
+
+    const originalRequests = await router.listRequests(collection.id);
+    expect(originalRequests.map((r) => r.name).sort()).toEqual(['Health', 'Login']);
+    expect((await router.listFolders(collection.id)).map((f) => f.name)).toEqual(['Auth']);
+
+    const copyRequests = await router.listRequests(duplicated.id);
+    expect(copyRequests.map((r) => r.name).sort()).toEqual(['Health', 'Login']);
+    expect(copyRequests.every((r) => r.collection_id === duplicated.id)).toBe(true);
+
+    const copyFolders = await router.listFolders(duplicated.id);
+    expect(copyFolders.map((f) => f.name)).toEqual(['Auth']);
+    expect(copyFolders[0]?.id).not.toBe(folder.id);
+
+    expect(await backendA.listCollections()).toHaveLength(2);
   });
 });
 

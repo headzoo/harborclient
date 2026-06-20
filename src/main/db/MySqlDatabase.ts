@@ -92,7 +92,7 @@ export class MySqlDatabase implements IDatabase {
         body_type VARCHAR(32) NOT NULL DEFAULT 'none',
         pre_request_script LONGTEXT NOT NULL,
         post_request_script LONGTEXT NOT NULL,
-        comment LONGTEXT NOT NULL DEFAULT '',
+        comment LONGTEXT NOT NULL DEFAULT (''),
         sort_order INT NOT NULL DEFAULT 0,
         created_at VARCHAR(64) NOT NULL,
         updated_at VARCHAR(64) NOT NULL,
@@ -127,13 +127,37 @@ export class MySqlDatabase implements IDatabase {
       )
     `);
 
-    await this.#pool.execute(`
-      ALTER TABLE requests ADD COLUMN IF NOT EXISTS comment LONGTEXT NOT NULL DEFAULT ''
-    `);
+    // MySQL has no `ADD COLUMN IF NOT EXISTS` (a MariaDB-only extension), so the
+    // schema is migrated by checking information_schema before each ALTER.
+    await this.addColumnIfMissing('requests', 'comment', "LONGTEXT NOT NULL DEFAULT ('')");
+    await this.addColumnIfMissing('requests', 'folder_id', 'INT NULL');
+  }
 
-    await this.#pool.execute(`
-      ALTER TABLE requests ADD COLUMN IF NOT EXISTS folder_id INT NULL
-    `);
+  /**
+   * Adds a column to a table only when it is not already present.
+   *
+   * MySQL rejects the MariaDB `ADD COLUMN IF NOT EXISTS` syntax, so existing
+   * databases are migrated by consulting `information_schema.COLUMNS` first. The
+   * table and column names are internal constants, never user input.
+   *
+   * @param table - Table to alter.
+   * @param column - Column to add when missing.
+   * @param definition - SQL column definition appended after the column name.
+   */
+  private async addColumnIfMissing(
+    table: string,
+    column: string,
+    definition: string
+  ): Promise<void> {
+    const [rows] = await this.getPool().execute<RowDataPacket[]>(
+      `SELECT COUNT(*) AS count FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+      [this.#settings.database, table, column]
+    );
+
+    if (Number(rows[0]?.count ?? 0) > 0) return;
+
+    await this.getPool().execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
   }
 
   async listCollections(): Promise<Collection[]> {

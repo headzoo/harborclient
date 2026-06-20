@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(collections): implement collection duplication and reordering functionality. (`97f6098`)
 - chore(docs): update README and index.md tagline for clarity. (`011696e`)
 - fix(ci): standardize Java version syntax in CI workflow. (`315c3dc`)
 - refactor(docs): improve formatting and clarity in TESTING.md. (`b0976c7`)

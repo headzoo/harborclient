@@ -45,6 +45,14 @@ export function registerCollectionHandlers(db: IDatabase): void {
   // Deletes a collection and all of its folders and requests.
   handle('collections:delete', ipcArgSchemas.dbId, (_event, id) => db.deleteCollection(id));
 
+  // Deep-copies a collection into a new collection on the same backend.
+  handle('collections:duplicate', ipcArgSchemas.dbId, (_event, id) => {
+    if (!(db instanceof RoutingDatabase)) {
+      throw new Error('Collection duplicate is unavailable.');
+    }
+    return db.duplicateCollection(id);
+  });
+
   // Exports a collection to a JSON file via a native save dialog.
   handle('collections:export', ipcArgSchemas.dbId, async (_event, id) => {
     const data = await db.exportCollectionData(id);
@@ -113,6 +121,14 @@ export function registerCollectionHandlers(db: IDatabase): void {
       throw new Error('Collection move is unavailable.');
     }
     return db.moveCollection(id, targetConnectionId);
+  });
+
+  // Reorders collections in the sidebar.
+  handle('collections:reorder', ipcArgSchemas.collectionReorder, (_event, orderedCollectionIds) => {
+    if (!(db instanceof RoutingDatabase)) {
+      throw new Error('Collection reorder is unavailable.');
+    }
+    return db.reorderCollections(orderedCollectionIds);
   });
 
   // Opens a native file picker and returns selected absolute file paths.

@@ -408,6 +408,25 @@ export class RoutingDatabase implements IDatabase {
   }
 
   /**
+   * Deep-copies a collection into a new collection on the same backend.
+   *
+   * @param id - Global collection id to duplicate.
+   * @returns The newly created collection with a new global id.
+   */
+  async duplicateCollection(id: number): Promise<Collection> {
+    return this.mover.duplicateCollection(id);
+  }
+
+  /**
+   * Persists a new sidebar order for collections in the local registry.
+   *
+   * @param orderedCollectionIds - Global collection ids in desired order.
+   */
+  async reorderCollections(orderedCollectionIds: number[]): Promise<void> {
+    this.registry.reorderRegistry(orderedCollectionIds);
+  }
+
+  /**
    * Deletes stale source copies left behind by interrupted collection moves.
    */
   async recoverPendingMoveCleanups(): Promise<void> {

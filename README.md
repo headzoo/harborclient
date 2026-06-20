@@ -2,7 +2,7 @@
 
 **Full documentation:** [https://harborclient.com/](https://harborclient.com/)
 
-The free API client that keeps your work private—no accounts, no subscriptions, no lock-in.
+The free API client that keeps your work private: no accounts, no subscriptions, no lock-in.
 
 ## Development
 

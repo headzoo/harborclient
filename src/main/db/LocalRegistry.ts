@@ -112,6 +112,7 @@ export class LocalRegistry {
         name TEXT NOT NULL,
         connection_id TEXT NOT NULL,
         provider_collection_id INTEGER NOT NULL,
+        sort_order INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
@@ -127,6 +128,44 @@ export class LocalRegistry {
         value TEXT NOT NULL
       );
     `);
+
+    this.migrateRegistrySortOrder();
+  }
+
+  /**
+   * Adds sort_order to legacy registry databases and backfills from name order.
+   */
+  private migrateRegistrySortOrder(): void {
+    const columns = this.getDb().prepare('PRAGMA table_info(collection_registry)').all() as Array<{
+      name: string;
+    }>;
+    const hasSortOrder = columns.some((col) => col.name === 'sort_order');
+    if (hasSortOrder) return;
+
+    this.getDb().exec(
+      'ALTER TABLE collection_registry ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0'
+    );
+
+    const rows = this.getDb()
+      .prepare('SELECT id FROM collection_registry ORDER BY name ASC, id ASC')
+      .all() as Array<{ id: number }>;
+    const update = this.getDb().prepare('UPDATE collection_registry SET sort_order = ? WHERE id = ?');
+    const backfill = this.getDb().transaction((entries: Array<{ id: number }>) => {
+      entries.forEach((entry, index) => {
+        update.run(index, entry.id);
+      });
+    });
+    backfill(rows);
+  }
+
+  /**
+   * Returns the next sort_order value for a new registry entry.
+   */
+  private nextRegistrySortOrder(): number {
+    const row = this.getDb()
+      .prepare('SELECT COALESCE(MAX(sort_order), -1) AS max_order FROM collection_registry')
+      .get() as { max_order: number };
+    return row.max_order + 1;
   }
 
   /**
@@ -142,11 +181,26 @@ export class LocalRegistry {
   listRegistry(): CollectionRegistryEntry[] {
     const rows = this.getDb()
       .prepare(
-        'SELECT id, name, connection_id, provider_collection_id, created_at FROM collection_registry ORDER BY name ASC'
+        'SELECT id, name, connection_id, provider_collection_id, created_at FROM collection_registry ORDER BY sort_order ASC, name ASC'
       )
       .all() as Record<string, unknown>[];
 
     return rows.map(rowToRegistryEntry);
+  }
+
+  /**
+   * Persists a new sidebar order for registry entries.
+   *
+   * @param orderedIds - Global collection ids in desired order.
+   */
+  reorderRegistry(orderedIds: number[]): void {
+    const reorder = this.getDb().transaction((ids: number[]) => {
+      const stmt = this.getDb().prepare('UPDATE collection_registry SET sort_order = ? WHERE id = ?');
+      ids.forEach((id, index) => {
+        stmt.run(index, id);
+      });
+    });
+    reorder(orderedIds);
   }
 
   getRegistryEntry(id: number): CollectionRegistryEntry | undefined {
@@ -160,12 +214,20 @@ export class LocalRegistry {
   }
 
   addRegistryEntry(input: AddRegistryEntryInput): CollectionRegistryEntry {
+    const sortOrder = this.nextRegistrySortOrder();
+
     if (input.id != null) {
       this.getDb()
         .prepare(
-          'INSERT INTO collection_registry (id, name, connection_id, provider_collection_id) VALUES (?, ?, ?, ?)'
+          'INSERT INTO collection_registry (id, name, connection_id, provider_collection_id, sort_order) VALUES (?, ?, ?, ?, ?)'
         )
-        .run(input.id, input.name.trim(), input.connectionId, input.providerCollectionId);
+        .run(
+          input.id,
+          input.name.trim(),
+          input.connectionId,
+          input.providerCollectionId,
+          sortOrder
+        );
       const entry = this.getRegistryEntry(input.id);
       if (!entry) throw new Error('Registry entry not found after insert');
       return entry;
@@ -173,9 +235,9 @@ export class LocalRegistry {
 
     const result = this.getDb()
       .prepare(
-        'INSERT INTO collection_registry (name, connection_id, provider_collection_id) VALUES (?, ?, ?)'
+        'INSERT INTO collection_registry (name, connection_id, provider_collection_id, sort_order) VALUES (?, ?, ?, ?)'
       )
-      .run(input.name.trim(), input.connectionId, input.providerCollectionId);
+      .run(input.name.trim(), input.connectionId, input.providerCollectionId, sortOrder);
 
     const entry = this.getRegistryEntry(Number(result.lastInsertRowid));
     if (!entry) throw new Error('Registry entry not found after insert');
