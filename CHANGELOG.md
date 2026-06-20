@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.3.1 - 2026-06-20
+
 - Update electron-builder configuration and package scripts for improved dependency management. (`b38f7d3`)
 - Refactor error handling and code formatting for improved readability. (`128884f`)
 
