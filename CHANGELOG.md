@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- refactor(install-app-deps): improve native module build process. (`447a021`)
 - feat(database): add MySQL and PostgreSQL support. (`93425a7`)
 
 ## 1.4.0 - 2026-06-20

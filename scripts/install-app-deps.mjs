@@ -5,18 +5,22 @@ import { fileURLToPath } from 'node:url'
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const isDarwin = process.platform === 'darwin'
-const isWindows = process.platform === 'win32'
 const ivmDir = path.join(projectRoot, 'node_modules', 'isolated-vm')
 
 const require = getElectronRebuildRequire()
 const { rebuild } = require('@electron/rebuild')
 const electronVersion = require('electron/package.json').version
 
+// Native modules compile against the platform's default toolchain: MSVC on
+// Windows (VS 2022 on the windows-2022 runner) and the system compiler on
+// Linux. macOS builds from source to stay ABI-compatible with Electron.
+// Avoid useElectronClang: it downloads a Chromium clang toolchain from Google
+// storage at install time, which is fragile and breaks the Windows build with
+// "Failed to fetch a clang resource".
 await rebuild({
   buildPath: projectRoot,
   electronVersion,
-  buildFromSource: isDarwin,
-  useElectronClang: isWindows
+  buildFromSource: isDarwin
 })
 
 pruneIsolatedVmPackagingArtifacts(ivmDir, { removePrebuilds: isDarwin })
