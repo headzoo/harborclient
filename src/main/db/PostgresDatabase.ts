@@ -10,8 +10,10 @@ import {
   rowToFolder,
   rowToRequest
 } from '#/main/db/entityMappers';
+import { DEFAULT_AUTH_JSON, defaultAuth, normalizeAuth } from '#/shared/auth';
 import type { IDatabase } from '#/main/db/IDatabase';
 import type {
+  AuthConfig,
   Collection,
   CollectionExport,
   Environment,
@@ -124,6 +126,14 @@ export class PostgresDatabase implements IDatabase {
     `);
 
     await this.#pool.query(`
+      ALTER TABLE collections ADD COLUMN IF NOT EXISTS auth TEXT NOT NULL DEFAULT '${DEFAULT_AUTH_JSON.replace(/'/g, "''")}'
+    `);
+
+    await this.#pool.query(`
+      ALTER TABLE requests ADD COLUMN IF NOT EXISTS auth TEXT NOT NULL DEFAULT '${DEFAULT_AUTH_JSON.replace(/'/g, "''")}'
+    `);
+
+    await this.#pool.query(`
       CREATE TABLE IF NOT EXISTS folders (
         id SERIAL PRIMARY KEY,
         collection_id INT NOT NULL,
@@ -137,7 +147,7 @@ export class PostgresDatabase implements IDatabase {
 
   async listCollections(): Promise<Collection[]> {
     const result = await this.getPool().query(
-      'SELECT id, name, variables, headers, pre_request_script, post_request_script, created_at FROM collections ORDER BY name ASC'
+      'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections ORDER BY name ASC'
     );
     return result.rows.map(rowToCollection);
   }
@@ -147,7 +157,7 @@ export class PostgresDatabase implements IDatabase {
     const result = await this.getPool().query(
       `INSERT INTO collections (name, variables, headers, pre_request_script, post_request_script, created_at)
        VALUES ($1, '[]', '[]', '', '', $2)
-       RETURNING id, name, variables, headers, pre_request_script, post_request_script, created_at`,
+       RETURNING id, name, variables, headers, auth, pre_request_script, post_request_script, created_at`,
       [name.trim(), createdAt]
     );
 
@@ -162,14 +172,16 @@ export class PostgresDatabase implements IDatabase {
     variables: Variable[],
     headers: KeyValue[],
     preRequestScript: string,
-    postRequestScript: string
+    postRequestScript: string,
+    auth: AuthConfig
   ): Promise<Collection> {
     const result = await this.getPool().query(
-      'UPDATE collections SET name = $1, variables = $2, headers = $3, pre_request_script = $4, post_request_script = $5 WHERE id = $6',
+      'UPDATE collections SET name = $1, variables = $2, headers = $3, auth = $4, pre_request_script = $5, post_request_script = $6 WHERE id = $7',
       [
         name.trim(),
         JSON.stringify(variables),
         JSON.stringify(headers),
+        JSON.stringify(auth),
         preRequestScript,
         postRequestScript,
         id
@@ -179,7 +191,7 @@ export class PostgresDatabase implements IDatabase {
     if (result.rowCount === 0) throw new Error('Collection not found');
 
     const selectResult = await this.getPool().query(
-      'SELECT id, name, variables, headers, pre_request_script, post_request_script, created_at FROM collections WHERE id = $1',
+      'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections WHERE id = $1',
       [id]
     );
 
@@ -245,6 +257,7 @@ export class PostgresDatabase implements IDatabase {
   async saveRequest(input: SaveRequestInput): Promise<SavedRequest> {
     const headers = JSON.stringify(input.headers);
     const params = JSON.stringify(input.params);
+    const auth = JSON.stringify(input.auth);
     const preRequestScript = input.pre_request_script ?? '';
     const postRequestScript = input.post_request_script ?? '';
     const comment = input.comment ?? '';
@@ -266,10 +279,10 @@ export class PostgresDatabase implements IDatabase {
       const result = await this.getPool().query(
         `UPDATE requests SET
           collection_id = $1, folder_id = $2, name = $3, method = $4, url = $5,
-          headers = $6, params = $7, body = $8, body_type = $9,
-          pre_request_script = $10, post_request_script = $11, comment = $12,
-          updated_at = $13
-        WHERE id = $14`,
+          headers = $6, params = $7, auth = $8, body = $9, body_type = $10,
+          pre_request_script = $11, post_request_script = $12, comment = $13,
+          updated_at = $14
+        WHERE id = $15`,
         [
           input.collection_id,
           folderId,
@@ -278,6 +291,7 @@ export class PostgresDatabase implements IDatabase {
           input.url,
           headers,
           params,
+          auth,
           input.body,
           input.body_type,
           preRequestScript,
@@ -306,9 +320,9 @@ export class PostgresDatabase implements IDatabase {
 
     const result = await this.getPool().query(
       `INSERT INTO requests (
-        collection_id, folder_id, name, method, url, headers, params, body, body_type,
+        collection_id, folder_id, name, method, url, headers, params, auth, body, body_type,
         pre_request_script, post_request_script, comment, sort_order, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING *`,
       [
         input.collection_id,
@@ -318,6 +332,7 @@ export class PostgresDatabase implements IDatabase {
         input.url,
         headers,
         params,
+        auth,
         input.body,
         input.body_type,
         preRequestScript,
@@ -493,7 +508,7 @@ export class PostgresDatabase implements IDatabase {
 
   async exportCollectionData(id: number): Promise<CollectionExport> {
     const result = await this.getPool().query(
-      'SELECT name, variables, headers, pre_request_script, post_request_script FROM collections WHERE id = $1',
+      'SELECT name, variables, headers, auth, pre_request_script, post_request_script FROM collections WHERE id = $1',
       [id]
     );
 
@@ -511,6 +526,7 @@ export class PostgresDatabase implements IDatabase {
         url,
         headers,
         params,
+        auth,
         body,
         body_type,
         pre_request_script,
@@ -524,6 +540,7 @@ export class PostgresDatabase implements IDatabase {
         url,
         headers,
         params,
+        auth,
         body,
         body_type,
         pre_request_script,
@@ -538,12 +555,14 @@ export class PostgresDatabase implements IDatabase {
       normalizeVariable
     );
     const headers = parseJson<KeyValue[]>(row.headers as string, []);
+    const auth = normalizeAuth(parseJson(row.auth as string, defaultAuth()));
 
     return {
       formatVersion: 2,
       name: row.name as string,
       variables: maskVariablesForExport(variables),
       headers,
+      auth,
       pre_request_script: (row.pre_request_script as string) ?? '',
       post_request_script: (row.post_request_script as string) ?? '',
       folders,
@@ -560,13 +579,14 @@ export class PostgresDatabase implements IDatabase {
       await client.query('BEGIN');
 
       const collectionResult = await client.query(
-        `INSERT INTO collections (name, variables, headers, pre_request_script, post_request_script, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING id, name, variables, headers, pre_request_script, post_request_script, created_at`,
+        `INSERT INTO collections (name, variables, headers, auth, pre_request_script, post_request_script, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING id, name, variables, headers, auth, pre_request_script, post_request_script, created_at`,
         [
           exportData.name,
           JSON.stringify(exportData.variables),
           JSON.stringify(exportData.headers),
+          JSON.stringify(exportData.auth ?? defaultAuth()),
           exportData.pre_request_script,
           exportData.post_request_script,
           now
@@ -593,9 +613,9 @@ export class PostgresDatabase implements IDatabase {
 
         await client.query(
           `INSERT INTO requests (
-            collection_id, folder_id, name, method, url, headers, params, body, body_type,
+            collection_id, folder_id, name, method, url, headers, params, auth, body, body_type,
             pre_request_script, post_request_script, comment, sort_order, created_at, updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
           [
             collectionId,
             folderId,
@@ -604,6 +624,7 @@ export class PostgresDatabase implements IDatabase {
             request.url,
             JSON.stringify(request.headers),
             JSON.stringify(request.params),
+            JSON.stringify(request.auth ?? defaultAuth()),
             request.body,
             request.body_type,
             request.pre_request_script,

@@ -264,7 +264,12 @@ describeSqlite('RoutingDatabase duplicateCollection', () => {
       [{ key: 'baseUrl', value: 'https://api.example.com', defaultValue: '', share: true }],
       [{ key: 'Accept', value: 'application/json', enabled: true }],
       'console.log("pre")',
-      'console.log("post")'
+      'console.log("post")',
+      {
+        type: 'bearer',
+        basic: { username: '', password: '' },
+        bearer: { token: 'source-token' }
+      }
     );
     const folder = await router.createFolder(collection.id, 'Auth');
     await router.saveRequest(
@@ -285,6 +290,11 @@ describeSqlite('RoutingDatabase duplicateCollection', () => {
     ]);
     expect(duplicated.pre_request_script).toBe('console.log("pre")');
     expect(duplicated.post_request_script).toBe('console.log("post")');
+    expect(duplicated.auth).toEqual({
+      type: 'bearer',
+      basic: { username: '', password: '' },
+      bearer: { token: 'source-token' }
+    });
 
     expect(registry.listRegistry()).toHaveLength(2);
 

@@ -30,8 +30,10 @@ import {
   docToFolder,
   docToRequest
 } from '#/main/db/entityMappers';
+import { defaultAuth } from '#/shared/auth';
 import type { IDatabase } from '#/main/db/IDatabase';
 import type {
+  AuthConfig,
   Collection,
   CollectionExport,
   Environment,
@@ -200,6 +202,7 @@ export class FirestoreDatabase implements IDatabase {
       name: name.trim(),
       variables: [] as Variable[],
       headers: [] as KeyValue[],
+      auth: defaultAuth(),
       pre_request_script: '',
       post_request_script: '',
       created_at: createdAt
@@ -215,7 +218,8 @@ export class FirestoreDatabase implements IDatabase {
     variables: Variable[],
     headers: KeyValue[],
     preRequestScript: string,
-    postRequestScript: string
+    postRequestScript: string,
+    auth: AuthConfig
   ): Promise<Collection> {
     const ref = doc(this.getFirestore(), 'collections', String(id));
     const snap = await getDoc(ref);
@@ -226,6 +230,7 @@ export class FirestoreDatabase implements IDatabase {
       name: name.trim(),
       variables,
       headers,
+      auth,
       pre_request_script: preRequestScript,
       post_request_script: postRequestScript
     });
@@ -235,6 +240,7 @@ export class FirestoreDatabase implements IDatabase {
       name: name.trim(),
       variables,
       headers,
+      auth,
       pre_request_script: preRequestScript,
       post_request_script: postRequestScript
     });
@@ -346,6 +352,7 @@ export class FirestoreDatabase implements IDatabase {
           url: input.url,
           headers: input.headers,
           params: input.params,
+          auth: input.auth,
           body: input.body,
           body_type: input.body_type,
           pre_request_script: preRequestScript,
@@ -377,6 +384,7 @@ export class FirestoreDatabase implements IDatabase {
       url: input.url,
       headers: input.headers,
       params: input.params,
+      auth: input.auth,
       body: input.body,
       body_type: input.body_type,
       pre_request_script: preRequestScript,
@@ -551,6 +559,7 @@ export class FirestoreDatabase implements IDatabase {
         url,
         headers,
         params,
+        auth,
         body,
         body_type,
         pre_request_script,
@@ -564,6 +573,7 @@ export class FirestoreDatabase implements IDatabase {
         url,
         headers,
         params,
+        auth,
         body,
         body_type,
         pre_request_script,
@@ -579,6 +589,7 @@ export class FirestoreDatabase implements IDatabase {
       name: collectionRecord.name,
       variables: maskVariablesForExport(collectionRecord.variables),
       headers: collectionRecord.headers,
+      auth: collectionRecord.auth,
       pre_request_script: collectionRecord.pre_request_script,
       post_request_script: collectionRecord.post_request_script,
       folders,
@@ -598,6 +609,7 @@ export class FirestoreDatabase implements IDatabase {
       name: exportData.name,
       variables: exportData.variables,
       headers: exportData.headers,
+      auth: exportData.auth ?? defaultAuth(),
       pre_request_script: exportData.pre_request_script,
       post_request_script: exportData.post_request_script,
       created_at: now
@@ -643,6 +655,7 @@ export class FirestoreDatabase implements IDatabase {
           url: request.url,
           headers: request.headers,
           params: request.params,
+          auth: request.auth ?? defaultAuth(),
           body: request.body,
           body_type: request.body_type,
           pre_request_script: request.pre_request_script,

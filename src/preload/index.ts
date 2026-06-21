@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type {
   Api,
+  AuthConfig,
   Collection,
   CollectionExportResult,
   DatabaseConnection,
@@ -50,6 +51,9 @@ function createCollection(name: string): Promise<Collection> {
  * @param name - New display name.
  * @param variables - Collection-scoped variables.
  * @param headers - Headers sent with every request in the collection.
+ * @param preRequestScript - Collection pre-request script.
+ * @param postRequestScript - Collection post-request script.
+ * @param auth - Default Authorization settings for requests in the collection.
  * @returns The updated collection.
  */
 function updateCollection(
@@ -58,7 +62,8 @@ function updateCollection(
   variables: Variable[],
   headers: KeyValue[],
   preRequestScript: string,
-  postRequestScript: string
+  postRequestScript: string,
+  auth: AuthConfig
 ): Promise<Collection> {
   return ipcRenderer.invoke(
     'collections:update',
@@ -67,7 +72,8 @@ function updateCollection(
     variables,
     headers,
     preRequestScript,
-    postRequestScript
+    postRequestScript,
+    auth
   );
 }
 

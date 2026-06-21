@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { bodyType, httpMethod, keyValue, variable } from '#/main/schemas/common';
+import { authConfig, bodyType, httpMethod, keyValue, variable } from '#/main/schemas/common';
 import type {
   DatabaseConnection,
   GeneralSettings,
@@ -11,7 +11,14 @@ import type {
   SentRequest
 } from '#/shared/types';
 
-export { bodyType, httpMethod, keyValue, variable } from '#/main/schemas/common';
+export {
+  bodyType,
+  httpMethod,
+  keyValue,
+  variable,
+  authConfig,
+  authType
+} from '#/main/schemas/common';
 
 /** Non-negative integer database row id. */
 export const dbId = z.number().int().nonnegative();
@@ -29,7 +36,16 @@ export const name = z.string();
 
 export const themeSource = z.enum(['light', 'dark', 'system']);
 
-export const editorTab = z.enum(['params', 'headers', 'cookies', 'body', 'pre', 'post', 'comment']);
+export const editorTab = z.enum([
+  'params',
+  'headers',
+  'auth',
+  'cookies',
+  'body',
+  'pre',
+  'post',
+  'comment'
+]);
 
 export const scriptPhase = z.enum(['pre', 'post']);
 
@@ -48,6 +64,7 @@ export const saveRequestInput = z.object({
   pre_request_script: z.string(),
   post_request_script: z.string(),
   comment: z.string(),
+  auth: authConfig,
   folder_id: nullableFolderId.optional()
 }) satisfies z.ZodType<SaveRequestInput>;
 
@@ -196,7 +213,8 @@ export const ipcArgSchemas = {
     z.array(variable),
     z.array(keyValue),
     z.string(),
-    z.string()
+    z.string(),
+    authConfig
   ]),
   environmentUpdate: z.tuple([dbId, name, z.array(variable)]),
   collectionMove: z.tuple([dbId, connectionId]),

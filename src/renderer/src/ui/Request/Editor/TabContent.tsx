@@ -4,6 +4,7 @@ import { CodeEditor } from '#/renderer/src/components/CodeEditor';
 import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
 import type { RequestDraft } from '#/renderer/src/store/drafts';
 import { field } from '#/renderer/src/ui/shared/classes';
+import { AuthEditor } from './AuthEditor';
 import { BodyEditor } from './BodyEditor';
 import { CookiesEditor } from './CookiesEditor';
 import type { EditorTab } from './types';
@@ -79,6 +80,14 @@ export function TabContent({
           placeholderValue="value"
           variables={variables}
           onEditVariable={onEditVariables}
+        />
+      )}
+      {tab === 'auth' && (
+        <AuthEditor
+          auth={draft.auth}
+          onChange={(auth) => update({ auth })}
+          variables={variables}
+          onEditVariables={onEditVariables}
         />
       )}
       {tab === 'cookies' && <CookiesEditor url={draft.url} variables={variables} />}

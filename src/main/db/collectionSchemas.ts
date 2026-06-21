@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { normalizeVariable } from '#/main/db/collectionVariables';
-import { bodyType, httpMethod, keyValue } from '#/main/schemas/common';
+import { authConfig, bodyType, httpMethod, keyValue } from '#/main/schemas/common';
 import type { CollectionExport, ExportedFolder, ExportedRequest, Variable } from '#/shared/types';
 
 /**
@@ -62,6 +62,7 @@ const exportedRequestRow = z
     url: z.string().default(''),
     headers: z.array(keyValue).default([]),
     params: z.array(keyValue).default([]),
+    auth: authConfig.optional(),
     body: z.string().default(''),
     body_type: bodyType,
     pre_request_script: z.string().default(''),
@@ -115,6 +116,7 @@ const collectionExportFields = {
   name: z.string().trim().min(1, 'collection name is required'),
   variables: importVariables,
   headers: z.array(keyValue).default([]),
+  auth: authConfig.optional(),
   pre_request_script: z.string().default(''),
   post_request_script: z.string().default(''),
   requests: exportedRequests

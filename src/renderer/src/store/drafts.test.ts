@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { defaultAuth } from '#/shared/auth';
 import type { SavedRequest } from '#/shared/types';
 import {
   cloneDraft,
@@ -21,6 +22,7 @@ const sampleDraft = (): RequestDraft => ({
   url: 'https://example.com',
   headers: [{ key: 'Authorization', value: 'Bearer token', enabled: true }],
   params: [{ key: 'page', value: '1', enabled: true }],
+  auth: defaultAuth(),
   body: '{"ok":true}',
   body_type: 'json',
   pre_request_script: '',
@@ -44,7 +46,8 @@ describe('normalizeDraft', () => {
       ...legacy,
       pre_request_script: '',
       post_request_script: '',
-      comment: ''
+      comment: '',
+      auth: defaultAuth()
     });
   });
 });
@@ -145,6 +148,7 @@ describe('defaultDraft and emptyKeyValue', () => {
       url: '',
       headers: [emptyKeyValue()],
       params: [emptyKeyValue()],
+      auth: defaultAuth(),
       body: '',
       body_type: 'none',
       pre_request_script: '',
@@ -184,6 +188,7 @@ describe('draftFromSaved', () => {
       url: 'https://api.example.com',
       headers: [{ key: 'X-Test', value: '1', enabled: true }],
       params: [{ key: 'q', value: 'search', enabled: true }],
+      auth: defaultAuth(),
       body: 'body',
       body_type: 'text',
       pre_request_script: '',
@@ -204,6 +209,7 @@ describe('draftFromSaved', () => {
       url: 'https://api.example.com',
       headers: [{ key: 'X-Test', value: '1', enabled: true }],
       params: [{ key: 'q', value: 'search', enabled: true }],
+      auth: defaultAuth(),
       body: 'body',
       body_type: 'text',
       pre_request_script: '',
@@ -221,6 +227,7 @@ describe('draftFromSaved', () => {
       url: '',
       headers: [],
       params: [],
+      auth: defaultAuth(),
       body: '',
       body_type: 'none',
       pre_request_script: '',

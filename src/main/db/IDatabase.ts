@@ -1,4 +1,5 @@
 import type {
+  AuthConfig,
   Collection,
   CollectionExport,
   Environment,
@@ -42,6 +43,7 @@ export interface IDatabase {
    * @param headers - Headers sent with every request in the collection.
    * @param preRequestScript - Script run before each request in the collection.
    * @param postRequestScript - Script run after each request in the collection.
+   * @param auth - Default Authorization settings for requests in the collection.
    * @returns The updated collection.
    */
   updateCollection(
@@ -50,7 +52,8 @@ export interface IDatabase {
     variables: Variable[],
     headers: KeyValue[],
     preRequestScript: string,
-    postRequestScript: string
+    postRequestScript: string,
+    auth: AuthConfig
   ): Promise<Collection>;
 
   /**

@@ -1,0 +1,37 @@
+import type { JSX } from 'react';
+import type { AuthConfig, Variable } from '#/shared/types';
+import { AuthEditor } from '#/renderer/src/ui/Request/Editor/AuthEditor';
+
+interface Props {
+  /**
+   * Default authorization settings for the collection.
+   */
+  auth: AuthConfig;
+
+  /**
+   * Collection-scoped variables for highlighting and tooltips.
+   */
+  variables: Variable[];
+
+  /**
+   * Called when authorization settings change.
+   *
+   * @param auth - Updated authorization settings.
+   */
+  onChange: (auth: AuthConfig) => void;
+}
+
+/**
+ * Collection authorization editor for the Authorization tab.
+ */
+export function AuthSection({ auth, variables, onChange }: Props): JSX.Element {
+  return (
+    <div className="mb-6">
+      <p className="mb-3 text-[12px] text-muted">
+        Default authorization for every request in this collection. Requests can override these
+        settings on their Authorization tab. Values support {'{{variable}}'} syntax.
+      </p>
+      <AuthEditor auth={auth} onChange={onChange} variables={variables} />
+    </div>
+  );
+}

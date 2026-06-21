@@ -13,8 +13,10 @@ import {
   rowToFolder,
   rowToRequest
 } from '#/main/db/entityMappers';
+import { DEFAULT_AUTH_JSON, defaultAuth, normalizeAuth } from '#/shared/auth';
 import type { IDatabase } from '#/main/db/IDatabase';
 import type {
+  AuthConfig,
   Collection,
   CollectionExport,
   Environment,
@@ -96,6 +98,7 @@ export class SqliteDatabase implements IDatabase {
       name TEXT NOT NULL,
       variables TEXT NOT NULL DEFAULT '[]',
       headers TEXT NOT NULL DEFAULT '[]',
+      auth TEXT NOT NULL DEFAULT '${DEFAULT_AUTH_JSON.replace(/'/g, "''")}',
       pre_request_script TEXT NOT NULL DEFAULT '',
       post_request_script TEXT NOT NULL DEFAULT '',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -109,6 +112,7 @@ export class SqliteDatabase implements IDatabase {
       url TEXT NOT NULL DEFAULT '',
       headers TEXT NOT NULL DEFAULT '[]',
       params TEXT NOT NULL DEFAULT '[]',
+      auth TEXT NOT NULL DEFAULT '${DEFAULT_AUTH_JSON.replace(/'/g, "''")}',
       body TEXT NOT NULL DEFAULT '',
       body_type TEXT NOT NULL DEFAULT 'none',
       pre_request_script TEXT NOT NULL DEFAULT '',
@@ -165,6 +169,12 @@ export class SqliteDatabase implements IDatabase {
         "ALTER TABLE collections ADD COLUMN post_request_script TEXT NOT NULL DEFAULT ''"
       );
     }
+    const hasCollectionAuth = columns.some((col) => col.name === 'auth');
+    if (!hasCollectionAuth) {
+      this.#db.exec(
+        `ALTER TABLE collections ADD COLUMN auth TEXT NOT NULL DEFAULT '${DEFAULT_AUTH_JSON.replace(/'/g, "''")}'`
+      );
+    }
 
     const requestColumns = this.#db.prepare('PRAGMA table_info(requests)').all() as Array<{
       name: string;
@@ -185,12 +195,18 @@ export class SqliteDatabase implements IDatabase {
     if (!hasFolderId) {
       this.#db.exec('ALTER TABLE requests ADD COLUMN folder_id INTEGER');
     }
+    const hasRequestAuth = requestColumns.some((col) => col.name === 'auth');
+    if (!hasRequestAuth) {
+      this.#db.exec(
+        `ALTER TABLE requests ADD COLUMN auth TEXT NOT NULL DEFAULT '${DEFAULT_AUTH_JSON.replace(/'/g, "''")}'`
+      );
+    }
   }
 
   async listCollections(): Promise<Collection[]> {
     const rows = this.getDb()
       .prepare(
-        'SELECT id, name, variables, headers, pre_request_script, post_request_script, created_at FROM collections ORDER BY name ASC'
+        'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections ORDER BY name ASC'
       )
       .all() as Record<string, unknown>[];
 
@@ -204,7 +220,7 @@ export class SqliteDatabase implements IDatabase {
 
     const row = this.getDb()
       .prepare(
-        'SELECT id, name, variables, headers, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?'
+        'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?'
       )
       .get(result.lastInsertRowid) as Record<string, unknown>;
 
@@ -217,16 +233,18 @@ export class SqliteDatabase implements IDatabase {
     variables: Variable[],
     headers: KeyValue[],
     preRequestScript: string,
-    postRequestScript: string
+    postRequestScript: string,
+    auth: AuthConfig
   ): Promise<Collection> {
     this.getDb()
       .prepare(
-        'UPDATE collections SET name = ?, variables = ?, headers = ?, pre_request_script = ?, post_request_script = ? WHERE id = ?'
+        'UPDATE collections SET name = ?, variables = ?, headers = ?, auth = ?, pre_request_script = ?, post_request_script = ? WHERE id = ?'
       )
       .run(
         name.trim(),
         JSON.stringify(variables),
         JSON.stringify(headers),
+        JSON.stringify(auth),
         preRequestScript,
         postRequestScript,
         id
@@ -234,7 +252,7 @@ export class SqliteDatabase implements IDatabase {
 
     const row = this.getDb()
       .prepare(
-        'SELECT id, name, variables, headers, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?'
+        'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?'
       )
       .get(id) as Record<string, unknown> | undefined;
 
@@ -294,6 +312,7 @@ export class SqliteDatabase implements IDatabase {
   async saveRequest(input: SaveRequestInput): Promise<SavedRequest> {
     const headers = JSON.stringify(input.headers);
     const params = JSON.stringify(input.params);
+    const auth = JSON.stringify(input.auth);
     const preRequestScript = input.pre_request_script ?? '';
     const postRequestScript = input.post_request_script ?? '';
     const comment = input.comment ?? '';
@@ -314,7 +333,7 @@ export class SqliteDatabase implements IDatabase {
         .prepare(
           `UPDATE requests SET
           collection_id = ?, folder_id = ?, name = ?, method = ?, url = ?,
-          headers = ?, params = ?, body = ?, body_type = ?,
+          headers = ?, params = ?, auth = ?, body = ?, body_type = ?,
           pre_request_script = ?, post_request_script = ?, comment = ?,
           updated_at = ?
         WHERE id = ?`
@@ -327,6 +346,7 @@ export class SqliteDatabase implements IDatabase {
           input.url,
           headers,
           params,
+          auth,
           input.body,
           input.body_type,
           preRequestScript,
@@ -352,9 +372,9 @@ export class SqliteDatabase implements IDatabase {
     const result = this.getDb()
       .prepare(
         `INSERT INTO requests (
-        collection_id, folder_id, name, method, url, headers, params, body, body_type,
+        collection_id, folder_id, name, method, url, headers, params, auth, body, body_type,
         pre_request_script, post_request_script, comment, sort_order, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         input.collection_id,
@@ -364,6 +384,7 @@ export class SqliteDatabase implements IDatabase {
         input.url,
         headers,
         params,
+        auth,
         input.body,
         input.body_type,
         preRequestScript,
@@ -536,13 +557,14 @@ export class SqliteDatabase implements IDatabase {
   async exportCollectionData(id: number): Promise<CollectionExport> {
     const row = this.getDb()
       .prepare(
-        'SELECT name, variables, headers, pre_request_script, post_request_script FROM collections WHERE id = ?'
+        'SELECT name, variables, headers, auth, pre_request_script, post_request_script FROM collections WHERE id = ?'
       )
       .get(id) as
       | {
           name: string;
           variables: string;
           headers: string;
+          auth: string;
           pre_request_script: string;
           post_request_script: string;
         }
@@ -565,6 +587,7 @@ export class SqliteDatabase implements IDatabase {
         url,
         headers,
         params,
+        auth,
         body,
         body_type,
         pre_request_script,
@@ -578,6 +601,7 @@ export class SqliteDatabase implements IDatabase {
         url,
         headers,
         params,
+        auth,
         body,
         body_type,
         pre_request_script,
@@ -590,12 +614,14 @@ export class SqliteDatabase implements IDatabase {
 
     const variables = parseJson<Partial<Variable>[]>(row.variables, []).map(normalizeVariable);
     const headers = parseJson<KeyValue[]>(row.headers, []);
+    const auth = normalizeAuth(parseJson(row.auth, defaultAuth()));
 
     return {
       formatVersion: 2,
       name: row.name,
       variables: maskVariablesForExport(variables),
       headers,
+      auth,
       pre_request_script: row.pre_request_script ?? '',
       post_request_script: row.post_request_script ?? '',
       folders,
@@ -611,12 +637,13 @@ export class SqliteDatabase implements IDatabase {
     const importCollection = database.transaction((payload: CollectionExport) => {
       const collectionResult = database
         .prepare(
-          'INSERT INTO collections (name, variables, headers, pre_request_script, post_request_script) VALUES (?, ?, ?, ?, ?)'
+          'INSERT INTO collections (name, variables, headers, auth, pre_request_script, post_request_script) VALUES (?, ?, ?, ?, ?, ?)'
         )
         .run(
           payload.name,
           JSON.stringify(payload.variables),
           JSON.stringify(payload.headers),
+          JSON.stringify(payload.auth ?? defaultAuth()),
           payload.pre_request_script,
           payload.post_request_script
         );
@@ -633,9 +660,9 @@ export class SqliteDatabase implements IDatabase {
 
       const insertRequest = database.prepare(
         `INSERT INTO requests (
-        collection_id, folder_id, name, method, url, headers, params, body, body_type,
+        collection_id, folder_id, name, method, url, headers, params, auth, body, body_type,
         pre_request_script, post_request_script, comment, sort_order, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       );
 
       for (const request of payload.requests) {
@@ -651,6 +678,7 @@ export class SqliteDatabase implements IDatabase {
           request.url,
           JSON.stringify(request.headers),
           JSON.stringify(request.params),
+          JSON.stringify(request.auth ?? defaultAuth()),
           request.body,
           request.body_type,
           request.pre_request_script,
@@ -663,7 +691,7 @@ export class SqliteDatabase implements IDatabase {
 
       const row = database
         .prepare(
-          'SELECT id, name, variables, headers, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?'
+          'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?'
         )
         .get(collectionId) as Record<string, unknown>;
 

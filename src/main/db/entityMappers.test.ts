@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { defaultAuth } from '#/shared/auth';
 import {
   docToCollection,
   docToEnvironment,
@@ -28,6 +29,7 @@ describe('entityMappers', () => {
         name: 'My Collection',
         variables: [{ key: 'base', value: 'https://example.com', defaultValue: '', share: true }],
         headers: [{ key: 'Accept', value: 'application/json', enabled: true }],
+        auth: defaultAuth(),
         pre_request_script: 'console.log("pre")',
         post_request_script: '',
         created_at: '2024-01-01T00:00:00.000Z'
@@ -122,6 +124,7 @@ describe('entityMappers', () => {
         name: 'Firestore Collection',
         variables: [{ key: 'env', value: 'dev', defaultValue: '', share: false }],
         headers: [{ key: 'X-Test', value: '1', enabled: true }],
+        auth: defaultAuth(),
         pre_request_script: '',
         post_request_script: '',
         created_at: '2024-02-01T00:00:00.000Z'

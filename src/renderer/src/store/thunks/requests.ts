@@ -8,6 +8,7 @@ import type {
   ScriptTestResult,
   SendResult
 } from '#/shared/types';
+import { buildAuthHeaderValue, defaultAuth, resolveAuthVariables } from '#/shared/auth';
 import {
   applyScriptRequestMutations,
   applyCollectionVariableSets,
@@ -74,7 +75,8 @@ export const saveRequest = createAsyncThunk<SavedRequest, number | undefined, Th
       body_type: currentDraft.body_type,
       pre_request_script: currentDraft.pre_request_script ?? '',
       post_request_script: currentDraft.post_request_script ?? '',
-      comment: currentDraft.comment ?? ''
+      comment: currentDraft.comment ?? '',
+      auth: currentDraft.auth
     });
 
     const savedDraft = cloneDraft(draftFromSaved(saved));
@@ -119,7 +121,8 @@ export const newRequestInFolder = createAsyncThunk<
     body_type: 'none',
     pre_request_script: '',
     post_request_script: '',
-    comment: ''
+    comment: '',
+    auth: defaultAuth()
   });
 
   dispatch(openTabWithDraft(draftFromSaved(saved)));
@@ -150,7 +153,8 @@ export const duplicateRequest = createAsyncThunk<SavedRequest, SavedRequest, Thu
       body_type: req.body_type,
       pre_request_script: req.pre_request_script ?? '',
       post_request_script: req.post_request_script ?? '',
-      comment: req.comment ?? ''
+      comment: req.comment ?? '',
+      auth: req.auth
     });
 
     if (sourceIndex >= 0) {
@@ -187,7 +191,8 @@ export const newRequestInCollection = createAsyncThunk<SavedRequest, number, Thu
       body_type: 'none',
       pre_request_script: '',
       post_request_script: '',
-      comment: ''
+      comment: '',
+      auth: defaultAuth()
     });
 
     dispatch(openTabWithDraft(draftFromSaved(saved)));
@@ -309,7 +314,26 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
         ...header,
         value: substituteWithMap(header.value, runtimeVars)
       }));
-      const headers = [...collectionHeaders, ...draftHeaders];
+      const effectiveAuth =
+        currentDraft.auth.type !== 'none' ? currentDraft.auth : (collection?.auth ?? defaultAuth());
+      const resolvedAuth = resolveAuthVariables(effectiveAuth, (text) =>
+        substituteWithMap(text, runtimeVars)
+      );
+      const authValue = buildAuthHeaderValue(resolvedAuth);
+      const manualHasAuth = [...collectionHeaders, ...draftHeaders].some(
+        (header) =>
+          header.enabled &&
+          header.key.trim().toLowerCase() === 'authorization' &&
+          header.value.trim() !== ''
+      );
+      const headers =
+        authValue && !manualHasAuth
+          ? [
+              { key: 'Authorization', value: authValue, enabled: true },
+              ...collectionHeaders,
+              ...draftHeaders
+            ]
+          : [...collectionHeaders, ...draftHeaders];
       const params = scriptRequest.params.map((param) => ({
         ...param,
         value: substituteWithMap(param.value, runtimeVars)
@@ -344,6 +368,7 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
               headers: collectionHeaderRows,
               preRequestScript: collection.pre_request_script,
               postRequestScript: collection.post_request_script,
+              auth: collection.auth,
               connectionId: collection.connectionId
             })
           );

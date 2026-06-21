@@ -145,6 +145,7 @@ export default function App(): JSX.Element {
                 headers,
                 preRequestScript,
                 postRequestScript,
+                auth,
                 connectionId
               ) => {
                 try {
@@ -156,6 +157,7 @@ export default function App(): JSX.Element {
                       headers,
                       preRequestScript,
                       postRequestScript,
+                      auth,
                       connectionId
                     })
                   ).unwrap();

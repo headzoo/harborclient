@@ -1,5 +1,5 @@
 import type { JSX } from 'react';
-import type { Collection, Environment, KeyValue, Variable } from '#/shared/types';
+import type { AuthConfig, Collection, Environment, KeyValue, Variable } from '#/shared/types';
 import { Certificates } from '#/renderer/src/ui/Certificates';
 import { CollectionSettings } from '../CollectionSettings';
 import { EnvironmentSettings } from '../EnvironmentSettings';
@@ -46,6 +46,7 @@ interface Props {
     headers: KeyValue[],
     preRequestScript: string,
     postRequestScript: string,
+    auth: AuthConfig,
     connectionId: string
   ) => Promise<Collection | void>;
 

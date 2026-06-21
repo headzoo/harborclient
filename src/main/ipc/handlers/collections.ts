@@ -31,14 +31,15 @@ export function registerCollectionHandlers(db: IDatabase): void {
   handle(
     'collections:update',
     ipcArgSchemas.collectionUpdate,
-    (_event, id, collectionName, variables, headers, preRequestScript, postRequestScript) =>
+    (_event, id, collectionName, variables, headers, preRequestScript, postRequestScript, auth) =>
       db.updateCollection(
         id,
         collectionName,
         variables,
         headers,
         preRequestScript,
-        postRequestScript
+        postRequestScript,
+        auth
       )
   );
 

@@ -1,3 +1,7 @@
+import type { AuthConfig } from '#/shared/auth';
+
+export type { AuthConfig, AuthType } from '#/shared/auth';
+
 /**
  * Supported HTTP request methods.
  */
@@ -138,6 +142,11 @@ export interface Collection {
   headers: KeyValue[];
 
   /**
+   * Default Authorization settings inherited by requests unless overridden.
+   */
+  auth: AuthConfig;
+
+  /**
    * JavaScript run before every request in this collection (before request-level pre script).
    */
   pre_request_script: string;
@@ -245,6 +254,11 @@ export interface SavedRequest {
   params: KeyValue[];
 
   /**
+   * Authorization settings; none inherits collection auth at send time.
+   */
+  auth: AuthConfig;
+
+  /**
    * Raw request body content.
    */
   body: string;
@@ -318,6 +332,11 @@ export interface ExportedRequest {
    * Query parameters as editable key-value pairs.
    */
   params: KeyValue[];
+
+  /**
+   * Authorization settings; none inherits collection auth at send time.
+   */
+  auth?: AuthConfig;
 
   /**
    * Raw request body content.
@@ -395,6 +414,11 @@ export interface CollectionExport {
   headers: KeyValue[];
 
   /**
+   * Default Authorization settings inherited by requests unless overridden.
+   */
+  auth?: AuthConfig;
+
+  /**
    * JavaScript run before every request in this collection.
    */
   pre_request_script: string;
@@ -468,6 +492,11 @@ export interface SaveRequestInput {
    * Query parameters as editable key-value pairs.
    */
   params: KeyValue[];
+
+  /**
+   * Authorization settings; none inherits collection auth at send time.
+   */
+  auth: AuthConfig;
 
   /**
    * Raw request body content.
@@ -709,7 +738,15 @@ export type DatabaseProvider = 'sqlite' | 'firestore' | 'mysql' | 'postgres';
 /**
  * Request editor tab identifiers.
  */
-export type EditorTab = 'params' | 'headers' | 'cookies' | 'body' | 'pre' | 'post' | 'comment';
+export type EditorTab =
+  | 'params'
+  | 'headers'
+  | 'auth'
+  | 'cookies'
+  | 'body'
+  | 'pre'
+  | 'post'
+  | 'comment';
 
 /**
  * General application settings for HTTP request execution.
@@ -958,12 +995,15 @@ export interface Api {
   createCollection: (name: string) => Promise<Collection>;
 
   /**
-   * Updates a collection's name, variables, and headers.
+   * Updates a collection's name, variables, headers, and auth settings.
    *
    * @param id - Collection ID to update.
    * @param name - New display name.
    * @param variables - Collection-scoped variables.
    * @param headers - Headers sent with every request in the collection.
+   * @param preRequestScript - Collection pre-request script.
+   * @param postRequestScript - Collection post-request script.
+   * @param auth - Default Authorization settings for requests in the collection.
    * @returns The updated collection.
    */
   updateCollection: (
@@ -972,7 +1012,8 @@ export interface Api {
     variables: Variable[],
     headers: KeyValue[],
     preRequestScript: string,
-    postRequestScript: string
+    postRequestScript: string,
+    auth: AuthConfig
   ) => Promise<Collection>;
 
   /**

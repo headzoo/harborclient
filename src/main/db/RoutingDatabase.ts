@@ -6,6 +6,7 @@ import { decodeGlobalId, encodeGlobalId } from '#/main/db/idNamespace';
 import type { IDatabase } from '#/main/db/IDatabase';
 import type { MountedBackend, RoutingInternals } from '#/main/db/routingInternals';
 import type {
+  AuthConfig,
   Collection,
   CollectionExport,
   DatabaseConnection,
@@ -16,6 +17,7 @@ import type {
   SavedRequest,
   Variable
 } from '#/shared/types';
+import { defaultAuth } from '#/shared/auth';
 
 /**
  * Formats a backend error for user-facing collection list warnings.
@@ -199,7 +201,8 @@ export class RoutingDatabase implements IDatabase {
     variables: Variable[],
     headers: KeyValue[],
     preRequestScript: string,
-    postRequestScript: string
+    postRequestScript: string,
+    auth: AuthConfig
   ): Promise<Collection> {
     const entry = this.requireEntry(id);
     const backend = this.requireBackendByConnectionId(entry.connectionId);
@@ -209,7 +212,8 @@ export class RoutingDatabase implements IDatabase {
       variables,
       headers,
       preRequestScript,
-      postRequestScript
+      postRequestScript,
+      auth
     );
     const updatedEntry = this.registry.updateRegistryEntry(id, { name });
     return this.buildCollection(updatedEntry, record);
@@ -584,6 +588,7 @@ export class RoutingDatabase implements IDatabase {
       name: entry.name,
       variables: record?.variables ?? [],
       headers: record?.headers ?? [],
+      auth: record?.auth ?? defaultAuth(),
       pre_request_script: record?.pre_request_script ?? '',
       post_request_script: record?.post_request_script ?? '',
       created_at: record?.created_at ?? entry.created_at,

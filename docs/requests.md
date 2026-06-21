@@ -20,15 +20,18 @@ Click the request name to edit it inline. When the request belongs to a collecti
 
 ### Editor tabs
 
-Below the URL bar, four or five tabs configure the request:
+Below the URL bar, tabs configure the request:
 
 | Tab | Purpose |
 | --- | --- |
 | **Params** | Query string parameters |
 | **Headers** | Request-level headers |
+| **Authorization** | Basic Auth or Bearer Token for the outgoing request |
+| **Cookies** | Read-only view of cookies for the request URL (from the cookie jar) |
 | **Body** | Request body (hidden for GET and HEAD) |
 | **PreRequest** | JavaScript to run before the request is sent |
 | **PostRequest** | JavaScript to run after the response is received |
+| **Comment** | Free-form notes (not sent with the request) |
 
 ## Query parameters
 
@@ -62,6 +65,42 @@ Every collection can define headers in **Collection Settings → Headers**. Thes
 **Merge rule:** collection headers are applied first, then request headers. If both define the same header name (case-insensitive), the **request-level header wins**.
 
 Open Collection Settings by double-clicking a collection in the sidebar, or choose **Settings** from the collection row menu.
+
+## Authorization
+
+The **Authorization** tab configures how HarborClient adds an `Authorization` header at send time. The left pane selects an **Auth Type**; the right pane shows credential fields for the selected type.
+
+| Auth Type | Fields |
+| --- | --- |
+| **None** | No request-level authorization — collection authorization still applies when configured |
+| **Basic Auth** | Username and password |
+| **Bearer Token** | Token value |
+
+All credential fields support `{{variable}}` substitution. HarborClient resolves variables, then generates the header value (`Basic …` or `Bearer …`) immediately before the HTTP request is sent.
+
+### Precedence
+
+HarborClient applies authorization in this order:
+
+1. **Manual `Authorization` header** — a non-empty, enabled `Authorization` row in the **Headers** tab, or one set by a pre-request script via `hc.request.headers`, always wins. HarborClient does not overwrite it with the Authorization tab.
+2. **Request Authorization tab** — when Auth Type is **Basic Auth** or **Bearer Token**, the request's credentials are used.
+3. **Collection Authorization** — when the request Auth Type is **None**, HarborClient uses the collection's Authorization tab settings from [Collection Settings](/collections#authorization).
+
+Collection-level authorization is configured in **Collection Settings → Authorization**. See [Collections — Authorization](/collections#authorization).
+
+### Alternatives
+
+You can still authenticate with a manual header or script when you need full control:
+
+| Header | Value |
+| --- | --- |
+| Authorization | Bearer {{token}} |
+
+```javascript
+hc.request.headers.upsert('Authorization', 'Bearer ' + hc.variables.get('token'));
+```
+
+See [Request scripts](/request-scripts) for the full `hc.request.headers` API.
 
 ## Request body
 
@@ -102,6 +141,7 @@ Use `{{key}}` syntax (whitespace inside the braces is allowed) anywhere HarborCl
 - Request URL
 - Header values
 - Query parameter values
+- Authorization credentials (Basic Auth username/password, Bearer token)
 - Request body
 - Pre- and post-request script source
 
@@ -138,6 +178,7 @@ Each collection provides:
 
 - **Variables** — available to all requests in the collection
 - **Headers** — merged with request headers (request wins on duplicates)
+- **Authorization** — default Basic Auth or Bearer Token when the request Auth Type is **None**
 - **Pre-request and post-request scripts** — run before and after every request in the collection
 
 Request-level scripts in the **PreRequest** and **PostRequest** tabs run in addition to collection scripts. See [Scripts at a glance](#scripts-at-a-glance) for execution order.
@@ -155,14 +196,16 @@ HarborClient can run JavaScript before and after each send. Scripts use the glob
 | Collection | Collection Settings → PreRequest / PostRequest |
 | Request | Request editor → PreRequest / PostRequest tabs |
 
+Authorization is configured separately on the **Authorization** tab at the collection and request level (not in scripts), though scripts can still set or override headers manually.
+
 When you send a request, scripts run in this order:
 
 ```mermaid
 flowchart TD
   send[Send] --> collPre[Collection pre-request script]
   collPre --> reqPre[Request pre-request script]
-  reqPre --> substitute["Substitute variables in URL, headers, params, body"]
-  substitute --> mergeHeaders[Merge collection + request headers]
+  reqPre --> substitute["Substitute variables in URL, headers, params, body, and auth credentials"]
+  substitute --> mergeHeaders["Apply Authorization tab, then merge collection + request headers"]
   mergeHeaders --> fetch[HTTP request]
   fetch --> collPost[Collection post-request script]
   collPost --> reqPost[Request post-request script]
@@ -187,7 +230,7 @@ There is no global keyboard shortcut (such as Cmd/Ctrl+Enter) for Send.
 
 ### What happens when you send
 
-HarborClient runs collection and request pre-request scripts, substitutes `{{variable}}` placeholders, merges collection and request headers, sends the HTTP request, then runs collection and request post-request scripts. The response viewer and Console update when the send completes.
+HarborClient runs collection and request pre-request scripts, substitutes `{{variable}}` placeholders (including authorization credentials), generates an `Authorization` header when configured, merges collection and request headers, sends the HTTP request, then runs collection and request post-request scripts. The response viewer and Console update when the send completes.
 
 ### Errors
 
@@ -261,26 +304,6 @@ To create a request directly in a collection, use **New Request** from the colle
 
 The environment dropdown on the far right of the TabBar selects the active environment for **all tabs**. Choose **No Environment** to clear the selection. The active environment persists across app restarts. See [Environments](/environments) for managing environment variables.
 
-## Authentication
-
-HarborClient has no dedicated authentication UI. Authenticate requests using headers or scripts:
-
-**Bearer token in a header** (request or collection headers):
-
-| Header | Value |
-| --- | --- |
-| Authorization | Bearer {{token}} |
-
-Store `token` as a collection or environment variable, or set it in a pre-request script.
-
-**Pre-request script:**
-
-```javascript
-hc.request.headers.upsert('Authorization', 'Bearer ' + hc.variables.get('token'));
-```
-
-See [Request scripts](/request-scripts) for the full `hc.request.headers` API.
-
 ## Keyboard shortcuts
 
 | Action | Shortcut |
@@ -295,7 +318,7 @@ See [Request scripts](/request-scripts) for the full `hc.request.headers` API.
 HarborClient does not currently support:
 
 - Redirect following controls, proxy settings, or custom SSL options in the UI
-- A dedicated authentication wizard (OAuth, Basic Auth, and similar)
+- OAuth or other interactive authentication flows
 - Persisted request history beyond the session Console
 - Changing query parameters or body type from scripts
 

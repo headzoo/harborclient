@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { IDatabase } from '#/main/db/IDatabase';
+import { defaultAuth } from '#/shared/auth';
 import type { CollectionExport, SaveRequestInput } from '#/shared/types';
 
 export interface TestDbHandle {
@@ -28,6 +29,7 @@ export function baseRequestInput(
     pre_request_script: '',
     post_request_script: '',
     comment: '',
+    auth: defaultAuth(),
     ...overrides
   };
 }
@@ -50,6 +52,7 @@ export function runIdatabaseContractSuite(label: string, createTestDb: CreateTes
       expect(collection.name).toBe('My API');
       expect(collection.variables).toEqual([]);
       expect(collection.headers).toEqual([]);
+      expect(collection.auth).toEqual(defaultAuth());
       expect(collection.pre_request_script).toBe('');
       expect(collection.post_request_script).toBe('');
       expect(collection.created_at).toEqual(expect.any(String));
@@ -74,7 +77,12 @@ export function runIdatabaseContractSuite(label: string, createTestDb: CreateTes
         [{ key: 'host', value: 'api.example.com', defaultValue: '', share: true }],
         [{ key: 'Authorization', value: 'Bearer token', enabled: true }],
         'console.log("pre");',
-        'console.log("post");'
+        'console.log("post");',
+        {
+          type: 'bearer',
+          basic: { username: '', password: '' },
+          bearer: { token: 'collection-token' }
+        }
       );
 
       expect(updated).toMatchObject({
@@ -82,6 +90,11 @@ export function runIdatabaseContractSuite(label: string, createTestDb: CreateTes
         name: 'Updated',
         variables: [{ key: 'host', value: 'api.example.com', defaultValue: '', share: true }],
         headers: [{ key: 'Authorization', value: 'Bearer token', enabled: true }],
+        auth: {
+          type: 'bearer',
+          basic: { username: '', password: '' },
+          bearer: { token: 'collection-token' }
+        },
         pre_request_script: 'console.log("pre");',
         post_request_script: 'console.log("post");'
       });
@@ -90,9 +103,9 @@ export function runIdatabaseContractSuite(label: string, createTestDb: CreateTes
 
     it('updateCollection throws when collection is missing', async () => {
       const { db } = await createTestDb();
-      await expect(db.updateCollection(999, 'Missing', [], [], '', '')).rejects.toThrow(
-        'Collection not found'
-      );
+      await expect(
+        db.updateCollection(999, 'Missing', [], [], '', '', defaultAuth())
+      ).rejects.toThrow('Collection not found');
     });
 
     it('deleteCollection removes the collection', async () => {
@@ -253,7 +266,12 @@ export function runIdatabaseContractSuite(label: string, createTestDb: CreateTes
         ],
         [{ key: 'X-Header', value: '1', enabled: true }],
         'pre script',
-        'post script'
+        'post script',
+        {
+          type: 'basic',
+          basic: { username: 'admin', password: 'secret' },
+          bearer: { token: '' }
+        }
       );
       await db.saveRequest(
         baseRequestInput(collection.id, {
@@ -276,6 +294,11 @@ export function runIdatabaseContractSuite(label: string, createTestDb: CreateTes
           { key: 'private', value: '', defaultValue: '', share: false }
         ],
         headers: [{ key: 'X-Header', value: '1', enabled: true }],
+        auth: {
+          type: 'basic',
+          basic: { username: 'admin', password: 'secret' },
+          bearer: { token: '' }
+        },
         pre_request_script: 'pre script',
         post_request_script: 'post script',
         folders: [],
@@ -286,6 +309,7 @@ export function runIdatabaseContractSuite(label: string, createTestDb: CreateTes
             url: 'https://api.example.com/users',
             headers: [{ key: 'X-Test', value: '1', enabled: true }],
             params: [{ key: 'q', value: 'search', enabled: true }],
+            auth: defaultAuth(),
             body: '',
             body_type: 'none',
             pre_request_script: 'req pre',

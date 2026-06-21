@@ -1,6 +1,6 @@
 # Collections
 
-Collections are named groups of saved HTTP requests. Each collection can define shared **variables**, **headers**, and **pre/post scripts** that apply to every request inside it.
+Collections are named groups of saved HTTP requests. Each collection can define shared **variables**, **headers**, **authorization**, and **pre/post scripts** that apply to every request inside it.
 
 The **Collections** section in the left sidebar sits above **Environments**. Both sections can be collapsed independently by clicking the section header.
 
@@ -81,7 +81,7 @@ Choose **Duplicate** from the request row menu. HarborClient creates a copy in t
 
 ### Duplicate a collection
 
-Choose **Duplicate** from the collection row menu. HarborClient creates a copy named `{name} (copy)` on the same database, placed directly below the original in the sidebar. The copy includes collection settings (variables, headers, and scripts), all folders, and all saved requests. The original collection is unchanged.
+Choose **Duplicate** from the collection row menu. HarborClient creates a copy named `{name} (copy)` on the same database, placed directly below the original in the sidebar. The copy includes collection settings (variables, headers, authorization, and scripts), all folders, and all saved requests. The original collection is unchanged.
 
 ## Collection Settings
 
@@ -98,6 +98,7 @@ Collection Settings is a full-area view that replaces the request editor while i
 | **General** | Collection name |
 | **Variables** | Shared variables for `{{key}}` substitution |
 | **Headers** | Headers sent with every request in the collection |
+| **Authorization** | Default Basic Auth or Bearer Token for every request in the collection |
 | **PreRequest** | JavaScript run before each request in the collection |
 | **PostRequest** | JavaScript run after each request in the collection |
 
@@ -121,6 +122,22 @@ At send time, collection variables are loaded first; active [environment](/envir
 Collection headers are sent with every request in the collection. Header values support `{{variable}}` syntax. Each row has an enable checkbox — disabled rows are excluded.
 
 Request-level headers override collection headers when both define the same header name (case-insensitive). See [Making requests](/requests#headers) for merge rules.
+
+### Authorization
+
+The **Authorization** tab configures default authentication for every request in the collection. Choose an **Auth Type**:
+
+| Auth Type | Fields |
+| --- | --- |
+| **None** | No collection-level authorization is configured |
+| **Basic Auth** | Username and password |
+| **Bearer Token** | Token value |
+
+All credential fields support `{{variable}}` syntax. At send time, HarborClient generates an `Authorization` header from the selected type (`Basic …` or `Bearer …`) after variables are resolved.
+
+Request-level authorization overrides collection authorization when the request's Auth Type is **Basic Auth** or **Bearer Token**. When a request's Auth Type is **None**, the collection's authorization still applies.
+
+A manually typed `Authorization` header (in the Headers tab, or set by a pre-request script) always wins over the Authorization tab. See [Making requests — Authorization](/requests#authorization) for the full precedence rules.
 
 ### Scripts
 
@@ -167,7 +184,7 @@ If the file is invalid, HarborClient shows an alert with a descriptive error (fo
 
 ### Export file format
 
-HarborClient export files use `formatVersion: 1`. They contain the collection name, variables, headers, scripts, and all saved requests. Database IDs are not included.
+HarborClient export files use `formatVersion: 1` or `formatVersion: 2` (with folders). They contain the collection name, variables, headers, authorization, scripts, and all saved requests. Database IDs are not included.
 
 Example (abbreviated):
 
@@ -181,6 +198,11 @@ Example (abbreviated):
   "headers": [
     { "key": "Accept", "value": "application/json", "enabled": true }
   ],
+  "auth": {
+    "type": "bearer",
+    "basic": { "username": "", "password": "" },
+    "bearer": { "token": "{{token}}" }
+  },
   "pre_request_script": "",
   "post_request_script": "",
   "requests": [
@@ -190,6 +212,11 @@ Example (abbreviated):
       "url": "{{baseUrl}}/v1/status",
       "params": [],
       "headers": [],
+      "auth": {
+        "type": "none",
+        "basic": { "username": "", "password": "" },
+        "bearer": { "token": "" }
+      },
       "body_type": "none",
       "body": "",
       "pre_request_script": "",
@@ -204,7 +231,7 @@ Common validation errors:
 
 | Error | Cause |
 | --- | --- |
-| `unsupported format version` | `formatVersion` is not `1` |
+| `unsupported format version` | `formatVersion` is not `1` or `2` |
 | `collection name is required` | Name is missing or blank |
 | `requests must be an array` | `requests` field is missing or wrong type |
 | `request N has an invalid method` | Method is not a supported HTTP method |
@@ -259,10 +286,11 @@ When you send a request, HarborClient determines which collection applies:
 - **Saved request** — the collection the request belongs to
 - **Unsaved tab** — the collection currently selected in the sidebar
 
-That collection provides variables, headers, and scripts for the send:
+That collection provides variables, headers, authorization, and scripts for the send:
 
 - **Variables** — collection variables load first; the active environment overrides duplicate keys. See [Environments](/environments).
 - **Headers** — collection headers merge with request headers; request headers win on duplicates.
+- **Authorization** — when configured, HarborClient generates an `Authorization` header unless the request or scripts already set one manually. Request-level Basic or Bearer overrides collection auth; request **None** inherits collection auth.
 - **Scripts** — collection pre-request → request pre-request → HTTP request → collection post-request → request post-request.
 
 ```mermaid
@@ -270,7 +298,7 @@ flowchart TD
   send[Send] --> collPre[Collection pre-request script]
   collPre --> reqPre[Request pre-request script]
   reqPre --> substitute["Substitute variables"]
-  substitute --> mergeHeaders[Merge collection + request headers]
+  substitute --> mergeHeaders["Merge auth header, collection headers, and request headers"]
   mergeHeaders --> fetch[HTTP request]
   fetch --> collPost[Collection post-request script]
   collPost --> reqPost[Request post-request script]

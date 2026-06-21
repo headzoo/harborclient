@@ -1,4 +1,5 @@
 import { normalizeVariable } from '#/main/db/collectionData';
+import { defaultAuth, normalizeAuth } from '#/shared/auth';
 import type {
   BodyType,
   Collection,
@@ -48,6 +49,23 @@ function readVariables(value: unknown): Variable[] {
 }
 
 /**
+ * Parses auth JSON from a database row, falling back to defaultAuth when absent or invalid.
+ *
+ * @param value - Raw auth column from storage.
+ * @returns Normalized AuthConfig.
+ */
+function readAuth(value: unknown): ReturnType<typeof defaultAuth> {
+  if (typeof value === 'string') {
+    try {
+      return normalizeAuth(JSON.parse(value));
+    } catch {
+      return defaultAuth();
+    }
+  }
+  return normalizeAuth(value);
+}
+
+/**
  * Maps a raw database row or document record to a Collection object.
  *
  * @param row - Row or document fields including numeric `id`.
@@ -58,6 +76,7 @@ export function rowToCollection(row: Record<string, unknown>): Collection {
     name: readString(row.name),
     variables: readVariables(row.variables),
     headers: readJsonArray<KeyValue>(row.headers, []),
+    auth: readAuth(row.auth),
     pre_request_script: readString(row.pre_request_script),
     post_request_script: readString(row.post_request_script),
     created_at: readTimestamp(row.created_at)
@@ -107,6 +126,7 @@ export function rowToRequest(row: Record<string, unknown>): SavedRequest {
     url: readString(row.url),
     headers: readJsonArray<KeyValue>(row.headers, []),
     params: readJsonArray<KeyValue>(row.params, []),
+    auth: readAuth(row.auth),
     body: readString(row.body),
     body_type: readString(row.body_type, 'none') as BodyType,
     pre_request_script: readString(row.pre_request_script),

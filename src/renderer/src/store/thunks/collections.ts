@@ -1,6 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import toast from 'react-hot-toast';
 import type {
+  AuthConfig,
   Collection,
   CollectionExportResult,
   Folder,
@@ -85,13 +86,14 @@ export const updateCollection = createAsyncThunk<
     headers: KeyValue[];
     preRequestScript: string;
     postRequestScript: string;
+    auth: AuthConfig;
     connectionId?: string;
   },
   ThunkApiConfig
 >(
   'collections/update',
   async (
-    { id, name, variables, headers, preRequestScript, postRequestScript, connectionId },
+    { id, name, variables, headers, preRequestScript, postRequestScript, auth, connectionId },
     { dispatch, getState }
   ) => {
     const state = getState();
@@ -105,7 +107,8 @@ export const updateCollection = createAsyncThunk<
       variables,
       headers,
       preRequestScript,
-      postRequestScript
+      postRequestScript,
+      auth
     );
 
     if (connectionId && connectionId !== currentConnectionId) {

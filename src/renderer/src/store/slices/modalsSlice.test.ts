@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { defaultAuth } from '#/shared/auth';
 import modalsReducer, {
   closeAboutModal,
   closeCollectionModal,
@@ -80,6 +81,7 @@ describe('modalsSlice', () => {
       pre_request_script: '',
       post_request_script: '',
       comment: '',
+      auth: defaultAuth(),
       sort_order: 0,
       created_at: '2026-01-01T00:00:00.000Z',
       updated_at: '2026-01-01T00:00:00.000Z'

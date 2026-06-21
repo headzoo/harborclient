@@ -6,6 +6,7 @@ import type {
   ScriptTestResult,
   SendResult
 } from '#/shared/types';
+import { defaultAuth, normalizeAuth, type AuthConfig } from '#/shared/auth';
 
 /** Editable request state in the UI before or during save. */
 export interface RequestDraft {
@@ -17,6 +18,7 @@ export interface RequestDraft {
   url: string;
   headers: KeyValue[];
   params: KeyValue[];
+  auth: AuthConfig;
   body: string;
   body_type: BodyType;
   pre_request_script: string;
@@ -46,7 +48,8 @@ export function normalizeDraft(draft: RequestDraft): RequestDraft {
     ...draft,
     pre_request_script: draft.pre_request_script ?? '',
     post_request_script: draft.post_request_script ?? '',
-    comment: draft.comment ?? ''
+    comment: draft.comment ?? '',
+    auth: normalizeAuth(draft.auth)
   };
 }
 
@@ -61,7 +64,12 @@ export function cloneDraft(draft: RequestDraft): RequestDraft {
   return {
     ...normalized,
     headers: normalized.headers.map((h) => ({ ...h })),
-    params: normalized.params.map((p) => ({ ...p }))
+    params: normalized.params.map((p) => ({ ...p })),
+    auth: {
+      ...normalized.auth,
+      basic: { ...normalized.auth.basic },
+      bearer: { ...normalized.auth.bearer }
+    }
   };
 }
 
@@ -81,6 +89,7 @@ export function normalizeDraftForCompare(draft: RequestDraft): string {
     pre_request_script: draft.pre_request_script ?? '',
     post_request_script: draft.post_request_script ?? '',
     comment: draft.comment ?? '',
+    auth: draft.auth,
     headers: draft.headers.filter((h) => h.key.trim() || h.value.trim()),
     params: draft.params.filter((p) => p.key.trim() || p.value.trim())
   };
@@ -136,6 +145,7 @@ export const defaultDraft = (): RequestDraft => ({
   url: '',
   headers: [emptyKeyValue()],
   params: [emptyKeyValue()],
+  auth: defaultAuth(),
   body: '',
   body_type: 'none',
   pre_request_script: '',
@@ -178,6 +188,7 @@ export function draftFromSaved(req: SavedRequest): RequestDraft {
     url: req.url,
     headers: req.headers.length ? req.headers : [emptyKeyValue()],
     params: req.params.length ? req.params : [emptyKeyValue()],
+    auth: normalizeAuth(req.auth),
     body: req.body,
     body_type: req.body_type,
     pre_request_script: req.pre_request_script ?? '',

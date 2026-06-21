@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useState, type JSX } from 'react';
-import type { Collection, DatabaseConnection, KeyValue, Variable } from '#/shared/types';
+import type {
+  AuthConfig,
+  Collection,
+  DatabaseConnection,
+  KeyValue,
+  Variable
+} from '#/shared/types';
+import { normalizeAuth } from '#/shared/auth';
 import { cleanVariables } from '#/renderer/src/components/variableUtils';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
 import { emptyKeyValue } from '#/renderer/src/store/drafts';
 import { faXmark } from '#/renderer/src/fontawesome';
 import { iconButton, primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
+import { AuthSection } from './AuthSection';
 import { GeneralSection } from './GeneralSection';
 import { HeadersSection } from './HeadersSection';
 import { ScriptSection } from './ScriptSection';
@@ -28,6 +36,7 @@ interface Props {
    * @param headers - Headers sent with every request in the collection.
    * @param preRequestScript - Collection pre-request script.
    * @param postRequestScript - Collection post-request script.
+   * @param auth - Default Authorization settings for requests in the collection.
    * @param connectionId - Target database connection id.
    */
   onSave: (
@@ -37,6 +46,7 @@ interface Props {
     headers: KeyValue[],
     preRequestScript: string,
     postRequestScript: string,
+    auth: AuthConfig,
     connectionId: string
   ) => Promise<Collection | void>;
 
@@ -74,6 +84,7 @@ function CollectionSettingsForm({
   const [headers, setHeaders] = useState<KeyValue[]>(
     collection.headers.length ? collection.headers : [emptyKeyValue()]
   );
+  const [auth, setAuth] = useState<AuthConfig>(normalizeAuth(collection.auth));
   const [preRequestScript, setPreRequestScript] = useState(collection.pre_request_script ?? '');
   const [postRequestScript, setPostRequestScript] = useState(collection.post_request_script ?? '');
   const [connections, setConnections] = useState<DatabaseConnection[]>([]);
@@ -108,6 +119,7 @@ function CollectionSettingsForm({
         headers,
         preRequestScript,
         postRequestScript,
+        auth,
         resolvedConnectionId
       ) !==
       serializeCollectionForm(
@@ -116,6 +128,7 @@ function CollectionSettingsForm({
         collection.headers,
         collection.pre_request_script ?? '',
         collection.post_request_script ?? '',
+        normalizeAuth(collection.auth),
         collection.connectionId ?? primaryConnectionId
       ),
     [
@@ -124,6 +137,7 @@ function CollectionSettingsForm({
       headers,
       preRequestScript,
       postRequestScript,
+      auth,
       resolvedConnectionId,
       collection,
       primaryConnectionId
@@ -150,6 +164,7 @@ function CollectionSettingsForm({
         cleanedHeaders,
         preRequestScript,
         postRequestScript,
+        auth,
         resolvedConnectionId
       );
       onClose();
@@ -181,6 +196,7 @@ function CollectionSettingsForm({
               { value: 'general', label: 'General' },
               { value: 'variables', label: 'Variables' },
               { value: 'headers', label: 'Headers' },
+              { value: 'auth', label: 'Authorization' },
               { value: 'pre', label: 'PreRequest' },
               { value: 'post', label: 'PostRequest' }
             ]}
@@ -204,6 +220,8 @@ function CollectionSettingsForm({
         {tab === 'headers' && (
           <HeadersSection headers={headers} variables={variables} onChange={setHeaders} />
         )}
+
+        {tab === 'auth' && <AuthSection auth={auth} variables={variables} onChange={setAuth} />}
 
         {tab === 'pre' && (
           <ScriptSection

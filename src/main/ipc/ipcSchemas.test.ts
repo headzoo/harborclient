@@ -26,7 +26,12 @@ const validSaveRequest = {
   body_type: 'none' as const,
   pre_request_script: '',
   post_request_script: '',
-  comment: ''
+  comment: '',
+  auth: {
+    type: 'none' as const,
+    basic: { username: '', password: '' },
+    bearer: { token: '' }
+  }
 };
 
 const validSendRequest = {
@@ -64,6 +69,7 @@ describe('enum schemas', () => {
   it('editorTab rejects unknown values', () => {
     expect(editorTab.safeParse('tests').success).toBe(false);
     expect(editorTab.safeParse('headers').success).toBe(true);
+    expect(editorTab.safeParse('auth').success).toBe(true);
   });
 });
 

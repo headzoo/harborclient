@@ -93,6 +93,7 @@ export function Editor({
     () => ({
       params: hasKeyValue(draft.params),
       headers: hasKeyValue(draft.headers),
+      auth: draft.auth.type !== 'none',
       cookies: hasCookies,
       body: showBody && draft.body.trim().length > 0,
       pre: draft.pre_request_script.trim().length > 0,
@@ -102,6 +103,7 @@ export function Editor({
     [
       draft.params,
       draft.headers,
+      draft.auth,
       draft.body,
       draft.pre_request_script,
       draft.post_request_script,
@@ -165,6 +167,7 @@ export function Editor({
           tabs={[
             { value: 'params', label: 'Params', indicator: tabIndicators.params },
             { value: 'headers', label: 'Headers', indicator: tabIndicators.headers },
+            { value: 'auth', label: 'Authorization', indicator: tabIndicators.auth },
             { value: 'cookies', label: 'Cookies', indicator: tabIndicators.cookies },
             { value: 'body', label: 'Body', hidden: !showBody, indicator: tabIndicators.body },
             { value: 'pre', label: 'PreRequest', indicator: tabIndicators.pre },

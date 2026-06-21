@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { defaultAuth } from '#/shared/auth';
 import type { RequestDraft } from '#/renderer/src/store/drafts';
 import {
   defaultTabState,
@@ -19,6 +20,7 @@ const sampleDraft = (overrides: Partial<RequestDraft> = {}): RequestDraft => ({
   pre_request_script: '',
   post_request_script: '',
   comment: '',
+  auth: defaultAuth(),
   ...overrides
 });
 

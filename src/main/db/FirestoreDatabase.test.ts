@@ -1,5 +1,6 @@
 import { afterAll, afterEach, expect, it, vi } from 'vitest';
 import { FirestoreDatabase } from '#/main/db/FirestoreDatabase';
+import { defaultAuth } from '#/shared/auth';
 import {
   closeSharedSqlBackends,
   createFirestoreTestDbFactory,
@@ -109,7 +110,8 @@ describeFirestore('FirestoreDatabase import and ID allocation', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
-        comment: ''
+        comment: '',
+        auth: defaultAuth()
       });
     }
 

@@ -161,6 +161,10 @@ export const sidebar: DefaultTheme.SidebarItem[] =
         "link": "/requests#headers"
       },
       {
+        "text": "Authorization",
+        "link": "/requests#authorization"
+      },
+      {
         "text": "Request body",
         "link": "/requests#request-body"
       },
@@ -191,10 +195,6 @@ export const sidebar: DefaultTheme.SidebarItem[] =
       {
         "text": "Tabs, collections, and saving",
         "link": "/requests#tabs-collections-and-saving"
-      },
-      {
-        "text": "Authentication",
-        "link": "/requests#authentication"
       },
       {
         "text": "Keyboard shortcuts",

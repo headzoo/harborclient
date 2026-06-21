@@ -10,8 +10,10 @@ import {
   rowToFolder,
   rowToRequest
 } from '#/main/db/entityMappers';
+import { DEFAULT_AUTH_JSON, defaultAuth, normalizeAuth } from '#/shared/auth';
 import type { IDatabase } from '#/main/db/IDatabase';
 import type {
+  AuthConfig,
   Collection,
   CollectionExport,
   Environment,
@@ -131,6 +133,16 @@ export class MySqlDatabase implements IDatabase {
     // schema is migrated by checking information_schema before each ALTER.
     await this.addColumnIfMissing('requests', 'comment', "LONGTEXT NOT NULL DEFAULT ('')");
     await this.addColumnIfMissing('requests', 'folder_id', 'INT NULL');
+    await this.addColumnIfMissing(
+      'collections',
+      'auth',
+      `LONGTEXT NOT NULL DEFAULT ('${DEFAULT_AUTH_JSON.replace(/'/g, "''")}')`
+    );
+    await this.addColumnIfMissing(
+      'requests',
+      'auth',
+      `LONGTEXT NOT NULL DEFAULT ('${DEFAULT_AUTH_JSON.replace(/'/g, "''")}')`
+    );
   }
 
   /**
@@ -162,7 +174,7 @@ export class MySqlDatabase implements IDatabase {
 
   async listCollections(): Promise<Collection[]> {
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
-      'SELECT id, name, variables, headers, pre_request_script, post_request_script, created_at FROM collections ORDER BY name ASC'
+      'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections ORDER BY name ASC'
     );
     return rows.map(rowToCollection);
   }
@@ -176,7 +188,7 @@ export class MySqlDatabase implements IDatabase {
     );
 
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
-      'SELECT id, name, variables, headers, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?',
+      'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?',
       [result.insertId]
     );
 
@@ -191,14 +203,16 @@ export class MySqlDatabase implements IDatabase {
     variables: Variable[],
     headers: KeyValue[],
     preRequestScript: string,
-    postRequestScript: string
+    postRequestScript: string,
+    auth: AuthConfig
   ): Promise<Collection> {
     const [result] = await this.getPool().execute<ResultSetHeader>(
-      'UPDATE collections SET name = ?, variables = ?, headers = ?, pre_request_script = ?, post_request_script = ? WHERE id = ?',
+      'UPDATE collections SET name = ?, variables = ?, headers = ?, auth = ?, pre_request_script = ?, post_request_script = ? WHERE id = ?',
       [
         name.trim(),
         JSON.stringify(variables),
         JSON.stringify(headers),
+        JSON.stringify(auth),
         preRequestScript,
         postRequestScript,
         id
@@ -208,7 +222,7 @@ export class MySqlDatabase implements IDatabase {
     if (result.affectedRows === 0) throw new Error('Collection not found');
 
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
-      'SELECT id, name, variables, headers, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?',
+      'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?',
       [id]
     );
 
@@ -278,6 +292,7 @@ export class MySqlDatabase implements IDatabase {
   async saveRequest(input: SaveRequestInput): Promise<SavedRequest> {
     const headers = JSON.stringify(input.headers);
     const params = JSON.stringify(input.params);
+    const auth = JSON.stringify(input.auth);
     const preRequestScript = input.pre_request_script ?? '';
     const postRequestScript = input.post_request_script ?? '';
     const comment = input.comment ?? '';
@@ -299,7 +314,7 @@ export class MySqlDatabase implements IDatabase {
       const [result] = await this.getPool().execute<ResultSetHeader>(
         `UPDATE requests SET
           collection_id = ?, folder_id = ?, name = ?, method = ?, url = ?,
-          headers = ?, params = ?, body = ?, body_type = ?,
+          headers = ?, params = ?, auth = ?, body = ?, body_type = ?,
           pre_request_script = ?, post_request_script = ?, comment = ?,
           updated_at = ?
         WHERE id = ?`,
@@ -311,6 +326,7 @@ export class MySqlDatabase implements IDatabase {
           input.url,
           headers,
           params,
+          auth,
           input.body,
           input.body_type,
           preRequestScript,
@@ -340,9 +356,9 @@ export class MySqlDatabase implements IDatabase {
 
     const [result] = await this.getPool().execute<ResultSetHeader>(
       `INSERT INTO requests (
-        collection_id, folder_id, name, method, url, headers, params, body, body_type,
+        collection_id, folder_id, name, method, url, headers, params, auth, body, body_type,
         pre_request_script, post_request_script, comment, sort_order, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         input.collection_id,
         folderId,
@@ -351,6 +367,7 @@ export class MySqlDatabase implements IDatabase {
         input.url,
         headers,
         params,
+        auth,
         input.body,
         input.body_type,
         preRequestScript,
@@ -543,7 +560,7 @@ export class MySqlDatabase implements IDatabase {
 
   async exportCollectionData(id: number): Promise<CollectionExport> {
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
-      'SELECT name, variables, headers, pre_request_script, post_request_script FROM collections WHERE id = ?',
+      'SELECT name, variables, headers, auth, pre_request_script, post_request_script FROM collections WHERE id = ?',
       [id]
     );
 
@@ -561,6 +578,7 @@ export class MySqlDatabase implements IDatabase {
         url,
         headers,
         params,
+        auth,
         body,
         body_type,
         pre_request_script,
@@ -574,6 +592,7 @@ export class MySqlDatabase implements IDatabase {
         url,
         headers,
         params,
+        auth,
         body,
         body_type,
         pre_request_script,
@@ -588,12 +607,14 @@ export class MySqlDatabase implements IDatabase {
       normalizeVariable
     );
     const headers = parseJson<KeyValue[]>(row.headers as string, []);
+    const auth = normalizeAuth(parseJson(row.auth as string, defaultAuth()));
 
     return {
       formatVersion: 2,
       name: row.name as string,
       variables: maskVariablesForExport(variables),
       headers,
+      auth,
       pre_request_script: (row.pre_request_script as string) ?? '',
       post_request_script: (row.post_request_script as string) ?? '',
       folders,
@@ -610,12 +631,13 @@ export class MySqlDatabase implements IDatabase {
       await connection.beginTransaction();
 
       const [collectionResult] = await connection.execute<ResultSetHeader>(
-        `INSERT INTO collections (name, variables, headers, pre_request_script, post_request_script, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO collections (name, variables, headers, auth, pre_request_script, post_request_script, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           exportData.name,
           JSON.stringify(exportData.variables),
           JSON.stringify(exportData.headers),
+          JSON.stringify(exportData.auth ?? defaultAuth()),
           exportData.pre_request_script,
           exportData.post_request_script,
           now
@@ -640,9 +662,9 @@ export class MySqlDatabase implements IDatabase {
 
         await connection.execute(
           `INSERT INTO requests (
-            collection_id, folder_id, name, method, url, headers, params, body, body_type,
+            collection_id, folder_id, name, method, url, headers, params, auth, body, body_type,
             pre_request_script, post_request_script, comment, sort_order, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             collectionId,
             folderId,
@@ -651,6 +673,7 @@ export class MySqlDatabase implements IDatabase {
             request.url,
             JSON.stringify(request.headers),
             JSON.stringify(request.params),
+            JSON.stringify(request.auth ?? defaultAuth()),
             request.body,
             request.body_type,
             request.pre_request_script,
@@ -664,7 +687,7 @@ export class MySqlDatabase implements IDatabase {
       }
 
       const [rows] = await connection.execute<RowDataPacket[]>(
-        'SELECT id, name, variables, headers, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?',
+        'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?',
         [collectionId]
       );
 
