@@ -55,7 +55,7 @@ Example:
 
 | Header | Value |
 | --- | --- |
-| Authorization | Bearer {{token}} |
+| Authorization | `Bearer {{token}}` |
 | Accept | application/json |
 
 ### Collection headers
@@ -94,7 +94,7 @@ You can still authenticate with a manual header or script when you need full con
 
 | Header | Value |
 | --- | --- |
-| Authorization | Bearer {{token}} |
+| Authorization | `Bearer {{token}}` |
 
 ```javascript
 hc.request.headers.upsert('Authorization', 'Bearer ' + hc.variables.get('token'));
@@ -120,7 +120,7 @@ Example multipart fields:
 
 | Key | Type | Value |
 | --- | --- | --- |
-| name | Text | {{userName}} |
+| name | Text | `{{userName}}` |
 | avatar | File | profile.png (chosen via file picker) |
 
 GET and HEAD requests never send a body, even if the Body tab has content.

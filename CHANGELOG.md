@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- fix(docs): format authorization and variable examples in requests documentation. (`970adf2`)
 - feat(docs): enhance collections and requests documentation with authorization details. (`da382b7`)
 - feat(request-editor): enhance URL and params handling in Editor component. (`ec87898`)
 - fix(docs): update contact information in Code of Conduct. (`a0cf200`)
