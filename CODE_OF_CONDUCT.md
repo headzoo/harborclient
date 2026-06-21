@@ -59,7 +59,7 @@ If you experience or witness unacceptable behavior, please report it to the proj
 
 You may report concerns by contacting:
 
-sean@headzoo.io
+**contact@harborclient.com**
 
 Reports will be reviewed as promptly and fairly as possible. Maintainers will respect the privacy and safety of the reporter and any individuals involved.
 

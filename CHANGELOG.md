@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- fix(docs): update contact information in Code of Conduct. (`a0cf200`)
 - feat(docs): add Code of Conduct and enhance testing documentation. (`0788722`)
 
 ## 1.4.3 - 2026-06-20
