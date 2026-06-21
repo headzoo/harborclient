@@ -134,6 +134,7 @@ export const deleteCollection = createAsyncThunk<void, number, ThunkApiConfig>(
   'collections/delete',
   async (id, { dispatch, getState }) => {
     await window.api.deleteCollection(id);
+    dispatch(closeTabsForCollection(id));
     if (getState().collections.selectedCollectionId === id) {
       dispatch(setSelectedCollectionId(null));
     }
