@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(request-editor): enhance URL and params handling in Editor component. (`ec87898`)
 - fix(docs): update contact information in Code of Conduct. (`a0cf200`)
 
 ## 1.4.4 - 2026-06-21

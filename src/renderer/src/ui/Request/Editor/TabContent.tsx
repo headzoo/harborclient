@@ -1,5 +1,5 @@
 import type { JSX } from 'react';
-import type { Variable } from '#/shared/types';
+import type { KeyValue, Variable } from '#/shared/types';
 import { CodeEditor } from '#/renderer/src/components/CodeEditor';
 import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
 import type { RequestDraft } from '#/renderer/src/store/drafts';
@@ -30,6 +30,13 @@ interface Props {
   update: (patch: Partial<RequestDraft>) => void;
 
   /**
+   * Updates params and mirrors them into the URL query string.
+   *
+   * @param params - Updated params table rows.
+   */
+  onParamsChange: (params: KeyValue[]) => void;
+
+  /**
    * Collection-scoped variables for highlighting and tooltips.
    */
   variables: Variable[];
@@ -48,6 +55,7 @@ export function TabContent({
   draft,
   showBody,
   update,
+  onParamsChange,
   variables,
   onEditVariables
 }: Props): JSX.Element {
@@ -56,7 +64,7 @@ export function TabContent({
       {tab === 'params' && (
         <KeyValueEditor
           rows={draft.params}
-          onChange={(params) => update({ params })}
+          onChange={onParamsChange}
           placeholderKey="param"
           placeholderValue="value"
           variables={variables}

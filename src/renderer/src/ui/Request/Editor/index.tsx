@@ -1,5 +1,6 @@
 import { useMemo, type JSX } from 'react';
 import type { KeyValue, Variable } from '#/shared/types';
+import { applyParamsToUrl, mergeParamsFromUrl } from '#/shared/queryParams';
 import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
 import type { RequestDraft } from '#/renderer/src/store/drafts';
 import { Name } from './Name';
@@ -119,6 +120,24 @@ export function Editor({
     onChange({ ...draft, ...patch });
   };
 
+  /**
+   * Updates the URL and mirrors its query string into the params table.
+   *
+   * @param url - URL typed in the URL bar.
+   */
+  const handleUrlChange = (url: string): void => {
+    update({ url, params: mergeParamsFromUrl(url, draft.params) });
+  };
+
+  /**
+   * Updates params and rewrites the URL query string from enabled rows.
+   *
+   * @param params - Updated params table rows.
+   */
+  const handleParamsChange = (params: KeyValue[]): void => {
+    update({ params, url: applyParamsToUrl(draft.url, params) });
+  };
+
   return (
     <div className="p-3">
       <Name
@@ -134,7 +153,7 @@ export function Editor({
         variables={variables}
         sending={sending}
         onMethodChange={(method) => update({ method })}
-        onUrlChange={(url) => update({ url })}
+        onUrlChange={handleUrlChange}
         onSend={onSend}
         onEditVariables={onEditVariables}
       />
@@ -160,6 +179,7 @@ export function Editor({
         draft={draft}
         showBody={showBody}
         update={update}
+        onParamsChange={handleParamsChange}
         variables={variables}
         onEditVariables={onEditVariables}
       />
