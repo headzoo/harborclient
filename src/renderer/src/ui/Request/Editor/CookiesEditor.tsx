@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState, type JSX } from 'react';
 import type { KeyValue, Variable } from '#/shared/types';
 import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
 import { emptyKeyValue } from '#/renderer/src/store/drafts';
-import { buildRuntimeVars, substituteWithMap } from '#/renderer/src/store/scriptOrchestration';
+import { buildRuntimeVars, substituteWithMap } from '#/renderer/src/scripting/scriptOrchestration';
+import { hostFromUrl } from './cookieHost';
 
 interface Props {
   /**
@@ -14,26 +15,6 @@ interface Props {
    * Collection-scoped variables for URL substitution.
    */
   variables: Variable[];
-}
-
-/**
- * Extracts a hostname from a URL string, with a fallback for host-only values.
- *
- * @param url - Absolute or partial URL.
- */
-function hostFromUrl(url: string): string | null {
-  const trimmed = url.trim();
-  if (!trimmed) return null;
-
-  try {
-    return new URL(trimmed).hostname || null;
-  } catch {
-    try {
-      return new URL(`https://${trimmed}`).hostname || null;
-    } catch {
-      return null;
-    }
-  }
 }
 
 /**

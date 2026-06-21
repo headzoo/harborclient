@@ -21,6 +21,11 @@ export interface TabItem<T extends string> {
    * When true, the tab button is disabled.
    */
   disabled?: boolean;
+
+  /**
+   * When true, renders a small dot indicating the tab has values set.
+   */
+  indicator?: boolean;
 }
 
 interface Props<T extends string> {
@@ -78,7 +83,10 @@ export function SegmentedTabs<T extends string>({
             disabled={tab.disabled}
             onClick={() => onChange(tab.value)}
           >
-            {tab.label}
+            <span className="inline-flex items-center gap-1.5">
+              {tab.label}
+              {tab.indicator && <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />}
+            </span>
           </button>
         ))}
     </div>

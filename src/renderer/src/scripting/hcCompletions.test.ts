@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Completion, CompletionContext, CompletionSource } from '@codemirror/autocomplete';
 import type { Variable } from '#/shared/types';
-import { createHcCompletionSource } from '#/renderer/src/components/hcCompletions';
+import { createHcCompletionSource } from '#/renderer/src/scripting/hcCompletions';
 
 /**
  * Builds a minimal CompletionContext for testing matchBefore-based sources.
@@ -52,7 +52,14 @@ describe('createHcCompletionSource', () => {
     const result = await complete(source, mockContext('hc.'));
 
     expect(result).not.toBeNull();
-    expect(labels(result!.options).sort()).toEqual(['expect', 'request', 'test', 'variables']);
+    expect(labels(result!.options).sort()).toEqual([
+      'collection',
+      'environment',
+      'expect',
+      'request',
+      'test',
+      'variables'
+    ]);
   });
 
   it('includes response for post scripts', async () => {
@@ -60,12 +67,49 @@ describe('createHcCompletionSource', () => {
     const result = await complete(source, mockContext('hc.'));
 
     expect(labels(result!.options).sort()).toEqual([
+      'collection',
+      'environment',
       'expect',
       'request',
       'response',
       'test',
       'variables'
     ]);
+  });
+
+  it('lists collection variable helpers', async () => {
+    const source = createHcCompletionSource('pre', variables);
+    const result = await complete(source, mockContext('hc.collection.variables.'));
+
+    expect(labels(result!.options).sort()).toEqual(['get', 'set']);
+  });
+
+  it('lists collection members', async () => {
+    const source = createHcCompletionSource('pre', variables);
+    const result = await complete(source, mockContext('hc.collection.'));
+
+    expect(labels(result!.options).sort()).toEqual(['headers', 'id', 'name', 'variables']);
+  });
+
+  it('lists collection header helpers', async () => {
+    const source = createHcCompletionSource('pre', variables);
+    const result = await complete(source, mockContext('hc.collection.headers.'));
+
+    expect(labels(result!.options).sort()).toEqual(['get', 'toObject', 'upsert']);
+  });
+
+  it('lists environment members', async () => {
+    const source = createHcCompletionSource('pre', variables);
+    const result = await complete(source, mockContext('hc.environment.'));
+
+    expect(labels(result!.options).sort()).toEqual(['name', 'variables']);
+  });
+
+  it('lists environment variable helpers', async () => {
+    const source = createHcCompletionSource('pre', variables);
+    const result = await complete(source, mockContext('hc.environment.variables.'));
+
+    expect(labels(result!.options).sort()).toEqual(['get', 'set']);
   });
 
   it('lists request header helpers', async () => {

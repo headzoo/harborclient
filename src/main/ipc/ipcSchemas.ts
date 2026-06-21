@@ -94,7 +94,15 @@ export const scriptRunInput = z.object({
   script: z.string(),
   request: scriptRequestContext,
   response: sendResult.optional(),
-  variables: z.record(z.string(), z.string())
+  variables: z.record(z.string(), z.string()),
+  collection: z
+    .object({
+      id: z.number().int().nullable(),
+      name: z.string(),
+      headers: z.array(keyValue)
+    })
+    .optional(),
+  environment: z.object({ name: z.string() }).optional()
 }) satisfies z.ZodType<ScriptRunInput>;
 
 export const generalSettings = z.object({

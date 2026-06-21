@@ -3,7 +3,7 @@ import type { ScriptPhase, Variable } from '#/shared/types';
 
 /**
  * Hand-maintained completion surface for the hc sandbox API.
- * Keep in sync with the bootstrap in src/main/scripts/scripts.ts.
+ * Keep in sync with the bootstrap in src/main/scripting/scripts.ts.
  */
 interface HcCompletionOption {
   label: string;
@@ -19,6 +19,8 @@ const TOP_LEVEL: HcCompletionOption[] = [
 const HC_ROOT: HcCompletionOption[] = [
   { label: 'request', type: 'property', detail: 'Read/write outgoing request' },
   { label: 'variables', type: 'property', detail: 'Get/set ephemeral variables' },
+  { label: 'collection', type: 'property', detail: 'Collection metadata, variables, and headers' },
+  { label: 'environment', type: 'property', detail: 'Environment metadata and variables' },
   { label: 'test', type: 'function', detail: '(name, fn) => void' },
   { label: 'expect', type: 'function', detail: '(actual) => Expect' },
   { label: 'response', type: 'property', detail: 'Post-request response (post scripts only)' }
@@ -42,6 +44,18 @@ const HC_VARIABLES: HcCompletionOption[] = [
   { label: 'set', type: 'method', detail: '(key, value) => void' }
 ];
 
+const HC_COLLECTION: HcCompletionOption[] = [
+  { label: 'id', type: 'property', detail: 'Collection database id (read-only)' },
+  { label: 'name', type: 'property', detail: 'Collection display name (read-only)' },
+  { label: 'variables', type: 'property', detail: 'Get/set collection variables' },
+  { label: 'headers', type: 'property', detail: 'Collection headers API' }
+];
+
+const HC_ENVIRONMENT: HcCompletionOption[] = [
+  { label: 'name', type: 'property', detail: 'Environment display name (read-only)' },
+  { label: 'variables', type: 'property', detail: 'Get/set environment variables' }
+];
+
 const HC_RESPONSE: HcCompletionOption[] = [
   { label: 'code', type: 'property', detail: 'HTTP status code' },
   { label: 'status', type: 'property', detail: 'HTTP status text' },
@@ -62,6 +76,11 @@ const GROUPS: Record<string, HcCompletionOption[]> = {
   'hc.request': HC_REQUEST,
   'hc.request.headers': HC_REQUEST_HEADERS,
   'hc.variables': HC_VARIABLES,
+  'hc.collection': HC_COLLECTION,
+  'hc.collection.variables': HC_VARIABLES,
+  'hc.collection.headers': HC_REQUEST_HEADERS,
+  'hc.environment': HC_ENVIRONMENT,
+  'hc.environment.variables': HC_VARIABLES,
   'hc.response': HC_RESPONSE,
   console: CONSOLE
 };

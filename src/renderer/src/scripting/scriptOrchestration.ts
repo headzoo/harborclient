@@ -36,7 +36,7 @@ export function substituteWithMap(text: string, runtimeVars: Record<string, stri
  * Merges ephemeral variable sets from a script run into the runtime map.
  *
  * @param runtimeVars - Current runtime variables.
- * @param variableSets - New values set by hc.variables.set.
+ * @param variableSets - New values set by hc.variables.set or hc.collection.variables.set.
  * @returns Updated runtime variable map.
  */
 export function mergeVariableSets(
@@ -44,6 +44,43 @@ export function mergeVariableSets(
   variableSets: Record<string, string>
 ): Record<string, string> {
   return { ...runtimeVars, ...variableSets };
+}
+
+/**
+ * Applies script-set collection variable values onto a collection variable list.
+ *
+ * Updates existing keys in place and appends new rows for keys not yet defined.
+ *
+ * @param variables - Current collection-scoped variables.
+ * @param collectionVariableSets - Values set via hc.collection.variables.set during send.
+ * @returns Updated collection variable list.
+ */
+export function applyCollectionVariableSets(
+  variables: Variable[],
+  collectionVariableSets: Record<string, string>
+): Variable[] {
+  const updated = variables.map((variable) => ({ ...variable }));
+  const indexByKey = new Map<string, number>();
+  for (let i = 0; i < updated.length; i++) {
+    const key = updated[i].key.trim();
+    if (key) {
+      indexByKey.set(key, i);
+    }
+  }
+
+  for (const [rawKey, value] of Object.entries(collectionVariableSets)) {
+    const key = rawKey.trim();
+    if (!key) continue;
+
+    const existingIndex = indexByKey.get(key);
+    if (existingIndex !== undefined) {
+      updated[existingIndex] = { ...updated[existingIndex], value };
+    } else {
+      updated.push({ key, value, defaultValue: '', share: false });
+    }
+  }
+
+  return updated;
 }
 
 /**

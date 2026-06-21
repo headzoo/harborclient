@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
+  applyCollectionVariableSets,
   applyScriptRequestMutations,
   buildRuntimeVars,
   buildScriptSlots,
   mergeVariableSets,
   substituteWithMap
-} from '#/renderer/src/store/scriptOrchestration';
+} from '#/renderer/src/scripting/scriptOrchestration';
 import type { ScriptRunResult } from '#/shared/types';
 
 describe('buildRuntimeVars', () => {
@@ -44,6 +45,20 @@ describe('mergeVariableSets', () => {
   });
 });
 
+describe('applyCollectionVariableSets', () => {
+  it('updates existing keys and appends new ones', () => {
+    expect(
+      applyCollectionVariableSets(
+        [{ key: 'token', value: 'old', defaultValue: 'fallback', share: false }],
+        { token: 'new', apiKey: 'secret' }
+      )
+    ).toEqual([
+      { key: 'token', value: 'new', defaultValue: 'fallback', share: false },
+      { key: 'apiKey', value: 'secret', defaultValue: '', share: false }
+    ]);
+  });
+});
+
 describe('applyScriptRequestMutations', () => {
   it('applies request mutations from script result', () => {
     const current = {
@@ -64,6 +79,9 @@ describe('applyScriptRequestMutations', () => {
         bodyType: 'json'
       },
       variableSets: {},
+      collectionVariableSets: {},
+      environmentVariableSets: {},
+      collectionHeaders: [],
       tests: [],
       logs: []
     };

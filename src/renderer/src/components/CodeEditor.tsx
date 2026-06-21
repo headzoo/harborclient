@@ -16,7 +16,7 @@ import { tags } from '@lezer/highlight';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import type { ScriptPhase, Variable } from '#/shared/types';
 import { resolveVariable } from '#/renderer/src/store';
-import { createHcCompletionSource } from '#/renderer/src/components/hcCompletions';
+import { createHcCompletionSource } from '#/renderer/src/scripting/hcCompletions';
 
 export type CodeEditorLanguage = 'json' | 'text' | 'javascript';
 

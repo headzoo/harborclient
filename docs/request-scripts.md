@@ -131,6 +131,125 @@ hc.variables.set('token', 'abc123');
 hc.variables.set('timestamp', String(Date.now()));
 ```
 
+### hc.collection.variables
+
+Get and set collection variables for the current send. Values set with `hc.collection.variables.set` are persisted to the collection after the send completes (unlike `hc.variables.set`, which is ephemeral).
+
+Collection variables can be referenced elsewhere with `{{key}}` syntax in URLs, headers, params, body, and script source.
+
+#### hc.collection.variables.get(key)
+
+**Signature:** `(key: string) => string | undefined`
+
+Returns the value set during this send (via `hc.collection.variables.set`) if present; otherwise returns the merged runtime variable value (collection and environment). Returns `undefined` if the key is not set.
+
+```javascript
+var token = hc.collection.variables.get('token');
+```
+
+#### hc.collection.variables.set(key, value)
+
+**Signature:** `(key: string, value: string) => void`
+
+Sets a collection variable for the remainder of this send and persists it to the collection when the send completes. Values are coerced to strings. New keys are added to the collection with an empty default and `share: false`.
+
+```javascript
+hc.collection.variables.set('token', 'abc123');
+hc.collection.variables.set('timestamp', String(Date.now()));
+```
+
+#### hc.collection.name
+
+**Type:** `string` (read-only)
+
+Display name of the collection the request belongs to. Empty string when the request has no collection.
+
+```javascript
+console.log('Collection:', hc.collection.name);
+```
+
+#### hc.collection.id
+
+**Type:** `number | null` (read-only)
+
+Database id of the collection, or `null` when the request has no collection.
+
+```javascript
+console.log('Collection id:', hc.collection.id);
+```
+
+#### hc.collection.headers
+
+Read and write collection-level headers sent with every request in the collection. Header values support `{{variable}}` syntax. Changes made via `hc.collection.headers.upsert` apply to the current send and are persisted to the collection after the send completes.
+
+Request-level headers override collection headers when both define the same header name (case-insensitive).
+
+##### hc.collection.headers.get(key)
+
+**Signature:** `(key: string) => string | undefined`
+
+Returns the value of the first **enabled** collection header whose name matches `key` case-insensitively. Returns `undefined` if no matching header exists.
+
+```javascript
+var auth = hc.collection.headers.get('Authorization');
+```
+
+##### hc.collection.headers.upsert(key, value)
+
+**Signature:** `(key: string, value: string) => void`
+
+Updates the value of an existing enabled collection header with the same name (case-insensitive), or appends a new enabled header if none exists. Persisted to the collection when the send completes.
+
+```javascript
+hc.collection.headers.upsert('Authorization', 'Bearer ' + hc.collection.variables.get('token'));
+```
+
+##### hc.collection.headers.toObject()
+
+**Signature:** `() => Record<string, string>`
+
+Returns a plain object of all enabled collection headers with non-empty keys.
+
+```javascript
+var headers = hc.collection.headers.toObject();
+console.log(headers['Content-Type']);
+```
+
+### hc.environment
+
+Read and write variables on the active environment. When no environment is selected, `hc.environment.name` is an empty string and variable sets apply to the current send only (they are not persisted).
+
+#### hc.environment.name
+
+**Type:** `string` (read-only)
+
+Display name of the active environment. Empty string when no environment is selected.
+
+```javascript
+console.log('Environment:', hc.environment.name);
+```
+
+#### hc.environment.variables.get(key)
+
+**Signature:** `(key: string) => string | undefined`
+
+Returns the value set during this send (via `hc.environment.variables.set`) if present; otherwise returns the merged runtime variable value (collection and environment). Returns `undefined` if the key is not set.
+
+```javascript
+var token = hc.environment.variables.get('token');
+```
+
+#### hc.environment.variables.set(key, value)
+
+**Signature:** `(key: string, value: string) => void`
+
+Sets an environment variable for the remainder of this send and persists it to the active environment when the send completes. Values are coerced to strings. New keys are added to the environment with an empty default and `share: false`. When no environment is active, the value applies to the send only.
+
+```javascript
+hc.environment.variables.set('token', 'abc123');
+hc.environment.variables.set('timestamp', String(Date.now()));
+```
+
 ### hc.test(name, fn)
 
 **Signature:** `(name: string, fn: () => void) => void`
@@ -285,6 +404,9 @@ After each script runs, HarborClient applies these changes:
 | --- | --- | --- |
 | `hc.request.method`, `url`, `body`, `headers` | Yes (pre scripts only) | No |
 | `hc.variables.set` | Yes (via `{{key}}` substitution) | No (session only) |
+| `hc.collection.variables.set` | Yes (via `{{key}}` substitution) | Yes (collection variables) |
+| `hc.collection.headers.upsert` | Yes (collection headers on send) | Yes (collection headers) |
+| `hc.environment.variables.set` | Yes (via `{{key}}` substitution) | Yes (active environment variables) |
 | `hc.test` results | N/A | Shown in response viewer |
 | `console.log` / `console.error` | N/A | Shown in send console |
 
@@ -295,6 +417,16 @@ Variable resolution order for `hc.variables.get`:
 1. Value set with `hc.variables.set` during this send
 2. Active environment variable value (or default if the value is empty)
 3. Collection variable value (or default if the value is empty)
+
+Variable resolution order for `hc.collection.variables.get`:
+
+1. Value set with `hc.collection.variables.set` during this send
+2. Merged runtime variable value (collection and environment, same order as above)
+
+Variable resolution order for `hc.environment.variables.get`:
+
+1. Value set with `hc.environment.variables.set` during this send
+2. Merged runtime variable value (collection and environment, same order as above)
 
 See [Environments](/environments) for how collection and environment variables are merged at send time.
 

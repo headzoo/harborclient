@@ -1,13 +1,14 @@
 import { config, library } from '@fortawesome/fontawesome-svg-core';
 import {
   faBars,
+  faChevronDown,
   faChevronRight,
   faPlus,
   faSidebar,
   faXmark
 } from '@awesome.me/kit-55c528f18b/icons/classic/solid';
 
-library.add(faXmark, faPlus, faBars, faSidebar, faChevronRight);
+library.add(faXmark, faPlus, faBars, faSidebar, faChevronDown, faChevronRight);
 config.autoAddCss = false;
 
-export { faBars, faChevronRight, faPlus, faSidebar, faXmark };
+export { faBars, faChevronDown, faChevronRight, faPlus, faSidebar, faXmark };

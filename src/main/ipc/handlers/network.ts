@@ -2,7 +2,7 @@ import { buildCookieHeader, captureSetCookies } from '#/main/cookieJar/cookieJar
 import { buildUrl, executeRequest } from '#/main/http/http';
 import { handle } from '#/main/ipc/handle';
 import { ipcArgSchemas } from '#/main/ipc/ipcSchemas';
-import { runScript } from '#/main/scripts/scripts';
+import { runScript } from '#/main/scripting/scripts';
 import { getGeneralSettings } from '#/main/settings/generalSettings';
 
 /**

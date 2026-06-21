@@ -6,9 +6,28 @@ import { faXmark } from '#/renderer/src/fontawesome';
 import { METHOD_CLASSES, requestTabItem } from '#/renderer/src/ui/shared/classes';
 
 interface Props {
+  /**
+   * Tab data and draft state to render.
+   */
   tab: RequestTab;
+
+  /**
+   * Whether this tab is the currently selected tab.
+   */
   active: boolean;
+
+  /**
+   * Called when the user selects this tab.
+   *
+   * @param tabId - Tab to activate.
+   */
   onSelect: (tabId: string) => void;
+
+  /**
+   * Called when the user closes this tab.
+   *
+   * @param tabId - Tab to close.
+   */
   onClose: (tabId: string) => void;
 }
 

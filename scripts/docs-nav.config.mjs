@@ -28,6 +28,7 @@ export const docsNav = [
   { kind: 'page', slug: 'collections', title: 'Collections', maxDepth: 2 },
   { kind: 'page', slug: 'requests', title: 'Making requests', maxDepth: 2 },
   { kind: 'page', slug: 'request-scripts', title: 'Request scripts', maxDepth: 2 },
+  { kind: 'page', slug: 'testing', title: 'Testing', maxDepth: 2 },
   { kind: 'page', slug: 'environments', title: 'Environments', maxDepth: 2 },
   
 ];

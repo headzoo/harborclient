@@ -1,6 +1,6 @@
 import type { JSX, ReactNode } from 'react';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
-import { faPlus } from '#/renderer/src/fontawesome';
+import { faChevronDown, faChevronRight, faPlus } from '#/renderer/src/fontawesome';
 import { toolbarButton } from '#/renderer/src/ui/shared/classes';
 
 interface Props {
@@ -55,8 +55,11 @@ export function Section({
           onClick={onToggle}
           aria-expanded={expanded}
         >
-          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center text-[10px] text-muted">
-            {expanded ? '▼' : '▶'}
+          <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">
+            <FaIcon
+              icon={expanded ? faChevronDown : faChevronRight}
+              className="h-3 w-3 text-muted"
+            />
           </span>
           <h2 className="m-0 text-[11px] font-medium uppercase tracking-wide text-muted">
             {title}

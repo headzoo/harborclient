@@ -60,7 +60,17 @@ cleanup. For `useMemo`, describe what is being derived and why memoization
 matters.
 
 **Props and types** — document non-obvious fields on interfaces and type aliases
-with inline JSDoc comments.
+with inline JSDoc comments. Name component props interfaces `Props` (not
+`ComponentNameProps`).
+
+**Docblock format** — never use single-line docblocks (`/** ... */`). Always
+use multi-line blocks:
+
+```ts
+/**
+ * Description here.
+ */
+```
 
 When you touch existing code, add or improve docblocks for any functions or
 hooks you modify. Prefer concise prose over repeating identifiers; a reader

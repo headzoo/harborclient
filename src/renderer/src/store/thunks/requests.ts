@@ -1,6 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import toast from 'react-hot-toast';
 import type {
+  KeyValue,
   SavedRequest,
   ScriptRequestContext,
   ScriptRunResult,
@@ -9,11 +10,12 @@ import type {
 } from '#/shared/types';
 import {
   applyScriptRequestMutations,
+  applyCollectionVariableSets,
   buildRuntimeVars,
   buildScriptSlots,
   mergeVariableSets,
   substituteWithMap
-} from '#/renderer/src/store/scriptOrchestration';
+} from '#/renderer/src/scripting/scriptOrchestration';
 import { cloneDraft, draftFromSaved } from '#/renderer/src/store/drafts';
 import { setSelectedCollectionId } from '#/renderer/src/store/slices/collectionsSlice';
 import { addConsoleEntry } from '#/renderer/src/store/slices/consoleSlice';
@@ -39,8 +41,10 @@ import { selectActiveTab } from '#/renderer/src/store/selectors';
 import {
   moveRequestToFolder,
   refreshCollectionContents,
-  refreshRequests
+  refreshRequests,
+  updateCollection
 } from '#/renderer/src/store/thunks/collections';
+import { updateEnvironment } from '#/renderer/src/store/thunks/environments';
 
 /** Persists the active tab draft to the selected or specified collection. */
 export const saveRequest = createAsyncThunk<SavedRequest, number | undefined, ThunkApiConfig>(
@@ -216,6 +220,11 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
       ...buildRuntimeVars(collection?.variables ?? []),
       ...buildRuntimeVars(environment?.variables ?? [])
     };
+    let collectionVarSets: Record<string, string> = {};
+    let envVarSets: Record<string, string> = {};
+    let collectionHeaderRows: KeyValue[] = collection
+      ? (collection.headers ?? []).map((header) => ({ ...header }))
+      : [];
     const allLogs: string[] = [];
     const allTests: ScriptTestResult[] = [];
     const scriptErrors: string[] = [];
@@ -245,7 +254,15 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
           script: scriptSource,
           request: scriptRequest,
           response,
-          variables: runtimeVars
+          variables: runtimeVars,
+          collection: {
+            id: collection?.id ?? null,
+            name: collection?.name ?? '',
+            headers: collectionHeaderRows
+          },
+          environment: {
+            name: environment?.name ?? ''
+          }
         });
 
         if (result.logs.length) {
@@ -260,6 +277,11 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
 
         scriptRequest = applyScriptRequestMutations(scriptRequest, result);
         runtimeVars = mergeVariableSets(runtimeVars, result.variableSets);
+        runtimeVars = mergeVariableSets(runtimeVars, result.collectionVariableSets);
+        runtimeVars = mergeVariableSets(runtimeVars, result.environmentVariableSets);
+        collectionVarSets = { ...collectionVarSets, ...result.collectionVariableSets };
+        envVarSets = { ...envVarSets, ...result.environmentVariableSets };
+        collectionHeaderRows = result.collectionHeaders;
       }
     };
 
@@ -279,12 +301,10 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
       await runScriptPhase('pre');
 
       const resolvedUrl = substituteWithMap(scriptRequest.url, runtimeVars);
-      const collectionHeaders = collection
-        ? (collection.headers ?? []).map((header) => ({
-            ...header,
-            value: substituteWithMap(header.value, runtimeVars)
-          }))
-        : [];
+      const collectionHeaders = collectionHeaderRows.map((header) => ({
+        ...header,
+        value: substituteWithMap(header.value, runtimeVars)
+      }));
       const draftHeaders = scriptRequest.headers.map((header) => ({
         ...header,
         value: substituteWithMap(header.value, runtimeVars)
@@ -309,6 +329,36 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
       );
 
       await runScriptPhase('post', result);
+
+      if (collection) {
+        const headersChanged =
+          JSON.stringify(collectionHeaderRows) !== JSON.stringify(collection.headers ?? []);
+        const hasCollectionChanges = Object.keys(collectionVarSets).length > 0 || headersChanged;
+
+        if (hasCollectionChanges) {
+          await dispatch(
+            updateCollection({
+              id: collection.id,
+              name: collection.name,
+              variables: applyCollectionVariableSets(collection.variables, collectionVarSets),
+              headers: collectionHeaderRows,
+              preRequestScript: collection.pre_request_script,
+              postRequestScript: collection.post_request_script,
+              connectionId: collection.connectionId
+            })
+          );
+        }
+      }
+
+      if (environment && Object.keys(envVarSets).length > 0) {
+        await dispatch(
+          updateEnvironment({
+            id: environment.id,
+            name: environment.name,
+            variables: applyCollectionVariableSets(environment.variables, envVarSets)
+          })
+        );
+      }
 
       if (isRequestStillActive()) {
         dispatch(

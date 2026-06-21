@@ -138,10 +138,6 @@ export const sidebar: DefaultTheme.SidebarItem[] =
         "link": "/collections#keyboard-shortcuts"
       },
       {
-        "text": "Limitations",
-        "link": "/collections#limitations"
-      },
-      {
         "text": "What's next",
         "link": "/collections#whats-next"
       }
@@ -242,6 +238,41 @@ export const sidebar: DefaultTheme.SidebarItem[] =
       {
         "text": "Examples",
         "link": "/request-scripts#examples"
+      }
+    ],
+    "collapsed": false
+  },
+  {
+    "text": "Testing",
+    "link": "/testing",
+    "items": [
+      {
+        "text": "Where tests run",
+        "link": "/testing#where-tests-run"
+      },
+      {
+        "text": "Writing a test",
+        "link": "/testing#writing-a-test"
+      },
+      {
+        "text": "Assertions",
+        "link": "/testing#assertions"
+      },
+      {
+        "text": "Reading results",
+        "link": "/testing#reading-results"
+      },
+      {
+        "text": "Common patterns",
+        "link": "/testing#common-patterns"
+      },
+      {
+        "text": "Tips and limits",
+        "link": "/testing#tips-and-limits"
+      },
+      {
+        "text": "What's next",
+        "link": "/testing#whats-next"
       }
     ],
     "collapsed": false

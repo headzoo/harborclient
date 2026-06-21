@@ -3,281 +3,180 @@ import {
   DragOverlay,
   PointerSensor,
   closestCenter,
-  pointerWithin,
-  useDroppable,
   useSensor,
   useSensors,
-  type CollisionDetection,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent
 } from '@dnd-kit/core';
-import {
-  SortableContext,
-  arrayMove,
-  useSortable,
-  verticalListSortingStrategy
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type JSX,
-  type ReactNode
-} from 'react';
+import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useEffect, useMemo, useRef, useState, type JSX } from 'react';
 import type { Collection, DatabaseProvider, Folder, SavedRequest } from '#/shared/types';
+import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { RowActionsMenu } from '#/renderer/src/components/RowActionsMenu';
+import { faChevronDown, faChevronRight } from '#/renderer/src/fontawesome';
 import { METHOD_CLASSES, sourceRow } from '#/renderer/src/ui/shared/classes';
+import { DropZone } from '#/renderer/src/ui/Sidebar/Collections/DropZone';
+import { RequestRow } from '#/renderer/src/ui/Sidebar/Collections/RequestRow';
+import { SortableRow } from '#/renderer/src/ui/Sidebar/Collections/SortableRow';
+import {
+  collectionCollisionDetection,
+  collectionDragId,
+  dropFolderId,
+  dropRootId,
+  dropTargetHighlightClass,
+  folderDragId,
+  parseCollectionDragId,
+  parseDragId,
+  requestDragId,
+  resolveRequestDropTarget,
+  type DragKind
+} from '#/renderer/src/ui/Sidebar/Collections/utils';
 
 interface Props {
+  /**
+   * Collections shown in the sidebar, in display order.
+   */
   collections: Collection[];
+
+  /**
+   * Folders grouped by collection id.
+   */
   foldersByCollection: Record<number, Folder[]>;
+
+  /**
+   * Saved requests grouped by collection id.
+   */
   requestsByCollection: Record<number, SavedRequest[]>;
+
+  /**
+   * Currently selected collection id, if any.
+   */
   selectedCollectionId: number | null;
+
+  /**
+   * Default connection id used when a collection has no explicit connection.
+   */
   primaryConnectionId: string;
+
+  /**
+   * Human-readable connection names keyed by connection id.
+   */
   connectionNamesById: Record<string, string>;
+
+  /**
+   * Database provider types keyed by connection id.
+   */
   connectionTypesById: Record<string, DatabaseProvider>;
+
+  /**
+   * Id of the request currently open in the editor, for row highlighting.
+   */
   activeRequestId?: number;
+
+  /**
+   * Called when the user selects a collection row.
+   */
   onSelectCollection: (id: number) => void;
+
+  /**
+   * Called when a collection is expanded so its contents can be loaded.
+   */
   onExpandCollection: (id: number) => void;
+
+  /**
+   * Called when the user opens collection settings.
+   */
   onConfigureCollection: (id: number) => void;
+
+  /**
+   * Deletes a collection after user confirmation.
+   */
   onDeleteCollection: (id: number) => Promise<void>;
+
+  /**
+   * Exports a collection to disk.
+   */
   onExportCollection: (id: number) => Promise<void> | void;
+
+  /**
+   * Duplicates a collection and its contents.
+   */
   onDuplicateCollection: (id: number) => Promise<void> | void;
+
+  /**
+   * Opens the invite flow for a shared collection.
+   */
   onInviteCollection: (collectionId: number, collectionName: string) => void;
+
+  /**
+   * Creates a new folder in the given collection.
+   */
   onNewFolder: (collectionId: number) => Promise<void> | void;
+
+  /**
+   * Creates a new request at the collection root.
+   */
   onNewRequestInCollection: (id: number) => Promise<void> | void;
+
+  /**
+   * Creates a new request inside a folder.
+   */
   onNewRequestInFolder: (collectionId: number, folderId: number) => Promise<void> | void;
+
+  /**
+   * Renames a folder within a collection.
+   */
   onRenameFolder: (id: number, collectionId: number) => Promise<void> | void;
+
+  /**
+   * Deletes a folder and any requests it contains.
+   */
   onDeleteFolder: (id: number, collectionId: number, requestIds: number[]) => Promise<void> | void;
+
+  /**
+   * Persists a new top-level collection order after drag-and-drop.
+   */
   onReorderCollections: (orderedCollectionIds: number[]) => Promise<void> | void;
+
+  /**
+   * Persists a new folder order within a collection after drag-and-drop.
+   */
   onReorderFolders: (collectionId: number, orderedFolderIds: number[]) => Promise<void> | void;
+
+  /**
+   * Persists a new request order within a folder or collection root.
+   */
   onReorderRequests: (
     collectionId: number,
     folderId: number | null,
     orderedRequestIds: number[]
   ) => Promise<void> | void;
+
+  /**
+   * Moves a request to another folder or collection root at the given index.
+   */
   onMoveRequest: (
     collectionId: number,
     requestId: number,
     folderId: number | null,
     index: number
   ) => Promise<void> | void;
+
+  /**
+   * Loads a saved request into the editor.
+   */
   onLoadRequest: (req: SavedRequest) => void;
+
+  /**
+   * Deletes a saved request.
+   */
   onDeleteRequest: (id: number) => Promise<void>;
+
+  /**
+   * Duplicates a saved request.
+   */
   onDuplicateRequest: (req: SavedRequest) => Promise<void>;
-}
-
-type DragKind = 'folder' | 'request';
-
-interface ParsedDragId {
-  kind: DragKind;
-  id: number;
-}
-
-function collectionDragId(collectionId: number): string {
-  return `collection:${collectionId}`;
-}
-
-function folderDragId(folderId: number): string {
-  return `folder:${folderId}`;
-}
-
-function requestDragId(requestId: number): string {
-  return `request:${requestId}`;
-}
-
-function dropRootId(collectionId: number): string {
-  return `drop:root:${collectionId}`;
-}
-
-function dropFolderId(folderId: number): string {
-  return `drop:folder:${folderId}`;
-}
-
-function parseDragId(value: string): ParsedDragId | null {
-  const [kind, idValue] = value.split(':');
-  if (kind !== 'folder' && kind !== 'request') return null;
-  const id = Number(idValue);
-  if (!Number.isFinite(id)) return null;
-  return { kind, id };
-}
-
-/**
- * Parses a collection drag id into its numeric collection id.
- *
- * @returns The collection id, or null when the value is not a collection drag id.
- */
-function parseCollectionDragId(value: string): number | null {
-  if (!value.startsWith('collection:')) return null;
-  const id = Number(value.slice('collection:'.length));
-  return Number.isFinite(id) ? id : null;
-}
-
-function parseDropTarget(value: string): { folderId: number | null; collectionId?: number } | null {
-  if (value.startsWith('drop:root:')) {
-    return { folderId: null, collectionId: Number(value.slice('drop:root:'.length)) };
-  }
-  if (value.startsWith('drop:folder:')) {
-    return { folderId: Number(value.slice('drop:folder:'.length)) };
-  }
-  return null;
-}
-
-/**
- * Resolves which folder container a request would drop into from the current over id.
- *
- * @returns folder id, null for collection root, or undefined when not a valid target.
- */
-function resolveRequestDropTarget(
-  overId: string,
-  requests: SavedRequest[]
-): number | null | undefined {
-  const overDrop = parseDropTarget(overId);
-  if (overDrop) return overDrop.folderId;
-
-  const parsed = parseDragId(overId);
-  if (!parsed) return undefined;
-
-  if (parsed.kind === 'folder') return parsed.id;
-
-  if (parsed.kind === 'request') {
-    const request = requests.find((req) => req.id === parsed.id);
-    if (!request) return undefined;
-    return request.folder_id ?? null;
-  }
-
-  return undefined;
-}
-
-const dropTargetHighlightClass = 'rounded-md ring-2 ring-info/60 bg-info/10';
-
-/** Prefer explicit drop zones when the pointer is inside them. */
-const collectionCollisionDetection: CollisionDetection = (args) => {
-  const pointerCollisions = pointerWithin(args);
-  if (pointerCollisions.length > 0) {
-    const dropTarget = pointerCollisions.find((collision) =>
-      String(collision.id).startsWith('drop:')
-    );
-    if (dropTarget) return [dropTarget];
-  }
-  return closestCenter(args);
-};
-
-interface SortableRowProps {
-  id: string;
-  className: string;
-  children: ReactNode;
-}
-
-function SortableRow({ id, className, children }: SortableRowProps): JSX.Element {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id
-  });
-  const style: CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.45 : undefined
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} className={className} {...attributes} {...listeners}>
-      {children}
-    </div>
-  );
-}
-
-interface DropZoneProps {
-  id: string;
-  className?: string;
-  children: ReactNode;
-}
-
-function DropZone({ id, className, children }: DropZoneProps): JSX.Element {
-  const { setNodeRef } = useDroppable({ id });
-  return (
-    <div ref={setNodeRef} className={className}>
-      {children}
-    </div>
-  );
-}
-
-interface RequestRowProps {
-  req: SavedRequest;
-  activeRequestId?: number;
-  openMenuId: string | null;
-  onOpenChange: (menuId: string | null) => void;
-  folders: Folder[];
-  onLoadRequest: (req: SavedRequest) => void;
-  onDeleteRequest: (id: number) => Promise<void>;
-  onDuplicateRequest: (req: SavedRequest) => Promise<void>;
-  onMoveRequest: (requestId: number, folderId: number | null) => void;
-}
-
-function RequestRow({
-  req,
-  activeRequestId,
-  openMenuId,
-  onOpenChange,
-  folders,
-  onLoadRequest,
-  onDeleteRequest,
-  onDuplicateRequest,
-  onMoveRequest
-}: RequestRowProps): JSX.Element {
-  const moveItems =
-    folders.length > 0
-      ? [
-          {
-            label: 'Move to collection root',
-            onSelect: () => onMoveRequest(req.id, null)
-          },
-          ...folders.map((folder) => ({
-            label: `Move to ${folder.name}`,
-            onSelect: () => onMoveRequest(req.id, folder.id)
-          }))
-        ]
-      : [];
-
-  return (
-    <SortableRow id={requestDragId(req.id)} className={sourceRow(activeRequestId === req.id)}>
-      <button
-        className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 border-none bg-transparent py-0.5 text-left text-inherit app-no-drag"
-        onClick={() => onLoadRequest(req)}
-      >
-        <span
-          className={`shrink-0 rounded px-1 py-px text-[10px] font-semibold ${METHOD_CLASSES[req.method.toLowerCase()] ?? 'bg-info text-white'}`}
-        >
-          {req.method}
-        </span>
-        <span className="truncate text-[13px]">{req.name}</span>
-      </button>
-      <RowActionsMenu
-        menuId={`request-${req.id}`}
-        openMenuId={openMenuId}
-        onOpenChange={onOpenChange}
-        items={[
-          ...moveItems,
-          {
-            label: 'Duplicate',
-            onSelect: () => void onDuplicateRequest(req)
-          },
-          {
-            label: 'Delete',
-            variant: 'danger' as const,
-            onSelect: () => {
-              if (confirm(`Delete request "${req.name}"?`)) {
-                void onDeleteRequest(req.id);
-              }
-            }
-          }
-        ]}
-      />
-    </SortableRow>
-  );
 }
 
 /**
@@ -329,6 +228,9 @@ export function Collections({
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
+  /**
+   * Clears drag state for request-row dragging.
+   */
   const clearDragState = (): void => {
     activeDragKindRef.current = null;
     dragCollectionIdRef.current = null;
@@ -355,11 +257,19 @@ export function Collections({
     }
   }
 
+  /**
+   * Loads collection contents when the selected collection changes.
+   */
   useEffect(() => {
     if (selectedCollectionId == null) return;
     onExpandCollection(selectedCollectionId);
   }, [selectedCollectionId, onExpandCollection]);
 
+  /**
+   * Toggles the expansion state of a collection.
+   *
+   * @param collectionId The collection id to toggle.
+   */
   const toggleCollection = (collectionId: number): void => {
     const willExpand = !expandedCollectionIds.has(collectionId);
     setExpandedCollectionIds((prev) => {
@@ -371,6 +281,11 @@ export function Collections({
     if (willExpand) onExpandCollection(collectionId);
   };
 
+  /**
+   * Toggles the expansion state of a folder.
+   *
+   * @param folderId The folder id to toggle.
+   */
   const toggleFolder = (folderId: number): void => {
     setExpandedFolderIds((prev) => {
       const next = new Set(prev);
@@ -380,12 +295,28 @@ export function Collections({
     });
   };
 
+  /**
+   * Gets the root requests for a collection.
+   *
+   * @param collectionId The collection id to get the root requests for.
+   * @returns The root requests for the collection.
+   */
   const getRootRequests = (collectionId: number): SavedRequest[] =>
     (requestsByCollection[collectionId] ?? []).filter((req) => req.folder_id == null);
 
+  /**
+   * Gets the requests for a folder.
+   *
+   * @param collectionId The collection id to get the requests for.
+   * @param folderId The folder id to get the requests for.
+   * @returns The requests for the folder.
+   */
   const getFolderRequests = (collectionId: number, folderId: number): SavedRequest[] =>
     (requestsByCollection[collectionId] ?? []).filter((req) => req.folder_id === folderId);
 
+  /**
+   * Precomputes per-collection folder and root-request groupings for rendering.
+   */
   const collectionTrees = useMemo(
     () =>
       collections.map((collection) => {
@@ -398,11 +329,19 @@ export function Collections({
     [collections, foldersByCollection, requestsByCollection]
   );
 
+  /**
+   * Stable sortable ids for top-level collection rows.
+   */
   const collectionIds = useMemo(
     () => collections.map((collection) => collectionDragId(collection.id)),
     [collections]
   );
 
+  /**
+   * Handles the start of a collection drag-and-drop operation.
+   *
+   * @param event The drag start event.
+   */
   const handleCollectionDragStart = (event: DragStartEvent): void => {
     const collectionId = parseCollectionDragId(String(event.active.id));
     if (collectionId == null) return;
@@ -410,6 +349,11 @@ export function Collections({
     setActiveDragCollection(collection);
   };
 
+  /**
+   * Handles the end of a collection drag-and-drop operation.
+   *
+   * @param event The drag end event.
+   */
   const handleCollectionDragEnd = async (event: DragEndEvent): Promise<void> => {
     const { active, over } = event;
     clearCollectionDragState();
@@ -428,6 +372,12 @@ export function Collections({
     await onReorderCollections(nextOrder);
   };
 
+  /**
+   * Handles the end of a request drag-and-drop operation.
+   *
+   * @param event The drag end event.
+   * @param collectionId The collection id to handle the drag end for.
+   */
   const handleDragEnd = async (event: DragEndEvent, collectionId: number): Promise<void> => {
     const { active, over } = event;
     clearDragState();
@@ -494,6 +444,12 @@ export function Collections({
     await onMoveRequest(collectionId, activeParsed.id, targetFolderId, targetIndex);
   };
 
+  /**
+   * Handles the over of a request drag-and-drop operation.
+   *
+   * @param event The drag over event.
+   * @param collectionId The collection id to handle the drag over for.
+   */
   const handleDragOver = (event: DragOverEvent, collectionId: number): void => {
     if (activeDragKindRef.current !== 'request' || dragCollectionIdRef.current !== collectionId) {
       return;
@@ -518,6 +474,12 @@ export function Collections({
     }
   };
 
+  /**
+   * Handles the start of a request drag-and-drop operation.
+   *
+   * @param event The drag start event.
+   * @param collectionId The collection id to handle the drag start for.
+   */
   const handleDragStart = (event: DragStartEvent, collectionId: number): void => {
     const parsed = parseDragId(String(event.active.id));
     if (!parsed) return;
@@ -587,11 +549,11 @@ export function Collections({
               <div key={collection.id}>
                 <SortableRow id={collectionDragId(collection.id)} className={sourceRow(selected)}>
                   <button
-                    className="inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-[10px] text-muted hover:text-text app-no-drag"
+                    className="inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-muted hover:text-text app-no-drag"
                     onClick={() => toggleCollection(collection.id)}
                     aria-label={expanded ? 'Collapse' : 'Expand'}
                   >
-                    {expanded ? '▼' : '▶'}
+                    <FaIcon icon={expanded ? faChevronDown : faChevronRight} className="h-3 w-3" />
                   </button>
                   <button
                     className="min-w-0 flex-1 cursor-pointer truncate border-none bg-transparent py-0.5 text-left text-[13px] text-inherit app-no-drag"
@@ -737,13 +699,16 @@ export function Collections({
                                   className={sourceRow(false)}
                                 >
                                   <button
-                                    className="inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-[10px] text-muted hover:text-text app-no-drag"
+                                    className="inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-muted hover:text-text app-no-drag"
                                     onClick={() => toggleFolder(folder.id)}
                                     aria-label={
                                       folderExpanded ? 'Collapse folder' : 'Expand folder'
                                     }
                                   >
-                                    {folderExpanded ? '▼' : '▶'}
+                                    <FaIcon
+                                      icon={folderExpanded ? faChevronDown : faChevronRight}
+                                      className="h-3 w-3"
+                                    />
                                   </button>
                                   <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
                                     {folder.name}

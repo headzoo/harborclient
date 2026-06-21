@@ -1,11 +1,22 @@
-import type { JSX } from 'react';
-import type { Variable } from '#/shared/types';
+import { useMemo, type JSX } from 'react';
+import type { KeyValue, Variable } from '#/shared/types';
 import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
 import type { RequestDraft } from '#/renderer/src/store/drafts';
 import { Name } from './Name';
 import { TabContent } from './TabContent';
 import { UrlBar } from './UrlBar';
+import { useHasCookies } from './useHasCookies';
 import { usePersistedEditorTab } from './usePersistedEditorTab';
+
+/**
+ * Returns whether any key-value row has a non-empty key or value.
+ *
+ * @param rows - Key-value rows from params, headers, or cookies.
+ * @returns True when at least one row has content.
+ */
+function hasKeyValue(rows: KeyValue[]): boolean {
+  return rows.some((row) => row.key.trim() || row.value.trim());
+}
 
 interface Props {
   /**
@@ -72,6 +83,32 @@ export function Editor({
 }: Props): JSX.Element {
   const showBody = draft.method !== 'GET' && draft.method !== 'HEAD';
   const { tab, setTab } = usePersistedEditorTab({ draft, tabId, showBody });
+  const hasCookies = useHasCookies(draft.url, variables);
+
+  /**
+   * Per-tab indicators for whether each editor section has values set.
+   */
+  const tabIndicators = useMemo(
+    () => ({
+      params: hasKeyValue(draft.params),
+      headers: hasKeyValue(draft.headers),
+      cookies: hasCookies,
+      body: showBody && draft.body.trim().length > 0,
+      pre: draft.pre_request_script.trim().length > 0,
+      post: draft.post_request_script.trim().length > 0,
+      comment: draft.comment.trim().length > 0
+    }),
+    [
+      draft.params,
+      draft.headers,
+      draft.body,
+      draft.pre_request_script,
+      draft.post_request_script,
+      draft.comment,
+      hasCookies,
+      showBody
+    ]
+  );
 
   /**
    * Merges a partial update into the current draft.
@@ -107,13 +144,13 @@ export function Editor({
           value={tab}
           onChange={setTab}
           tabs={[
-            { value: 'params', label: 'Params' },
-            { value: 'headers', label: 'Headers' },
-            { value: 'cookies', label: 'Cookies' },
-            { value: 'body', label: 'Body', hidden: !showBody },
-            { value: 'pre', label: 'PreRequest' },
-            { value: 'post', label: 'PostRequest' },
-            { value: 'comment', label: 'Comment' }
+            { value: 'params', label: 'Params', indicator: tabIndicators.params },
+            { value: 'headers', label: 'Headers', indicator: tabIndicators.headers },
+            { value: 'cookies', label: 'Cookies', indicator: tabIndicators.cookies },
+            { value: 'body', label: 'Body', hidden: !showBody, indicator: tabIndicators.body },
+            { value: 'pre', label: 'PreRequest', indicator: tabIndicators.pre },
+            { value: 'post', label: 'PostRequest', indicator: tabIndicators.post },
+            { value: 'comment', label: 'Comment', indicator: tabIndicators.comment }
           ]}
         />
       </div>

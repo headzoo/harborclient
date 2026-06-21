@@ -10,41 +10,46 @@ const state = {
   request: ctx.request,
   variables: Object.assign({}, ctx.variables),
   variableSets: {},
+  collectionVariableSets: {},
+  environmentVariableSets: {},
+  collectionHeaders: ctx.collection && ctx.collection.headers ? ctx.collection.headers : [],
   tests: [],
   logs: [],
   phase: ctx.phase
 };
 
-function upsertHeader(key, value) {
-  const k = String(key);
-  const v = String(value);
-  const rows = state.request.headers;
-  const existing = rows.find(function(h) {
-    return h.enabled && h.key.trim().toLowerCase() === k.toLowerCase();
-  });
-  if (existing) {
-    existing.value = v;
-  } else {
-    rows.push({ key: k, value: v, enabled: true });
-  }
-}
-
-function headerGet(key) {
-  const k = String(key).toLowerCase();
-  const row = state.request.headers.find(function(h) {
-    return h.enabled && h.key.trim().toLowerCase() === k;
-  });
-  return row ? row.value : undefined;
-}
-
-function headerToMap() {
-  const map = {};
-  for (const h of state.request.headers) {
-    if (h.enabled && h.key.trim()) {
-      map[h.key.trim()] = h.value;
+function makeHeaderApi(getRows) {
+  return {
+    get: function(key) {
+      const k = String(key).toLowerCase();
+      const row = getRows().find(function(h) {
+        return h.enabled && h.key.trim().toLowerCase() === k;
+      });
+      return row ? row.value : undefined;
+    },
+    upsert: function(key, value) {
+      const k = String(key);
+      const v = String(value);
+      const rows = getRows();
+      const existing = rows.find(function(h) {
+        return h.enabled && h.key.trim().toLowerCase() === k.toLowerCase();
+      });
+      if (existing) {
+        existing.value = v;
+      } else {
+        rows.push({ key: k, value: v, enabled: true });
+      }
+    },
+    toObject: function() {
+      const map = {};
+      for (const h of getRows()) {
+        if (h.enabled && h.key.trim()) {
+          map[h.key.trim()] = h.value;
+        }
+      }
+      return map;
     }
-  }
-  return map;
+  };
 }
 
 function makeExpect(actual) {
@@ -90,11 +95,7 @@ const hc = {
     set url(v) { state.request.url = String(v); },
     get body() { return state.request.body; },
     set body(v) { state.request.body = String(v); },
-    headers: {
-      get: headerGet,
-      upsert: upsertHeader,
-      toObject: headerToMap
-    }
+    headers: makeHeaderApi(function() { return state.request.headers; })
   },
   variables: {
     get: function(k) {
@@ -105,6 +106,36 @@ const hc = {
     },
     set: function(k, v) {
       state.variableSets[k] = String(v);
+    }
+  },
+  collection: {
+    get id() { return ctx.collection ? ctx.collection.id : null; },
+    get name() { return ctx.collection ? ctx.collection.name : ''; },
+    variables: {
+      get: function(k) {
+        if (Object.prototype.hasOwnProperty.call(state.collectionVariableSets, k)) {
+          return state.collectionVariableSets[k];
+        }
+        return state.variables[k];
+      },
+      set: function(k, v) {
+        state.collectionVariableSets[k] = String(v);
+      }
+    },
+    headers: makeHeaderApi(function() { return state.collectionHeaders; })
+  },
+  environment: {
+    get name() { return ctx.environment ? ctx.environment.name : ''; },
+    variables: {
+      get: function(k) {
+        if (Object.prototype.hasOwnProperty.call(state.environmentVariableSets, k)) {
+          return state.environmentVariableSets[k];
+        }
+        return state.variables[k];
+      },
+      set: function(k, v) {
+        state.environmentVariableSets[k] = String(v);
+      }
     }
   },
   test: function(name, fn) {
@@ -192,6 +223,9 @@ export async function runScript(input: ScriptRunInput): Promise<ScriptRunResult>
   const passthrough: ScriptRunResult = {
     request: input.request,
     variableSets: {},
+    collectionVariableSets: {},
+    environmentVariableSets: {},
+    collectionHeaders: input.collection?.headers ?? [],
     tests: [],
     logs: []
   };
@@ -204,7 +238,9 @@ export async function runScript(input: ScriptRunInput): Promise<ScriptRunResult>
     phase: input.phase,
     request: input.request,
     response: input.response,
-    variables: input.variables
+    variables: input.variables,
+    collection: input.collection,
+    environment: input.environment
   });
 
   const sandbox = vm.createContext({ __CONTEXT__: contextPayload });
@@ -216,6 +252,9 @@ export async function runScript(input: ScriptRunInput): Promise<ScriptRunResult>
     const state = JSON.parse(String(resultJson)) as {
       request: ScriptRunResult['request'];
       variableSets: Record<string, string>;
+      collectionVariableSets: Record<string, string>;
+      environmentVariableSets: Record<string, string>;
+      collectionHeaders: ScriptRunResult['collectionHeaders'];
       tests: ScriptRunResult['tests'];
       logs: string[];
     };
@@ -223,6 +262,9 @@ export async function runScript(input: ScriptRunInput): Promise<ScriptRunResult>
     return {
       request: state.request,
       variableSets: state.variableSets ?? {},
+      collectionVariableSets: state.collectionVariableSets ?? {},
+      environmentVariableSets: state.environmentVariableSets ?? {},
+      collectionHeaders: state.collectionHeaders ?? [],
       tests: state.tests ?? [],
       logs: state.logs ?? []
     };
