@@ -7,6 +7,9 @@ on:
       FONTAWESOME_PACKAGE_TOKEN:
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
