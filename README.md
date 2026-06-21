@@ -1,4 +1,4 @@
-![HarborClient](images/logo-white-bg.png)
+![HarborClient](images/logo.png)
 
 **Full documentation:** [https://harborclient.com/](https://harborclient.com/)
 

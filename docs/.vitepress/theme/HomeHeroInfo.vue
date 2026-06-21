@@ -9,7 +9,7 @@ const hero = frontmatter.value.hero as
     }
   | undefined;
 
-const logoSrc = withBase('/images/logo-white.png');
+const logoSrc = withBase('/images/logo.png');
 </script>
 
 <template>
