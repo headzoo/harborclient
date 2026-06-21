@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- docs(README): add downloads section with latest release link. (`db7bffc`)
+
 ## 1.5.2 - 2026-06-21
 
 - fix: standardize quotes in dependabot.yml and improve formatting in RequestRow and Collections components. (`ebf412b`)
