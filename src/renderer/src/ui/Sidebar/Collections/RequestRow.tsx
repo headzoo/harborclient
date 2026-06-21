@@ -1,5 +1,6 @@
 import type { Folder, SavedRequest } from '#/shared/types';
 import { RowActionsMenu } from '#/renderer/src/components/RowActionsMenu';
+import { useConfirm } from '#/renderer/src/hooks/useConfirm';
 import { METHOD_CLASSES, sourceRow } from '#/renderer/src/ui/shared/classes';
 import { requestDragId } from '#/renderer/src/ui/Sidebar/Collections/utils';
 import { type JSX } from 'react';
@@ -66,18 +67,19 @@ export function RequestRow({
   onDuplicateRequest,
   onMoveRequest
 }: Props): JSX.Element {
+  const confirm = useConfirm();
   const moveItems =
     folders.length > 0
       ? [
-          {
-            label: 'Move to collection root',
-            onSelect: () => onMoveRequest(req.id, null)
-          },
-          ...folders.map((folder) => ({
-            label: `Move to ${folder.name}`,
-            onSelect: () => onMoveRequest(req.id, folder.id)
-          }))
-        ]
+        {
+          label: 'Move to collection root',
+          onSelect: () => onMoveRequest(req.id, null)
+        },
+        ...folders.map((folder) => ({
+          label: `Move to ${folder.name}`,
+          onSelect: () => onMoveRequest(req.id, folder.id)
+        }))
+      ]
       : [];
 
   return (
@@ -107,9 +109,17 @@ export function RequestRow({
             label: 'Delete',
             variant: 'danger' as const,
             onSelect: () => {
-              if (confirm(`Delete request "${req.name}"?`)) {
-                void onDeleteRequest(req.id);
-              }
+              void (async () => {
+                const confirmed = await confirm({
+                  title: 'Delete request',
+                  message: `Delete request "${req.name}"?`,
+                  confirmLabel: 'Delete',
+                  variant: 'danger'
+                });
+                if (confirmed) {
+                  void onDeleteRequest(req.id);
+                }
+              })();
             }
           }
         ]}

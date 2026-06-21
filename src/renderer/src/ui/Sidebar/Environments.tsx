@@ -1,6 +1,7 @@
 import { useState, type JSX } from 'react';
 import type { Environment } from '#/shared/types';
 import { RowActionsMenu } from '#/renderer/src/components/RowActionsMenu';
+import { useConfirm } from '#/renderer/src/hooks/useConfirm';
 import { sourceRow } from '#/renderer/src/ui/shared/classes';
 
 interface Props {
@@ -40,6 +41,7 @@ export function Environments({
   onConfigureEnvironment,
   onDeleteEnvironment
 }: Props): JSX.Element {
+  const confirm = useConfirm();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   return (
@@ -69,9 +71,17 @@ export function Environments({
                   label: 'Delete',
                   variant: 'danger',
                   onSelect: () => {
-                    if (confirm(`Delete environment "${environment.name}"?`)) {
-                      void onDeleteEnvironment(environment.id);
-                    }
+                    void (async () => {
+                      const confirmed = await confirm({
+                        title: 'Delete environment',
+                        message: `Delete environment "${environment.name}"?`,
+                        confirmLabel: 'Delete',
+                        variant: 'danger'
+                      });
+                      if (confirmed) {
+                        void onDeleteEnvironment(environment.id);
+                      }
+                    })();
                   }
                 }
               ]}

@@ -11,9 +11,12 @@ import modalsReducer, {
   setCollectionModalInviteTokenInput,
   setCollectionModalName,
   setCollectionModalTab,
+  setCollectionModalSubmitError,
   setInviteRecipientKid,
   setPendingLoadRequest,
-  setQuitPrompt
+  setQuitPrompt,
+  setAlertModal,
+  setConfirmModal
 } from '#/renderer/src/store/slices/modalsSlice';
 
 describe('modalsSlice', () => {
@@ -24,6 +27,8 @@ describe('modalsSlice', () => {
     expect(state.pendingLoadRequest).toBeNull();
     expect(state.quitPrompt).toBeNull();
     expect(state.about).toEqual({ open: false, version: '' });
+    expect(state.alertModal).toBeNull();
+    expect(state.confirmModal).toBeNull();
   });
 
   it('opens and closes the collection modal', () => {
@@ -35,7 +40,8 @@ describe('modalsSlice', () => {
       mode: 'create-and-save',
       tab: 'invite',
       name: '',
-      inviteTokenInput: ''
+      inviteTokenInput: '',
+      submitError: null
     });
 
     state = modalsReducer(state, setCollectionModalName('My API'));
@@ -43,9 +49,14 @@ describe('modalsSlice', () => {
 
     state = modalsReducer(state, setCollectionModalTab('import'));
     expect(state.collectionModal?.tab).toBe('import');
+    expect(state.collectionModal?.submitError).toBeNull();
+
+    state = modalsReducer(state, setCollectionModalSubmitError('Create failed'));
+    expect(state.collectionModal?.submitError).toBe('Create failed');
 
     state = modalsReducer(state, setCollectionModalInviteTokenInput('token'));
     expect(state.collectionModal?.inviteTokenInput).toBe('token');
+    expect(state.collectionModal?.submitError).toBeNull();
 
     state = modalsReducer(state, closeCollectionModal());
     expect(state.collectionModal).toBeNull();
@@ -106,5 +117,31 @@ describe('modalsSlice', () => {
 
     state = modalsReducer(state, closeAboutModal());
     expect(state.about).toEqual({ open: false, version: '' });
+  });
+
+  it('opens and closes alert and confirm modals', () => {
+    let state = modalsReducer(
+      undefined,
+      setAlertModal({ title: 'Error', message: 'Something went wrong' })
+    );
+    expect(state.alertModal).toEqual({ title: 'Error', message: 'Something went wrong' });
+
+    state = modalsReducer(state, setAlertModal(null));
+    expect(state.alertModal).toBeNull();
+
+    state = modalsReducer(
+      state,
+      setConfirmModal({
+        title: 'Delete item',
+        message: 'Are you sure?',
+        confirmLabel: 'Delete',
+        cancelLabel: 'Cancel',
+        variant: 'danger'
+      })
+    );
+    expect(state.confirmModal?.variant).toBe('danger');
+
+    state = modalsReducer(state, setConfirmModal(null));
+    expect(state.confirmModal).toBeNull();
   });
 });

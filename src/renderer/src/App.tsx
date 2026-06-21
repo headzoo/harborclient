@@ -38,10 +38,13 @@ import {
   updateEnvironment
 } from '#/renderer/src/store/thunks';
 import { AboutModal } from '#/renderer/src/ui/modals/AboutModal';
+import { AlertModal } from '#/renderer/src/ui/modals/AlertModal';
 import { CollectionModal } from '#/renderer/src/ui/modals/CollectionModal';
+import { ConfirmModal } from '#/renderer/src/ui/modals/ConfirmModal';
 import { InviteModal } from '#/renderer/src/ui/modals/InviteModal';
 import { QuitPrompt } from '#/renderer/src/ui/modals/QuitPrompt';
 import { UnsavedLoadPrompt } from '#/renderer/src/ui/modals/UnsavedLoadPrompt';
+import { formatErrorMessage, showAlert } from '#/renderer/src/ui/modals/dialogHelpers';
 import { Configuration } from '#/renderer/src/ui/Configuration';
 import { Sidebar } from '#/renderer/src/ui/Sidebar';
 import { Request } from '#/renderer/src/ui/Request';
@@ -170,7 +173,7 @@ export default function App(): JSX.Element {
                   }
                   toast.success('Collection updated');
                 } catch (err) {
-                  alert(err instanceof Error ? err.message : 'Failed to update collection');
+                  showAlert(dispatch, formatErrorMessage(err, 'Failed to update collection'));
                 }
               }}
               onCloseCollectionSettings={() => dispatch(closeOverlay())}
@@ -181,7 +184,7 @@ export default function App(): JSX.Element {
                   await dispatch(updateEnvironment({ id, name, variables })).unwrap();
                   toast.success('Environment updated');
                 } catch (err) {
-                  alert(err instanceof Error ? err.message : 'Failed to update environment');
+                  showAlert(dispatch, formatErrorMessage(err, 'Failed to update environment'));
                 }
               }}
               onCloseEnvironmentSettings={() => dispatch(closeOverlay())}
@@ -218,6 +221,8 @@ export default function App(): JSX.Element {
       <UnsavedLoadPrompt />
       <QuitPrompt />
       <AboutModal />
+      <AlertModal />
+      <ConfirmModal />
 
       <Toaster
         position="bottom-center"

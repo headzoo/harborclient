@@ -10,6 +10,20 @@ export interface CollectionModalState {
   tab: CollectionModalTab;
   name: string;
   inviteTokenInput: string;
+  submitError: string | null;
+}
+
+export interface AlertModalState {
+  title: string;
+  message: string;
+}
+
+export interface ConfirmModalState {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  cancelLabel: string;
+  variant: 'default' | 'danger';
 }
 
 export interface InviteModalState {
@@ -42,6 +56,8 @@ export interface ModalsState {
   pendingLoadRequest: PendingLoadRequest | null;
   quitPrompt: string[] | null;
   about: AboutModalState;
+  alertModal: AlertModalState | null;
+  confirmModal: ConfirmModalState | null;
 }
 
 const initialState: ModalsState = {
@@ -49,7 +65,9 @@ const initialState: ModalsState = {
   invite: null,
   pendingLoadRequest: null,
   quitPrompt: null,
-  about: { open: false, version: '' }
+  about: { open: false, version: '' },
+  alertModal: null,
+  confirmModal: null
 };
 
 const modalsSlice = createSlice({
@@ -67,7 +85,8 @@ const modalsSlice = createSlice({
         mode: action.payload.mode,
         tab: action.payload.tab ?? 'create',
         name: '',
-        inviteTokenInput: ''
+        inviteTokenInput: '',
+        submitError: null
       };
     },
     /**
@@ -82,6 +101,7 @@ const modalsSlice = createSlice({
     setCollectionModalTab(state, action: PayloadAction<CollectionModalTab>) {
       if (state.collectionModal) {
         state.collectionModal.tab = action.payload;
+        state.collectionModal.submitError = null;
       }
     },
     /**
@@ -90,6 +110,7 @@ const modalsSlice = createSlice({
     setCollectionModalName(state, action: PayloadAction<string>) {
       if (state.collectionModal) {
         state.collectionModal.name = action.payload;
+        state.collectionModal.submitError = null;
       }
     },
     /**
@@ -98,6 +119,15 @@ const modalsSlice = createSlice({
     setCollectionModalInviteTokenInput(state, action: PayloadAction<string>) {
       if (state.collectionModal) {
         state.collectionModal.inviteTokenInput = action.payload;
+        state.collectionModal.submitError = null;
+      }
+    },
+    /**
+     * Stores a submit error shown inline in the collection modal.
+     */
+    setCollectionModalSubmitError(state, action: PayloadAction<string | null>) {
+      if (state.collectionModal) {
+        state.collectionModal.submitError = action.payload;
       }
     },
     /**
@@ -203,6 +233,18 @@ const modalsSlice = createSlice({
      */
     setAboutVersion(state, action: PayloadAction<string>) {
       state.about.version = action.payload;
+    },
+    /**
+     * Opens or closes the global alert dialog.
+     */
+    setAlertModal(state, action: PayloadAction<AlertModalState | null>) {
+      state.alertModal = action.payload;
+    },
+    /**
+     * Opens or closes the global confirmation dialog.
+     */
+    setConfirmModal(state, action: PayloadAction<ConfirmModalState | null>) {
+      state.confirmModal = action.payload;
     }
   }
 });
@@ -213,6 +255,7 @@ export const {
   setCollectionModalTab,
   setCollectionModalName,
   setCollectionModalInviteTokenInput,
+  setCollectionModalSubmitError,
   openInviteModal,
   closeInviteModal,
   setInviteRecipientKid,
@@ -225,7 +268,9 @@ export const {
   setQuitPrompt,
   openAboutModal,
   closeAboutModal,
-  setAboutVersion
+  setAboutVersion,
+  setAlertModal,
+  setConfirmModal
 } = modalsSlice.actions;
 
 /**
@@ -250,5 +295,15 @@ export const selectQuitPrompt = (state: RootState): string[] | null => state.mod
  * Returns about dialog open state and version.
  */
 export const selectAboutModal = (state: RootState): AboutModalState => state.modals.about;
+/**
+ * Returns alert dialog state when open.
+ */
+export const selectAlertModal = (state: RootState): AlertModalState | null =>
+  state.modals.alertModal;
+/**
+ * Returns confirmation dialog state when open.
+ */
+export const selectConfirmModal = (state: RootState): ConfirmModalState | null =>
+  state.modals.confirmModal;
 
 export default modalsSlice.reducer;

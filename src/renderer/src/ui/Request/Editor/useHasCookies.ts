@@ -35,8 +35,9 @@ export function useHasCookies(url: string, variables: Variable[]): boolean {
         if (cancelled) return;
         setLoaded({ host, hasCookies: cookies.length > 0 });
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         if (cancelled) return;
+        console.warn(`Failed to load cookies for ${host}:`, err);
         setLoaded({ host, hasCookies: false });
       });
 

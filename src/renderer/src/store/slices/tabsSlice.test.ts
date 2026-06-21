@@ -109,10 +109,10 @@ describe('tabsSlice loadRequest', () => {
       tabs: initial.tabs.map((tab) =>
         tab.tabId === tabId
           ? {
-            ...tab,
-            response: { status: 200 } as SendResult,
-            testResults: [{ name: 'ok', passed: true }] as ScriptTestResult[]
-          }
+              ...tab,
+              response: { status: 200 } as SendResult,
+              testResults: [{ name: 'ok', passed: true }] as ScriptTestResult[]
+            }
           : tab
       )
     };

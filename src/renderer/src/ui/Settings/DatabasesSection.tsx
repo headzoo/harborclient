@@ -1,5 +1,6 @@
 import { useEffect, useState, type JSX } from 'react';
 import type { DatabaseConnection } from '#/shared/types';
+import { useDatabaseConnections } from '#/renderer/src/hooks/useDatabaseConnections';
 import { primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
 import { createBlankConnection, providerLabel } from './constants';
 import { DatabaseConnectionForm } from './DatabaseConnectionForm';
@@ -8,35 +9,19 @@ import { DatabaseConnectionForm } from './DatabaseConnectionForm';
  * Database settings with a list of named connections.
  */
 export function DatabasesSection(): JSX.Element {
-  const [connections, setConnections] = useState<DatabaseConnection[]>([]);
-  const [activeId, setActiveId] = useState('');
-  const [loading, setLoading] = useState(true);
+  const {
+    connections,
+    primaryConnectionId: activeId,
+    loading,
+    error: bootstrapError,
+    reload: reloadConnections
+  } = useDatabaseConnections();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [editingConnection, setEditingConnection] = useState<DatabaseConnection | null>(null);
   const [deletingConnection, setDeletingConnection] = useState<DatabaseConnection | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  /**
-   * Loads saved database connections and the active connection id on mount.
-   */
-  useEffect(() => {
-    let cancelled = false;
-
-    void Promise.all([window.api.listDatabaseConnections(), window.api.getActiveDatabaseId()]).then(
-      ([nextConnections, nextActiveId]) => {
-        if (cancelled) return;
-        setConnections(nextConnections);
-        setActiveId(nextActiveId);
-        setLoading(false);
-      }
-    );
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   /**
    * Closes edit or delete modals when Escape is pressed.
@@ -109,8 +94,8 @@ export function DatabasesSection(): JSX.Element {
       const payload: DatabaseConnection = isNew
         ? { ...editingConnection, id: crypto.randomUUID() }
         : editingConnection;
-      const nextConnections = await window.api.saveDatabaseConnection(payload);
-      setConnections(nextConnections);
+      await window.api.saveDatabaseConnection(payload);
+      reloadConnections();
       setEditingConnection(null);
       setIsNew(false);
       setSaved(true);
@@ -132,10 +117,8 @@ export function DatabasesSection(): JSX.Element {
     setDeletingConnection(null);
 
     try {
-      const nextConnections = await window.api.deleteDatabaseConnection(id);
-      setConnections(nextConnections);
-      const nextActiveId = await window.api.getActiveDatabaseId();
-      setActiveId(nextActiveId);
+      await window.api.deleteDatabaseConnection(id);
+      reloadConnections();
       if (editingConnection?.id === id) {
         handleCancelEdit();
       }
@@ -155,7 +138,7 @@ export function DatabasesSection(): JSX.Element {
 
     try {
       await window.api.setActiveDatabaseId(id);
-      setActiveId(id);
+      reloadConnections();
       setSaved(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -187,6 +170,13 @@ export function DatabasesSection(): JSX.Element {
 
         {loading ? (
           <p className="text-[12px] text-muted">Loading…</p>
+        ) : bootstrapError ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="mb-0 text-[12px] text-danger">{bootstrapError}</p>
+            <button type="button" className={secondaryButton} onClick={reloadConnections}>
+              Retry
+            </button>
+          </div>
         ) : (
           <ul className="m-0 flex list-none flex-col gap-2 p-0">
             {connections.map((connection) => {

@@ -5,6 +5,7 @@ import { initLocalRegistry } from '#/main/db/localRegistryInstance';
 import { createDatabaseInstance } from '#/main/db/createDatabaseInstance';
 import type { IDatabase } from '#/main/db/IDatabase';
 import { registerIpcHandlers } from '#/main/ipc/ipc';
+import { ipcArgSchemas } from '#/main/ipc/ipcSchemas';
 import {
   getActiveDatabaseId,
   getActiveDatabaseConnection,
@@ -208,9 +209,16 @@ function createWindow(): BrowserWindow {
   return window;
 }
 
-ipcMain.on('app:close-decision', (_event, proceed: boolean) => {
+ipcMain.on('app:close-decision', (_event, ...raw) => {
   closePromptOpen = false;
 
+  const result = ipcArgSchemas.closeDecision.safeParse(raw);
+  if (!result.success) {
+    closeReason = null;
+    return;
+  }
+
+  const [proceed] = result.data;
   if (!proceed) {
     closeReason = null;
     return;

@@ -287,6 +287,14 @@ describe('object schema happy paths', () => {
     expect(ipcArgSchemas.inviteCreate.safeParse([1, 'kid-abc']).success).toBe(true);
     expect(ipcArgSchemas.inviteCreate.safeParse([1, '']).success).toBe(false);
   });
+
+  it('closeDecision accepts booleans and rejects non-boolean proceed values', () => {
+    expect(ipcArgSchemas.closeDecision.safeParse([true]).success).toBe(true);
+    expect(ipcArgSchemas.closeDecision.safeParse([false]).success).toBe(true);
+    expect(ipcArgSchemas.closeDecision.safeParse([1]).success).toBe(false);
+    expect(ipcArgSchemas.closeDecision.safeParse(['true']).success).toBe(false);
+    expect(ipcArgSchemas.closeDecision.safeParse([]).success).toBe(false);
+  });
 });
 
 describe('non-empty name schemas', () => {

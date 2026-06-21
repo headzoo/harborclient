@@ -7,12 +7,22 @@ import { ipcArgSchemas } from '#/main/ipc/ipcSchemas';
  */
 export function registerCookieHandlers(): void {
   // Returns cookies stored for a hostname.
-  handle('cookies:getForDomain', ipcArgSchemas.domain, (_event, cookieDomain) =>
-    getCookiesForDomain(cookieDomain)
-  );
+  handle('cookies:getForDomain', ipcArgSchemas.domain, (_event, cookieDomain) => {
+    try {
+      return getCookiesForDomain(cookieDomain);
+    } catch (err) {
+      console.warn(`Failed to get cookies for "${cookieDomain}":`, err);
+      throw err;
+    }
+  });
 
   // Replaces cookies stored for a hostname.
   handle('cookies:setForDomain', ipcArgSchemas.setCookies, (_event, cookieDomain, cookies) => {
-    setCookiesForDomain(cookieDomain, cookies);
+    try {
+      setCookiesForDomain(cookieDomain, cookies);
+    } catch (err) {
+      console.warn(`Failed to set cookies for "${cookieDomain}":`, err);
+      throw err;
+    }
   });
 }

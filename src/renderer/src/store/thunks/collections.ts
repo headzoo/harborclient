@@ -134,6 +134,35 @@ export const updateCollection = createAsyncThunk<
     const primaryConnectionId = await window.api.getActiveDatabaseId();
     const currentConnectionId = collection?.connectionId ?? primaryConnectionId;
 
+    if (connectionId && connectionId !== currentConnectionId) {
+      await window.api.moveCollection(id, connectionId);
+      dispatch(closeTabsForCollection(id));
+
+      let updated: Collection;
+      try {
+        updated = await window.api.updateCollection(
+          id,
+          name,
+          variables,
+          headers,
+          preRequestScript,
+          postRequestScript,
+          auth
+        );
+      } catch (err) {
+        await dispatch(refreshCollections());
+        throw new Error(
+          'Collection was moved to the new database, but your settings could not be saved. Open collection settings and save again.',
+          { cause: err }
+        );
+      }
+
+      await dispatch(refreshCollections());
+      dispatch(setSelectedCollectionId(updated.id));
+      await dispatch(refreshRequests(updated.id));
+      return updated;
+    }
+
     await window.api.updateCollection(
       id,
       name,
@@ -143,15 +172,6 @@ export const updateCollection = createAsyncThunk<
       postRequestScript,
       auth
     );
-
-    if (connectionId && connectionId !== currentConnectionId) {
-      dispatch(closeTabsForCollection(id));
-      const moved = await window.api.moveCollection(id, connectionId);
-      await dispatch(refreshCollections());
-      dispatch(setSelectedCollectionId(moved.id));
-      await dispatch(refreshRequests(moved.id));
-      return moved;
-    }
 
     await dispatch(refreshCollections());
     const refreshed = getState().collections.collections.find((item) => item.id === id);

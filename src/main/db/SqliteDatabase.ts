@@ -712,24 +712,23 @@ export class SqliteDatabase implements IDatabase {
       )
       .get(id) as
       | {
-        name: string;
-        variables: string;
-        headers: string;
-        auth: string;
-        pre_request_script: string;
-        post_request_script: string;
-      }
+          name: string;
+          variables: string;
+          headers: string;
+          auth: string;
+          pre_request_script: string;
+          post_request_script: string;
+        }
       | undefined;
 
     if (!row) throw new Error('Collection not found');
 
-    const folders = (await this.listFolders(id)).map(({ name, sort_order }) => ({
+    const folderRows = await this.listFolders(id);
+    const folders = folderRows.map(({ name, sort_order }) => ({
       name,
       sort_order
     }));
-    const folderNameById = new Map(
-      (await this.listFolders(id)).map((folder) => [folder.id, folder.name])
-    );
+    const folderNameById = new Map(folderRows.map((folder) => [folder.id, folder.name]));
 
     const requests = (await this.listRequests(id)).map(
       ({

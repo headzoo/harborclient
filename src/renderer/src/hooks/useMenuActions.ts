@@ -3,6 +3,7 @@ import { useAppDispatch } from '#/renderer/src/store/hooks';
 import { openAboutModal, openCollectionModal } from '#/renderer/src/store/slices/modalsSlice';
 import { openCertificates, openSettings } from '#/renderer/src/store/slices/navigationSlice';
 import { dispatchNewRequest, importCollection, saveFromMenu } from '#/renderer/src/store/thunks';
+import { formatErrorMessage, showAlert } from '#/renderer/src/ui/modals/dialogHelpers';
 
 /**
  * Subscribes to main-process menu actions and dispatches the matching store updates.
@@ -27,7 +28,7 @@ export function useMenuActions(): void {
           break;
         case 'save':
           void dispatch(saveFromMenu()).catch((err: unknown) => {
-            alert(err instanceof Error ? err.message : 'Failed to save request');
+            showAlert(dispatch, formatErrorMessage(err, 'Failed to save request'));
           });
           break;
         case 'settings':

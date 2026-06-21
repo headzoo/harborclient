@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
-import type { DatabaseConnection, SavedRequest } from '#/shared/types';
+import type { SavedRequest } from '#/shared/types';
 import { ResizeHandle, useResizable } from '#/renderer/src/components/Resizable';
+import { useDatabaseConnections } from '#/renderer/src/hooks/useDatabaseConnections';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import {
   selectActiveEnvironmentId,
@@ -34,6 +35,8 @@ import {
   reorderRequests
 } from '#/renderer/src/store/thunks';
 import { field, primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
+import { Modal } from '#/renderer/src/ui/shared/Modal';
+import { formatErrorMessage, showAlert, showConfirm } from '#/renderer/src/ui/modals/dialogHelpers';
 import { Collections } from './Collections';
 import { Environments } from './Environments';
 import { Section } from './Section';
@@ -110,14 +113,19 @@ export function Sidebar({
 
   const [showEnvironmentModal, setShowEnvironmentModal] = useState(false);
   const [newEnvironmentName, setNewEnvironmentName] = useState('');
+  const [environmentModalError, setEnvironmentModalError] = useState<string | null>(null);
   const [folderModal, setFolderModal] = useState<{
     mode: 'create' | 'rename';
     collectionId: number;
     folderId?: number;
     name: string;
+    error: string | null;
   } | null>(null);
-  const [databaseConnections, setDatabaseConnections] = useState<DatabaseConnection[]>([]);
-  const [primaryConnectionId, setPrimaryConnectionId] = useState('');
+  const {
+    connections: databaseConnections,
+    primaryConnectionId,
+    error: connectionsError
+  } = useDatabaseConnections();
   const { size: width, onResizeStart } = useResizable({
     axis: 'x',
     direction: 1,
@@ -128,23 +136,14 @@ export function Sidebar({
   });
 
   /**
-   * Loads database connections for collection badges and routing labels.
+   * Surfaces a one-time toast when database connection bootstrap fails so badges
+   * may be missing without silent failure.
    */
   useEffect(() => {
-    let cancelled = false;
-
-    void Promise.all([window.api.listDatabaseConnections(), window.api.getActiveDatabaseId()]).then(
-      ([connections, activeId]) => {
-        if (cancelled) return;
-        setDatabaseConnections(connections);
-        setPrimaryConnectionId(activeId);
-      }
-    );
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (connectionsError) {
+      toast.error(`Failed to load databases: ${connectionsError}`);
+    }
+  }, [connectionsError]);
 
   /**
    * Maps connection ids to display names for sidebar badges.
@@ -172,6 +171,7 @@ export function Sidebar({
   const closeEnvironmentModal = (): void => {
     setShowEnvironmentModal(false);
     setNewEnvironmentName('');
+    setEnvironmentModalError(null);
   };
 
   /**
@@ -190,6 +190,7 @@ export function Sidebar({
     if (!name) return;
 
     const { mode, collectionId, folderId } = folderModal;
+    setFolderModal({ ...folderModal, error: null });
     try {
       if (mode === 'create') {
         await dispatch(createFolder({ collectionId, name })).unwrap();
@@ -200,7 +201,10 @@ export function Sidebar({
       }
       closeFolderModal();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to save folder');
+      setFolderModal({
+        ...folderModal,
+        error: formatErrorMessage(err, 'Failed to save folder')
+      });
     }
   };
 
@@ -210,12 +214,13 @@ export function Sidebar({
   const handleEnvironmentModalSubmit = async (): Promise<void> => {
     const name = newEnvironmentName.trim();
     if (!name) return;
+    setEnvironmentModalError(null);
     try {
       await dispatch(createEnvironment(name)).unwrap();
       toast.success('Environment created');
       closeEnvironmentModal();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to create environment');
+      setEnvironmentModalError(formatErrorMessage(err, 'Failed to create environment'));
     }
   };
 
@@ -260,25 +265,25 @@ export function Sidebar({
                   await dispatch(duplicateCollection(id)).unwrap();
                   toast.success('Collection duplicated');
                 } catch (err) {
-                  alert(err instanceof Error ? err.message : 'Failed to duplicate collection');
+                  showAlert(dispatch, formatErrorMessage(err, 'Failed to duplicate collection'));
                 }
               }}
               onInviteCollection={onInviteCollection}
               onNewFolder={(collectionId) => {
-                setFolderModal({ mode: 'create', collectionId, name: '' });
+                setFolderModal({ mode: 'create', collectionId, name: '', error: null });
               }}
               onNewRequestInCollection={async (id) => {
                 try {
                   await dispatch(newRequestInCollection(id)).unwrap();
                 } catch (err) {
-                  alert(err instanceof Error ? err.message : 'Failed to create request');
+                  showAlert(dispatch, formatErrorMessage(err, 'Failed to create request'));
                 }
               }}
               onNewRequestInFolder={async (collectionId, folderId) => {
                 try {
                   await dispatch(newRequestInFolder({ collectionId, folderId })).unwrap();
                 } catch (err) {
-                  alert(err instanceof Error ? err.message : 'Failed to create request');
+                  showAlert(dispatch, formatErrorMessage(err, 'Failed to create request'));
                 }
               }}
               onRenameFolder={(id, collectionId) => {
@@ -288,7 +293,8 @@ export function Sidebar({
                   mode: 'rename',
                   collectionId,
                   folderId: id,
-                  name: folder?.name ?? ''
+                  name: folder?.name ?? '',
+                  error: null
                 });
               }}
               onDeleteFolder={async (id, collectionId, requestIds) => {
@@ -297,11 +303,17 @@ export function Sidebar({
                   count > 0
                     ? `Delete this folder and ${count} request${count === 1 ? '' : 's'} inside it?`
                     : 'Delete this folder?';
-                if (!confirm(message)) return;
+                const confirmed = await showConfirm(dispatch, {
+                  title: 'Delete folder',
+                  message,
+                  confirmLabel: 'Delete',
+                  variant: 'danger'
+                });
+                if (!confirmed) return;
                 try {
                   await dispatch(deleteFolder({ id, collectionId, requestIds })).unwrap();
                 } catch (err) {
-                  alert(err instanceof Error ? err.message : 'Failed to delete folder');
+                  showAlert(dispatch, formatErrorMessage(err, 'Failed to delete folder'));
                 }
               }}
               onReorderCollections={async (orderedCollectionIds) => {
@@ -324,7 +336,7 @@ export function Sidebar({
                 try {
                   await dispatch(duplicateRequest(req)).unwrap();
                 } catch (err) {
-                  alert(err instanceof Error ? err.message : 'Failed to duplicate request');
+                  showAlert(dispatch, formatErrorMessage(err, 'Failed to duplicate request'));
                 }
               }}
             />
@@ -336,6 +348,7 @@ export function Sidebar({
             onToggle={toggleEnvironmentsSection}
             onAdd={() => {
               setNewEnvironmentName('');
+              setEnvironmentModalError(null);
               setShowEnvironmentModal(true);
             }}
             addLabel="Add Environment"
@@ -359,85 +372,74 @@ export function Sidebar({
       />
 
       {folderModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onClick={closeFolderModal}
-        >
-          <div
-            className="w-96 rounded-lg border border-separator bg-surface p-4 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">
-              {folderModal.mode === 'create' ? 'New folder' : 'Rename folder'}
-            </h2>
-            <input
-              className={`${field} mt-3 w-full`}
-              type="text"
-              autoFocus
-              placeholder="Folder name"
-              value={folderModal.name}
-              onChange={(e) =>
-                setFolderModal((current) =>
-                  current ? { ...current, name: e.target.value } : current
-                )
-              }
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void handleFolderModalSubmit();
-                if (e.key === 'Escape') closeFolderModal();
-              }}
-            />
-            <div className="mt-4 flex justify-end gap-2">
-              <button className={secondaryButton} onClick={closeFolderModal}>
-                Cancel
-              </button>
-              <button
-                className={primaryButton}
-                onClick={() => void handleFolderModalSubmit()}
-                disabled={!folderModal.name.trim()}
-              >
-                {folderModal.mode === 'create' ? 'Create' : 'Save'}
-              </button>
-            </div>
+        <Modal onClose={closeFolderModal}>
+          <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">
+            {folderModal.mode === 'create' ? 'New folder' : 'Rename folder'}
+          </h2>
+          <input
+            className={`${field} mt-3 w-full`}
+            type="text"
+            autoFocus
+            placeholder="Folder name"
+            value={folderModal.name}
+            onChange={(e) =>
+              setFolderModal((current) =>
+                current ? { ...current, name: e.target.value, error: null } : current
+              )
+            }
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void handleFolderModalSubmit();
+            }}
+          />
+          {folderModal.error && <p className="mt-3 text-[12px] text-danger">{folderModal.error}</p>}
+          <div className="mt-4 flex justify-end gap-2">
+            <button className={secondaryButton} onClick={closeFolderModal}>
+              Cancel
+            </button>
+            <button
+              className={primaryButton}
+              onClick={() => void handleFolderModalSubmit()}
+              disabled={!folderModal.name.trim()}
+            >
+              {folderModal.mode === 'create' ? 'Create' : 'Save'}
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
 
       {showEnvironmentModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onClick={closeEnvironmentModal}
-        >
-          <div
-            className="w-96 rounded-lg border border-separator bg-surface p-4 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">New environment</h2>
-            <input
-              className={`${field} mt-3 w-full`}
-              type="text"
-              autoFocus
-              placeholder="Environment name"
-              value={newEnvironmentName}
-              onChange={(e) => setNewEnvironmentName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void handleEnvironmentModalSubmit();
-                if (e.key === 'Escape') closeEnvironmentModal();
-              }}
-            />
-            <div className="mt-4 flex justify-end gap-2">
-              <button className={secondaryButton} onClick={closeEnvironmentModal}>
-                Cancel
-              </button>
-              <button
-                className={primaryButton}
-                onClick={() => void handleEnvironmentModalSubmit()}
-                disabled={!newEnvironmentName.trim()}
-              >
-                Create
-              </button>
-            </div>
+        <Modal onClose={closeEnvironmentModal}>
+          <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">New environment</h2>
+          <input
+            className={`${field} mt-3 w-full`}
+            type="text"
+            autoFocus
+            placeholder="Environment name"
+            value={newEnvironmentName}
+            onChange={(e) => {
+              setNewEnvironmentName(e.target.value);
+              setEnvironmentModalError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') void handleEnvironmentModalSubmit();
+            }}
+          />
+          {environmentModalError && (
+            <p className="mt-3 text-[12px] text-danger">{environmentModalError}</p>
+          )}
+          <div className="mt-4 flex justify-end gap-2">
+            <button className={secondaryButton} onClick={closeEnvironmentModal}>
+              Cancel
+            </button>
+            <button
+              className={primaryButton}
+              onClick={() => void handleEnvironmentModalSubmit()}
+              disabled={!newEnvironmentName.trim()}
+            >
+              Create
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
     </>
   );

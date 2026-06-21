@@ -47,8 +47,9 @@ export function CookiesEditor({ url, variables }: Props): JSX.Element {
         if (cancelled) return;
         setRows(cookies.length ? cookies : [emptyKeyValue()]);
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         if (cancelled) return;
+        console.warn(`Failed to load cookies for ${host}:`, err);
         setRows([emptyKeyValue()]);
       })
       .finally(() => {
@@ -70,7 +71,9 @@ export function CookiesEditor({ url, variables }: Props): JSX.Element {
   const handleChange = (nextRows: KeyValue[]): void => {
     setRows(nextRows);
     if (!host) return;
-    void window.api.setCookies(host, nextRows);
+    void window.api.setCookies(host, nextRows).catch((err: unknown) => {
+      console.warn(`Failed to save cookies for ${host}:`, err);
+    });
   };
 
   if (!host) {

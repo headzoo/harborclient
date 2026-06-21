@@ -1,15 +1,10 @@
 import { useEffect, useMemo, useState, type JSX } from 'react';
-import type {
-  AuthConfig,
-  Collection,
-  DatabaseConnection,
-  KeyValue,
-  Variable
-} from '#/shared/types';
+import type { AuthConfig, Collection, KeyValue, Variable } from '#/shared/types';
 import { normalizeAuth } from '#/shared/auth';
 import { cleanVariables } from '#/renderer/src/components/variableUtils';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
+import { useDatabaseConnections } from '#/renderer/src/hooks/useDatabaseConnections';
 import { emptyKeyValue } from '#/renderer/src/store/drafts';
 import { faXmark } from '#/renderer/src/fontawesome';
 import { iconButton, primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
@@ -92,36 +87,16 @@ function CollectionSettingsForm({
   const [auth, setAuth] = useState<AuthConfig>(normalizeAuth(collection.auth));
   const [preRequestScript, setPreRequestScript] = useState(collection.pre_request_script ?? '');
   const [postRequestScript, setPostRequestScript] = useState(collection.post_request_script ?? '');
-  const [connections, setConnections] = useState<DatabaseConnection[]>([]);
-  const [primaryConnectionId, setPrimaryConnectionId] = useState('');
   const [connectionId, setConnectionId] = useState(collection.connectionId ?? '');
-  const [connectionsReady, setConnectionsReady] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  /**
-   * Loads database connections and the active primary connection on mount and when
-   * the collection's saved connection id changes. Fills the connection selector
-   * when the form value is still empty.
-   *
-   * Cleanup sets cancelled so stale async results are ignored after unmount or re-run.
-   */
-  useEffect(() => {
-    let cancelled = false;
-
-    void Promise.all([window.api.listDatabaseConnections(), window.api.getActiveDatabaseId()]).then(
-      ([nextConnections, nextPrimaryConnectionId]) => {
-        if (cancelled) return;
-        setConnections(nextConnections);
-        setPrimaryConnectionId(nextPrimaryConnectionId);
-        setConnectionId((current) => current || collection.connectionId || nextPrimaryConnectionId);
-        setConnectionsReady(true);
-      }
-    );
-
-    return () => {
-      cancelled = true;
-    };
-  }, [collection.connectionId]);
+  const {
+    connections,
+    primaryConnectionId,
+    loading: connectionsLoading,
+    error: connectionsError,
+    reload: reloadConnections
+  } = useDatabaseConnections([collection.connectionId]);
 
   const resolvedConnectionId = connectionId || collection.connectionId || primaryConnectionId;
 
@@ -169,8 +144,8 @@ function CollectionSettingsForm({
    * cause a spurious dirty flicker during load.
    */
   useEffect(() => {
-    onDirtyChange?.(connectionsReady ? isDirty : false);
-  }, [isDirty, connectionsReady, onDirtyChange]);
+    onDirtyChange?.(!connectionsLoading ? isDirty : false);
+  }, [isDirty, connectionsLoading, onDirtyChange]);
 
   /**
    * Dot indicators for tabs whose sections have content configured.
@@ -252,6 +227,9 @@ function CollectionSettingsForm({
             connectionId={resolvedConnectionId}
             connections={connections}
             onConnectionIdChange={setConnectionId}
+            connectionsLoading={connectionsLoading}
+            connectionsError={connectionsError}
+            onConnectionsRetry={reloadConnections}
             onSave={() => void handleSave()}
             onClose={onClose}
           />

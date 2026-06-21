@@ -255,6 +255,7 @@ export const ipcArgSchemas = {
   label: z.tuple([label]),
   labelAndPublicKey: z.tuple([label, publicKeyPem]),
   themeSet: z.tuple([themeSource]),
+  closeDecision: z.tuple([z.boolean()]),
   saveRequest: z.tuple([saveRequestInput]),
   sendRequest: z.tuple([sendRequestInput, requestId.optional()]),
   cancelRequest: z.tuple([requestId]),

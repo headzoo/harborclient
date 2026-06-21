@@ -32,17 +32,34 @@ function createLocalStorageMock(): Storage {
 
 const deleteCollectionMock = vi.fn<(id: number) => Promise<void>>();
 const listCollectionsMock = vi.fn<() => Promise<ListCollectionsResult>>();
+const getActiveDatabaseIdMock = vi.fn<() => Promise<string>>();
+const updateCollectionMock =
+  vi.fn<
+    (
+      id: number,
+      name: string,
+      variables: Collection['variables'],
+      headers: Collection['headers'],
+      preRequestScript: string,
+      postRequestScript: string,
+      auth: Collection['auth']
+    ) => Promise<Collection>
+  >();
+const moveCollectionMock = vi.fn<(id: number, targetConnectionId: string) => Promise<Collection>>();
+const listRequestsMock = vi.fn<(collectionId: number) => Promise<unknown[]>>();
 
 /**
  * Builds a minimal collection row for listCollections mocks.
  *
  * @param id - Collection id.
  * @param name - Display name.
+ * @param connectionId - Database connection id when routed across providers.
  */
-function sampleCollection(id: number, name: string): Collection {
+function sampleCollection(id: number, name: string, connectionId?: string): Collection {
   return {
     id,
     name,
+    connectionId,
     variables: [],
     headers: [],
     auth: defaultAuth(),
@@ -81,7 +98,11 @@ beforeEach(() => {
   vi.stubGlobal('window', {
     api: {
       deleteCollection: deleteCollectionMock,
-      listCollections: listCollectionsMock
+      listCollections: listCollectionsMock,
+      getActiveDatabaseId: getActiveDatabaseIdMock,
+      updateCollection: updateCollectionMock,
+      moveCollection: moveCollectionMock,
+      listRequests: listRequestsMock
     }
   });
   deleteCollectionMock.mockReset();
@@ -91,6 +112,12 @@ beforeEach(() => {
     collections: [sampleCollection(2, 'Remaining')],
     warnings: []
   });
+  getActiveDatabaseIdMock.mockReset();
+  getActiveDatabaseIdMock.mockResolvedValue('conn-a');
+  updateCollectionMock.mockReset();
+  moveCollectionMock.mockReset();
+  listRequestsMock.mockReset();
+  listRequestsMock.mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -144,5 +171,85 @@ describe('refreshCollections', () => {
     await firstRefresh;
 
     expect(store.getState().collections.collections[0]?.name).toBe('Fresh');
+  });
+});
+
+describe('updateCollection', () => {
+  it('does not persist metadata when moveCollection fails', async () => {
+    const { store } = await import('#/renderer/src/store/redux');
+    const { setCollections } = await import('#/renderer/src/store/slices/collectionsSlice');
+    const { updateCollection } = await import('#/renderer/src/store/thunks/collections');
+
+    store.dispatch(setCollections([sampleCollection(1, 'Original', 'conn-a')]));
+
+    moveCollectionMock.mockRejectedValue(new Error('Move failed'));
+    updateCollectionMock.mockResolvedValue(sampleCollection(1, 'Updated', 'conn-b'));
+
+    await expect(
+      store
+        .dispatch(
+          updateCollection({
+            id: 1,
+            name: 'Updated',
+            variables: [],
+            headers: [],
+            preRequestScript: '',
+            postRequestScript: '',
+            auth: defaultAuth(),
+            connectionId: 'conn-b'
+          })
+        )
+        .unwrap()
+    ).rejects.toThrow('Move failed');
+
+    expect(moveCollectionMock).toHaveBeenCalledWith(1, 'conn-b');
+    expect(updateCollectionMock).not.toHaveBeenCalled();
+
+    const collection = store.getState().collections.collections.find((item) => item.id === 1);
+    expect(collection?.connectionId).toBe('conn-a');
+    expect(collection?.name).toBe('Original');
+  });
+
+  it('refreshes store and reports partial failure when update fails after move', async () => {
+    const { store } = await import('#/renderer/src/store/redux');
+    const { setCollections } = await import('#/renderer/src/store/slices/collectionsSlice');
+    const { updateCollection } = await import('#/renderer/src/store/thunks/collections');
+
+    store.dispatch(setCollections([sampleCollection(1, 'Original', 'conn-a')]));
+
+    moveCollectionMock.mockResolvedValue(sampleCollection(1, 'Original', 'conn-b'));
+    updateCollectionMock.mockRejectedValue(new Error('Update failed'));
+    listCollectionsMock.mockResolvedValue({
+      collections: [sampleCollection(1, 'Original', 'conn-b')],
+      warnings: []
+    });
+
+    await expect(
+      store
+        .dispatch(
+          updateCollection({
+            id: 1,
+            name: 'Updated',
+            variables: [],
+            headers: [],
+            preRequestScript: '',
+            postRequestScript: '',
+            auth: defaultAuth(),
+            connectionId: 'conn-b'
+          })
+        )
+        .unwrap()
+    ).rejects.toThrow(
+      'Collection was moved to the new database, but your settings could not be saved. Open collection settings and save again.'
+    );
+
+    expect(moveCollectionMock.mock.invocationCallOrder[0]).toBeLessThan(
+      updateCollectionMock.mock.invocationCallOrder[0] ?? Number.MAX_SAFE_INTEGER
+    );
+    expect(listCollectionsMock).toHaveBeenCalled();
+
+    const collection = store.getState().collections.collections.find((item) => item.id === 1);
+    expect(collection?.connectionId).toBe('conn-b');
+    expect(collection?.name).toBe('Original');
   });
 });

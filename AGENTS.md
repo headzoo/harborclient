@@ -43,6 +43,22 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for project layout, the IPC contract
 (`src/shared/types.ts` → `src/preload/index.ts` → `src/main/ipc/ipc.ts`), code
 style, and path aliases.
 
+## User interface
+
+Never use native browser dialogs (`alert`, `confirm`, `prompt`) in the renderer.
+They block the Electron renderer thread and break visual consistency.
+
+- Use custom modals built on [`Modal`](src/renderer/src/ui/shared/Modal.tsx) for
+  blocking messages and confirmations (`AlertModal`, `ConfirmModal`, or
+  feature-specific dialogs like `QuitPrompt`).
+- Show errors inline (`text-danger`) when the user is already inside a modal or
+  settings form.
+- Use `react-hot-toast` only for non-blocking success or info feedback, not for
+  errors that require acknowledgment.
+
+Helpers live in [`dialogHelpers.ts`](src/renderer/src/ui/modals/dialogHelpers.ts)
+(`showAlert`, `showConfirm`) and [`useConfirm`](src/renderer/src/hooks/useConfirm.ts).
+
 ## Documentation
 
 Always add clear, useful documentation when you write or change code. Match the

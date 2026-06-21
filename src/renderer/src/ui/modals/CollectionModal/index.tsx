@@ -6,6 +6,7 @@ import {
   selectCollectionModal,
   setCollectionModalInviteTokenInput,
   setCollectionModalName,
+  setCollectionModalSubmitError,
   setCollectionModalTab
 } from '#/renderer/src/store/slices/modalsSlice';
 import {
@@ -17,6 +18,7 @@ import {
 import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
 import { field, primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
 import { Modal } from '#/renderer/src/ui/shared/Modal';
+import { formatErrorMessage } from '#/renderer/src/ui/modals/dialogHelpers';
 
 /**
  * Modal for creating a collection, importing from file, or accepting an invite.
@@ -39,6 +41,7 @@ export function CollectionModal(): JSX.Element | null {
     if (!collectionModal) return;
     const name = collectionModal.name.trim();
     if (!name) return;
+    dispatch(setCollectionModalSubmitError(null));
     try {
       const collection = await dispatch(createCollection(name)).unwrap();
       if (collectionModal.mode === 'create-and-save') {
@@ -47,12 +50,15 @@ export function CollectionModal(): JSX.Element | null {
       }
       dispatch(closeCollectionModal());
     } catch (err) {
-      alert(
-        err instanceof Error
-          ? err.message
-          : collectionModal.mode === 'create-and-save'
-            ? 'Failed to save request'
-            : 'Failed to create collection'
+      dispatch(
+        setCollectionModalSubmitError(
+          formatErrorMessage(
+            err,
+            collectionModal.mode === 'create-and-save'
+              ? 'Failed to save request'
+              : 'Failed to create collection'
+          )
+        )
       );
     }
   }, [collectionModal, dispatch]);
@@ -61,13 +67,16 @@ export function CollectionModal(): JSX.Element | null {
    * Imports a collection from a JSON file selected via a native dialog.
    */
   const handleImport = useCallback(async (): Promise<void> => {
+    dispatch(setCollectionModalSubmitError(null));
     try {
       const collection = await dispatch(importCollection()).unwrap();
       if (!collection) return;
       toast.success('Collection imported');
       dispatch(closeCollectionModal());
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to import collection');
+      dispatch(
+        setCollectionModalSubmitError(formatErrorMessage(err, 'Failed to import collection'))
+      );
     }
   }, [dispatch]);
 
@@ -78,10 +87,11 @@ export function CollectionModal(): JSX.Element | null {
     if (!collectionModal) return;
     const token = collectionModal.inviteTokenInput.trim();
     if (!token) return;
+    dispatch(setCollectionModalSubmitError(null));
     try {
       await dispatch(acceptInviteToken(token)).unwrap();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to accept invite');
+      dispatch(setCollectionModalSubmitError(formatErrorMessage(err, 'Failed to accept invite')));
     }
   }, [collectionModal, dispatch]);
 
@@ -112,6 +122,10 @@ export function CollectionModal(): JSX.Element | null {
             { value: 'invite', label: 'Accept invite' }
           ]}
         />
+      )}
+
+      {collectionModal.submitError && (
+        <p className="mb-3 text-[12px] text-danger">{collectionModal.submitError}</p>
       )}
 
       {collectionModal.tab === 'invite' && showImportTab ? (

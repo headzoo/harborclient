@@ -22,6 +22,7 @@ import {
 import type { Collection, DatabaseProvider, Folder, SavedRequest } from '#/shared/types';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { RowActionsMenu } from '#/renderer/src/components/RowActionsMenu';
+import { useConfirm } from '#/renderer/src/hooks/useConfirm';
 import { faChevronDown, faChevronRight } from '#/renderer/src/fontawesome';
 import { METHOD_CLASSES, sourceRow } from '#/renderer/src/ui/shared/classes';
 import { DropZone } from '#/renderer/src/ui/Sidebar/Collections/DropZone';
@@ -243,6 +244,7 @@ export function Collections({
   onDeleteRequest,
   onDuplicateRequest
 }: Props): JSX.Element {
+  const confirm = useConfirm();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [prevSelectedId, setPrevSelectedId] = useState<number | null>(null);
   const [activeDragKind, setActiveDragKind] = useState<DragKind | null>(null);
@@ -620,19 +622,27 @@ export function Collections({
                       },
                       ...(canInvite
                         ? [
-                            {
-                              label: 'Invite',
-                              onSelect: () => onInviteCollection(collection.id, collection.name)
-                            }
-                          ]
+                          {
+                            label: 'Invite',
+                            onSelect: () => onInviteCollection(collection.id, collection.name)
+                          }
+                        ]
                         : []),
                       {
                         label: 'Delete',
                         variant: 'danger',
                         onSelect: () => {
-                          if (confirm(`Delete collection "${collection.name}"?`)) {
-                            void onDeleteCollection(collection.id);
-                          }
+                          void (async () => {
+                            const confirmed = await confirm({
+                              title: 'Delete collection',
+                              message: `Delete collection "${collection.name}"?`,
+                              confirmLabel: 'Delete',
+                              variant: 'danger'
+                            });
+                            if (confirmed) {
+                              void onDeleteCollection(collection.id);
+                            }
+                          })();
                         }
                       }
                     ]}
@@ -825,8 +835,8 @@ export function Collections({
 
                     <DragOverlay>
                       {dragCollectionId === collection.id &&
-                      activeDragKind === 'request' &&
-                      activeDragRequest ? (
+                        activeDragKind === 'request' &&
+                        activeDragRequest ? (
                         <div className="flex items-center gap-1.5 rounded border border-separator bg-surface px-2 py-1 shadow-md">
                           <span
                             className={`shrink-0 rounded px-1 py-px text-[10px] font-semibold ${METHOD_CLASSES[activeDragRequest.method.toLowerCase()] ?? 'bg-info text-white'}`}
