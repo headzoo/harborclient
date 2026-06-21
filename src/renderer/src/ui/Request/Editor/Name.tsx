@@ -52,8 +52,8 @@ function BreadcrumbPrefix({
   if (!collectionName && !folderName) return null;
 
   const segmentClass = compact
-    ? 'shrink-0 text-[15px] font-normal text-muted'
-    : 'font-normal text-muted';
+    ? 'truncate text-[15px] font-normal text-muted'
+    : 'truncate font-normal text-muted';
   const separator = (
     <FaIcon
       icon={faChevronRight}
@@ -62,7 +62,7 @@ function BreadcrumbPrefix({
   );
 
   return (
-    <span className="inline-flex shrink-0 items-center gap-1">
+    <span className="inline-flex min-w-0 shrink items-center gap-1 overflow-hidden">
       {collectionName && (
         <>
           <span className={segmentClass}>{collectionName}</span>
@@ -96,7 +96,7 @@ export function Name({ name, collectionName, folderName, onNameChange }: Props):
   return (
     <div className="mb-2">
       {editingName ? (
-        <div className="flex min-w-0 max-w-xs items-center gap-1">
+        <div className="flex w-full min-w-0 items-center gap-1">
           <BreadcrumbPrefix collectionName={collectionName} folderName={folderName} compact />
           <input
             ref={nameInputRef}
@@ -116,11 +116,13 @@ export function Name({ name, collectionName, folderName, onNameChange }: Props):
       ) : (
         <button
           type="button"
-          className="inline-flex min-w-0 max-w-xs cursor-text items-center gap-1 border-none bg-transparent p-0 text-left text-[15px] font-semibold text-text hover:opacity-80 app-no-drag"
+          className="flex w-full min-w-0 cursor-text items-center gap-1 border-none bg-transparent p-0 text-left text-[15px] font-semibold text-text hover:opacity-80 app-no-drag"
           onClick={() => setEditingName(true)}
         >
           <BreadcrumbPrefix collectionName={collectionName} folderName={folderName} />
-          {name ? name : <span className="text-muted">Request name</span>}
+          <span className="shrink-0 whitespace-nowrap">
+            {name ? name : <span className="text-muted">Request name</span>}
+          </span>
         </button>
       )}
     </div>

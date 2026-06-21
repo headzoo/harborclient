@@ -182,6 +182,32 @@ Import always creates a **new** collection. It does not merge into or replace an
 
 If the file is invalid, HarborClient shows an alert with a descriptive error (for example, unsupported format version, missing collection name, or malformed request). Canceling the file dialog does nothing.
 
+#### Postman collections
+
+HarborClient also accepts **Postman v2.1 collection exports** (`.json` files exported from Postman). Postman files are detected automatically by `info._postman_id` in the JSON.
+
+When you import a Postman collection, HarborClient shows a warning that not all Postman features are supported. Choose **Import anyway** to continue.
+
+HarborClient imports:
+
+- Collection name, variables, Basic Auth, and Bearer Token authorization
+- Saved requests (method, URL, headers, body, and description)
+- Folders (nested Postman folders are flattened into a single level using `Parent / Child` names)
+- Pre-request and post-request script text (imported verbatim)
+
+The following Postman features are **ignored** or converted:
+
+| Postman feature | HarborClient behavior |
+| --- | --- |
+| API Key, OAuth 2, and other auth types | Dropped (request uses no auth override) |
+| GraphQL and file request bodies | Body omitted (`none`) |
+| Saved example responses | Ignored |
+| URL path variables (`:id`) | Kept in the URL string only |
+| Collection/folder descriptions | Ignored |
+| Disabled query params in the URL object | URL uses the raw string as exported |
+
+Scripts imported from Postman use the `pm.*` API in Postman but run in HarborClient's `hc` sandbox — they may not behave the same way after import.
+
 ### Export file format
 
 HarborClient export files use `formatVersion: 1` or `formatVersion: 2` (with folders). They contain the collection name, variables, headers, authorization, scripts, and all saved requests. Database IDs are not included.

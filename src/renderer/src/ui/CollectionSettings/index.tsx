@@ -62,12 +62,17 @@ interface Props {
 }
 
 /**
- * Full-area collection settings with tabbed sections.
+ * Full-area collection settings with tabbed sections. Remounts internal form
+ * state when the collection id changes.
  */
 export function CollectionSettings(props: Props): JSX.Element {
   return <CollectionSettingsForm key={props.collection.id} {...props} />;
 }
 
+/**
+ * Holds editable collection settings state and tab UI. Separated from the
+ * export so the parent can reset all fields via React key on collection change.
+ */
 function CollectionSettingsForm({
   collection,
   onSave,
@@ -92,6 +97,13 @@ function CollectionSettingsForm({
   const [connectionId, setConnectionId] = useState(collection.connectionId ?? '');
   const [saving, setSaving] = useState(false);
 
+  /**
+   * Loads database connections and the active primary connection on mount and when
+   * the collection's saved connection id changes. Fills the connection selector
+   * when the form value is still empty.
+   *
+   * Cleanup sets cancelled so stale async results are ignored after unmount or re-run.
+   */
   useEffect(() => {
     let cancelled = false;
 
@@ -111,6 +123,11 @@ function CollectionSettingsForm({
 
   const resolvedConnectionId = connectionId || collection.connectionId || primaryConnectionId;
 
+  /**
+   * Whether any editable field differs from the persisted collection snapshot.
+   * Memoized because form serialization is expensive and the result drives the
+   * dirty-state callback effect.
+   */
   const isDirty = useMemo(
     () =>
       serializeCollectionForm(
@@ -144,11 +161,33 @@ function CollectionSettingsForm({
     ]
   );
 
+  /**
+   * Notifies the parent when unsaved edits appear or are cleared.
+   * Runs when isDirty or the callback reference changes; no cleanup.
+   */
   useEffect(() => {
     onDirtyChange?.(isDirty);
   }, [isDirty, onDirtyChange]);
 
-  /** Persists name, variables, headers, scripts, and database selection. */
+  /**
+   * Dot indicators for tabs whose sections have content configured.
+   * Memoized so SegmentedTabs tab config only rebuilds when section values change.
+   */
+  const tabIndicators = useMemo(
+    () => ({
+      variables: cleanVariables(variables).length > 0,
+      headers: cleanHeaders(headers).length > 0,
+      auth: auth.type !== 'none',
+      pre: preRequestScript.trim().length > 0,
+      post: postRequestScript.trim().length > 0
+    }),
+    [variables, headers, auth, preRequestScript, postRequestScript]
+  );
+
+  /**
+   * Validates name and connection, persists the form, then closes on success.
+   * No-ops when the trimmed name is empty or no connection is selected.
+   */
   const handleSave = async (): Promise<void> => {
     const trimmedName = name.trim();
     if (!trimmedName || !resolvedConnectionId) return;
@@ -194,11 +233,11 @@ function CollectionSettingsForm({
             onChange={setTab}
             tabs={[
               { value: 'general', label: 'General' },
-              { value: 'variables', label: 'Variables' },
-              { value: 'headers', label: 'Headers' },
-              { value: 'auth', label: 'Authorization' },
-              { value: 'pre', label: 'PreRequest' },
-              { value: 'post', label: 'PostRequest' }
+              { value: 'variables', label: 'Variables', indicator: tabIndicators.variables },
+              { value: 'headers', label: 'Headers', indicator: tabIndicators.headers },
+              { value: 'auth', label: 'Authorization', indicator: tabIndicators.auth },
+              { value: 'pre', label: 'PreRequest', indicator: tabIndicators.pre },
+              { value: 'post', label: 'PostRequest', indicator: tabIndicators.post }
             ]}
           />
         </div>

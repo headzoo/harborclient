@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(docs): enhance Postman collection import and migration documentation. (`415f623`)
 - fix(docs): format authorization and variable examples in requests documentation. (`970adf2`)
 
 ## 1.5.0 - 2026-06-21

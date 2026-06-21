@@ -171,7 +171,7 @@ export function CollectionModal(): JSX.Element | null {
       ) : (
         <>
           <p className="mb-4 text-[12px] text-muted">
-            Choose a HarborClient collection export (.json) to import all saved requests.
+            Choose a HarborClient or Postman collection export (.json) to import all saved requests.
           </p>
           <div className="flex justify-end gap-2">
             <button className={secondaryButton} onClick={handleClose}>

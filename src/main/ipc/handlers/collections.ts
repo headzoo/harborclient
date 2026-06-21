@@ -4,6 +4,11 @@ import {
   collectionExportContainsScripts,
   validateCollectionExport
 } from '#/main/db/collectionData';
+import { convertPostmanCollection, isPostmanCollection } from '#/main/import/postman';
+import {
+  getSuppressPostmanImportWarning,
+  setSuppressPostmanImportWarning
+} from '#/main/settings/importWarningSettings';
 import type { IDatabase } from '#/main/db/IDatabase';
 import { RoutingDatabase } from '#/main/db/RoutingDatabase';
 import { handle } from '#/main/ipc/handle';
@@ -91,25 +96,56 @@ export function registerCollectionHandlers(db: IDatabase): void {
 
     const raw = await readFile(filePaths[0], 'utf-8');
     const parsed = JSON.parse(raw) as unknown;
-    const exportData = validateCollectionExport(parsed);
 
-    if (collectionExportContainsScripts(exportData)) {
-      const messageBoxOptions = {
-        type: 'warning' as const,
-        buttons: ['Cancel', 'Import anyway'],
-        defaultId: 0,
-        cancelId: 0,
-        title: 'Collection contains scripts',
-        message: 'This collection includes pre-request or post-request scripts.',
-        detail:
-          'Scripts from imported files may not be safe. They run in a limited sandbox, but that sandbox is not a security boundary. Only import collections from sources you trust.'
-      };
-      const { response } = win
-        ? await dialog.showMessageBox(win, messageBoxOptions)
-        : await dialog.showMessageBox(messageBoxOptions);
+    let exportData;
+    if (isPostmanCollection(parsed)) {
+      if (!getSuppressPostmanImportWarning()) {
+        const postmanWarningOptions = {
+          type: 'warning' as const,
+          buttons: ['Cancel', 'Import anyway'],
+          defaultId: 0,
+          cancelId: 0,
+          title: 'Import Postman collection',
+          message: 'HarborClient does not support all Postman features.',
+          detail:
+            'Some Postman settings may be ignored or converted. Scripts from imported files may not behave the same as in Postman. Only import collections from sources you trust.',
+          checkboxLabel: "Don't show this again"
+        };
+        const { response, checkboxChecked } = win
+          ? await dialog.showMessageBox(win, postmanWarningOptions)
+          : await dialog.showMessageBox(postmanWarningOptions);
 
-      if (response !== 1) {
-        return null;
+        if (response !== 1) {
+          return null;
+        }
+
+        if (checkboxChecked) {
+          setSuppressPostmanImportWarning(true);
+        }
+      }
+
+      exportData = validateCollectionExport(convertPostmanCollection(parsed));
+    } else {
+      exportData = validateCollectionExport(parsed);
+
+      if (collectionExportContainsScripts(exportData)) {
+        const messageBoxOptions = {
+          type: 'warning' as const,
+          buttons: ['Cancel', 'Import anyway'],
+          defaultId: 0,
+          cancelId: 0,
+          title: 'Collection contains scripts',
+          message: 'This collection includes pre-request or post-request scripts.',
+          detail:
+            'Scripts from imported files may not be safe. They run in a limited sandbox, but that sandbox is not a security boundary. Only import collections from sources you trust.'
+        };
+        const { response } = win
+          ? await dialog.showMessageBox(win, messageBoxOptions)
+          : await dialog.showMessageBox(messageBoxOptions);
+
+        if (response !== 1) {
+          return null;
+        }
       }
     }
 

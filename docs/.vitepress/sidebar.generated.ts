@@ -238,6 +238,10 @@ export const sidebar: DefaultTheme.SidebarItem[] =
       {
         "text": "Examples",
         "link": "/request-scripts#examples"
+      },
+      {
+        "text": "Migrating from Postman",
+        "link": "/request-scripts#migrating-from-postman"
       }
     ],
     "collapsed": false

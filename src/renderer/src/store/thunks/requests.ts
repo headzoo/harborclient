@@ -61,11 +61,16 @@ export const saveRequest = createAsyncThunk<SavedRequest, number | undefined, Th
     }
 
     const currentDraft = activeTab.draft;
-    const shouldUpdate = currentDraft.id != null && currentDraft.collection_id === targetId;
+    const sameCollection = currentDraft.collection_id === targetId;
+    const shouldUpdate = currentDraft.id != null && sameCollection;
+    // Folders are scoped to a single collection, so a folder_id is only valid when
+    // saving back into the draft's own collection. Saving into a different collection
+    // creates a copy at the root; carrying the source folder_id would reference a
+    // folder that does not exist in the target and fail with "Folder not found".
     const saved = await window.api.saveRequest({
       id: shouldUpdate ? currentDraft.id : undefined,
       collection_id: targetId,
-      folder_id: currentDraft.folder_id ?? null,
+      folder_id: sameCollection ? (currentDraft.folder_id ?? null) : null,
       name: currentDraft.name,
       method: currentDraft.method,
       url: currentDraft.url,
@@ -329,10 +334,10 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
       const headers =
         authValue && !manualHasAuth
           ? [
-              { key: 'Authorization', value: authValue, enabled: true },
-              ...collectionHeaders,
-              ...draftHeaders
-            ]
+            { key: 'Authorization', value: authValue, enabled: true },
+            ...collectionHeaders,
+            ...draftHeaders
+          ]
           : [...collectionHeaders, ...draftHeaders];
       const params = scriptRequest.params.map((param) => ({
         ...param,

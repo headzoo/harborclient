@@ -484,3 +484,86 @@ hc.request.url = hc.variables.get('baseUrl') + '/v1/status';
 ```
 
 The request URL becomes `https://api.example.com/v1/status` when sent.
+
+## Migrating from Postman
+
+When you [import a Postman collection](/collections#postman-collections), HarborClient copies pre-request and post-request script text into the collection and request settings **verbatim**. Postman scripts use the global `pm` object; HarborClient scripts use `hc`. There is no `pm` compatibility layer — any `pm.*` reference throws `pm is not defined` at runtime.
+
+After import, open each script and rewrite it against the `hc` API described above. The sections below map common Postman patterns to HarborClient equivalents and call out features that have no direct replacement.
+
+### pm to hc API mapping
+
+| Postman (`pm`) | HarborClient (`hc`) | Notes |
+| --- | --- | --- |
+| `pm.variables.get(key)` / `pm.variables.set(key, value)` | `hc.variables.get(key)` / `hc.variables.set(key, value)` | Session-only; not persisted after the send |
+| `pm.environment.get(key)` / `pm.environment.set(key, value)` | `hc.environment.variables.get(key)` / `hc.environment.variables.set(key, value)` | Persists to the active environment when one is selected |
+| `pm.collectionVariables.get(key)` / `pm.collectionVariables.set(key, value)` | `hc.collection.variables.get(key)` / `hc.collection.variables.set(key, value)` | Persists to the collection after the send |
+| `pm.globals.get(key)` / `pm.globals.set(key, value)` | `hc.variables.set(key, value)` or `hc.environment.variables.set(key, value)` | HarborClient has no workspace globals; use session variables or environment variables |
+| `postman.setEnvironmentVariable(key, value)` | `hc.environment.variables.set(key, value)` | Legacy Postman alias |
+| `postman.setGlobalVariable(key, value)` | `hc.variables.set(key, value)` | Legacy Postman alias; session only in HarborClient |
+| `pm.request.method` | `hc.request.method` | Get/set |
+| `pm.request.url` | `hc.request.url` | Get/set |
+| `pm.request.body` (raw mode) | `hc.request.body` | Get/set as text |
+| `pm.request.headers.get(key)` | `hc.request.headers.get(key)` | Case-insensitive |
+| `pm.request.headers.add({ key, value })` / `pm.request.headers.upsert({ key, value })` | `hc.request.headers.upsert(key, value)` | HarborClient uses separate key and value arguments |
+| `pm.request.headers.toObject()` | `hc.request.headers.toObject()` | Plain object of enabled headers |
+| `pm.response.code` | `hc.response.code` | HTTP status code (e.g. `200`) |
+| `pm.response.status` | `hc.response.status` | Status text (e.g. `OK`) |
+| `pm.response.text()` | `hc.response.text()` | Response body as string |
+| `pm.response.json()` | `hc.response.json()` | Parses JSON; throws on invalid JSON |
+| `pm.response.responseTime` | `hc.response.responseTime` | Round-trip time in milliseconds |
+| `pm.response.headers.get(name)` | `hc.response.headers[name]` | Flat read-only map; use bracket notation, not `.get()` |
+| `pm.test(name, fn)` | `hc.test(name, fn)` | Same pattern |
+| `pm.expect(actual).to.equal(expected)` | `hc.expect(actual).to.equal(expected)` | Strict equality |
+| `pm.expect(actual).to.eql(expected)` | `hc.expect(actual).to.eql(expected)` | Deep equality via JSON comparison |
+| `pm.expect(actual).to.include(substr)` | `hc.expect(actual).to.include(substr)` | String contains |
+| `pm.expect(actual).to.be.ok` | `hc.expect(actual).be.ok()` | HarborClient uses `.be.ok()` as a method call, not `.to.be.ok` |
+| `pm.response.to.have.status(200)` | `hc.expect(hc.response.code).to.equal(200)` | No Chai-style response matchers |
+
+Collection-level headers in Postman are usually set in the collection UI. In HarborClient, use `hc.collection.headers.upsert(key, value)` in a script or configure headers in collection settings. See [hc.collection.headers](#hccollectionheaders) above.
+
+### Not supported
+
+These Postman script features have no HarborClient equivalent:
+
+- **`pm.sendRequest(...)`** — scripts cannot make outbound HTTP requests. The sandbox has no network access; see [Sandbox limits](#sandbox-limits).
+- **`require(...)` / bundled libraries** — lodash, crypto-js, cheerio, ajv, and other Postman built-ins are not available.
+- **Extended Chai matchers** — `hc.expect` supports only `to.equal`, `to.eql`, `to.include`, and `be.ok()`. Matchers such as `to.be.a`, `to.have.property`, and `pm.response.to.be.ok` must be rewritten.
+- **`pm.info`**, **`pm.iterationData`**, **visualizers**, and the legacy **`tests["name"] = true`** global.
+- **Request params and body type** — scripts cannot change query params or switch between JSON, form, and multipart body modes; only `hc.request.body` text is writable.
+
+Prefer ES5-style syntax (`var`, `function`) in migrated scripts. Modern JavaScript may not run reliably in the sandbox; see [Sandbox limits](#sandbox-limits).
+
+### Example: rewrite a Postman test script
+
+Postman post-request script:
+
+```javascript
+var jsonData = pm.response.json();
+pm.environment.set('token', jsonData.token);
+
+pm.test('Status code is 200', function () {
+  pm.response.to.have.status(200);
+});
+
+pm.test('Content-Type is JSON', function () {
+  pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');
+});
+```
+
+Equivalent HarborClient post-request script:
+
+```javascript
+var jsonData = hc.response.json();
+hc.environment.variables.set('token', jsonData.token);
+
+hc.test('Status code is 200', function () {
+  hc.expect(hc.response.code).to.equal(200);
+});
+
+hc.test('Content-Type is JSON', function () {
+  hc.expect(hc.response.headers['content-type']).to.include('application/json');
+});
+```
+
+For collection import behavior and other Postman feature gaps, see [Collections — Postman collections](/collections#postman-collections).
