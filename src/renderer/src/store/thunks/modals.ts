@@ -12,7 +12,9 @@ import {
 import type { ThunkApiConfig } from '#/renderer/src/store/redux';
 import { refreshCollections } from '#/renderer/src/store/thunks/collections';
 
-/** Loads trusted keys for the invite modal recipient picker. */
+/**
+ * Loads trusted keys for the invite modal recipient picker.
+ */
 export const loadTrustedKeys = createAsyncThunk<void, void, ThunkApiConfig>(
   'modals/loadTrustedKeys',
   async (_, { dispatch }) => {
@@ -32,7 +34,9 @@ export const loadTrustedKeys = createAsyncThunk<void, void, ThunkApiConfig>(
   }
 );
 
-/** Generates an encrypted invite token for the selected recipient. */
+/**
+ * Generates an encrypted invite token for the selected recipient.
+ */
 export const generateInviteToken = createAsyncThunk<void, void, ThunkApiConfig>(
   'modals/generateInviteToken',
   async (_, { dispatch, getState }) => {
@@ -56,7 +60,9 @@ export const generateInviteToken = createAsyncThunk<void, void, ThunkApiConfig>(
   }
 );
 
-/** Accepts an invite JWT and refreshes collections. */
+/**
+ * Accepts an invite JWT and refreshes collections.
+ */
 export const acceptInviteToken = createAsyncThunk<void, string, ThunkApiConfig>(
   'modals/acceptInviteToken',
   async (token, { dispatch }) => {
@@ -67,7 +73,9 @@ export const acceptInviteToken = createAsyncThunk<void, string, ThunkApiConfig>(
   }
 );
 
-/** Fetches the application version for the about dialog. */
+/**
+ * Fetches the application version for the about dialog.
+ */
 export const fetchAppVersion = createAsyncThunk<string, void, ThunkApiConfig>(
   'modals/fetchAppVersion',
   async (_, { dispatch }) => {

@@ -12,6 +12,11 @@ import type { CollectionExport } from '#/shared/types';
 
 const cleanups: Array<() => void | Promise<void>> = [];
 
+/**
+ * Creates an isolated Firestore database instance for unit tests.
+ *
+ * @returns Configured test database handle.
+ */
 async function createTestDb(): Promise<TestDbHandle> {
   const handle = await createFirestoreTestDbFactory()();
   if (handle.cleanup) {

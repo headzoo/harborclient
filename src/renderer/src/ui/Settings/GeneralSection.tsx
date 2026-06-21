@@ -14,6 +14,9 @@ export function GeneralSection(): JSX.Element {
   const [generalSaving, setGeneralSaving] = useState(false);
   const [generalSaved, setGeneralSaved] = useState(false);
 
+  /**
+   * Loads the persisted theme preference on mount.
+   */
   useEffect(() => {
     let cancelled = false;
     window.api.getTheme().then((value) => {
@@ -27,6 +30,9 @@ export function GeneralSection(): JSX.Element {
     };
   }, []);
 
+  /**
+   * Loads general request settings on mount.
+   */
   useEffect(() => {
     let cancelled = false;
     window.api.getGeneralSettings().then((value) => {

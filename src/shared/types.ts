@@ -668,11 +668,17 @@ export interface ScriptRequestContext {
  * Collection context passed into a pre/post script sandbox.
  */
 export interface ScriptCollectionContext {
-  /** Collection database id, or null when the request has no collection. */
+  /**
+   * Collection database id, or null when the request has no collection.
+   */
   id: number | null;
-  /** Display name of the collection, or empty when none is associated. */
+  /**
+   * Display name of the collection, or empty when none is associated.
+   */
   name: string;
-  /** Raw collection headers (unsubstituted {{var}} values). */
+  /**
+   * Raw collection headers (unsubstituted {{var}} values).
+   */
   headers: KeyValue[];
 }
 
@@ -680,7 +686,9 @@ export interface ScriptCollectionContext {
  * Environment context passed into a pre/post script sandbox.
  */
 export interface ScriptEnvironmentContext {
-  /** Active environment display name, or empty when none is active. */
+  /**
+   * Active environment display name, or empty when none is active.
+   */
   name: string;
 }
 
@@ -693,9 +701,13 @@ export interface ScriptRunInput {
   request: ScriptRequestContext;
   response?: SendResult;
   variables: Record<string, string>;
-  /** Active collection metadata and headers when the request belongs to a collection. */
+  /**
+   * Active collection metadata and headers when the request belongs to a collection.
+   */
   collection?: ScriptCollectionContext;
-  /** Active environment metadata when an environment is selected. */
+  /**
+   * Active environment metadata when an environment is selected.
+   */
   environment?: ScriptEnvironmentContext;
 }
 
@@ -714,11 +726,17 @@ export interface ScriptTestResult {
 export interface ScriptRunResult {
   request: ScriptRequestContext;
   variableSets: Record<string, string>;
-  /** Values set via hc.collection.variables.set; persisted to the collection after send. */
+  /**
+   * Values set via hc.collection.variables.set; persisted to the collection after send.
+   */
   collectionVariableSets: Record<string, string>;
-  /** Collection headers after hc.collection.headers mutations; persisted after send. */
+  /**
+   * Collection headers after hc.collection.headers mutations; persisted after send.
+   */
   collectionHeaders: KeyValue[];
-  /** Values set via hc.environment.variables.set; persisted to the active environment after send. */
+  /**
+   * Values set via hc.environment.variables.set; persisted to the active environment after send.
+   */
   environmentVariableSets: Record<string, string>;
   tests: ScriptTestResult[];
   logs: string[];

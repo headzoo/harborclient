@@ -180,6 +180,11 @@ export class LocalRegistry {
     }
   }
 
+  /**
+   * Lists all collection registry entries ordered for sidebar display.
+   *
+   * @returns Registry entries with connection routing metadata.
+   */
   listRegistry(): CollectionRegistryEntry[] {
     const rows = this.getDb()
       .prepare(
@@ -207,6 +212,12 @@ export class LocalRegistry {
     reorder(orderedIds);
   }
 
+  /**
+   * Looks up a single registry entry by global collection id.
+   *
+   * @param id - Global collection id.
+   * @returns The entry when found, otherwise undefined.
+   */
   getRegistryEntry(id: number): CollectionRegistryEntry | undefined {
     const row = this.getDb()
       .prepare(
@@ -217,6 +228,12 @@ export class LocalRegistry {
     return row ? rowToRegistryEntry(row) : undefined;
   }
 
+  /**
+   * Registers a new collection in the local routing registry.
+   *
+   * @param input - Registry entry fields including optional explicit id.
+   * @returns The persisted registry entry.
+   */
   addRegistryEntry(input: AddRegistryEntryInput): CollectionRegistryEntry {
     const sortOrder = this.nextRegistrySortOrder();
 
@@ -248,6 +265,13 @@ export class LocalRegistry {
     return entry;
   }
 
+  /**
+   * Updates registry metadata for an existing collection entry.
+   *
+   * @param id - Global collection id.
+   * @param fields - Partial fields to merge into the entry.
+   * @returns The updated registry entry.
+   */
   updateRegistryEntry(id: number, fields: UpdateRegistryEntryInput): CollectionRegistryEntry {
     const current = this.getRegistryEntry(id);
     if (!current) throw new Error('Registry entry not found');
@@ -268,10 +292,20 @@ export class LocalRegistry {
     return updated;
   }
 
+  /**
+   * Removes a collection from the local routing registry.
+   *
+   * @param id - Global collection id to delete.
+   */
   deleteRegistryEntry(id: number): void {
     this.getDb().prepare('DELETE FROM collection_registry WHERE id = ?').run(id);
   }
 
+  /**
+   * Lists all environments ordered by name.
+   *
+   * @returns All environments in the database.
+   */
   listEnvironments(): Environment[] {
     const rows = this.getDb()
       .prepare('SELECT id, name, variables, created_at FROM environments ORDER BY name ASC')
@@ -280,6 +314,12 @@ export class LocalRegistry {
     return rows.map(rowToEnvironment);
   }
 
+  /**
+   * Creates a new environment with the given name.
+   *
+   * @param name - Display name for the environment.
+   * @returns The newly created environment.
+   */
   createEnvironment(name: string): Environment {
     const result = this.getDb()
       .prepare('INSERT INTO environments (name) VALUES (?)')
@@ -312,6 +352,14 @@ export class LocalRegistry {
     return rowToEnvironment(row);
   }
 
+  /**
+   * Updates an environment's name and variables.
+   *
+   * @param id - Environment ID to update.
+   * @param name - New display name.
+   * @param variables - Environment-scoped variables.
+   * @returns The updated environment.
+   */
   updateEnvironment(id: number, name: string, variables: Variable[]): Environment {
     this.getDb()
       .prepare('UPDATE environments SET name = ?, variables = ? WHERE id = ?')
@@ -325,10 +373,21 @@ export class LocalRegistry {
     return rowToEnvironment(row);
   }
 
+  /**
+   * Deletes an environment.
+   *
+   * @param id - Environment ID to delete.
+   */
   deleteEnvironment(id: number): void {
     this.getDb().prepare('DELETE FROM environments WHERE id = ?').run(id);
   }
 
+  /**
+   * Reads a persisted setting by key.
+   *
+   * @param key - Setting key to look up.
+   * @returns The stored value, or undefined when not set.
+   */
   getSetting(key: string): string | undefined {
     const row = this.getDb().prepare('SELECT value FROM settings WHERE key = ?').get(key) as
       | { value: string }
@@ -336,6 +395,12 @@ export class LocalRegistry {
     return row?.value;
   }
 
+  /**
+   * Persists a setting value, replacing any existing entry for the key.
+   *
+   * @param key - Setting key to store.
+   * @param value - Value to persist.
+   */
   setSetting(key: string, value: string): void {
     this.getDb()
       .prepare(

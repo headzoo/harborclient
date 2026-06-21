@@ -17,10 +17,14 @@ import type { DatabaseConnection, DatabaseProvider, TrustedInviteKey } from '#/s
 
 export const INVITE_TOKEN_VERSION = 2;
 
-/** Default invite lifetime (7 days). */
+/**
+ * Default invite lifetime (7 days).
+ */
 export const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** Allowed clock skew when validating `iat`. */
+/**
+ * Allowed clock skew when validating `iat`.
+ */
 const CLOCK_SKEW_MS = 5 * 60 * 1000;
 
 /**

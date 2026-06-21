@@ -41,7 +41,9 @@ export function defaultAuth(): AuthConfig {
   };
 }
 
-/** JSON string of {@link defaultAuth} for database column defaults. */
+/**
+ * JSON string of {@link defaultAuth} for database column defaults.
+ */
 export const DEFAULT_AUTH_JSON = JSON.stringify(defaultAuth());
 
 /**

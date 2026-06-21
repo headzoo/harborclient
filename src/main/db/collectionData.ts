@@ -19,13 +19,6 @@ export function maskVariablesForExport(variables: Variable[]): Variable[] {
 }
 
 /**
- * Validates and normalizes imported collection export data.
- *
- * @param data - Parsed JSON payload from an export file.
- * @returns Normalized collection export.
- * @throws When the payload is invalid.
- */
-/**
  * Returns whether a script field contains executable code.
  *
  * @param script - Pre- or post-request script text from an export row.
@@ -54,6 +47,13 @@ export function collectionExportContainsScripts(data: CollectionExport): boolean
   );
 }
 
+/**
+ * Validates and normalizes imported collection export data.
+ *
+ * @param data - Parsed JSON payload from an export file.
+ * @returns Normalized collection export.
+ * @throws When the payload is invalid.
+ */
 export function validateCollectionExport(data: unknown): CollectionExport {
   if (!data || typeof data !== 'object') {
     throw new Error('Invalid collection file: expected a JSON object');

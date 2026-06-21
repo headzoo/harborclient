@@ -12,6 +12,11 @@ vi.mock('electron', () => ({
   screen: { getAllDisplays: () => [] }
 }));
 
+/**
+ * Returns a mock Electron display object for window state tests.
+ *
+ * @returns Display bounds used by window state helpers.
+ */
 function display(workArea: Display['workArea']): Display {
   return { workArea } as Display;
 }

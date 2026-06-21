@@ -40,8 +40,14 @@ interface Props {
 export function Response({ response, sending, testResults, onCancel }: Props): JSX.Element {
   const [tab, setTab] = useState<ViewerTab>('body');
 
+  /**
+   * Pretty-prints the response body for display in the read-only editor.
+   */
   const formattedBody = useMemo(() => (response ? formatBody(response.body) : ''), [response]);
 
+  /**
+   * Chooses JSON or plain-text highlighting based on response content and headers.
+   */
   const responseBodyLanguage = useMemo(
     () => (response ? bodyLanguage(response.body, response.headers) : 'text'),
     [response]
@@ -52,6 +58,11 @@ export function Response({ response, sending, testResults, onCancel }: Props): J
   const failedCount = testResults.length - passedCount;
   const effectiveTab = tab === 'tests' && !hasTests ? 'body' : tab;
 
+  /**
+   * Renders a centered placeholder when there is no response content to show.
+   *
+   * @param message - User-facing empty-state text.
+   */
   const emptyState = (message: string): JSX.Element => (
     <div className="flex flex-1 flex-col p-3">
       <div className="flex flex-1 items-center justify-center text-[13px] text-muted">

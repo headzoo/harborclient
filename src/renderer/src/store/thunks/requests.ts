@@ -47,7 +47,9 @@ import {
 } from '#/renderer/src/store/thunks/collections';
 import { updateEnvironment } from '#/renderer/src/store/thunks/environments';
 
-/** Persists the active tab draft to the selected or specified collection. */
+/**
+ * Persists the active tab draft to the selected or specified collection.
+ */
 export const saveRequest = createAsyncThunk<SavedRequest, number | undefined, ThunkApiConfig>(
   'tabs/saveRequest',
   async (collectionId, { dispatch, getState }) => {
@@ -91,7 +93,9 @@ export const saveRequest = createAsyncThunk<SavedRequest, number | undefined, Th
   }
 );
 
-/** Deletes a saved request and closes any editor tabs showing it. */
+/**
+ * Deletes a saved request and closes any editor tabs showing it.
+ */
 export const deleteRequest = createAsyncThunk<void, number, ThunkApiConfig>(
   'tabs/deleteRequest',
   async (id, { dispatch, getState }) => {
@@ -106,7 +110,9 @@ export const deleteRequest = createAsyncThunk<void, number, ThunkApiConfig>(
   }
 );
 
-/** Creates a new saved request inside a folder and opens it in a tab. */
+/**
+ * Creates a new saved request inside a folder and opens it in a tab.
+ */
 export const newRequestInFolder = createAsyncThunk<
   SavedRequest,
   { collectionId: number; folderId: number },
@@ -135,7 +141,9 @@ export const newRequestInFolder = createAsyncThunk<
   return saved;
 });
 
-/** Duplicates a saved request in the same collection/folder and opens it in a tab. */
+/**
+ * Duplicates a saved request in the same collection/folder and opens it in a tab.
+ */
 export const duplicateRequest = createAsyncThunk<SavedRequest, SavedRequest, ThunkApiConfig>(
   'tabs/duplicateRequest',
   async (req, { dispatch, getState }) => {
@@ -179,7 +187,9 @@ export const duplicateRequest = createAsyncThunk<SavedRequest, SavedRequest, Thu
   }
 );
 
-/** Creates a new saved request at the collection root and opens it in a tab. */
+/**
+ * Creates a new saved request at the collection root and opens it in a tab.
+ */
 export const newRequestInCollection = createAsyncThunk<SavedRequest, number, ThunkApiConfig>(
   'tabs/newRequestInCollection',
   async (collectionId, { dispatch }) => {
@@ -206,7 +216,9 @@ export const newRequestInCollection = createAsyncThunk<SavedRequest, number, Thu
   }
 );
 
-/** Sends the active tab request, running pre/post scripts and recording console output. */
+/**
+ * Sends the active tab request, running pre/post scripts and recording console output.
+ */
 export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
   'tabs/sendRequest',
   async (_, { dispatch, getState }) => {
@@ -248,6 +260,9 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
       bodyType: currentDraft.body_type
     };
 
+    /**
+     * Runs pre- or post-request scripts for one phase slot.
+     */
     const runScriptPhase = async (phase: 'pre' | 'post', response?: SendResult): Promise<void> => {
       const slots = buildScriptSlots(
         collection?.pre_request_script ?? '',
@@ -295,6 +310,9 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
       }
     };
 
+    /**
+     * Returns whether the tab still owns the in-flight send.
+     */
     const isRequestStillActive = (): boolean => {
       const tab = getState().tabs.tabs.find((t) => t.tabId === tabId);
       return tab?.sendingRequestId === requestId;
@@ -422,7 +440,9 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
   }
 );
 
-/** Cancels the in-flight HTTP request for the active tab. */
+/**
+ * Cancels the in-flight HTTP request for the active tab.
+ */
 export const cancelRequest = createAsyncThunk<void, void, ThunkApiConfig>(
   'tabs/cancelRequest',
   async (_, { dispatch, getState }) => {
@@ -440,17 +460,23 @@ export const cancelRequest = createAsyncThunk<void, void, ThunkApiConfig>(
   }
 );
 
-/** Opens a saved request in a tab (sync action wrapper). */
+/**
+ * Opens a saved request in a tab (sync action wrapper).
+ */
 export function dispatchLoadRequest(dispatch: AppDispatch, req: SavedRequest): void {
   dispatch(loadRequest(req));
 }
 
-/** Opens a new blank request tab (sync action wrapper). */
+/**
+ * Opens a new blank request tab (sync action wrapper).
+ */
 export function dispatchNewRequest(dispatch: AppDispatch): void {
   dispatch(newTab());
 }
 
-/** Loads a saved request, prompting when settings overlays have unsaved edits. */
+/**
+ * Loads a saved request, prompting when settings overlays have unsaved edits.
+ */
 export const requestLoadRequest = createAsyncThunk<void, SavedRequest, ThunkApiConfig>(
   'modals/requestLoadRequest',
   async (req, { dispatch, getState }) => {
@@ -470,7 +496,9 @@ export const requestLoadRequest = createAsyncThunk<void, SavedRequest, ThunkApiC
   }
 );
 
-/** Saves the current draft from the menu, prompting for a collection when none is selected. */
+/**
+ * Saves the current draft from the menu, prompting for a collection when none is selected.
+ */
 export const saveFromMenu = createAsyncThunk<void, void, ThunkApiConfig>(
   'requests/saveFromMenu',
   async (_, { dispatch, getState }) => {

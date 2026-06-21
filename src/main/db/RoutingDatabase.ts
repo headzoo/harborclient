@@ -300,6 +300,12 @@ export class RoutingDatabase implements IDatabase {
     await backend.db.deleteRequest(localId);
   }
 
+  /**
+   * Lists all folders in a collection.
+   *
+   * @param collectionId - Collection to query.
+   * @returns Folders ordered by sort_order then name.
+   */
   async listFolders(collectionId: number): Promise<Folder[]> {
     const entry = this.requireEntry(collectionId);
     const backend = this.requireBackendByConnectionId(entry.connectionId);
@@ -307,6 +313,13 @@ export class RoutingDatabase implements IDatabase {
     return folders.map((folder) => this.toGlobalFolder(folder, backend, collectionId));
   }
 
+  /**
+   * Creates a new folder in a collection.
+   *
+   * @param collectionId - Collection to add the folder to.
+   * @param name - Display name for the folder.
+   * @returns The newly created folder.
+   */
   async createFolder(collectionId: number, name: string): Promise<Folder> {
     const entry = this.requireEntry(collectionId);
     const backend = this.requireBackendByConnectionId(entry.connectionId);
@@ -314,6 +327,13 @@ export class RoutingDatabase implements IDatabase {
     return this.toGlobalFolder(created, backend, collectionId);
   }
 
+  /**
+   * Renames a folder.
+   *
+   * @param id - Folder ID to rename.
+   * @param name - New display name.
+   * @returns The updated folder.
+   */
   async renameFolder(id: number, name: string): Promise<Folder> {
     const { slot, localId } = decodeGlobalId(id);
     const backend = this.bySlot.get(slot);
@@ -326,6 +346,11 @@ export class RoutingDatabase implements IDatabase {
     return this.toGlobalFolder(updated, backend, globalCollectionId);
   }
 
+  /**
+   * Deletes a folder and all requests inside it.
+   *
+   * @param id - Folder ID to delete.
+   */
   async deleteFolder(id: number): Promise<void> {
     const { slot, localId } = decodeGlobalId(id);
     const backend = this.bySlot.get(slot);
@@ -335,6 +360,12 @@ export class RoutingDatabase implements IDatabase {
     await backend.db.deleteFolder(localId);
   }
 
+  /**
+   * Reorders folders within a collection.
+   *
+   * @param collectionId - Collection containing the folders.
+   * @param orderedFolderIds - Folder IDs in desired order.
+   */
   async reorderFolders(collectionId: number, orderedFolderIds: number[]): Promise<void> {
     const entry = this.requireEntry(collectionId);
     const backend = this.requireBackendByConnectionId(entry.connectionId);
@@ -342,6 +373,13 @@ export class RoutingDatabase implements IDatabase {
     await backend.db.reorderFolders(entry.providerCollectionId, localIds);
   }
 
+  /**
+   * Reorders requests within a folder or at collection root.
+   *
+   * @param collectionId - Collection containing the requests.
+   * @param folderId - Folder ID, or null for root-level requests.
+   * @param orderedRequestIds - Request IDs in desired order.
+   */
   async reorderRequests(
     collectionId: number,
     folderId: number | null,
@@ -354,6 +392,13 @@ export class RoutingDatabase implements IDatabase {
     await backend.db.reorderRequests(entry.providerCollectionId, localFolderId, localRequestIds);
   }
 
+  /**
+   * Moves a request to another folder or collection root at a given index.
+   *
+   * @param requestId - Request ID to move.
+   * @param folderId - Destination folder ID, or null for collection root.
+   * @param index - Zero-based position within the destination container.
+   */
   async moveRequest(requestId: number, folderId: number | null, index: number): Promise<void> {
     const { slot, localId } = decodeGlobalId(requestId);
     const backend = this.bySlot.get(slot);
@@ -579,6 +624,13 @@ export class RoutingDatabase implements IDatabase {
     return connections[0]?.id ?? preferredConnectionId;
   }
 
+  /**
+   * Merges registry metadata with backend collection record fields.
+   *
+   * @param entry - Registry entry for the collection.
+   * @param record - Optional backend collection record.
+   * @returns Combined Collection for the renderer.
+   */
   private buildCollection(
     entry: CollectionRegistryEntry,
     record: Collection | undefined
@@ -596,6 +648,14 @@ export class RoutingDatabase implements IDatabase {
     };
   }
 
+  /**
+   * Encodes backend-scoped request ids into global ids for the UI.
+   *
+   * @param request - Backend-scoped saved request.
+   * @param backend - Mounted backend that owns the request.
+   * @param globalCollectionId - Encoded global collection id.
+   * @returns Request with global ids.
+   */
   private toGlobalRequest(
     request: SavedRequest,
     backend: MountedBackend,
@@ -609,6 +669,14 @@ export class RoutingDatabase implements IDatabase {
     };
   }
 
+  /**
+   * Encodes backend-scoped folder ids into global ids for the UI.
+   *
+   * @param folder - Backend-scoped folder.
+   * @param backend - Mounted backend that owns the folder.
+   * @param globalCollectionId - Encoded global collection id.
+   * @returns Folder with global ids.
+   */
   private toGlobalFolder(
     folder: Folder,
     backend: MountedBackend,
@@ -621,6 +689,13 @@ export class RoutingDatabase implements IDatabase {
     };
   }
 
+  /**
+   * Resolves the registry entry for a provider-scoped collection id.
+   *
+   * @param connectionId - Backend connection id.
+   * @param providerCollectionId - Collection id within that backend.
+   * @returns Matching registry entry, or undefined.
+   */
   private findEntryForBackendCollection(
     connectionId: string,
     providerCollectionId: number
@@ -633,6 +708,12 @@ export class RoutingDatabase implements IDatabase {
       );
   }
 
+  /**
+   * Chooses the default mounted backend for new collections.
+   *
+   * @returns The preferred or first available backend.
+   * @throws When no backend is mounted.
+   */
   private resolveDefaultDataBackend(): MountedBackend {
     if (this.byConnectionId.has(this.defaultDataConnectionId)) {
       return this.requireBackendByConnectionId(this.defaultDataConnectionId);
@@ -650,6 +731,12 @@ export class RoutingDatabase implements IDatabase {
     return first;
   }
 
+  /**
+   * Returns the configured default data backend or throws.
+   *
+   * @returns The default mounted backend.
+   * @throws When the default connection is unavailable.
+   */
   private requireDefaultDataBackend(): MountedBackend {
     const backend = this.byConnectionId.get(this.defaultDataConnectionId);
     if (!backend) {
@@ -658,6 +745,13 @@ export class RoutingDatabase implements IDatabase {
     return backend;
   }
 
+  /**
+   * Returns a mounted backend by connection id or throws.
+   *
+   * @param connectionId - Connection id to resolve.
+   * @returns The mounted backend.
+   * @throws When the connection is unavailable.
+   */
   private requireBackendByConnectionId(connectionId: string): MountedBackend {
     const backend = this.byConnectionId.get(connectionId);
     if (!backend) {
@@ -666,6 +760,13 @@ export class RoutingDatabase implements IDatabase {
     return backend;
   }
 
+  /**
+   * Returns a registry entry by global id or throws.
+   *
+   * @param id - Global collection id.
+   * @returns The registry entry.
+   * @throws When the entry does not exist.
+   */
   private requireEntry(id: number): CollectionRegistryEntry {
     const entry = this.registry.getRegistryEntry(id);
     if (!entry) {

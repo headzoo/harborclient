@@ -99,10 +99,16 @@ export function useResizable({
   const startSizeRef = useRef(defaultSize);
   const sizeRef = useRef(size);
 
+  /**
+   * Keeps a ref in sync with state so drag handlers read the latest size.
+   */
   useEffect(() => {
     sizeRef.current = size;
   }, [size]);
 
+  /**
+   * Updates panel size with min/max clamping applied.
+   */
   const setSize = useCallback(
     (nextSize: number): void => {
       setSizeState(clampSize(nextSize, minSize, getMaxSize));
@@ -110,6 +116,9 @@ export function useResizable({
     [getMaxSize, minSize]
   );
 
+  /**
+   * Captures pointer position and current size when a resize drag begins.
+   */
   const onResizeStart = useCallback(
     (event: ReactMouseEvent): void => {
       event.preventDefault();
@@ -120,7 +129,15 @@ export function useResizable({
     [axis]
   );
 
+  /**
+   * Applies pointer delta to panel size during drag and persists on mouse up.
+   */
   useEffect(() => {
+    /**
+     * Updates size from pointer movement while a resize drag is active.
+     *
+     * @param event - Window mousemove event.
+     */
     const handleMouseMove = (event: MouseEvent): void => {
       if (!resizingRef.current) return;
       const currentPos = axis === 'x' ? event.clientX : event.clientY;
@@ -129,6 +146,9 @@ export function useResizable({
       setSizeState(nextSize);
     };
 
+    /**
+     * Ends the resize drag and writes the final size to localStorage when configured.
+     */
     const handleMouseUp = (): void => {
       if (!resizingRef.current) return;
       resizingRef.current = false;

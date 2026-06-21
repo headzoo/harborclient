@@ -13,10 +13,14 @@ import { parseFormParts } from '#/shared/formData';
 import { parseUrlEncodedParts } from '#/shared/urlencoded';
 import { DEFAULT_GENERAL_SETTINGS } from '#/main/settings/generalSettings';
 
-/** HTTP schemes allowed for outbound requests. */
+/**
+ * HTTP schemes allowed for outbound requests.
+ */
 const ALLOWED_PROTOCOLS = new Set(['http:', 'https:']);
 
-/** Absolute ceiling when the user disables the configurable response size limit (0). */
+/**
+ * Absolute ceiling when the user disables the configurable response size limit (0).
+ */
 export const HARD_MAX_RESPONSE_SIZE_MB = 512;
 
 /**

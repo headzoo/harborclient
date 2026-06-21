@@ -95,11 +95,17 @@ export function Request({ onEditVariables }: Props): JSX.Element {
       ? environments.find((env) => env.id === activeEnvironmentId)
       : undefined;
 
+  /**
+   * Merges collection and environment variables; environment wins on duplicate keys.
+   */
   const activeVariables = useMemo(
     () => mergeVariables(activeCollection?.variables ?? [], activeEnvironment?.variables ?? []),
     [activeCollection, activeEnvironment]
   );
   const activeCollectionName = activeCollection?.name;
+  /**
+   * Resolves the folder id for the active draft from saved state or draft fields.
+   */
   const activeFolderId = useMemo(() => {
     if (activeCollectionId == null) return null;
     if (draft.id != null) {
@@ -110,12 +116,18 @@ export function Request({ onEditVariables }: Props): JSX.Element {
     }
     return draft.folder_id ?? null;
   }, [draft.folder_id, draft.id, activeCollectionId, requestsByCollection]);
+  /**
+   * Looks up the folder name for breadcrumb display in the request editor.
+   */
   const activeFolderName = useMemo(() => {
     if (activeFolderId == null || activeCollectionId == null) return undefined;
     const folders = foldersByCollection[activeCollectionId] ?? [];
     return folders.find((folder) => folder.id === activeFolderId)?.name;
   }, [activeFolderId, activeCollectionId, foldersByCollection]);
 
+  /**
+   * Loads folders and requests when the active collection has not been fetched yet.
+   */
   useEffect(() => {
     if (activeCollectionId == null) return;
     if (foldersByCollection[activeCollectionId] === undefined) {

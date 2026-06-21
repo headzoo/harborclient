@@ -8,7 +8,9 @@ import type {
 } from '#/shared/types';
 import { defaultAuth, normalizeAuth, type AuthConfig } from '#/shared/auth';
 
-/** Editable request state in the UI before or during save. */
+/**
+ * Editable request state in the UI before or during save.
+ */
 export interface RequestDraft {
   id?: number;
   collection_id?: number;
@@ -26,7 +28,9 @@ export interface RequestDraft {
   comment: string;
 }
 
-/** Open request tab with draft, response, and in-flight state. */
+/**
+ * Open request tab with draft, response, and in-flight state.
+ */
 export interface RequestTab {
   tabId: string;
   draft: RequestDraft;

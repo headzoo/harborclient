@@ -21,10 +21,14 @@ export {
   authType
 } from '#/main/schemas/common';
 
-/** Non-negative integer database row id. */
+/**
+ * Non-negative integer database row id.
+ */
 export const dbId = z.number().int().nonnegative();
 
-/** UUID or opaque string connection / request id. */
+/**
+ * UUID or opaque string connection / request id.
+ */
 export const connectionId = z.string();
 
 export const requestId = z.string();
@@ -196,7 +200,9 @@ export const sidebarExpansion = z.object({
   folderIds: z.array(dbId)
 }) satisfies z.ZodType<SidebarExpansionState>;
 
-/** Tuple schemas for IPC handler argument validation. */
+/**
+ * Tuple schemas for IPC handler argument validation.
+ */
 export const ipcArgSchemas = {
   none: z.tuple([]),
   name: z.tuple([name]),

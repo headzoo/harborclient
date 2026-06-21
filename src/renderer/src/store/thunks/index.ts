@@ -7,7 +7,9 @@ import type { AppDispatch } from '#/renderer/src/store/redux';
 import { refreshCollections } from '#/renderer/src/store/thunks/collections';
 import { refreshEnvironments } from '#/renderer/src/store/thunks/environments';
 
-/** Dispatches initial data loads on app mount. */
+/**
+ * Dispatches initial data loads on app mount.
+ */
 export function initializeStore(dispatch: AppDispatch): void {
   void dispatch(refreshCollections());
   void dispatch(refreshEnvironments());

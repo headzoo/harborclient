@@ -25,6 +25,9 @@ export function CollectionModal(): JSX.Element | null {
   const dispatch = useAppDispatch();
   const collectionModal = useAppSelector(selectCollectionModal);
 
+  /**
+   * Closes the collection modal and resets modal state.
+   */
   const handleClose = useCallback((): void => {
     dispatch(closeCollectionModal());
   }, [dispatch]);

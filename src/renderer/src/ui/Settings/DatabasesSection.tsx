@@ -18,6 +18,9 @@ export function DatabasesSection(): JSX.Element {
   const [isNew, setIsNew] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Loads saved database connections and the active connection id on mount.
+   */
   useEffect(() => {
     let cancelled = false;
 
@@ -35,9 +38,17 @@ export function DatabasesSection(): JSX.Element {
     };
   }, []);
 
+  /**
+   * Closes edit or delete modals when Escape is pressed.
+   */
   useEffect(() => {
     if (!editingConnection && !deletingConnection) return;
 
+    /**
+     * Dismisses the active modal on Escape.
+     *
+     * @param event - Window keydown event.
+     */
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape') return;
       if (deletingConnection) {

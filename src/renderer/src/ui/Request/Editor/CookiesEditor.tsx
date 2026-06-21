@@ -21,6 +21,9 @@ interface Props {
  * Editable cookie list for the request URL host, backed by the main-process jar.
  */
 export function CookiesEditor({ url, variables }: Props): JSX.Element {
+  /**
+   * Resolves the request URL host after variable substitution for cookie storage.
+   */
   const host = useMemo(() => {
     const resolvedUrl = substituteWithMap(url, buildRuntimeVars(variables));
     return hostFromUrl(resolvedUrl);
@@ -30,6 +33,9 @@ export function CookiesEditor({ url, variables }: Props): JSX.Element {
   const [loadedHost, setLoadedHost] = useState<string | null>(null);
   const loading = host !== null && loadedHost !== host;
 
+  /**
+   * Loads cookies for the resolved host whenever the URL changes.
+   */
   useEffect(() => {
     if (!host) return;
 

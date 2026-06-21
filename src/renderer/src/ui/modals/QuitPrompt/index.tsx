@@ -11,11 +11,17 @@ export function QuitPrompt(): JSX.Element | null {
   const dispatch = useAppDispatch();
   const quitPrompt = useAppSelector(selectQuitPrompt);
 
+  /**
+   * Dismisses the quit prompt and tells main whether to proceed with app close.
+   */
   const handleCancel = useCallback((): void => {
     dispatch(setQuitPrompt(null));
     window.api.confirmClose(false);
   }, [dispatch]);
 
+  /**
+   * Confirms quit without saving and tells main to close the app.
+   */
   const handleConfirm = useCallback((): void => {
     dispatch(setQuitPrompt(null));
     window.api.confirmClose(true);

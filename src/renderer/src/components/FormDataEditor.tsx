@@ -62,6 +62,9 @@ function withTrailingRow(parts: FormDataPart[]): FormDataPart[] {
  * Editable table of multipart form parts with text and file field types.
  */
 export function FormDataEditor({ parts, onChange, variables, onEditVariable }: Props): JSX.Element {
+  /**
+   * Ensures at least one row exists for rendering, including a trailing blank row.
+   */
   const rows = useMemo(() => withTrailingRow(parts), [parts]);
 
   /**

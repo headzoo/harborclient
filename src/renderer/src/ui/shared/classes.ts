@@ -1,4 +1,6 @@
-/** Shared macOS-style Tailwind class strings. */
+/**
+ * Shared macOS-style Tailwind class strings.
+ */
 
 export const field =
   'rounded-md border border-separator bg-control px-2 py-1 text-[15px] text-text shadow-[inset_0_0.5px_1px_rgba(0,0,0,0.06)] app-no-drag';
@@ -21,12 +23,22 @@ export const iconButtonDanger =
 export const segmentGroup =
   'inline-flex rounded-md p-0.5 shadow-[inset_0_0.5px_1px_rgba(0,0,0,0.06)] app-no-drag';
 
+/**
+ * Tailwind classes for a segmented control button.
+ *
+ * @param active - Whether this segment is selected.
+ */
 export function segment(active: boolean): string {
   return active
     ? 'cursor-pointer rounded-[5px] border-none bg-control px-3 py-1 text-[15px] text-text shadow-sm app-no-drag'
     : 'cursor-pointer rounded-[5px] border-none bg-transparent px-3 py-1 text-[15px] text-muted hover:text-text app-no-drag';
 }
 
+/**
+ * Tailwind classes for a sidebar source row (collection, folder, or request).
+ *
+ * @param selected - Whether this row is the active selection.
+ */
 export function sourceRow(selected: boolean): string {
   return selected
     ? 'group flex items-center gap-1 rounded-md bg-selection px-1.5 py-0.5 app-no-drag'
@@ -59,6 +71,11 @@ export const METHOD_CLASSES: Record<string, string> = {
   options: 'bg-method-options/80 text-white'
 };
 
+/**
+ * Status dot color class for an HTTP response code.
+ *
+ * @param status - HTTP status code, or 0 for network errors.
+ */
 export function statusDotClass(status: number): string {
   if (status === 0) return 'bg-danger';
   if (status >= 200 && status < 300) return 'bg-success';

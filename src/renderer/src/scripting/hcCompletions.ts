@@ -194,6 +194,11 @@ export function createHcCompletionSource(
   phase: ScriptPhase,
   variables: Variable[]
 ): CompletionSource {
+  /**
+   * Returns variable or hc API completions for the current cursor context.
+   *
+   * @param context - CodeMirror completion context at the cursor.
+   */
   return (context) => {
     const variableMatch = variableCompletions(context, variables);
     if (variableMatch) return variableMatch;

@@ -6,7 +6,9 @@ import {
 } from '#/renderer/src/store/slices/environmentsSlice';
 import type { ThunkApiConfig } from '#/renderer/src/store/redux';
 
-/** Reloads all environments and clears the active selection when it no longer exists. */
+/**
+ * Reloads all environments and clears the active selection when it no longer exists.
+ */
 export const refreshEnvironments = createAsyncThunk<
   Awaited<ReturnType<typeof window.api.listEnvironments>>,
   void,
@@ -21,7 +23,9 @@ export const refreshEnvironments = createAsyncThunk<
   return data;
 });
 
-/** Creates an environment and makes it the active selection. */
+/**
+ * Creates an environment and makes it the active selection.
+ */
 export const createEnvironment = createAsyncThunk<Environment, string, ThunkApiConfig>(
   'environments/create',
   async (name, { dispatch }) => {
@@ -32,7 +36,9 @@ export const createEnvironment = createAsyncThunk<Environment, string, ThunkApiC
   }
 );
 
-/** Updates environment metadata and refreshes the environment list. */
+/**
+ * Updates environment metadata and refreshes the environment list.
+ */
 export const updateEnvironment = createAsyncThunk<
   void,
   { id: number; name: string; variables: Variable[] },
@@ -42,7 +48,9 @@ export const updateEnvironment = createAsyncThunk<
   await dispatch(refreshEnvironments());
 });
 
-/** Deletes an environment and clears the active selection when it was selected. */
+/**
+ * Deletes an environment and clears the active selection when it was selected.
+ */
 export const deleteEnvironment = createAsyncThunk<void, number, ThunkApiConfig>(
   'environments/delete',
   async (id, { dispatch, getState }) => {

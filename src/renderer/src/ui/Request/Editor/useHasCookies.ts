@@ -11,6 +11,9 @@ import { hostFromUrl } from './cookieHost';
  * @returns True when at least one cookie exists for the resolved host.
  */
 export function useHasCookies(url: string, variables: Variable[]): boolean {
+  /**
+   * Resolves the request URL host after variable substitution for cookie lookups.
+   */
   const host = useMemo(() => {
     const resolvedUrl = substituteWithMap(url, buildRuntimeVars(variables));
     return hostFromUrl(resolvedUrl);

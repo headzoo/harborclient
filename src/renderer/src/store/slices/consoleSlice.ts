@@ -1,7 +1,9 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { ScriptTestResult, SendResult } from '#/shared/types';
 
-/** A single entry in the global session console log. */
+/**
+ * A single entry in the global session console log.
+ */
 export interface ConsoleEntry {
   id: string;
   timestamp: number;
@@ -25,9 +27,15 @@ const consoleSlice = createSlice({
   name: 'console',
   initialState,
   reducers: {
+    /**
+     * Prepends a send result entry to the session console.
+     */
     addConsoleEntry(state, action: PayloadAction<ConsoleEntry>) {
       state.consoleEntries.unshift(action.payload);
     },
+    /**
+     * Removes all console entries.
+     */
     clearConsole(state) {
       state.consoleEntries = [];
     }

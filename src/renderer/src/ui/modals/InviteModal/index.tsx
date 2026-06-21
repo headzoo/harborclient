@@ -17,6 +17,9 @@ export function InviteModal(): JSX.Element | null {
   const dispatch = useAppDispatch();
   const invite = useAppSelector(selectInviteModal);
 
+  /**
+   * Closes the invite modal and clears generated token state.
+   */
   const handleClose = useCallback((): void => {
     dispatch(closeInviteModal());
   }, [dispatch]);

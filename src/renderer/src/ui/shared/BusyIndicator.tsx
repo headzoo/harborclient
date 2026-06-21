@@ -16,6 +16,9 @@ export function BusyIndicator(): JSX.Element | null {
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const shownAtRef = useRef<number | null>(null);
 
+  /**
+   * Shows, hides, or extends the busy overlay based on global busy state.
+   */
   useEffect(() => {
     if (isBusy) {
       if (hideTimerRef.current != null) {
@@ -57,6 +60,9 @@ export function BusyIndicator(): JSX.Element | null {
     }, remaining);
   }, [isBusy, visible]);
 
+  /**
+   * Clears pending show/hide timers on unmount.
+   */
   useEffect(() => {
     return () => {
       if (showTimerRef.current != null) clearTimeout(showTimerRef.current);
@@ -64,6 +70,9 @@ export function BusyIndicator(): JSX.Element | null {
     };
   }, []);
 
+  /**
+   * Toggles the document wait cursor while the overlay is visible.
+   */
   useEffect(() => {
     document.body.classList.toggle('app-busy', visible);
     return () => {

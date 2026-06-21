@@ -85,6 +85,9 @@ export function Sidebar({
   const environments = useAppSelector(selectEnvironments);
   const activeEnvironmentId = useAppSelector(selectActiveEnvironmentId);
 
+  /**
+   * Loads folders and requests when a collection tree is expanded.
+   */
   const handleExpandCollection = useCallback(
     (id: number) => {
       void dispatch(refreshCollectionContents(id));
@@ -124,6 +127,9 @@ export function Sidebar({
     storageKey: 'hc.sidebarWidth'
   });
 
+  /**
+   * Loads database connections for collection badges and routing labels.
+   */
   useEffect(() => {
     let cancelled = false;
 
@@ -140,6 +146,9 @@ export function Sidebar({
     };
   }, []);
 
+  /**
+   * Maps connection ids to display names for sidebar badges.
+   */
   const connectionNamesById = useMemo(
     () =>
       Object.fromEntries(
@@ -148,17 +157,26 @@ export function Sidebar({
     [databaseConnections]
   );
 
+  /**
+   * Maps connection ids to provider types for sidebar badges.
+   */
   const connectionTypesById = useMemo(
     () =>
       Object.fromEntries(databaseConnections.map((connection) => [connection.id, connection.type])),
     [databaseConnections]
   );
 
+  /**
+   * Closes the new-environment modal and clears its form state.
+   */
   const closeEnvironmentModal = (): void => {
     setShowEnvironmentModal(false);
     setNewEnvironmentName('');
   };
 
+  /**
+   * Closes the folder create/rename modal.
+   */
   const closeFolderModal = (): void => {
     setFolderModal(null);
   };

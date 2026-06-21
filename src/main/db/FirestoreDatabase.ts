@@ -45,17 +45,23 @@ import type {
   Variable
 } from '#/shared/types';
 
-/** Maximum writes per Firestore batch commit. */
+/**
+ * Maximum writes per Firestore batch commit.
+ */
 const WRITE_BATCH_LIMIT = 500;
 
-/** IDs reserved per counter transaction when dispensing via {@link FirestoreDatabase.nextId}. */
+/**
+ * IDs reserved per counter transaction when dispensing via {@link FirestoreDatabase.nextId}.
+ */
 const ID_BLOCK_SIZE = 50;
 
 export class FirestoreDatabase implements IDatabase {
   readonly #settings: FirestoreSettings;
   #app: FirebaseApp | null = null;
   #firestore: Firestore | null = null;
-  /** Unused IDs from the most recent block allocation, keyed by counter name. */
+  /**
+   * Unused IDs from the most recent block allocation, keyed by counter name.
+   */
   readonly #idBlocks = new Map<string, number[]>();
 
   /**
@@ -139,6 +145,9 @@ export class FirestoreDatabase implements IDatabase {
     }
   }
 
+  /**
+   * Opens the Firestore connection and signs in with configured credentials.
+   */
   async init(): Promise<void> {
     if (this.#firestore) return;
 
@@ -185,6 +194,11 @@ export class FirestoreDatabase implements IDatabase {
     }
   }
 
+  /**
+   * Lists all collections ordered by name.
+   *
+   * @returns All collections in the database.
+   */
   async listCollections(): Promise<Collection[]> {
     const snap = await getDocs(
       query(collection(this.getFirestore(), 'collections'), orderBy('name'))
@@ -194,6 +208,12 @@ export class FirestoreDatabase implements IDatabase {
     );
   }
 
+  /**
+   * Creates a new collection with the given name.
+   *
+   * @param name - Display name for the collection.
+   * @returns The newly created collection.
+   */
   async createCollection(name: string): Promise<Collection> {
     const id = await this.nextId('collections');
     const createdAt = new Date().toISOString();
@@ -212,6 +232,30 @@ export class FirestoreDatabase implements IDatabase {
     return docToCollection(id, data);
   }
 
+  /**
+   * Updates a collection's name, variables, headers, and scripts.
+   *
+   * @param id - Collection ID to update.
+   * @param name - New display name.
+   * @param variables - Collection-scoped variables.
+   * @param headers - Headers sent with every request in the collection.
+   * @param preRequestScript - Script run before each request in the collection.
+   * @param postRequestScript - Script run after each request in the collection.
+   * @param auth - Default Authorization settings for requests in the collection.
+   * @returns The updated collection.
+   */
+  /**
+   * Updates a collection's name, variables, headers, and scripts.
+   *
+   * @param id - Collection ID to update.
+   * @param name - New display name.
+   * @param variables - Collection-scoped variables.
+   * @param headers - Headers sent with every request in the collection.
+   * @param preRequestScript - Script run before each request in the collection.
+   * @param postRequestScript - Script run after each request in the collection.
+   * @param auth - Default Authorization settings for requests in the collection.
+   * @returns The updated collection.
+   */
   async updateCollection(
     id: number,
     name: string,
@@ -246,6 +290,11 @@ export class FirestoreDatabase implements IDatabase {
     });
   }
 
+  /**
+   * Deletes a collection and all of its requests.
+   *
+   * @param id - Collection ID to delete.
+   */
   async deleteCollection(id: number): Promise<void> {
     const firestore = this.getFirestore();
     const requestsSnap = await getDocs(
@@ -266,6 +315,11 @@ export class FirestoreDatabase implements IDatabase {
     await batch.commit();
   }
 
+  /**
+   * Lists all environments ordered by name.
+   *
+   * @returns All environments in the database.
+   */
   async listEnvironments(): Promise<Environment[]> {
     const snap = await getDocs(
       query(collection(this.getFirestore(), 'environments'), orderBy('name'))
@@ -275,6 +329,12 @@ export class FirestoreDatabase implements IDatabase {
     );
   }
 
+  /**
+   * Creates a new environment with the given name.
+   *
+   * @param name - Display name for the environment.
+   * @returns The newly created environment.
+   */
   async createEnvironment(name: string): Promise<Environment> {
     const id = await this.nextId('environments');
     const createdAt = new Date().toISOString();
@@ -289,6 +349,14 @@ export class FirestoreDatabase implements IDatabase {
     return docToEnvironment(id, data);
   }
 
+  /**
+   * Updates an environment's name and variables.
+   *
+   * @param id - Environment ID to update.
+   * @param name - New display name.
+   * @param variables - Environment-scoped variables.
+   * @returns The updated environment.
+   */
   async updateEnvironment(id: number, name: string, variables: Variable[]): Promise<Environment> {
     const ref = doc(this.getFirestore(), 'environments', String(id));
     const snap = await getDoc(ref);
@@ -307,10 +375,21 @@ export class FirestoreDatabase implements IDatabase {
     });
   }
 
+  /**
+   * Deletes an environment.
+   *
+   * @param id - Environment ID to delete.
+   */
   async deleteEnvironment(id: number): Promise<void> {
     await deleteDoc(doc(this.getFirestore(), 'environments', String(id)));
   }
 
+  /**
+   * Lists all saved requests in a collection.
+   *
+   * @param collectionId - Collection to query.
+   * @returns Requests ordered by sort_order then name.
+   */
   async listRequests(collectionId: number): Promise<SavedRequest[]> {
     const snap = await getDocs(
       query(collection(this.getFirestore(), 'requests'), where('collection_id', '==', collectionId))
@@ -323,6 +402,12 @@ export class FirestoreDatabase implements IDatabase {
       .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
   }
 
+  /**
+   * Inserts a new request or updates an existing one.
+   *
+   * @param input - Request fields to persist.
+   * @returns The saved request with ID and timestamps.
+   */
   async saveRequest(input: SaveRequestInput): Promise<SavedRequest> {
     const preRequestScript = input.pre_request_script ?? '';
     const postRequestScript = input.post_request_script ?? '';
@@ -399,10 +484,21 @@ export class FirestoreDatabase implements IDatabase {
     return docToRequest(id, data);
   }
 
+  /**
+   * Deletes a saved request by ID.
+   *
+   * @param id - Request ID to delete.
+   */
   async deleteRequest(id: number): Promise<void> {
     await deleteDoc(doc(this.getFirestore(), 'requests', String(id)));
   }
 
+  /**
+   * Lists all folders in a collection.
+   *
+   * @param collectionId - Collection to query.
+   * @returns Folders ordered by sort_order then name.
+   */
   async listFolders(collectionId: number): Promise<Folder[]> {
     const snap = await getDocs(
       query(collection(this.getFirestore(), 'folders'), where('collection_id', '==', collectionId))
@@ -415,6 +511,13 @@ export class FirestoreDatabase implements IDatabase {
       .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
   }
 
+  /**
+   * Creates a new folder in a collection.
+   *
+   * @param collectionId - Collection to add the folder to.
+   * @param name - Display name for the folder.
+   * @returns The newly created folder.
+   */
   async createFolder(collectionId: number, name: string): Promise<Folder> {
     const existing = await this.listFolders(collectionId);
     const maxOrder = existing.reduce((max, folder) => Math.max(max, folder.sort_order), -1);
@@ -432,6 +535,13 @@ export class FirestoreDatabase implements IDatabase {
     return docToFolder(id, data);
   }
 
+  /**
+   * Renames a folder.
+   *
+   * @param id - Folder ID to rename.
+   * @param name - New display name.
+   * @returns The updated folder.
+   */
   async renameFolder(id: number, name: string): Promise<Folder> {
     const ref = doc(this.getFirestore(), 'folders', String(id));
     const snap = await getDoc(ref);
@@ -442,6 +552,11 @@ export class FirestoreDatabase implements IDatabase {
     return docToFolder(id, { ...existing, name: name.trim() });
   }
 
+  /**
+   * Deletes a folder and all requests inside it.
+   *
+   * @param id - Folder ID to delete.
+   */
   async deleteFolder(id: number): Promise<void> {
     const firestore = this.getFirestore();
     const requestsSnap = await getDocs(
@@ -456,6 +571,12 @@ export class FirestoreDatabase implements IDatabase {
     await batch.commit();
   }
 
+  /**
+   * Reorders folders within a collection.
+   *
+   * @param collectionId - Collection containing the folders.
+   * @param orderedFolderIds - Folder IDs in desired order.
+   */
   async reorderFolders(collectionId: number, orderedFolderIds: number[]): Promise<void> {
     const firestore = this.getFirestore();
     const batch = writeBatch(firestore);
@@ -468,6 +589,13 @@ export class FirestoreDatabase implements IDatabase {
     await batch.commit();
   }
 
+  /**
+   * Reorders requests within a folder or at collection root.
+   *
+   * @param collectionId - Collection containing the requests.
+   * @param folderId - Folder ID, or null for root-level requests.
+   * @param orderedRequestIds - Request IDs in desired order.
+   */
   async reorderRequests(
     collectionId: number,
     folderId: number | null,
@@ -485,6 +613,13 @@ export class FirestoreDatabase implements IDatabase {
     await batch.commit();
   }
 
+  /**
+   * Moves a request to another folder or collection root at a given index.
+   *
+   * @param requestId - Request ID to move.
+   * @param folderId - Destination folder ID, or null for collection root.
+   * @param index - Zero-based position within the destination container.
+   */
   async moveRequest(requestId: number, folderId: number | null, index: number): Promise<void> {
     const firestore = this.getFirestore();
     const ref = doc(firestore, 'requests', String(requestId));
@@ -542,6 +677,12 @@ export class FirestoreDatabase implements IDatabase {
     await reindexContainer(folderId, newIds);
   }
 
+  /**
+   * Builds a portable export payload for a collection and its requests.
+   *
+   * @param id - Collection ID to export.
+   * @returns Collection export data without database IDs.
+   */
   async exportCollectionData(id: number): Promise<CollectionExport> {
     const snap = await getDoc(doc(this.getFirestore(), 'collections', String(id)));
     if (!snap.exists()) throw new Error('Collection not found');
@@ -597,6 +738,12 @@ export class FirestoreDatabase implements IDatabase {
     };
   }
 
+  /**
+   * Imports a collection and its requests from export data.
+   *
+   * @param data - Parsed collection export payload.
+   * @returns The newly created collection.
+   */
   async importCollectionData(data: unknown): Promise<Collection> {
     const exportData = validateCollectionExport(data);
     const id = await this.nextId('collections');
@@ -673,6 +820,12 @@ export class FirestoreDatabase implements IDatabase {
     return docToCollection(id, collectionData);
   }
 
+  /**
+   * Reads a persisted setting by key.
+   *
+   * @param key - Setting key to look up.
+   * @returns The stored value, or undefined when not set.
+   */
   async getSetting(key: string): Promise<string | undefined> {
     const snap = await getDoc(doc(this.getFirestore(), 'settings', key));
     if (!snap.exists()) return undefined;
@@ -680,10 +833,19 @@ export class FirestoreDatabase implements IDatabase {
     return typeof value === 'string' ? value : undefined;
   }
 
+  /**
+   * Persists a setting value, replacing any existing entry for the key.
+   *
+   * @param key - Setting key to store.
+   * @param value - Value to persist.
+   */
   async setSetting(key: string, value: string): Promise<void> {
     await setDoc(doc(this.getFirestore(), 'settings', key), { value });
   }
 
+  /**
+   * Closes the database connection.
+   */
   async close(): Promise<void> {
     this.#idBlocks.clear();
     if (this.#firestore) {

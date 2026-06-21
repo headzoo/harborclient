@@ -13,9 +13,15 @@ const uiSlice = createSlice({
   name: 'ui',
   initialState,
   reducers: {
+    /**
+     * Increments the global in-flight operation counter.
+     */
     operationStarted(state) {
       state.pendingCount += 1;
     },
+    /**
+     * Decrements the global in-flight operation counter.
+     */
     operationFinished(state) {
       state.pendingCount = Math.max(0, state.pendingCount - 1);
     }
@@ -24,6 +30,9 @@ const uiSlice = createSlice({
 
 export const { operationStarted, operationFinished } = uiSlice.actions;
 
+/**
+ * Returns true when async operations are in flight.
+ */
 export const selectIsBusy = (state: RootState): boolean => state.ui.pendingCount > 0;
 
 export default uiSlice.reducer;

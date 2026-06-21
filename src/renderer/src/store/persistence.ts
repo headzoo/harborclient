@@ -11,7 +11,9 @@ export const OPEN_TABS_KEY = 'harborclient.openTabs';
 export const LEGACY_OPEN_TABS_KEY = 'harbor-client.openTabs';
 export const ACTIVE_ENVIRONMENT_KEY = 'harborclient.activeEnvironmentId';
 
-/** Persisted tab shape (draft only, no response/sending). */
+/**
+ * Persisted tab shape (draft only, no response/sending).
+ */
 export interface PersistedTab {
   tabId: string;
   draft: RequestDraft;

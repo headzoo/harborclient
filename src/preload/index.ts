@@ -204,26 +204,64 @@ function deleteRequest(id: number): Promise<void> {
   return ipcRenderer.invoke('requests:delete', id);
 }
 
+/**
+ * Lists all folders in a collection.
+ *
+ * @param collectionId - Collection to query.
+ * @returns Folders ordered by sort_order then name.
+ */
 function listFolders(collectionId: number): Promise<Folder[]> {
   return ipcRenderer.invoke('folders:list', collectionId);
 }
 
+/**
+ * Creates a new folder in a collection.
+ *
+ * @param collectionId - Collection to add the folder to.
+ * @param name - Display name for the folder.
+ * @returns The newly created folder.
+ */
 function createFolder(collectionId: number, name: string): Promise<Folder> {
   return ipcRenderer.invoke('folders:create', collectionId, name);
 }
 
+/**
+ * Renames a folder.
+ *
+ * @param id - Folder ID to rename.
+ * @param name - New display name.
+ * @returns The updated folder.
+ */
 function renameFolder(id: number, name: string): Promise<Folder> {
   return ipcRenderer.invoke('folders:rename', id, name);
 }
 
+/**
+ * Deletes a folder and all requests inside it.
+ *
+ * @param id - Folder ID to delete.
+ */
 function deleteFolder(id: number): Promise<void> {
   return ipcRenderer.invoke('folders:delete', id);
 }
 
+/**
+ * Reorders folders within a collection.
+ *
+ * @param collectionId - Collection containing the folders.
+ * @param orderedFolderIds - Folder IDs in desired order.
+ */
 function reorderFolders(collectionId: number, orderedFolderIds: number[]): Promise<void> {
   return ipcRenderer.invoke('folders:reorder', collectionId, orderedFolderIds);
 }
 
+/**
+ * Reorders requests within a folder or at collection root.
+ *
+ * @param collectionId - Collection containing the requests.
+ * @param folderId - Folder ID, or null for root-level requests.
+ * @param orderedRequestIds - Request IDs in desired order.
+ */
 function reorderRequests(
   collectionId: number,
   folderId: number | null,
@@ -232,6 +270,13 @@ function reorderRequests(
   return ipcRenderer.invoke('requests:reorder', collectionId, folderId, orderedRequestIds);
 }
 
+/**
+ * Moves a request to another folder or collection root at a given index.
+ *
+ * @param requestId - Request ID to move.
+ * @param folderId - Destination folder ID, or null for collection root.
+ * @param index - Zero-based position within the destination container.
+ */
 function moveRequest(requestId: number, folderId: number | null, index: number): Promise<void> {
   return ipcRenderer.invoke('requests:move', requestId, folderId, index);
 }

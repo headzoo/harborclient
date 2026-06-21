@@ -22,28 +22,67 @@ function parseJson<T>(value: string, fallback: T): T {
   }
 }
 
+/**
+ * Coerces an unknown value to a string with a fallback.
+ *
+ * @param value - Raw field value.
+ * @param fallback - Default when value is not a string.
+ * @returns The string value or fallback.
+ */
 function readString(value: unknown, fallback = ''): string {
   return typeof value === 'string' ? value : fallback;
 }
 
+/**
+ * Coerces an unknown value to a number with a fallback.
+ *
+ * @param value - Raw field value.
+ * @param fallback - Default when value is not a number.
+ * @returns The numeric value or fallback.
+ */
 function readNumber(value: unknown, fallback = 0): number {
   return typeof value === 'number' ? value : fallback;
 }
 
+/**
+ * Coerces an unknown value to a number or null.
+ *
+ * @param value - Raw field value.
+ * @returns The number when numeric, null otherwise.
+ */
 function readNullableNumber(value: unknown): number | null {
   return typeof value === 'number' ? value : value === null ? null : null;
 }
 
+/**
+ * Coerces an unknown value to an ISO timestamp string.
+ *
+ * @param value - Raw field value.
+ * @returns ISO string, or current time when invalid.
+ */
 function readTimestamp(value: unknown): string {
   return readString(value, new Date().toISOString());
 }
 
+/**
+ * Parses a JSON array from an array or JSON string field.
+ *
+ * @param value - Raw field value.
+ * @param fallback - Default when parsing fails.
+ * @returns Parsed array or fallback.
+ */
 function readJsonArray<T>(value: unknown, fallback: T[]): T[] {
   if (Array.isArray(value)) return value;
   if (typeof value === 'string') return parseJson(value, fallback);
   return fallback;
 }
 
+/**
+ * Parses and normalizes variable rows from storage.
+ *
+ * @param value - Raw variables field.
+ * @returns Normalized Variable array.
+ */
 function readVariables(value: unknown): Variable[] {
   return readJsonArray<Partial<Variable>>(value, []).map(normalizeVariable);
 }
@@ -139,18 +178,26 @@ export function rowToRequest(row: Record<string, unknown>): SavedRequest {
   };
 }
 
-/** Maps a Firestore collection document to a Collection object. */
+/**
+ * Maps a Firestore collection document to a Collection object.
+ */
 export const docToCollection = (id: number, data: Record<string, unknown>): Collection =>
   rowToCollection({ ...data, id });
 
-/** Maps a Firestore environment document to an Environment object. */
+/**
+ * Maps a Firestore environment document to an Environment object.
+ */
 export const docToEnvironment = (id: number, data: Record<string, unknown>): Environment =>
   rowToEnvironment({ ...data, id });
 
-/** Maps a Firestore folder document to a Folder object. */
+/**
+ * Maps a Firestore folder document to a Folder object.
+ */
 export const docToFolder = (id: number, data: Record<string, unknown>): Folder =>
   rowToFolder({ ...data, id });
 
-/** Maps a Firestore request document to a SavedRequest object. */
+/**
+ * Maps a Firestore request document to a SavedRequest object.
+ */
 export const docToRequest = (id: number, data: Record<string, unknown>): SavedRequest =>
   rowToRequest({ ...data, id });

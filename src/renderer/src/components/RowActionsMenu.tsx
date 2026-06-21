@@ -40,6 +40,9 @@ export function RowActionsMenu({ items, menuId, openMenuId, onOpenChange }: Prop
   const isOpen = openMenuId === menuId;
   const rootRef = useRef<HTMLDivElement>(null);
 
+  /**
+   * Closes the menu on outside click or Escape while it is open.
+   */
   useEffect(() => {
     if (!isOpen) return;
 

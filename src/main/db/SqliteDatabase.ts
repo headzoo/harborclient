@@ -203,6 +203,11 @@ export class SqliteDatabase implements IDatabase {
     }
   }
 
+  /**
+   * Lists all collections ordered by name.
+   *
+   * @returns All collections in the database.
+   */
   async listCollections(): Promise<Collection[]> {
     const rows = this.getDb()
       .prepare(
@@ -213,6 +218,12 @@ export class SqliteDatabase implements IDatabase {
     return rows.map(rowToCollection);
   }
 
+  /**
+   * Creates a new collection with the given name.
+   *
+   * @param name - Display name for the collection.
+   * @returns The newly created collection.
+   */
   async createCollection(name: string): Promise<Collection> {
     const result = this.getDb()
       .prepare('INSERT INTO collections (name) VALUES (?)')
@@ -227,6 +238,30 @@ export class SqliteDatabase implements IDatabase {
     return rowToCollection(row);
   }
 
+  /**
+   * Updates a collection's name, variables, headers, and scripts.
+   *
+   * @param id - Collection ID to update.
+   * @param name - New display name.
+   * @param variables - Collection-scoped variables.
+   * @param headers - Headers sent with every request in the collection.
+   * @param preRequestScript - Script run before each request in the collection.
+   * @param postRequestScript - Script run after each request in the collection.
+   * @param auth - Default Authorization settings for requests in the collection.
+   * @returns The updated collection.
+   */
+  /**
+   * Updates a collection's name, variables, headers, and scripts.
+   *
+   * @param id - Collection ID to update.
+   * @param name - New display name.
+   * @param variables - Collection-scoped variables.
+   * @param headers - Headers sent with every request in the collection.
+   * @param preRequestScript - Script run before each request in the collection.
+   * @param postRequestScript - Script run after each request in the collection.
+   * @param auth - Default Authorization settings for requests in the collection.
+   * @returns The updated collection.
+   */
   async updateCollection(
     id: number,
     name: string,
@@ -260,10 +295,20 @@ export class SqliteDatabase implements IDatabase {
     return rowToCollection(row);
   }
 
+  /**
+   * Deletes a collection and all of its requests.
+   *
+   * @param id - Collection ID to delete.
+   */
   async deleteCollection(id: number): Promise<void> {
     this.getDb().prepare('DELETE FROM collections WHERE id = ?').run(id);
   }
 
+  /**
+   * Lists all environments ordered by name.
+   *
+   * @returns All environments in the database.
+   */
   async listEnvironments(): Promise<Environment[]> {
     const rows = this.getDb()
       .prepare('SELECT id, name, variables, created_at FROM environments ORDER BY name ASC')
@@ -272,6 +317,12 @@ export class SqliteDatabase implements IDatabase {
     return rows.map(rowToEnvironment);
   }
 
+  /**
+   * Creates a new environment with the given name.
+   *
+   * @param name - Display name for the environment.
+   * @returns The newly created environment.
+   */
   async createEnvironment(name: string): Promise<Environment> {
     const result = this.getDb()
       .prepare('INSERT INTO environments (name) VALUES (?)')
@@ -284,6 +335,14 @@ export class SqliteDatabase implements IDatabase {
     return rowToEnvironment(row);
   }
 
+  /**
+   * Updates an environment's name and variables.
+   *
+   * @param id - Environment ID to update.
+   * @param name - New display name.
+   * @param variables - Environment-scoped variables.
+   * @returns The updated environment.
+   */
   async updateEnvironment(id: number, name: string, variables: Variable[]): Promise<Environment> {
     this.getDb()
       .prepare('UPDATE environments SET name = ?, variables = ? WHERE id = ?')
@@ -297,10 +356,21 @@ export class SqliteDatabase implements IDatabase {
     return rowToEnvironment(row);
   }
 
+  /**
+   * Deletes an environment.
+   *
+   * @param id - Environment ID to delete.
+   */
   async deleteEnvironment(id: number): Promise<void> {
     this.getDb().prepare('DELETE FROM environments WHERE id = ?').run(id);
   }
 
+  /**
+   * Lists all saved requests in a collection.
+   *
+   * @param collectionId - Collection to query.
+   * @returns Requests ordered by sort_order then name.
+   */
   async listRequests(collectionId: number): Promise<SavedRequest[]> {
     const rows = this.getDb()
       .prepare('SELECT * FROM requests WHERE collection_id = ? ORDER BY sort_order ASC, name ASC')
@@ -309,6 +379,12 @@ export class SqliteDatabase implements IDatabase {
     return rows.map(rowToRequest);
   }
 
+  /**
+   * Inserts a new request or updates an existing one.
+   *
+   * @param input - Request fields to persist.
+   * @returns The saved request with ID and timestamps.
+   */
   async saveRequest(input: SaveRequestInput): Promise<SavedRequest> {
     const headers = JSON.stringify(input.headers);
     const params = JSON.stringify(input.params);
@@ -402,10 +478,21 @@ export class SqliteDatabase implements IDatabase {
     return rowToRequest(row as Record<string, unknown>);
   }
 
+  /**
+   * Deletes a saved request by ID.
+   *
+   * @param id - Request ID to delete.
+   */
   async deleteRequest(id: number): Promise<void> {
     this.getDb().prepare('DELETE FROM requests WHERE id = ?').run(id);
   }
 
+  /**
+   * Lists all folders in a collection.
+   *
+   * @param collectionId - Collection to query.
+   * @returns Folders ordered by sort_order then name.
+   */
   async listFolders(collectionId: number): Promise<Folder[]> {
     const rows = this.getDb()
       .prepare('SELECT * FROM folders WHERE collection_id = ? ORDER BY sort_order ASC, name ASC')
@@ -414,6 +501,13 @@ export class SqliteDatabase implements IDatabase {
     return rows.map(rowToFolder);
   }
 
+  /**
+   * Creates a new folder in a collection.
+   *
+   * @param collectionId - Collection to add the folder to.
+   * @param name - Display name for the folder.
+   * @returns The newly created folder.
+   */
   async createFolder(collectionId: number, name: string): Promise<Folder> {
     const maxOrder = this.getDb()
       .prepare(
@@ -432,6 +526,13 @@ export class SqliteDatabase implements IDatabase {
     return rowToFolder(row);
   }
 
+  /**
+   * Renames a folder.
+   *
+   * @param id - Folder ID to rename.
+   * @param name - New display name.
+   * @returns The updated folder.
+   */
   async renameFolder(id: number, name: string): Promise<Folder> {
     const result = this.getDb()
       .prepare('UPDATE folders SET name = ? WHERE id = ?')
@@ -447,6 +548,11 @@ export class SqliteDatabase implements IDatabase {
     return rowToFolder(row);
   }
 
+  /**
+   * Deletes a folder and all requests inside it.
+   *
+   * @param id - Folder ID to delete.
+   */
   async deleteFolder(id: number): Promise<void> {
     const database = this.getDb();
     const deleteRequests = database.transaction((folderId: number) => {
@@ -456,6 +562,12 @@ export class SqliteDatabase implements IDatabase {
     deleteRequests(id);
   }
 
+  /**
+   * Reorders folders within a collection.
+   *
+   * @param collectionId - Collection containing the folders.
+   * @param orderedFolderIds - Folder IDs in desired order.
+   */
   async reorderFolders(collectionId: number, orderedFolderIds: number[]): Promise<void> {
     const reorder = this.getDb().transaction((ids: number[]) => {
       const stmt = this.getDb().prepare(
@@ -468,6 +580,13 @@ export class SqliteDatabase implements IDatabase {
     reorder(orderedFolderIds);
   }
 
+  /**
+   * Reorders requests within a folder or at collection root.
+   *
+   * @param collectionId - Collection containing the requests.
+   * @param folderId - Folder ID, or null for root-level requests.
+   * @param orderedRequestIds - Request IDs in desired order.
+   */
   async reorderRequests(
     collectionId: number,
     folderId: number | null,
@@ -484,6 +603,13 @@ export class SqliteDatabase implements IDatabase {
     reorder(orderedRequestIds);
   }
 
+  /**
+   * Moves a request to another folder or collection root at a given index.
+   *
+   * @param requestId - Request ID to move.
+   * @param folderId - Destination folder ID, or null for collection root.
+   * @param index - Zero-based position within the destination container.
+   */
   async moveRequest(requestId: number, folderId: number | null, index: number): Promise<void> {
     const database = this.getDb();
     const row = database.prepare('SELECT * FROM requests WHERE id = ?').get(requestId) as
@@ -554,6 +680,12 @@ export class SqliteDatabase implements IDatabase {
     reindexContainer(folderId, newIds);
   }
 
+  /**
+   * Builds a portable export payload for a collection and its requests.
+   *
+   * @param id - Collection ID to export.
+   * @returns Collection export data without database IDs.
+   */
   async exportCollectionData(id: number): Promise<CollectionExport> {
     const row = this.getDb()
       .prepare(
@@ -629,6 +761,12 @@ export class SqliteDatabase implements IDatabase {
     };
   }
 
+  /**
+   * Imports a collection and its requests from export data.
+   *
+   * @param data - Parsed collection export payload.
+   * @returns The newly created collection.
+   */
   async importCollectionData(data: unknown): Promise<Collection> {
     const exportData = validateCollectionExport(data);
     const database = this.getDb();
@@ -701,6 +839,12 @@ export class SqliteDatabase implements IDatabase {
     return importCollection(exportData);
   }
 
+  /**
+   * Reads a persisted setting by key.
+   *
+   * @param key - Setting key to look up.
+   * @returns The stored value, or undefined when not set.
+   */
   async getSetting(key: string): Promise<string | undefined> {
     const row = this.getDb().prepare('SELECT value FROM settings WHERE key = ?').get(key) as
       | { value: string }
@@ -708,6 +852,12 @@ export class SqliteDatabase implements IDatabase {
     return row?.value;
   }
 
+  /**
+   * Persists a setting value, replacing any existing entry for the key.
+   *
+   * @param key - Setting key to store.
+   * @param value - Value to persist.
+   */
   async setSetting(key: string, value: string): Promise<void> {
     this.getDb()
       .prepare(
@@ -716,6 +866,9 @@ export class SqliteDatabase implements IDatabase {
       .run(key, value, value);
   }
 
+  /**
+   * Closes the database connection.
+   */
   async close(): Promise<void> {
     if (this.#db) {
       this.#db.close();

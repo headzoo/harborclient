@@ -41,6 +41,12 @@ const CONN_B: DatabaseConnection = {
 
 const cleanups: Array<() => void | Promise<void>> = [];
 
+/**
+ * Builds a routing database fixture with mounted backends for tests.
+ *
+ * @param options - Optional flags such as whether to mount a second backend.
+ * @returns Test routing database, registry, backends, and temp root directory.
+ */
 async function createRoutingFixture(options?: { mountB?: boolean }): Promise<{
   router: RoutingDatabase;
   registry: LocalRegistry;

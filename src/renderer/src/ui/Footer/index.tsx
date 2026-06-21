@@ -94,6 +94,9 @@ export function Footer({
   sidebarOpen,
   onToggleSidebar
 }: Props): JSX.Element {
+  /**
+   * Merges collection and environment variables for the footer variables panel.
+   */
   const resolvedVariables = useMemo(
     () => resolveScopedVariables(collectionVariables, environmentVariables),
     [collectionVariables, environmentVariables]

@@ -2,7 +2,9 @@ import type { Variable } from '#/shared/types';
 
 const VARIABLE_PATTERN = /\{\{\s*([\w.-]+)\s*\}\}/g;
 
-/** A segment of text, optionally marking a {{variable}} token. */
+/**
+ * A segment of text, optionally marking a {{variable}} token.
+ */
 export interface VariableToken {
   text: string;
   key?: string;

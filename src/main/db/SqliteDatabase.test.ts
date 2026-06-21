@@ -31,6 +31,11 @@ vi.mock('electron', () => ({
 
 const cleanups: Array<() => void | Promise<void>> = [];
 
+/**
+ * Creates an isolated SQLite database instance for unit tests.
+ *
+ * @returns Configured test database handle and temp directory path.
+ */
 async function createTestDb(): Promise<TestDbHandle & { tmpDir: string }> {
   const tmpDir = mkdtempSync(join(tmpdir(), 'harborclient-db-'));
   const db = new SqliteDatabase(tmpDir, DEFAULT_TEST_SETTINGS);

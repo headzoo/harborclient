@@ -17,7 +17,9 @@ import {
 import { closeTabsForCollection, closeTabsForRequest } from '#/renderer/src/store/slices/tabsSlice';
 import type { ThunkApiConfig } from '#/renderer/src/store/redux';
 
-/** Reloads all collections from the active database and auto-selects the first when none is selected. */
+/**
+ * Reloads all collections from the active database and auto-selects the first when none is selected.
+ */
 export const refreshCollections = createAsyncThunk<Collection[], void, ThunkApiConfig>(
   'collections/refresh',
   async (_, { dispatch, getState }) => {
@@ -34,7 +36,9 @@ export const refreshCollections = createAsyncThunk<Collection[], void, ThunkApiC
   }
 );
 
-/** Reloads folder metadata for a single collection. */
+/**
+ * Reloads folder metadata for a single collection.
+ */
 export const refreshFolders = createAsyncThunk<
   Awaited<ReturnType<typeof window.api.listFolders>>,
   number,
@@ -45,7 +49,9 @@ export const refreshFolders = createAsyncThunk<
   return data;
 });
 
-/** Reloads both folders and requests for a collection. */
+/**
+ * Reloads both folders and requests for a collection.
+ */
 export const refreshCollectionContents = createAsyncThunk<void, number, ThunkApiConfig>(
   'collections/refreshContents',
   async (collectionId, { dispatch }) => {
@@ -54,7 +60,9 @@ export const refreshCollectionContents = createAsyncThunk<void, number, ThunkApi
   }
 );
 
-/** Reloads saved requests for a single collection. */
+/**
+ * Reloads saved requests for a single collection.
+ */
 export const refreshRequests = createAsyncThunk<
   Awaited<ReturnType<typeof window.api.listRequests>>,
   number,
@@ -65,7 +73,9 @@ export const refreshRequests = createAsyncThunk<
   return data;
 });
 
-/** Creates a collection and selects it in the sidebar. */
+/**
+ * Creates a collection and selects it in the sidebar.
+ */
 export const createCollection = createAsyncThunk<Collection, string, ThunkApiConfig>(
   'collections/create',
   async (name, { dispatch }) => {
@@ -76,7 +86,9 @@ export const createCollection = createAsyncThunk<Collection, string, ThunkApiCon
   }
 );
 
-/** Updates collection metadata and optionally moves it to another database connection. */
+/**
+ * Updates collection metadata and optionally moves it to another database connection.
+ */
 export const updateCollection = createAsyncThunk<
   Collection,
   {
@@ -129,7 +141,9 @@ export const updateCollection = createAsyncThunk<
   }
 );
 
-/** Deletes a collection and clears selection when it was active. */
+/**
+ * Deletes a collection and clears selection when it was active.
+ */
 export const deleteCollection = createAsyncThunk<void, number, ThunkApiConfig>(
   'collections/delete',
   async (id, { dispatch, getState }) => {
@@ -142,7 +156,9 @@ export const deleteCollection = createAsyncThunk<void, number, ThunkApiConfig>(
   }
 );
 
-/** Deep-copies a collection and places the duplicate directly below the original. */
+/**
+ * Deep-copies a collection and places the duplicate directly below the original.
+ */
 export const duplicateCollection = createAsyncThunk<Collection, number, ThunkApiConfig>(
   'collections/duplicate',
   async (id, { dispatch, getState }) => {
@@ -166,7 +182,9 @@ export const duplicateCollection = createAsyncThunk<Collection, number, ThunkApi
   }
 );
 
-/** Exports a collection to a user-chosen file path. */
+/**
+ * Exports a collection to a user-chosen file path.
+ */
 export const exportCollection = createAsyncThunk<CollectionExportResult, number, ThunkApiConfig>(
   'collections/export',
   async (id) => {
@@ -174,7 +192,9 @@ export const exportCollection = createAsyncThunk<CollectionExportResult, number,
   }
 );
 
-/** Imports a collection from disk and refreshes sidebar state. */
+/**
+ * Imports a collection from disk and refreshes sidebar state.
+ */
 export const importCollection = createAsyncThunk<Collection | null, void, ThunkApiConfig>(
   'collections/import',
   async (_, { dispatch }) => {
@@ -188,7 +208,9 @@ export const importCollection = createAsyncThunk<Collection | null, void, ThunkA
   }
 );
 
-/** Persists a new sidebar order for collections. */
+/**
+ * Persists a new sidebar order for collections.
+ */
 export const reorderCollections = createAsyncThunk<
   void,
   { orderedCollectionIds: number[] },
@@ -198,7 +220,9 @@ export const reorderCollections = createAsyncThunk<
   await dispatch(refreshCollections());
 });
 
-/** Creates a folder inside a collection. */
+/**
+ * Creates a folder inside a collection.
+ */
 export const createFolder = createAsyncThunk<
   Folder,
   { collectionId: number; name: string },
@@ -209,7 +233,9 @@ export const createFolder = createAsyncThunk<
   return folder;
 });
 
-/** Renames an existing folder. */
+/**
+ * Renames an existing folder.
+ */
 export const renameFolder = createAsyncThunk<
   Folder,
   { id: number; collectionId: number; name: string },
@@ -220,7 +246,9 @@ export const renameFolder = createAsyncThunk<
   return folder;
 });
 
-/** Deletes a folder and closes any open tabs for requests it contained. */
+/**
+ * Deletes a folder and closes any open tabs for requests it contained.
+ */
 export const deleteFolder = createAsyncThunk<
   void,
   { id: number; collectionId: number; requestIds: number[] },
@@ -234,7 +262,9 @@ export const deleteFolder = createAsyncThunk<
   await dispatch(refreshCollectionContents(collectionId));
 });
 
-/** Persists a new folder order for a collection. */
+/**
+ * Persists a new folder order for a collection.
+ */
 export const reorderFolders = createAsyncThunk<
   void,
   { collectionId: number; orderedFolderIds: number[] },
@@ -244,7 +274,9 @@ export const reorderFolders = createAsyncThunk<
   await dispatch(refreshFolders(collectionId));
 });
 
-/** Persists a new request order within a folder or the collection root. */
+/**
+ * Persists a new request order within a folder or the collection root.
+ */
 export const reorderRequests = createAsyncThunk<
   void,
   { collectionId: number; folderId: number | null; orderedRequestIds: number[] },
@@ -257,7 +289,9 @@ export const reorderRequests = createAsyncThunk<
   }
 );
 
-/** Moves a request into a folder (or back to the collection root) at a specific index. */
+/**
+ * Moves a request into a folder (or back to the collection root) at a specific index.
+ */
 export const moveRequestToFolder = createAsyncThunk<
   void,
   { collectionId: number; requestId: number; folderId: number | null; index: number },

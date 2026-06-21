@@ -12,6 +12,9 @@ export function IdentitySection(): JSX.Element {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /**
+   * Loads the local invite identity on mount.
+   */
   useEffect(() => {
     let cancelled = false;
 

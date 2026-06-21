@@ -191,10 +191,20 @@ const variableHighlighter = ViewPlugin.fromClass(
   class {
     decorations: DecorationSet;
 
+    /**
+     * Builds the initial {{variable}} decoration set for the editor view.
+     *
+     * @param view - CodeMirror editor view instance.
+     */
     constructor(view: EditorView) {
       this.decorations = variableMatcher.createDeco(view);
     }
 
+    /**
+     * Recomputes decorations when document content or viewport changes.
+     *
+     * @param update - View update describing what changed.
+     */
     update(update: ViewUpdate): void {
       this.decorations = variableMatcher.updateDeco(update, this.decorations);
     }
@@ -277,6 +287,9 @@ export function CodeEditor({
     () => window.matchMedia('(prefers-color-scheme: dark)').matches
   );
 
+  /**
+   * Tracks system dark mode so syntax highlighting matches the active theme.
+   */
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (): void => setIsDark(media.matches);
@@ -284,6 +297,9 @@ export function CodeEditor({
     return () => media.removeEventListener('change', handleChange);
   }, []);
 
+  /**
+   * Assembles CodeMirror extensions for language mode, theme, and optional variable tooling.
+   */
   const extensions = useMemo(() => {
     const next = [
       EditorView.lineWrapping,

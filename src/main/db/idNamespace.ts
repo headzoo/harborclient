@@ -1,4 +1,6 @@
-/** Offset multiplier for namespacing per-backend numeric IDs. */
+/**
+ * Offset multiplier for namespacing per-backend numeric IDs.
+ */
 export const ID_OFFSET = 1_000_000_000;
 
 /**

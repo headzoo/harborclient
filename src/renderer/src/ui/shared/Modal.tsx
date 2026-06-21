@@ -1,10 +1,14 @@
 import type { JSX, ReactNode } from 'react';
 
 interface Props {
-  /** Called when the backdrop is clicked or Escape is pressed. */
+  /**
+   * Called when the backdrop is clicked or Escape is pressed.
+   */
   onClose: () => void;
 
-  /** Optional width class for the dialog panel (defaults to w-96). */
+  /**
+   * Optional width class for the dialog panel (defaults to w-96).
+   */
   className?: string;
 
   children: ReactNode;

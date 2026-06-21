@@ -1,7 +1,9 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { RootState } from '#/renderer/src/store/redux';
 
-/** Which main-area view is currently shown. Overlays are mutually exclusive. */
+/**
+ * Which main-area view is currently shown. Overlays are mutually exclusive.
+ */
 export type MainView =
   | { type: 'request' }
   | { type: 'settings' }
@@ -39,41 +41,71 @@ const navigationSlice = createSlice({
   name: 'navigation',
   initialState,
   reducers: {
+    /**
+     * Shows the settings overlay and clears dirty flags.
+     */
     openSettings(state) {
       resetDirtyFlags(state);
       state.mainView = { type: 'settings' };
     },
+    /**
+     * Shows the certificates overlay and clears dirty flags.
+     */
     openCertificates(state) {
       resetDirtyFlags(state);
       state.mainView = { type: 'certificates' };
     },
+    /**
+     * Shows collection settings for the given id.
+     */
     openCollectionSettings(state, action: PayloadAction<number>) {
       resetDirtyFlags(state);
       state.mainView = { type: 'collection', id: action.payload };
     },
+    /**
+     * Shows environment settings for the given id.
+     */
     openEnvironmentSettings(state, action: PayloadAction<number>) {
       resetDirtyFlags(state);
       state.mainView = { type: 'environment', id: action.payload };
     },
+    /**
+     * Returns to the request editor and clears dirty flags.
+     */
     closeOverlay(state) {
       resetDirtyFlags(state);
       state.mainView = { type: 'request' };
     },
+    /**
+     * Tracks unsaved edits in collection settings.
+     */
     setCollectionSettingsDirty(state, action: PayloadAction<boolean>) {
       state.collectionSettingsDirty = action.payload;
     },
+    /**
+     * Tracks unsaved edits in environment settings.
+     */
     setEnvironmentSettingsDirty(state, action: PayloadAction<boolean>) {
       state.environmentSettingsDirty = action.payload;
     },
+    /**
+     * Toggles sidebar visibility.
+     */
     toggleSidebar(state) {
       state.showSidebar = !state.showSidebar;
     },
+    /**
+     * Toggles the footer console panel.
+     */
     toggleConsole(state) {
       state.showConsole = !state.showConsole;
       if (state.showConsole) {
         state.showVariables = false;
       }
     },
+    /**
+     * Toggles the footer variables panel.
+     */
     toggleVariables(state) {
       state.showVariables = !state.showVariables;
       if (state.showVariables) {
@@ -96,13 +128,31 @@ export const {
   toggleVariables
 } = navigationSlice.actions;
 
+/**
+ * Returns the current main-area view.
+ */
 export const selectMainView = (state: RootState): MainView => state.navigation.mainView;
+/**
+ * Returns whether collection settings have unsaved edits.
+ */
 export const selectCollectionSettingsDirty = (state: RootState): boolean =>
   state.navigation.collectionSettingsDirty;
+/**
+ * Returns whether environment settings have unsaved edits.
+ */
 export const selectEnvironmentSettingsDirty = (state: RootState): boolean =>
   state.navigation.environmentSettingsDirty;
+/**
+ * Returns the user sidebar visibility preference.
+ */
 export const selectShowSidebar = (state: RootState): boolean => state.navigation.showSidebar;
+/**
+ * Returns whether the console panel is open.
+ */
 export const selectShowConsole = (state: RootState): boolean => state.navigation.showConsole;
+/**
+ * Returns whether the variables panel is open.
+ */
 export const selectShowVariables = (state: RootState): boolean => state.navigation.showVariables;
 
 /**

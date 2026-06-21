@@ -155,10 +155,16 @@ export function usePersistedSidebarExpansion({ onExpandCollection }: Options): R
     expandedFolderIds
   ]);
 
+  /**
+   * Toggles the Collections section expanded state.
+   */
   const toggleCollectionsSection = useCallback(() => {
     setCollectionsSectionExpanded((open) => !open);
   }, []);
 
+  /**
+   * Toggles the Environments section expanded state.
+   */
   const toggleEnvironmentsSection = useCallback(() => {
     setEnvironmentsSectionExpanded((open) => !open);
   }, []);

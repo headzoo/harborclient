@@ -66,9 +66,14 @@ export function VariableInput({
   const hideTimer = useRef<number | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
+  /**
+   * Splits the input value into plain text and {{variable}} token spans for highlighting.
+   */
   const tokens = useMemo(() => tokenizeVariables(value), [value]);
 
-  /** Clears any pending tooltip hide timer. */
+  /**
+   * Clears any pending tooltip hide timer.
+   */
   const cancelHide = (): void => {
     if (hideTimer.current != null) {
       window.clearTimeout(hideTimer.current);
@@ -76,12 +81,17 @@ export function VariableInput({
     }
   };
 
-  /** Hides the tooltip after a short grace period so the pointer can reach it. */
+  /**
+   * Hides the tooltip after a short grace period so the pointer can reach it.
+   */
   const scheduleHide = (): void => {
     cancelHide();
     hideTimer.current = window.setTimeout(() => setTooltip(null), 120);
   };
 
+  /**
+   * Clears any pending tooltip hide timer when the component unmounts.
+   */
   useEffect(() => () => cancelHide(), []);
 
   /**

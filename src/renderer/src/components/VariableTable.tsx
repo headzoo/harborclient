@@ -4,6 +4,9 @@ import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faPlus, faXmark } from '#/renderer/src/fontawesome';
 import { field, iconButtonDanger, toolbarButton } from '#/renderer/src/ui/shared/classes';
 
+/**
+ * Returns a blank variable row for new table entries.
+ */
 const emptyVariable = (): Variable => ({ key: '', value: '', defaultValue: '', share: false });
 
 const thClass = 'pb-1 text-left text-[11px] font-medium uppercase tracking-wide text-muted';
@@ -39,7 +42,9 @@ export function VariableTable({ variables, onChange, description }: Props): JSX.
     onChange(variables.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   };
 
-  /** Appends a blank variable row. */
+  /**
+   * Appends a blank variable row.
+   */
   const addVariable = (): void => {
     onChange([...variables, emptyVariable()]);
   };

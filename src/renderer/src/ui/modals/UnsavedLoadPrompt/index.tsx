@@ -16,10 +16,16 @@ export function UnsavedLoadPrompt(): JSX.Element | null {
   const dispatch = useAppDispatch();
   const pendingLoadRequest = useAppSelector(selectPendingLoadRequest);
 
+  /**
+   * Dismisses the prompt and keeps the current settings overlay open.
+   */
   const handleCancel = useCallback((): void => {
     dispatch(setPendingLoadRequest(null));
   }, [dispatch]);
 
+  /**
+   * Closes settings without saving and loads the pending request.
+   */
   const handleConfirm = useCallback((): void => {
     if (!pendingLoadRequest) return;
     dispatch(setPendingLoadRequest(null));

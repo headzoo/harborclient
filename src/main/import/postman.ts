@@ -11,7 +11,9 @@ import type {
   Variable
 } from '#/shared/types';
 
-/** HTTP methods HarborClient accepts for saved requests. */
+/**
+ * HTTP methods HarborClient accepts for saved requests.
+ */
 const SUPPORTED_METHODS = new Set<HttpMethod>([
   'GET',
   'POST',

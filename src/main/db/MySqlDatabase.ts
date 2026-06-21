@@ -172,6 +172,11 @@ export class MySqlDatabase implements IDatabase {
     await this.getPool().execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
   }
 
+  /**
+   * Lists all collections ordered by name.
+   *
+   * @returns All collections in the database.
+   */
   async listCollections(): Promise<Collection[]> {
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
       'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections ORDER BY name ASC'
@@ -179,6 +184,12 @@ export class MySqlDatabase implements IDatabase {
     return rows.map(rowToCollection);
   }
 
+  /**
+   * Creates a new collection with the given name.
+   *
+   * @param name - Display name for the collection.
+   * @returns The newly created collection.
+   */
   async createCollection(name: string): Promise<Collection> {
     const createdAt = new Date().toISOString();
     const [result] = await this.getPool().execute<ResultSetHeader>(
@@ -197,6 +208,30 @@ export class MySqlDatabase implements IDatabase {
     return rowToCollection(row);
   }
 
+  /**
+   * Updates a collection's name, variables, headers, and scripts.
+   *
+   * @param id - Collection ID to update.
+   * @param name - New display name.
+   * @param variables - Collection-scoped variables.
+   * @param headers - Headers sent with every request in the collection.
+   * @param preRequestScript - Script run before each request in the collection.
+   * @param postRequestScript - Script run after each request in the collection.
+   * @param auth - Default Authorization settings for requests in the collection.
+   * @returns The updated collection.
+   */
+  /**
+   * Updates a collection's name, variables, headers, and scripts.
+   *
+   * @param id - Collection ID to update.
+   * @param name - New display name.
+   * @param variables - Collection-scoped variables.
+   * @param headers - Headers sent with every request in the collection.
+   * @param preRequestScript - Script run before each request in the collection.
+   * @param postRequestScript - Script run after each request in the collection.
+   * @param auth - Default Authorization settings for requests in the collection.
+   * @returns The updated collection.
+   */
   async updateCollection(
     id: number,
     name: string,
@@ -231,10 +266,20 @@ export class MySqlDatabase implements IDatabase {
     return rowToCollection(row);
   }
 
+  /**
+   * Deletes a collection and all of its requests.
+   *
+   * @param id - Collection ID to delete.
+   */
   async deleteCollection(id: number): Promise<void> {
     await this.getPool().execute('DELETE FROM collections WHERE id = ?', [id]);
   }
 
+  /**
+   * Lists all environments ordered by name.
+   *
+   * @returns All environments in the database.
+   */
   async listEnvironments(): Promise<Environment[]> {
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
       'SELECT id, name, variables, created_at FROM environments ORDER BY name ASC'
@@ -242,6 +287,12 @@ export class MySqlDatabase implements IDatabase {
     return rows.map(rowToEnvironment);
   }
 
+  /**
+   * Creates a new environment with the given name.
+   *
+   * @param name - Display name for the environment.
+   * @returns The newly created environment.
+   */
   async createEnvironment(name: string): Promise<Environment> {
     const createdAt = new Date().toISOString();
     const [result] = await this.getPool().execute<ResultSetHeader>(
@@ -259,6 +310,14 @@ export class MySqlDatabase implements IDatabase {
     return rowToEnvironment(row);
   }
 
+  /**
+   * Updates an environment's name and variables.
+   *
+   * @param id - Environment ID to update.
+   * @param name - New display name.
+   * @param variables - Environment-scoped variables.
+   * @returns The updated environment.
+   */
   async updateEnvironment(id: number, name: string, variables: Variable[]): Promise<Environment> {
     const [result] = await this.getPool().execute<ResultSetHeader>(
       'UPDATE environments SET name = ?, variables = ? WHERE id = ?',
@@ -277,10 +336,21 @@ export class MySqlDatabase implements IDatabase {
     return rowToEnvironment(row);
   }
 
+  /**
+   * Deletes an environment.
+   *
+   * @param id - Environment ID to delete.
+   */
   async deleteEnvironment(id: number): Promise<void> {
     await this.getPool().execute('DELETE FROM environments WHERE id = ?', [id]);
   }
 
+  /**
+   * Lists all saved requests in a collection.
+   *
+   * @param collectionId - Collection to query.
+   * @returns Requests ordered by sort_order then name.
+   */
   async listRequests(collectionId: number): Promise<SavedRequest[]> {
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
       'SELECT * FROM requests WHERE collection_id = ? ORDER BY sort_order ASC, name ASC',
@@ -289,6 +359,12 @@ export class MySqlDatabase implements IDatabase {
     return rows.map(rowToRequest);
   }
 
+  /**
+   * Inserts a new request or updates an existing one.
+   *
+   * @param input - Request fields to persist.
+   * @returns The saved request with ID and timestamps.
+   */
   async saveRequest(input: SaveRequestInput): Promise<SavedRequest> {
     const headers = JSON.stringify(input.headers);
     const params = JSON.stringify(input.params);
@@ -389,10 +465,21 @@ export class MySqlDatabase implements IDatabase {
     return rowToRequest(row);
   }
 
+  /**
+   * Deletes a saved request by ID.
+   *
+   * @param id - Request ID to delete.
+   */
   async deleteRequest(id: number): Promise<void> {
     await this.getPool().execute('DELETE FROM requests WHERE id = ?', [id]);
   }
 
+  /**
+   * Lists all folders in a collection.
+   *
+   * @param collectionId - Collection to query.
+   * @returns Folders ordered by sort_order then name.
+   */
   async listFolders(collectionId: number): Promise<Folder[]> {
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
       'SELECT * FROM folders WHERE collection_id = ? ORDER BY sort_order ASC, name ASC',
@@ -401,6 +488,13 @@ export class MySqlDatabase implements IDatabase {
     return rows.map(rowToFolder);
   }
 
+  /**
+   * Creates a new folder in a collection.
+   *
+   * @param collectionId - Collection to add the folder to.
+   * @param name - Display name for the folder.
+   * @returns The newly created folder.
+   */
   async createFolder(collectionId: number, name: string): Promise<Folder> {
     const createdAt = new Date().toISOString();
     const [maxRows] = await this.getPool().execute<RowDataPacket[]>(
@@ -423,6 +517,13 @@ export class MySqlDatabase implements IDatabase {
     return rowToFolder(row);
   }
 
+  /**
+   * Renames a folder.
+   *
+   * @param id - Folder ID to rename.
+   * @param name - New display name.
+   * @returns The updated folder.
+   */
   async renameFolder(id: number, name: string): Promise<Folder> {
     const [result] = await this.getPool().execute<ResultSetHeader>(
       'UPDATE folders SET name = ? WHERE id = ?',
@@ -439,6 +540,11 @@ export class MySqlDatabase implements IDatabase {
     return rowToFolder(row);
   }
 
+  /**
+   * Deletes a folder and all requests inside it.
+   *
+   * @param id - Folder ID to delete.
+   */
   async deleteFolder(id: number): Promise<void> {
     const connection = await this.getPool().getConnection();
     try {
@@ -454,6 +560,12 @@ export class MySqlDatabase implements IDatabase {
     }
   }
 
+  /**
+   * Reorders folders within a collection.
+   *
+   * @param collectionId - Collection containing the folders.
+   * @param orderedFolderIds - Folder IDs in desired order.
+   */
   async reorderFolders(collectionId: number, orderedFolderIds: number[]): Promise<void> {
     const connection = await this.getPool().getConnection();
     try {
@@ -473,6 +585,13 @@ export class MySqlDatabase implements IDatabase {
     }
   }
 
+  /**
+   * Reorders requests within a folder or at collection root.
+   *
+   * @param collectionId - Collection containing the requests.
+   * @param folderId - Folder ID, or null for root-level requests.
+   * @param orderedRequestIds - Request IDs in desired order.
+   */
   async reorderRequests(
     collectionId: number,
     folderId: number | null,
@@ -496,6 +615,13 @@ export class MySqlDatabase implements IDatabase {
     }
   }
 
+  /**
+   * Moves a request to another folder or collection root at a given index.
+   *
+   * @param requestId - Request ID to move.
+   * @param folderId - Destination folder ID, or null for collection root.
+   * @param index - Zero-based position within the destination container.
+   */
   async moveRequest(requestId: number, folderId: number | null, index: number): Promise<void> {
     const pool = this.getPool();
     const [requestRows] = await pool.execute<RowDataPacket[]>(
@@ -558,6 +684,12 @@ export class MySqlDatabase implements IDatabase {
     await reindexContainer(folderId, newIds);
   }
 
+  /**
+   * Builds a portable export payload for a collection and its requests.
+   *
+   * @param id - Collection ID to export.
+   * @returns Collection export data without database IDs.
+   */
   async exportCollectionData(id: number): Promise<CollectionExport> {
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
       'SELECT name, variables, headers, auth, pre_request_script, post_request_script FROM collections WHERE id = ?',
@@ -622,6 +754,12 @@ export class MySqlDatabase implements IDatabase {
     };
   }
 
+  /**
+   * Imports a collection and its requests from export data.
+   *
+   * @param data - Parsed collection export payload.
+   * @returns The newly created collection.
+   */
   async importCollectionData(data: unknown): Promise<Collection> {
     const exportData = validateCollectionExport(data);
     const now = new Date().toISOString();
@@ -704,6 +842,12 @@ export class MySqlDatabase implements IDatabase {
     }
   }
 
+  /**
+   * Reads a persisted setting by key.
+   *
+   * @param key - Setting key to look up.
+   * @returns The stored value, or undefined when not set.
+   */
   async getSetting(key: string): Promise<string | undefined> {
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
       'SELECT value FROM settings WHERE `key` = ?',
@@ -713,6 +857,12 @@ export class MySqlDatabase implements IDatabase {
     return row ? (row.value as string) : undefined;
   }
 
+  /**
+   * Persists a setting value, replacing any existing entry for the key.
+   *
+   * @param key - Setting key to store.
+   * @param value - Value to persist.
+   */
   async setSetting(key: string, value: string): Promise<void> {
     await this.getPool().execute(
       'INSERT INTO settings (`key`, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)',
@@ -720,6 +870,9 @@ export class MySqlDatabase implements IDatabase {
     );
   }
 
+  /**
+   * Closes the database connection.
+   */
   async close(): Promise<void> {
     if (this.#pool) {
       await this.#pool.end();

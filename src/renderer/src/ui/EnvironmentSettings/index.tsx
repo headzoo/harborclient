@@ -45,6 +45,9 @@ export function EnvironmentSettings(props: Props): JSX.Element {
   return <EnvironmentSettingsForm key={props.environment.id} {...props} />;
 }
 
+/**
+ * Editable environment form keyed by environment id so state resets on navigation.
+ */
 function EnvironmentSettingsForm({
   environment,
   onSave,
@@ -59,6 +62,9 @@ function EnvironmentSettingsForm({
   );
   const [saving, setSaving] = useState(false);
 
+  /**
+   * Compares serialized form state to the saved environment to detect unsaved edits.
+   */
   const isDirty = useMemo(
     () =>
       serializeEnvironmentForm(name, variables) !==
@@ -66,11 +72,16 @@ function EnvironmentSettingsForm({
     [name, variables, environment]
   );
 
+  /**
+   * Notifies the parent when unsaved edits appear or are cleared.
+   */
   useEffect(() => {
     onDirtyChange?.(isDirty);
   }, [isDirty, onDirtyChange]);
 
-  /** Persists name and variables. */
+  /**
+   * Persists name and variables.
+   */
   const handleSave = async (): Promise<void> => {
     const trimmedName = name.trim();
     if (!trimmedName) return;

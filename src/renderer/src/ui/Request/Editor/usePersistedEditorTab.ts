@@ -39,6 +39,9 @@ export function usePersistedEditorTab({ draft, tabId, showBody }: Options): Resu
   const [tab, setTabState] = useState<EditorTab>('params');
   const tabRef = useRef(tab);
 
+  /**
+   * Keeps a ref in sync with tab state for persistence after first save.
+   */
   useEffect(() => {
     tabRef.current = tab;
   }, [tab]);
@@ -46,6 +49,9 @@ export function usePersistedEditorTab({ draft, tabId, showBody }: Options): Resu
   const storageKey = requestEditorTabKey(draft, tabId);
   const previousDraftIdRef = useRef(draft.id);
 
+  /**
+   * Loads the persisted editor tab when the open tab changes.
+   */
   useEffect(() => {
     let cancelled = false;
     const key = requestEditorTabKey(draft, tabId);
@@ -62,6 +68,9 @@ export function usePersistedEditorTab({ draft, tabId, showBody }: Options): Resu
     // eslint-disable-next-line react-hooks/exhaustive-deps -- draft/showBody are correct on mount via editor key remount
   }, [tabId]);
 
+  /**
+   * Migrates tab persistence from unsaved tab key to saved request id on first save.
+   */
   useEffect(() => {
     const previousId = previousDraftIdRef.current;
     previousDraftIdRef.current = draft.id;
@@ -72,6 +81,9 @@ export function usePersistedEditorTab({ draft, tabId, showBody }: Options): Resu
     void window.api.deleteRequestEditorTab(requestEditorTabKey({}, tabId));
   }, [draft.id, tabId]);
 
+  /**
+   * Updates the selected tab in memory and electron-store.
+   */
   const setTab = useCallback(
     (next: EditorTab) => {
       setTabState(next);

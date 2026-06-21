@@ -15,6 +15,9 @@ export function TrustedKeysSection(): JSX.Element {
   const [publicKeyPem, setPublicKeyPem] = useState('');
   const [deletingKey, setDeletingKey] = useState<TrustedInviteKey | null>(null);
 
+  /**
+   * Loads trusted invite public keys on mount.
+   */
   useEffect(() => {
     let cancelled = false;
 
@@ -29,9 +32,17 @@ export function TrustedKeysSection(): JSX.Element {
     };
   }, []);
 
+  /**
+   * Closes the delete confirmation modal when Escape is pressed.
+   */
   useEffect(() => {
     if (!deletingKey) return;
 
+    /**
+     * Dismisses the delete confirmation on Escape.
+     *
+     * @param event - Window keydown event.
+     */
     const onKeyDown = (event: KeyboardEvent): void => {
       if (event.key === 'Escape') setDeletingKey(null);
     };

@@ -19,17 +19,28 @@ export const store = configureStore({
     navigation: navigationReducer,
     modals: modalsReducer
   },
+  /**
+   * Registers default RTK middleware plus busy tracking.
+   *
+   * @param getDefaultMiddleware - RTK default middleware factory.
+   * @returns Configured middleware chain.
+   */
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(busyMiddleware)
 });
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 
-/** Typed thunk API for createAsyncThunk generics. */
+/**
+ * Typed thunk API for createAsyncThunk generics.
+ */
 export type ThunkApiConfig = {
   state: RootState;
 };
 
+/**
+ * Persists tabs and active environment whenever store state changes.
+ */
 store.subscribe(() => {
   const state = store.getState();
   persistTabs(state.tabs.tabs, state.tabs.activeTabId);

@@ -7,12 +7,18 @@ const pendingRequests = new Set<string>();
 
 type AsyncPhase = 'pending' | 'fulfilled' | 'rejected';
 
+/**
+ * Parses RTK async action types into thunk name and phase.
+ */
 function parseAsyncActionType(actionType: string): { thunkType: string; phase: AsyncPhase } | null {
   const match = actionType.match(/^(.+)\/(pending|fulfilled|rejected)$/);
   if (!match) return null;
   return { thunkType: match[1], phase: match[2] as AsyncPhase };
 }
 
+/**
+ * Returns whether an action is an RTK async thunk lifecycle action.
+ */
 function isAsyncThunkAction(action: unknown): action is UnknownAction & {
   meta: { requestId: string };
 } {

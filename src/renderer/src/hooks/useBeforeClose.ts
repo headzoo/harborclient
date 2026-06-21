@@ -12,6 +12,9 @@ export function useBeforeClose(): void {
   const tabs = useAppSelector(selectTabs);
   const tabsRef = useRef(tabs);
 
+  /**
+   * Keeps the latest tabs list available to the before-close handler without resubscribing.
+   */
   useEffect(() => {
     tabsRef.current = tabs;
   });

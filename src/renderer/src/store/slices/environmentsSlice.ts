@@ -16,9 +16,15 @@ const environmentsSlice = createSlice({
   name: 'environments',
   initialState,
   reducers: {
+    /**
+     * Replaces the environments list from a refresh.
+     */
     setEnvironments(state, action: PayloadAction<Environment[]>) {
       state.environments = action.payload;
     },
+    /**
+     * Sets the active environment selection.
+     */
     setActiveEnvironmentId(state, action: PayloadAction<number | null>) {
       state.activeEnvironmentId = action.payload;
     }

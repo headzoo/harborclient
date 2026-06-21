@@ -58,6 +58,9 @@ export function VariablesPanel({
     storageKey: 'hc.variablesHeight'
   });
 
+  /**
+   * Closes the variables panel.
+   */
   const handleClose = useCallback(() => {
     onClose();
   }, [onClose]);

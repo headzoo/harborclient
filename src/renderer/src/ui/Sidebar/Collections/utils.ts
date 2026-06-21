@@ -127,10 +127,14 @@ export function resolveRequestDropTarget(
   return undefined;
 }
 
-/** Tailwind classes applied to the active request drop target row. */
+/**
+ * Tailwind classes applied to the active request drop target row.
+ */
 export const dropTargetHighlightClass = 'rounded-md ring-2 ring-info/60 bg-info/10';
 
-/** Prefer explicit drop zones when the pointer is inside them. */
+/**
+ * Prefers explicit drop zones under the pointer, otherwise falls back to closest center.
+ */
 export const collectionCollisionDetection: CollisionDetection = (args) => {
   const pointerCollisions = pointerWithin(args);
   if (pointerCollisions.length > 0) {
