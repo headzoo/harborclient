@@ -13,6 +13,7 @@ import {
   setMessages,
   setSelectedModel,
   restoreChatSession,
+  setHubModelGroups,
   setSendError,
   setSending
 } from '#/renderer/src/store/slices/aiChatSlice';
@@ -73,12 +74,15 @@ export const initializeAiChat = createAsyncThunk<void, AiSettings, ThunkApiConfi
   'aiChat/initialize',
   async (aiSettings, { dispatch, getState }) => {
     const { openTabIds, activeChatId } = getState().aiChat;
+    const hubModelGroups = await window.api.listHubLlmModels();
+    dispatch(setHubModelGroups(hubModelGroups));
+
     if (openTabIds.length > 0 && activeChatId != null) {
       return;
     }
 
     const summaries = await dispatch(refreshChatHistory()).unwrap();
-    const availableModels = getAvailableModels(aiSettings);
+    const availableModels = getAvailableModels(aiSettings, hubModelGroups);
     const defaultModel = availableModels[0]?.id;
     const existingChatIds = new Set(summaries.map((chat) => chat.id));
     const session = await window.api.getAiChatSession();
@@ -134,7 +138,8 @@ export const initializeAiChat = createAsyncThunk<void, AiSettings, ThunkApiConfi
 export const createNewChat = createAsyncThunk<void, AiSettings, ThunkApiConfig>(
   'aiChat/createNewChat',
   async (aiSettings, { dispatch, getState }) => {
-    const availableModels = getAvailableModels(aiSettings);
+    const hubModelGroups = getState().aiChat.hubModelGroups;
+    const availableModels = getAvailableModels(aiSettings, hubModelGroups);
     const defaultModel = availableModels[0]?.id;
     const activeChatId = getState().aiChat.activeChatId;
     const selectedModel =
@@ -180,9 +185,9 @@ export const closeChat = createAsyncThunk<void, number, ThunkApiConfig>(
  */
 export const sendChatMessage = createAsyncThunk<
   void,
-  { chatId: number; content: string; model?: string },
+  { chatId: number; content: string; model?: string; hubId?: string },
   ThunkApiConfig
->('aiChat/sendMessage', async ({ chatId, content, model }, { dispatch, getState }) => {
+>('aiChat/sendMessage', async ({ chatId, content, model, hubId }, { dispatch, getState }) => {
   const trimmed = content.trim();
   if (!trimmed) return;
 
@@ -208,7 +213,11 @@ export const sendChatMessage = createAsyncThunk<
     let assistantText: string | null = null;
 
     for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration += 1) {
-      const step = await window.api.completeChatStep({ model: modelId, messages });
+      const step = await window.api.completeChatStep({
+        model: modelId,
+        messages,
+        ...(hubId ? { hubId } : {})
+      });
 
       if (step.toolCalls && step.toolCalls.length > 0) {
         messages.push({

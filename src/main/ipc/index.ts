@@ -7,6 +7,7 @@ import { registerCookieHandlers } from '#/main/ipc/handlers/cookies';
 import { registerEnvironmentHandlers } from '#/main/ipc/handlers/environments';
 import { registerFileHandlers } from '#/main/ipc/handlers/files';
 import { registerInviteHandlers } from '#/main/ipc/handlers/invites';
+import { registerLlmHandlers } from '#/main/ipc/handlers/llm';
 import { registerMenuHandlers } from '#/main/ipc/handlers/menu';
 import { registerNetworkHandlers } from '#/main/ipc/handlers/network';
 import { registerRequestHandlers } from '#/main/ipc/handlers/requests';
@@ -22,6 +23,7 @@ export function registerIpcHandlers(db: IDatabase): void {
 
   registerCollectionHandlers(db);
   registerChatHandlers();
+  registerLlmHandlers();
   registerEnvironmentHandlers(db);
   registerRequestHandlers(db);
   registerNetworkHandlers(cookieJar);

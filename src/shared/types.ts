@@ -1277,6 +1277,51 @@ export interface ChatStepInput {
    * Conversation messages excluding the system prompt (injected in main).
    */
   messages: ChatStepMessage[];
+
+  /**
+   * Team Hub id when the selected model is hub-proxied.
+   */
+  hubId?: string;
+}
+
+/**
+ * One LLM model offered by a Team Hub.
+ */
+export interface HubLlmModel {
+  /**
+   * Provider-specific model id.
+   */
+  id: string;
+
+  /**
+   * Human-readable label from the hub.
+   */
+  label: string;
+
+  /**
+   * LLM provider that owns this model.
+   */
+  provider: LlmProvider;
+}
+
+/**
+ * Models returned from a single configured Team Hub.
+ */
+export interface HubLlmModelGroup {
+  /**
+   * Team Hub identifier from local settings.
+   */
+  hubId: string;
+
+  /**
+   * Display name of the Team Hub.
+   */
+  hubName: string;
+
+  /**
+   * Models the authenticated user may use on this hub.
+   */
+  models: HubLlmModel[];
 }
 
 /**
@@ -1953,6 +1998,11 @@ export interface Api {
    * @param input - Model id and conversation messages for the step.
    */
   completeChatStep: (input: ChatStepInput) => Promise<ChatStepResult>;
+
+  /**
+   * Lists LLM models offered by configured Team Hubs for the current user.
+   */
+  listHubLlmModels: () => Promise<HubLlmModelGroup[]>;
 
   /**
    * Deletes a chat and its messages.

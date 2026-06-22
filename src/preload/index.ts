@@ -18,6 +18,7 @@ import type {
   ChatStepResult,
   CreateChatInput,
   GeneralSettings,
+  HubLlmModelGroup,
   ImportEntityResult,
   InviteIdentity,
   ListCollectionsResult,
@@ -539,6 +540,13 @@ function completeChatStep(input: ChatStepInput): Promise<ChatStepResult> {
 }
 
 /**
+ * Lists LLM models offered by configured Team Hubs.
+ */
+function listHubLlmModels(): Promise<HubLlmModelGroup[]> {
+  return ipcRenderer.invoke('llm:listHubModels');
+}
+
+/**
  * Deletes a chat and its messages.
  *
  * @param id - Chat id to delete.
@@ -895,6 +903,7 @@ const api: Api = {
   getChat,
   addChatMessage,
   completeChatStep,
+  listHubLlmModels,
   deleteChat,
   listDatabaseConnections,
   saveDatabaseConnection,

@@ -1,6 +1,6 @@
 import { useEffect, useState, type JSX } from 'react';
-import type { AiSettings } from '#/shared/types';
-import { hasConfiguredAiApiKeys } from '#/shared/aiSettings';
+import type { AiSettings, HubLlmModelGroup } from '#/shared/types';
+import { hasAvailableAiModels } from '#/shared/aiModels';
 import { ResizeHandle, useResizable } from '#/renderer/src/components/Resizable';
 import { DEFAULT_AI_SETTINGS } from '#/renderer/src/ui/Settings/constants';
 import { ConfigureApiKeysPrompt } from './ConfigureApiKeysPrompt';
@@ -11,6 +11,7 @@ import { AiChat } from './Chat';
  */
 export function AiSidebar(): JSX.Element {
   const [aiSettings, setAiSettings] = useState<AiSettings>(DEFAULT_AI_SETTINGS);
+  const [hubModelGroups, setHubModelGroups] = useState<HubLlmModelGroup[]>([]);
   const [loading, setLoading] = useState(true);
 
   const {
@@ -36,9 +37,13 @@ export function AiSidebar(): JSX.Element {
 
     const loadSettings = async (): Promise<void> => {
       try {
-        const value = await window.api.getAiSettings();
+        const [value, hubs] = await Promise.all([
+          window.api.getAiSettings(),
+          window.api.listHubLlmModels()
+        ]);
         if (!cancelled) {
           setAiSettings(value);
+          setHubModelGroups(hubs);
         }
       } finally {
         if (!cancelled) {
@@ -54,7 +59,7 @@ export function AiSidebar(): JSX.Element {
     };
   }, []);
 
-  const showConfigurePrompt = !loading && !hasConfiguredAiApiKeys(aiSettings);
+  const showConfigurePrompt = !loading && !hasAvailableAiModels(aiSettings, hubModelGroups);
   const showChat = !loading && !showConfigurePrompt;
 
   return (

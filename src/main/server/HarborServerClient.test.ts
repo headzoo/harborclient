@@ -87,6 +87,72 @@ describe('HarborServerClient', () => {
     });
   });
 
+  describe('listLlmModels', () => {
+    it('parses hub LLM model listings', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            models: [{ id: 'gpt-4o', label: 'GPT-4o', provider: 'openai' }]
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        )
+      );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      const models = await client.listLlmModels();
+
+      expect(models).toEqual([{ id: 'gpt-4o', label: 'GPT-4o', provider: 'openai' }]);
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://127.0.0.1:8788/llm/models',
+        expect.objectContaining({ method: 'GET' })
+      );
+    });
+  });
+
+  describe('completeChatStep', () => {
+    it('posts chat step payloads to the hub LLM proxy route', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            content: 'Done',
+            usage: { promptTokens: 1, completionTokens: 2, totalTokens: 3 }
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        )
+      );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      const result = await client.completeChatStep({
+        model: 'gpt-4o',
+        messages: [{ role: 'user', content: 'Hi' }],
+        systemPrompt: 'System',
+        tools: []
+      });
+
+      expect(result.content).toBe('Done');
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://127.0.0.1:8788/llm/chat/step',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            model: 'gpt-4o',
+            messages: [{ role: 'user', content: 'Hi' }],
+            systemPrompt: 'System',
+            tools: []
+          })
+        })
+      );
+    });
+  });
+
   describe('deleteCollection', () => {
     it('resolves without a body for 204 responses', async () => {
       const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));

@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { ChatMessage, ChatSummary } from '#/shared/types';
+import type { ChatMessage, ChatSummary, HubLlmModelGroup } from '#/shared/types';
 import type { RootState } from '#/renderer/src/store/redux';
 
 export interface AiChatState {
@@ -8,6 +8,7 @@ export interface AiChatState {
   activeChatId: number | null;
   messagesByChat: Record<number, ChatMessage[]>;
   selectedModelByChat: Record<number, string>;
+  hubModelGroups: HubLlmModelGroup[];
   historyOpen: boolean;
   sendingByChat: Record<number, boolean>;
   sendErrorByChat: Record<number, string>;
@@ -19,6 +20,7 @@ const initialState: AiChatState = {
   activeChatId: null,
   messagesByChat: {},
   selectedModelByChat: {},
+  hubModelGroups: [],
   historyOpen: false,
   sendingByChat: {},
   sendErrorByChat: {}
@@ -118,6 +120,12 @@ const aiChatSlice = createSlice({
       }
     },
     /**
+     * Replaces hub model groups discovered from configured Team Hubs.
+     */
+    setHubModelGroups(state, action: PayloadAction<HubLlmModelGroup[]>) {
+      state.hubModelGroups = action.payload;
+    },
+    /**
      * Stores a send failure message for a chat tab.
      */
     setSendError(state, action: PayloadAction<{ chatId: number; message: string }>) {
@@ -143,6 +151,7 @@ export const {
   setSelectedModel,
   toggleHistory,
   setHistoryOpen,
+  setHubModelGroups,
   setSending,
   setSendError,
   clearSendError
@@ -174,6 +183,12 @@ export const selectMessagesByChat = (state: RootState): Record<number, ChatMessa
  */
 export const selectSelectedModelByChat = (state: RootState): Record<number, string> =>
   state.aiChat.selectedModelByChat;
+
+/**
+ * Returns hub LLM model groups loaded from configured Team Hubs.
+ */
+export const selectHubModelGroups = (state: RootState): HubLlmModelGroup[] =>
+  state.aiChat.hubModelGroups;
 
 /**
  * Returns whether the chat history popover is open.

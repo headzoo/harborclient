@@ -309,7 +309,8 @@ export const chatCompleteStepInput = z.object({
       tool_call_id: z.string().optional(),
       name: z.string().optional()
     })
-  )
+  ),
+  hubId: z.string().optional()
 }) satisfies z.ZodType<ChatStepInput>;
 
 export const sidebarExpansion = z.object({

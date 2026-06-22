@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat: enhance AI assistant with Team Hub integration and model management. (`06cb4c9`)
 - feat: update Vitest configuration to include setup files. (`8721783`)
 - feat: add markdown rendering to message bubbles. (`09694af`)
 - feat: add AI assistant feature and update documentation. (`ce70937`)

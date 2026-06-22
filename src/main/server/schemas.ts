@@ -113,3 +113,40 @@ export const listFoldersResponseSchema = z.object({
 export const listRequestsResponseSchema = z.object({
   requests: z.array(savedRequestRecordSchema)
 });
+
+/**
+ * JSON shape for one hub-offered LLM model.
+ */
+export const hubLlmModelSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  provider: z.enum(['openai', 'claude', 'gemini'])
+});
+
+/**
+ * JSON shape for GET /llm/models response body.
+ */
+export const listHubLlmModelsResponseSchema = z.object({
+  models: z.array(hubLlmModelSchema)
+});
+
+/**
+ * JSON shape for POST /llm/chat/step response body.
+ */
+export const hubChatStepResponseSchema = z.object({
+  content: z.string().nullable(),
+  toolCalls: z
+    .array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        arguments: z.string()
+      })
+    )
+    .optional(),
+  usage: z.object({
+    promptTokens: z.number().int().nonnegative(),
+    completionTokens: z.number().int().nonnegative(),
+    totalTokens: z.number().int().nonnegative()
+  })
+});

@@ -16,11 +16,11 @@ flowchart LR
 
 Before adding a team hub in HarborClient, you need:
 
-| Requirement | Description |
-| --- | --- |
+| Requirement               | Description                                                                                                                                                                                                                                                               |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **HarborClient Team Hub** | A running team hub instance your team can reach over the network. See the [HarborClient Team Hub repository](https://github.com/headzoo/harborclient-service-hub) and [full documentation](https://headzoo.github.io/harborclient-service-hub/) for setup and deployment. |
-| **Team hub URL** | The team hub base URL (for example `http://127.0.0.1:8788` or `https://api.example.com`). HarborClient strips trailing slashes when saving. |
-| **API token** | A bearer token prefixed with `hbk_` that authorizes your HarborClient instance against protected API routes. Obtain or create tokens according to your team hub's documentation. |
+| **Team hub URL**          | The team hub base URL (for example `http://127.0.0.1:8788` or `https://api.example.com`). HarborClient strips trailing slashes when saving.                                                                                                                               |
+| **API token**             | A bearer token prefixed with `hbk_` that authorizes your HarborClient instance against protected API routes. Obtain or create tokens according to your team hub's documentation.                                                                                          |
 
 HarborClient verifies connectivity when a hub is saved or mounted at launch. If the team hub is unreachable or the token is invalid, the hub is skipped and a warning is logged — other providers continue to work.
 
@@ -30,13 +30,13 @@ Open **File → Team Hubs** to manage hub connections. The page lists every conf
 
 ### Add a team hub
 
-| Step | Action |
-| --- | --- |
-| 1 | Click **Add team hub** |
-| 2 | Enter a **Name** (shown in provider dropdowns and sidebar badges) |
-| 3 | Enter the **Team hub URL** |
-| 4 | Enter the **API token** |
-| 5 | Click **Save** |
+| Step | Action                                                            |
+| ---- | ----------------------------------------------------------------- |
+| 1    | Click **Add team hub**                                            |
+| 2    | Enter a **Name** (shown in provider dropdowns and sidebar badges) |
+| 3    | Enter the **Team hub URL**                                        |
+| 4    | Enter the **API token**                                           |
+| 5    | Click **Save**                                                    |
 
 On success, HarborClient shows **Team hub saved.**, mounts the hub, and runs an additive sync so collections already on the team hub appear in the sidebar.
 
@@ -62,10 +62,10 @@ HarborClient treats database connections and team hubs as **providers** — plac
 
 When you create or move a collection, pick the provider that should store its data:
 
-| Location | How |
-| --- | --- |
-| **Create new collection** | Sidebar **+** or **File → New Collection** → **Add collection** → **Create new** → choose **Provider** |
-| **Move an existing collection** | **Collection Settings → General → Provider** → **Save** |
+| Location                        | How                                                                                                    |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **Create new collection**       | Sidebar **+** or **File → New Collection** → **Add collection** → **Create new** → choose **Provider** |
+| **Move an existing collection** | **Collection Settings → General → Provider** → **Save**                                                |
 
 The provider dropdown lists SQLite, Firestore, MySQL, PostgreSQL, and any configured team hubs. Team hubs are labeled **(Team Hub)**.
 
@@ -110,26 +110,39 @@ Deleting a collection from a SQLite or remote-database provider does not show th
 
 HarborClient offers several ways to work with others. Pick the approach that matches how your team operates:
 
-| Approach | Best for |
-| --- | --- |
-| **SQLite / local DB** | Solo work, offline-first, full control on one machine |
-| **Remote DB** (Firestore, MySQL, Postgres) | Team shares one database directly; configure connections in [Settings → Databases](/settings#databases) |
-| **Encrypted invites** | One-step handoff of database credentials plus a collection; requires [Certificates](/certificates) and [Collections → Sharing](/collections#sharing-collections) |
-| **Team hubs** | Team shares collections through HarborClient Team Hub with token-based access — no manual database setup per teammate |
+| Approach                                   | Best for                                                                                                                                                         |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **SQLite / local DB**                      | Solo work, offline-first, full control on one machine                                                                                                            |
+| **Remote DB** (Firestore, MySQL, Postgres) | Team shares one database directly; configure connections in [Settings → Databases](/settings#databases)                                                          |
+| **Encrypted invites**                      | One-step handoff of database credentials plus a collection; requires [Certificates](/certificates) and [Collections → Sharing](/collections#sharing-collections) |
+| **Team hubs**                              | Team shares collections through HarborClient Team Hub with token-based access — no manual database setup per teammate                                            |
 
 **Remote database vs team hub:** With a remote database, every teammate configures the same DB connection (or accepts an invite that embeds credentials). With a team hub, teammates only need the team hub URL and their own API token; collection data is exposed through HarborClient Team Hub's HTTP API.
 
 **Invites vs team hubs:** Invites bundle remote **database** connection details and a single collection mapping. Team hubs are a separate path: collections live on HarborClient Team Hub, and sync discovers collections your token can access. The **Invite** row menu action is intended for remote-database sharing; for hub-backed collections, sharing is handled by granting team hub access (tokens) rather than sending an invite token.
 
+## Team Hub LLM access
+
+When your HarborClient Team Hub administrator enables LLM support, HarborClient can run AI chat through the hub instead of your personal provider keys. The hub holds the OpenAI, Claude, and Gemini keys in `server.yaml`; your desktop client only sends chat steps to the hub API.
+
+| Topic              | Behavior                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------ |
+| **Model picker**   | Hub models are labeled **Team Hub** and preferred over personal keys for the same model id |
+| **Tool calling**   | HarborClient still executes tools locally against your open requests and collections       |
+| **Access control** | Administrators grant LLM access and monthly token limits per user through the team hub CLI |
+| **Fallback**       | Personal API keys in **Settings → AI** are used only for models your hubs do not offer     |
+
+See the [AI assistant](/ai) guide and the team hub [LLM proxy documentation](https://headzoo.github.io/harborclient-service-hub/llm.html).
+
 ## Limitations
 
-| Topic | Behavior |
-| --- | --- |
-| **Live sync** | No background polling. Reload data by restarting the app or saving a hub again. |
-| **Environments** | Not shared via hubs. Each HarborClient instance keeps its own environment list locally. |
-| **Concurrent edits** | Last write wins through the team hub API. HarborClient does not merge conflicting edits. |
-| **Offline team hub** | Hub-backed collections may show warnings if the team hub is unreachable; sidebar entries are not auto-deleted. |
-| **Configuration location** | Team hubs are managed under **File → Team Hubs**, not under [Settings → Databases](/settings#databases). |
+| Topic                      | Behavior                                                                                                       |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Live sync**              | No background polling. Reload data by restarting the app or saving a hub again.                                |
+| **Environments**           | Not shared via hubs. Each HarborClient instance keeps its own environment list locally.                        |
+| **Concurrent edits**       | Last write wins through the team hub API. HarborClient does not merge conflicting edits.                       |
+| **Offline team hub**       | Hub-backed collections may show warnings if the team hub is unreachable; sidebar entries are not auto-deleted. |
+| **Configuration location** | Team hubs are managed under **File → Team Hubs**, not under [Settings → Databases](/settings#databases).       |
 
 ## What's next
 

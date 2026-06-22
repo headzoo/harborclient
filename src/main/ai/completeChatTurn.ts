@@ -1,6 +1,7 @@
 import { APIError, type OpenAI } from 'openai';
 import type { ChatCompletion, ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 import { LlmClientFactory } from '#/main/ai/LlmClientFactory';
+import { runHubChatCompletionStep } from '#/main/ai/hubChatStep';
 import { truncateChatStepMessages } from '#/shared/aiChatContext';
 import { getAiModelById } from '#/shared/aiModels';
 import { AI_SYSTEM_PROMPT, AI_TOOL_DEFINITIONS } from '#/shared/aiTools';
@@ -136,6 +137,10 @@ export async function runChatCompletionStep(
   input: ChatStepInput,
   deps?: RunChatCompletionStepDeps
 ): Promise<ChatStepResult> {
+  if (input.hubId?.trim()) {
+    return runHubChatCompletionStep(input);
+  }
+
   const createClient =
     deps?.createClient ?? ((provider) => new LlmClientFactory().factory(provider));
 

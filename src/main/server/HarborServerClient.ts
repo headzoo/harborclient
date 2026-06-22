@@ -10,7 +10,9 @@ import {
   listCollectionsResponseSchema,
   listEnvironmentsResponseSchema,
   listFoldersResponseSchema,
+  listHubLlmModelsResponseSchema,
   listRequestsResponseSchema,
+  hubChatStepResponseSchema,
   savedRequestRecordSchema
 } from '#/main/server/schemas';
 import type {
@@ -32,11 +34,37 @@ import type {
   UpdateEnvironmentInput,
   UpdateRequestInput
 } from '#/main/server/types';
+import type { ChatStepMessage, ChatStepResult, HubLlmModel } from '#/shared/types';
 
 /**
  * Default request timeout when {@link ServerClientConfig.requestTimeoutMs} is omitted.
  */
 export const DEFAULT_SERVER_REQUEST_TIMEOUT_MS = 30_000;
+
+/**
+ * Input for POST /llm/chat/step on Team Hub.
+ */
+export interface HubChatStepRequest {
+  /**
+   * Provider-specific model id.
+   */
+  model: string;
+
+  /**
+   * Conversation messages excluding the injected system prompt.
+   */
+  messages: ChatStepMessage[];
+
+  /**
+   * OpenAI-compatible tool definitions forwarded to the provider.
+   */
+  tools?: Record<string, unknown>[];
+
+  /**
+   * System prompt injected ahead of the conversation messages.
+   */
+  systemPrompt?: string;
+}
 
 /**
  * Options passed to the internal {@link HarborServerClient.request} helper.
@@ -436,5 +464,28 @@ export class HarborServerClient implements IServerClient {
     await this.request('PUT', `/requests/${id}/move`, {
       body: input
     });
+  }
+
+  /**
+   * Lists hub-offered LLM models visible to the authenticated token.
+   */
+  async listLlmModels(): Promise<HubLlmModel[]> {
+    const result = await this.request('GET', '/llm/models', {
+      schema: listHubLlmModelsResponseSchema
+    });
+    return (result as { models: HubLlmModel[] }).models;
+  }
+
+  /**
+   * Runs one hub-proxied LLM completion step.
+   *
+   * @param input - Model, messages, tools, and system prompt for the step.
+   */
+  async completeChatStep(input: HubChatStepRequest): Promise<ChatStepResult> {
+    const result = await this.request('POST', '/llm/chat/step', {
+      body: input,
+      schema: hubChatStepResponseSchema
+    });
+    return result as ChatStepResult;
   }
 }

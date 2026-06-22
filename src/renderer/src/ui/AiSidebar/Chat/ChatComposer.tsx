@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, type JSX, type KeyboardEvent } from 'react';
-import { getAvailableModels } from '#/shared/aiModels';
+import { getAvailableModels, resolveAiModelOption } from '#/shared/aiModels';
 import type { AiSettings } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import {
   clearSendError,
+  selectHubModelGroups,
   selectSendErrorByChat,
   setSelectedModel
 } from '#/renderer/src/store/slices/aiChatSlice';
@@ -39,11 +40,13 @@ interface Props {
 export function ChatComposer({ chatId, aiSettings, selectedModel, sending }: Props): JSX.Element {
   const dispatch = useAppDispatch();
   const sendErrorByChat = useAppSelector(selectSendErrorByChat);
+  const hubModelGroups = useAppSelector(selectHubModelGroups);
   const [draft, setDraft] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const wasSendingRef = useRef(false);
-  const availableModels = getAvailableModels(aiSettings);
+  const availableModels = getAvailableModels(aiSettings, hubModelGroups);
   const modelId = selectedModel ?? availableModels[0]?.id ?? '';
+  const selectedModelOption = resolveAiModelOption(modelId, aiSettings, hubModelGroups);
   const canSend = chatId != null && draft.trim().length > 0 && !sending && modelId.length > 0;
   const sendError = chatId != null ? sendErrorByChat[chatId] : undefined;
 
@@ -82,7 +85,8 @@ export function ChatComposer({ chatId, aiSettings, selectedModel, sending }: Pro
       sendChatMessage({
         chatId,
         content,
-        model: modelId || undefined
+        model: modelId || undefined,
+        hubId: selectedModelOption?.source === 'hub' ? selectedModelOption.hubId : undefined
       })
     );
   };

@@ -1,12 +1,12 @@
 # AI assistant
 
-HarborClient includes a built-in AI sidebar for working with your API requests. Chat with models from OpenAI, Claude, or Google Gemini using your own API keys. Requests go directly from your machine to the provider you choose.
+HarborClient includes a built-in AI sidebar for working with your API requests. Chat with models from OpenAI, Claude, or Google Gemini using your own API keys, or use models provided by a connected Team Hub. When a hub offers a model, HarborClient prefers the hub and never sends you the server-side provider keys.
 
 API keys are encrypted and stored locally on your machine. HarborClient uses the OS keychain when available; on systems without Secret Service support it falls back to a local encryption key in your application data directory. On Linux, OS-backed encryption typically requires **GNOME Keyring** or **KWallet** to be running.
 
 ## API keys
 
-Before you can chat, add at least one provider API key:
+Before you can chat with personal models, add at least one provider API key:
 
 1. Open **File → Settings** (or **Cmd/Ctrl+,**).
 2. Select the **AI** section in the settings sidebar.
@@ -16,18 +16,18 @@ Before you can chat, add at least one provider API key:
    - **Google Gemini API key**
 4. Click **Save**.
 
-If you open the AI sidebar before any keys are configured, click **Open AI settings** in the prompt to jump straight to the AI section.
+If you open the AI sidebar before any keys or Team Hub models are available, click **Open AI settings** in the prompt to jump straight to the AI section.
 
-Only providers with saved keys appear in the chat model picker. Supported models:
+Only available models appear in the chat model picker. Labels show whether a model uses **Team Hub** or **Personal** keys. Supported models:
 
-| Model | Provider |
-| --- | --- |
-| GPT-4o | OpenAI |
-| GPT-4o Mini | OpenAI |
-| Claude 3.5 Sonnet | Claude |
-| Claude 3.5 Haiku | Claude |
-| Gemini 1.5 Pro | Google Gemini |
-| Gemini 1.5 Flash | Google Gemini |
+| Model             | Provider      |
+| ----------------- | ------------- |
+| GPT-4o            | OpenAI        |
+| GPT-4o Mini       | OpenAI        |
+| Claude 3.5 Sonnet | Claude        |
+| Claude 3.5 Haiku  | Claude        |
+| Gemini 1.5 Pro    | Google Gemini |
+| Gemini 1.5 Flash  | Google Gemini |
 
 See [Settings → AI](/settings#ai) for key storage details.
 
@@ -44,14 +44,14 @@ Your sidebar visibility preference persists across app restarts. The AI sidebar 
 
 The AI sidebar provides a tabbed chat panel. Use the controls in the chat tab bar and composer to manage conversations.
 
-| Action | How |
-| --- | --- |
-| **New chat** | `+` button in the chat tab bar |
-| **Open previous chat** | History button (clock icon) → select a chat |
-| **Close tab** | Close button on the tab (the chat remains in history until deleted) |
-| **Delete chat** | History menu → **Delete** |
-| **Choose model** | Model dropdown in the composer (per chat) |
-| **Send message** | **Send** or **Enter** (**Shift+Enter** for a newline) |
+| Action                 | How                                                                 |
+| ---------------------- | ------------------------------------------------------------------- |
+| **New chat**           | `+` button in the chat tab bar                                      |
+| **Open previous chat** | History button (clock icon) → select a chat                         |
+| **Close tab**          | Close button on the tab (the chat remains in history until deleted) |
+| **Delete chat**        | History menu → **Delete**                                           |
+| **Choose model**       | Model dropdown in the composer (per chat)                           |
+| **Send message**       | **Send** or **Enter** (**Shift+Enter** for a newline)               |
 
 Chats and messages are stored locally in the app database. New chats start as **New Chat**; the tab title updates from your first message. Open tabs and the active selection persist across restarts. While the model is working, the UI shows **Thinking…**; errors appear inline below the composer.
 
