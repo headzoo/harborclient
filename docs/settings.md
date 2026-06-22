@@ -2,7 +2,7 @@
 
 HarborClient application settings control appearance, HTTP request defaults, and the database connections where collections, requests, and environments are stored. Open settings from **File → Settings** or **Cmd/Ctrl+,**.
 
-The settings panel has a sidebar with six sections: **General**, **Syntax highlighting**, **Shortcuts**, **Proxy**, **Databases**, and **AI**. General covers appearance and request defaults; Syntax highlighting controls the code editor; Shortcuts lets you customize keyboard shortcuts; Proxy configures a global HTTP proxy for outbound requests; Databases manages the named database connections that hold your data; AI stores API keys for future assistant features.
+The settings panel has a sidebar with six sections: **General**, **Syntax highlighting**, **Shortcuts**, **Proxy**, **Databases**, and **AI**. General covers appearance and request defaults; Syntax highlighting controls the code editor; Shortcuts lets you customize keyboard shortcuts; Proxy configures a global HTTP proxy for outbound requests; Databases manages the named database connections that hold your data; AI stores API keys for the built-in assistant.
 
 Appearance, request defaults, and connection definitions are stored in electron-store on your machine. Collections, requests, and environments live in the database connections you configure.
 
@@ -133,7 +133,7 @@ When you use a remote type such as Firestore, MySQL, or PostgreSQL, multiple Har
 
 ## AI
 
-The **AI** section stores API keys for OpenAI, Claude, and Google Gemini. Keys are encrypted and saved locally on your machine. HarborClient uses the OS keychain when available; on systems without Secret Service support it falls back to a local encryption key in your application data directory. They are not used by HarborClient yet.
+The **AI** section stores API keys for OpenAI, Claude, and Google Gemini. Keys are encrypted and saved locally on your machine. HarborClient uses the OS keychain when available; on systems without Secret Service support it falls back to a local encryption key in your application data directory. Saved keys power the AI sidebar chat. See [AI assistant](/ai) for setup and usage.
 
 On Linux, OS-backed encryption typically requires **GNOME Keyring** or **KWallet** to be running.
 
@@ -147,6 +147,7 @@ Click **Save** to persist API keys.
 
 ## What's next
 
+- [AI assistant](/ai) — configure API keys and use the chat sidebar
 - [Collections](/collections) — organize saved requests and manage storage and backup
 - [Environments](/environments) — define global variable groups stored in your chosen backend
 - [Features](/features) — overview of database backends and team collaboration

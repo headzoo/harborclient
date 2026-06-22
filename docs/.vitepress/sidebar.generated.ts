@@ -71,6 +71,33 @@ export const sidebar: DefaultTheme.SidebarItem[] =
     "collapsed": false
   },
   {
+    "text": "AI assistant",
+    "link": "/ai",
+    "items": [
+      {
+        "text": "API keys",
+        "link": "/ai#api-keys"
+      },
+      {
+        "text": "Opening the AI sidebar",
+        "link": "/ai#opening-the-ai-sidebar"
+      },
+      {
+        "text": "Using chat",
+        "link": "/ai#using-chat"
+      },
+      {
+        "text": "What the assistant can do",
+        "link": "/ai#what-the-assistant-can-do"
+      },
+      {
+        "text": "What's next",
+        "link": "/ai#whats-next"
+      }
+    ],
+    "collapsed": false
+  },
+  {
     "text": "Team hubs",
     "link": "/team-hubs",
     "items": [

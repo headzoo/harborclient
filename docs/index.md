@@ -40,5 +40,7 @@ features:
     details: Share live remote collections with signed, encrypted invite tokens backed by RSA key pairs you manage under Certificates.
   - title: Tabbed workspace
     details: Open multiple requests side by side. Each tab keeps its own draft, response, and unsaved-changes indicator.
+  - title: AI assistant
+    details: Chat with OpenAI, Claude, or Google Gemini using your own API keys stored locally. The assistant can inspect collections, send requests, read responses, and query JSON bodies with JMESPath.
 
 ---

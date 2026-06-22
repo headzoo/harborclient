@@ -259,13 +259,13 @@ function getSidebarRequest(state: RootState): {
  */
 function getActiveRequest(state: RootState):
   | {
-    tabId: string;
-    name: string;
-    method: string;
-    url: string;
-    savedRequestId: number | null;
-    isDirty: boolean;
-  }
+      tabId: string;
+      name: string;
+      method: string;
+      url: string;
+      savedRequestId: number | null;
+      isDirty: boolean;
+    }
   | { error: string } {
   const tab = selectActiveTab(state);
   if (!tab) {
@@ -289,17 +289,17 @@ function getActiveRequest(state: RootState):
  */
 function getActiveRequestDetails(state: RootState):
   | {
-    method: string;
-    url: string;
-    headers: KeyValue[];
-    params: KeyValue[];
-    auth: AuthConfig;
-    body: string;
-    body_type: string;
-    pre_request_script: string;
-    post_request_script: string;
-    comment: string;
-  }
+      method: string;
+      url: string;
+      headers: KeyValue[];
+      params: KeyValue[];
+      auth: AuthConfig;
+      body: string;
+      body_type: string;
+      pre_request_script: string;
+      post_request_script: string;
+      comment: string;
+    }
   | { error: string } {
   const tab = selectActiveTab(state);
   if (!tab) {
