@@ -5,6 +5,7 @@ import type {
   GeneralSettings,
   MySqlSettings,
   PostgresSettings,
+  ProxySettings,
   SqliteSettings,
   ThemeSource
 } from '#/shared/types';
@@ -18,13 +19,29 @@ export const THEME_OPTIONS: Array<{ value: ThemeSource; label: string }> = [
   { value: 'system', label: 'System' }
 ];
 
+export const DEFAULT_PROXY_SETTINGS: ProxySettings = {
+  enabled: false,
+  protocol: 'http',
+  host: '',
+  port: 8080,
+  authEnabled: false,
+  username: '',
+  password: ''
+};
+
 export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
   requestTimeoutMs: 30000,
   maxResponseSizeMb: 50,
   verifySsl: true,
   codeEditorTheme: 'default',
-  codeEditorSetup: { ...DEFAULT_CODE_EDITOR_SETUP }
+  codeEditorSetup: { ...DEFAULT_CODE_EDITOR_SETUP },
+  proxy: { ...DEFAULT_PROXY_SETTINGS }
 };
+
+export const PROXY_PROTOCOL_OPTIONS: Array<{ value: ProxySettings['protocol']; label: string }> = [
+  { value: 'http', label: 'HTTP' },
+  { value: 'https', label: 'HTTPS' }
+];
 
 export const PROVIDER_OPTIONS: Array<{ value: DatabaseProvider; label: string }> = [
   { value: 'sqlite', label: 'SQLite' },
@@ -68,6 +85,7 @@ export const SETTINGS_SECTIONS: Array<{ value: SettingsSection; label: string }>
   { value: 'general', label: 'General' },
   { value: 'syntax', label: 'Syntax highlighting' },
   { value: 'shortcuts', label: 'Shortcuts' },
+  { value: 'proxy', label: 'Proxy' },
   { value: 'databases', label: 'Databases' }
 ];
 

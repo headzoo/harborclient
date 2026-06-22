@@ -4,6 +4,7 @@ import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faXmark } from '#/renderer/src/fontawesome';
 import { DatabasesSection } from './DatabasesSection';
 import { GeneralSection } from './GeneralSection';
+import { ProxySection } from './ProxySection';
 import { ShortcutsSection } from './ShortcutsSection';
 import { SyntaxHighlightingSection } from './SyntaxHighlightingSection';
 import { SettingsSidebar } from './SettingsSidebar';
@@ -44,6 +45,7 @@ export function Settings({ onClose }: Props): JSX.Element {
           {section === 'general' && <GeneralSection />}
           {section === 'syntax' && <SyntaxHighlightingSection />}
           {section === 'shortcuts' && <ShortcutsSection />}
+          {section === 'proxy' && <ProxySection />}
           {section === 'databases' && <DatabasesSection />}
         </div>
       </div>

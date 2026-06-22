@@ -1,5 +1,11 @@
-import { Agent, type Dispatcher } from 'undici';
-import type { GeneralSettings, SendRequestInput, SendResult, SentRequest } from '#/shared/types';
+import { Agent, ProxyAgent, type Dispatcher } from 'undici';
+import type {
+  GeneralSettings,
+  ProxySettings,
+  SendRequestInput,
+  SendResult,
+  SentRequest
+} from '#/shared/types';
 import { DEFAULT_GENERAL_SETTINGS } from '#/main/settings/generalSettings';
 import type { IBody } from '#/main/http/IBody';
 import type { IHeaders } from '#/main/http/IHeaders';
@@ -22,6 +28,48 @@ export interface RequesterDeps {
 }
 
 let insecureDispatcher: Agent | undefined;
+let cachedProxyDispatcher: ProxyAgent | undefined;
+let cachedProxyDispatcherKey = '';
+
+/**
+ * Returns a cache key for proxy dispatcher configuration.
+ *
+ * @param proxy - Normalized proxy settings.
+ * @param verifySsl - Whether TLS certificates are verified for the origin request.
+ */
+function proxyDispatcherCacheKey(proxy: ProxySettings, verifySsl: boolean): string {
+  return JSON.stringify({ proxy, verifySsl });
+}
+
+/**
+ * Returns a shared undici ProxyAgent for the given proxy configuration.
+ *
+ * @param proxy - Normalized proxy settings with a non-empty host.
+ * @param verifySsl - When false, origin TLS verification is disabled through the proxy.
+ */
+function getProxyDispatcher(proxy: ProxySettings, verifySsl: boolean): ProxyAgent {
+  const key = proxyDispatcherCacheKey(proxy, verifySsl);
+  if (cachedProxyDispatcher && cachedProxyDispatcherKey === key) {
+    return cachedProxyDispatcher;
+  }
+
+  void cachedProxyDispatcher?.close();
+
+  const uri = `${proxy.protocol}://${proxy.host.trim()}:${proxy.port}`;
+  const options: ProxyAgent.Options = { uri };
+
+  if (proxy.authEnabled && proxy.username) {
+    options.token = `Basic ${Buffer.from(`${proxy.username}:${proxy.password}`).toString('base64')}`;
+  }
+
+  if (!verifySsl) {
+    options.requestTls = { rejectUnauthorized: false };
+  }
+
+  cachedProxyDispatcher = new ProxyAgent(options);
+  cachedProxyDispatcherKey = key;
+  return cachedProxyDispatcher;
+}
 
 /**
  * Executes outbound HTTP requests via fetch with configurable collaborators.
@@ -229,7 +277,9 @@ export class Requester implements IRequester {
         signal: effectiveSignal
       };
 
-      if (!settings.verifySsl) {
+      if (settings.proxy.enabled && settings.proxy.host.trim()) {
+        init.dispatcher = getProxyDispatcher(settings.proxy, settings.verifySsl);
+      } else if (!settings.verifySsl) {
         init.dispatcher = this.getInsecureDispatcher();
       }
 

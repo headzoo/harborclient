@@ -167,6 +167,15 @@ export const generalSettings = z.object({
     foldGutter: z.boolean(),
     highlightActiveLine: z.boolean(),
     highlightActiveLineGutter: z.boolean()
+  }),
+  proxy: z.object({
+    enabled: z.boolean(),
+    protocol: z.enum(['http', 'https']),
+    host: z.string(),
+    port: z.number().int().min(1).max(65535),
+    authEnabled: z.boolean(),
+    username: z.string(),
+    password: z.string()
   })
 }) satisfies z.ZodType<GeneralSettings>;
 

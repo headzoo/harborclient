@@ -2,7 +2,7 @@
 
 HarborClient application settings control appearance, HTTP request defaults, and the database connections where collections, requests, and environments are stored. Open settings from **File → Settings** or **Cmd/Ctrl+,**.
 
-The settings panel has a sidebar with four sections: **General**, **Syntax highlighting**, **Shortcuts**, and **Databases**. General covers appearance and request defaults; Syntax highlighting controls the code editor; Shortcuts lets you customize keyboard shortcuts; Databases manages the named database connections that hold your data.
+The settings panel has a sidebar with five sections: **General**, **Syntax highlighting**, **Shortcuts**, **Proxy**, and **Databases**. General covers appearance and request defaults; Syntax highlighting controls the code editor; Shortcuts lets you customize keyboard shortcuts; Proxy configures a global HTTP proxy for outbound requests; Databases manages the named database connections that hold your data.
 
 Appearance, request defaults, and connection definitions are stored in electron-store on your machine. Collections, requests, and environments live in the database connections you configure.
 
@@ -44,6 +44,22 @@ The **Shortcuts** section lists every configurable keyboard shortcut in HarborCl
 Shortcut changes apply immediately when valid. Duplicate or invalid combinations are shown inline and are not saved.
 
 Configurable shortcuts include File menu actions (new request, save, settings), Edit menu actions (undo, copy, paste), and View menu actions (full screen, zoom). Some actions such as **Send** still use **Enter** when the URL field is focused and are not listed here.
+
+## Proxy
+
+The **Proxy** section configures a global HTTP proxy applied to every outbound request.
+
+| Field | Description | Default |
+| --- | --- | --- |
+| **Use a proxy** | Route all requests through the configured proxy server | Off |
+| **Protocol** | Protocol used to connect to the proxy (`HTTP` or `HTTPS`) | HTTP |
+| **Host** | Proxy server hostname or IP address | (empty) |
+| **Port** | Proxy server port | `8080` |
+| **Use basic authentication** | Send HTTP Basic credentials to the proxy | Off |
+| **Username** | Username for proxy authentication | (empty) |
+| **Password** | Password for proxy authentication | (empty) |
+
+Click **Save** to apply proxy settings. When the proxy is enabled but the host is empty, requests are sent directly without a proxy.
 
 ## Databases
 

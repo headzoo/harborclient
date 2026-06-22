@@ -8,7 +8,16 @@ export const defaultGeneralSettings: GeneralSettings = {
   maxResponseSizeMb: 50,
   verifySsl: true,
   codeEditorTheme: 'default',
-  codeEditorSetup: { ...DEFAULT_CODE_EDITOR_SETUP }
+  codeEditorSetup: { ...DEFAULT_CODE_EDITOR_SETUP },
+  proxy: {
+    enabled: false,
+    protocol: 'http',
+    host: '',
+    port: 8080,
+    authEnabled: false,
+    username: '',
+    password: ''
+  }
 };
 
 export interface SettingsState {

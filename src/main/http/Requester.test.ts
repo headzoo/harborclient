@@ -283,5 +283,44 @@ describe('Requester', () => {
       expect(secureInit.dispatcher).toBeUndefined();
       expect(insecureInit.dispatcher).toBeDefined();
     });
+
+    it('passes a proxy dispatcher when proxy is enabled with a host', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(new Response('ok', { status: 200, statusText: 'OK' }));
+      globalThis.fetch = fetchMock;
+
+      await requester.executeRequest(baseInput, {
+        ...DEFAULT_GENERAL_SETTINGS,
+        proxy: {
+          ...DEFAULT_GENERAL_SETTINGS.proxy,
+          enabled: true,
+          host: 'proxy.example.com',
+          port: 8080
+        }
+      });
+
+      const init = fetchMock.mock.calls[0]?.[1] as RequestInit & { dispatcher?: unknown };
+      expect(init.dispatcher).toBeDefined();
+    });
+
+    it('omits a proxy dispatcher when proxy is disabled', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(new Response('ok', { status: 200, statusText: 'OK' }));
+      globalThis.fetch = fetchMock;
+
+      await requester.executeRequest(baseInput, {
+        ...DEFAULT_GENERAL_SETTINGS,
+        proxy: {
+          ...DEFAULT_GENERAL_SETTINGS.proxy,
+          enabled: false,
+          host: 'proxy.example.com'
+        }
+      });
+
+      const init = fetchMock.mock.calls[0]?.[1] as RequestInit & { dispatcher?: unknown };
+      expect(init.dispatcher).toBeUndefined();
+    });
   });
 });

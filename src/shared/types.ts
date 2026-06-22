@@ -912,6 +912,51 @@ export interface SidebarExpansionState {
 }
 
 /**
+ * Proxy protocol used to connect to the proxy server.
+ */
+export type ProxyProtocol = 'http' | 'https';
+
+/**
+ * Global HTTP proxy configuration applied to every outbound request.
+ */
+export interface ProxySettings {
+  /**
+   * When true, outbound requests are routed through the configured proxy.
+   */
+  enabled: boolean;
+
+  /**
+   * Protocol used to connect to the proxy server.
+   */
+  protocol: ProxyProtocol;
+
+  /**
+   * Proxy server hostname or IP address.
+   */
+  host: string;
+
+  /**
+   * Proxy server port.
+   */
+  port: number;
+
+  /**
+   * When true, HTTP Basic authentication credentials are sent to the proxy.
+   */
+  authEnabled: boolean;
+
+  /**
+   * Username for proxy HTTP Basic authentication.
+   */
+  username: string;
+
+  /**
+   * Password for proxy HTTP Basic authentication.
+   */
+  password: string;
+}
+
+/**
  * General application settings for HTTP request execution.
  */
 export interface GeneralSettings {
@@ -939,6 +984,11 @@ export interface GeneralSettings {
    * CodeMirror basicSetup options for editable editor instances.
    */
   codeEditorSetup: CodeEditorSetup;
+
+  /**
+   * Global HTTP proxy applied to every outbound request.
+   */
+  proxy: ProxySettings;
 }
 
 /**

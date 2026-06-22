@@ -202,6 +202,15 @@ describe('generalSettings', () => {
       foldGutter: true,
       highlightActiveLine: true,
       highlightActiveLineGutter: true
+    },
+    proxy: {
+      enabled: false,
+      protocol: 'http' as const,
+      host: '',
+      port: 8080,
+      authEnabled: false,
+      username: '',
+      password: ''
     }
   };
 
