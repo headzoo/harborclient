@@ -1,7 +1,7 @@
 import type { Middleware, UnknownAction } from '@reduxjs/toolkit';
 import { operationFinished, operationStarted } from '#/renderer/src/store/slices/uiSlice';
 
-const EXCLUDED_THUNKS = new Set(['tabs/sendRequest', 'tabs/cancelRequest']);
+const EXCLUDED_THUNKS = new Set(['tabs/sendRequest', 'tabs/cancelRequest', 'aiChat/sendMessage']);
 
 const pendingRequests = new Set<string>();
 
@@ -29,7 +29,7 @@ function isAsyncThunkAction(action: unknown): action is UnknownAction & {
 
 /**
  * Tracks in-flight RTK async thunks and updates global busy state.
- * HTTP send/cancel thunks are excluded because they have dedicated UI feedback.
+ * HTTP send/cancel and AI chat send thunks are excluded because they have dedicated UI feedback.
  */
 export const busyMiddleware: Middleware = (store) => (next) => (action) => {
   const result = next(action);

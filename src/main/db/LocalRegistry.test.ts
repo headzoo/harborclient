@@ -87,4 +87,12 @@ describeSqlite('LocalRegistry chats', () => {
     registry.deleteChat(chat.id);
     expect(registry.getChat(chat.id)).toBeNull();
   });
+
+  it('updates the stored model id for a chat', async () => {
+    const { registry } = await createRegistry();
+    const chat = registry.createChat({ model: 'gpt-4o-mini' });
+
+    registry.updateChatModel(chat.id, 'gpt-4o');
+    expect(registry.getChat(chat.id)?.model).toBe('gpt-4o');
+  });
 });

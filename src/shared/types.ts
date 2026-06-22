@@ -1180,6 +1180,21 @@ export interface AddChatMessageInput {
 }
 
 /**
+ * Input for requesting an assistant reply from the LLM for a chat turn.
+ */
+export interface CompleteChatTurnInput {
+  /**
+   * Chat thread whose latest user message should be completed.
+   */
+  chatId: number;
+
+  /**
+   * Provider-specific model id selected in the composer.
+   */
+  model: string;
+}
+
+/**
  * Firebase Firestore connection settings.
  */
 export interface FirestoreSettings {
@@ -1831,6 +1846,13 @@ export interface Api {
    * @param input - Chat id, role, content, and optional model.
    */
   addChatMessage: (input: AddChatMessageInput) => Promise<ChatMessage>;
+
+  /**
+   * Calls the LLM with a chat's message history and persists the assistant reply.
+   *
+   * @param input - Chat id and model id for the completion request.
+   */
+  completeChatTurn: (input: CompleteChatTurnInput) => Promise<ChatMessage>;
 
   /**
    * Deletes a chat and its messages.

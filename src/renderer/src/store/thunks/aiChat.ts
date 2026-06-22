@@ -1,19 +1,19 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { buildStubAssistantReply, getAvailableModels } from '#/shared/aiModels';
+import { getAvailableModels } from '#/shared/aiModels';
 import type { AiSettings, ChatSummary } from '#/shared/types';
 import type { ThunkApiConfig } from '#/renderer/src/store/redux';
 import {
   appendMessage,
+  clearSendError,
   closeChatTab,
   openChatTab,
   setActiveChat,
   setChats,
   setMessages,
   setSelectedModel,
+  setSendError,
   setSending
 } from '#/renderer/src/store/slices/aiChatSlice';
-
-const STUB_REPLY_DELAY_MS = 400;
 
 /**
  * Refreshes chat history from persistence.
@@ -41,6 +41,7 @@ export const loadChat = createAsyncThunk<number, number, ThunkApiConfig>(
     }
 
     dispatch(setMessages({ chatId, messages: chat.messages }));
+    dispatch(clearSendError(chatId));
     if (chat.model) {
       dispatch(setSelectedModel({ chatId, modelId: chat.model }));
     }
@@ -130,7 +131,7 @@ export const closeChat = createAsyncThunk<void, number, ThunkApiConfig>(
 );
 
 /**
- * Sends a user message and appends a stub assistant reply.
+ * Sends a user message and requests an assistant reply from the LLM.
  */
 export const sendChatMessage = createAsyncThunk<
   void,
@@ -140,28 +141,37 @@ export const sendChatMessage = createAsyncThunk<
   const trimmed = content.trim();
   if (!trimmed) return;
 
+  const modelId = model?.trim();
+  if (!modelId) {
+    dispatch(setSendError({ chatId, message: 'Select a model before sending.' }));
+    return;
+  }
+
+  dispatch(clearSendError(chatId));
+
   const userMessage = await window.api.addChatMessage({
     chatId,
     role: 'user',
     content: trimmed,
-    model
+    model: modelId
   });
   dispatch(appendMessage(userMessage));
   dispatch(setSending({ chatId, sending: true }));
 
-  await new Promise((resolve) => {
-    setTimeout(resolve, STUB_REPLY_DELAY_MS);
-  });
-
-  const assistantMessage = await window.api.addChatMessage({
-    chatId,
-    role: 'assistant',
-    content: buildStubAssistantReply(trimmed),
-    model
-  });
-  dispatch(appendMessage(assistantMessage));
-  dispatch(setSending({ chatId, sending: false }));
-  await dispatch(refreshChatHistory());
+  try {
+    const assistantMessage = await window.api.completeChatTurn({
+      chatId,
+      model: modelId
+    });
+    dispatch(appendMessage(assistantMessage));
+    await dispatch(refreshChatHistory());
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Failed to get a response from the model.';
+    dispatch(setSendError({ chatId, message }));
+  } finally {
+    dispatch(setSending({ chatId, sending: false }));
+  }
 });
 
 /**

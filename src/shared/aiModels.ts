@@ -63,10 +63,11 @@ export function getAvailableModels(settings: AiSettings): AiModelOption[] {
 }
 
 /**
- * Builds a placeholder assistant reply until real LLM integration is wired.
+ * Looks up a catalog model by its provider-specific id.
  *
- * @param userContent - The user's message text.
+ * @param modelId - Model id from the chat composer or persisted chat record.
+ * @returns The matching catalog entry, or undefined when unknown.
  */
-export function buildStubAssistantReply(userContent: string): string {
-  return `AI responses are not wired up yet. You said: ${userContent}`;
+export function getAiModelById(modelId: string): AiModelOption | undefined {
+  return AI_MODELS.find((model) => model.id === modelId);
 }

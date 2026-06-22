@@ -2,8 +2,12 @@ import { useState, type JSX, type KeyboardEvent } from 'react';
 import { getAvailableModels } from '#/shared/aiModels';
 import type { AiSettings } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
-import { useAppDispatch } from '#/renderer/src/store/hooks';
-import { setSelectedModel } from '#/renderer/src/store/slices/aiChatSlice';
+import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
+import {
+  clearSendError,
+  selectSendErrorByChat,
+  setSelectedModel
+} from '#/renderer/src/store/slices/aiChatSlice';
 import { sendChatMessage } from '#/renderer/src/store/thunks/aiChat';
 import { field } from '#/renderer/src/ui/shared/classes';
 
@@ -34,10 +38,12 @@ interface Props {
  */
 export function ChatComposer({ chatId, aiSettings, selectedModel, sending }: Props): JSX.Element {
   const dispatch = useAppDispatch();
+  const sendErrorByChat = useAppSelector(selectSendErrorByChat);
   const [draft, setDraft] = useState('');
   const availableModels = getAvailableModels(aiSettings);
   const modelId = selectedModel ?? availableModels[0]?.id ?? '';
-  const canSend = chatId != null && draft.trim().length > 0 && !sending;
+  const canSend = chatId != null && draft.trim().length > 0 && !sending && modelId.length > 0;
+  const sendError = chatId != null ? sendErrorByChat[chatId] : undefined;
 
   /**
    * Sends the current draft when Enter is pressed without Shift.
@@ -57,6 +63,9 @@ export function ChatComposer({ chatId, aiSettings, selectedModel, sending }: Pro
 
     const content = draft.trim();
     setDraft('');
+    if (chatId != null) {
+      dispatch(clearSendError(chatId));
+    }
     await dispatch(
       sendChatMessage({
         chatId,
@@ -74,7 +83,12 @@ export function ChatComposer({ chatId, aiSettings, selectedModel, sending }: Pro
         placeholder="Type a message…"
         aria-label="Chat message"
         disabled={chatId == null || sending}
-        onChange={(event) => setDraft(event.target.value)}
+        onChange={(event) => {
+          setDraft(event.target.value);
+          if (chatId != null) {
+            dispatch(clearSendError(chatId));
+          }
+        }}
         onKeyDown={handleKeyDown}
       />
       <div className="flex items-center justify-between gap-2">
@@ -102,6 +116,11 @@ export function ChatComposer({ chatId, aiSettings, selectedModel, sending }: Pro
           Send
         </Button>
       </div>
+      {sendError ? (
+        <p className="text-[13px] text-danger" role="alert">
+          {sendError}
+        </p>
+      ) : null}
     </div>
   );
 }

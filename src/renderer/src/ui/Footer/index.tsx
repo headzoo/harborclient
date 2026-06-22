@@ -115,7 +115,7 @@ export function Footer({
   );
   const variableCount = effectiveCount(resolvedVariables);
   const iconButtonClassName =
-    'inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted hover:bg-selection hover:text-text app-no-drag';
+    'inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted hover:bg-selection hover:text-text app-no-drag';
 
   return (
     <div className="relative shrink-0">
@@ -165,7 +165,7 @@ export function Footer({
             aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
             title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
           >
-            <FaIcon icon={faTableColumns} className="h-3.5 w-3.5" />
+            <FaIcon icon={faTableColumns} className="h-4 w-4" />
           </button>
           <button
             type="button"
@@ -174,7 +174,7 @@ export function Footer({
             aria-label={aiSidebarOpen ? 'Hide AI sidebar' : 'Show AI sidebar'}
             title={aiSidebarOpen ? 'Hide AI sidebar' : 'Show AI sidebar'}
           >
-            <FaIcon icon={faRobot} className="h-3.5 w-3.5" />
+            <FaIcon icon={faRobot} className="h-4 w-4" />
           </button>
         </div>
       </footer>

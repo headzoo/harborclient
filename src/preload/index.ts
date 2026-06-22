@@ -13,6 +13,7 @@ import type {
   Chat,
   ChatMessage,
   ChatSummary,
+  CompleteChatTurnInput,
   CreateChatInput,
   GeneralSettings,
   ImportEntityResult,
@@ -526,6 +527,15 @@ function addChatMessage(input: AddChatMessageInput): Promise<ChatMessage> {
 }
 
 /**
+ * Calls the LLM with a chat's message history and persists the assistant reply.
+ *
+ * @param input - Chat id and model id for the completion request.
+ */
+function completeChatTurn(input: CompleteChatTurnInput): Promise<ChatMessage> {
+  return ipcRenderer.invoke('chats:completeTurn', input);
+}
+
+/**
  * Deletes a chat and its messages.
  *
  * @param id - Chat id to delete.
@@ -849,6 +859,7 @@ const api: Api = {
   createChat,
   getChat,
   addChatMessage,
+  completeChatTurn,
   deleteChat,
   listDatabaseConnections,
   saveDatabaseConnection,

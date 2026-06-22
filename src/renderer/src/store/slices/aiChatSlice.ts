@@ -10,6 +10,7 @@ export interface AiChatState {
   selectedModelByChat: Record<number, string>;
   historyOpen: boolean;
   sendingByChat: Record<number, boolean>;
+  sendErrorByChat: Record<number, string>;
 }
 
 const initialState: AiChatState = {
@@ -19,7 +20,8 @@ const initialState: AiChatState = {
   messagesByChat: {},
   selectedModelByChat: {},
   historyOpen: false,
-  sendingByChat: {}
+  sendingByChat: {},
+  sendErrorByChat: {}
 };
 
 const aiChatSlice = createSlice({
@@ -104,6 +106,18 @@ const aiChatSlice = createSlice({
       } else {
         delete state.sendingByChat[action.payload.chatId];
       }
+    },
+    /**
+     * Stores a send failure message for a chat tab.
+     */
+    setSendError(state, action: PayloadAction<{ chatId: number; message: string }>) {
+      state.sendErrorByChat[action.payload.chatId] = action.payload.message;
+    },
+    /**
+     * Clears a send failure message for a chat tab.
+     */
+    clearSendError(state, action: PayloadAction<number>) {
+      delete state.sendErrorByChat[action.payload];
     }
   }
 });
@@ -118,7 +132,9 @@ export const {
   setSelectedModel,
   toggleHistory,
   setHistoryOpen,
-  setSending
+  setSending,
+  setSendError,
+  clearSendError
 } = aiChatSlice.actions;
 
 /**
@@ -158,5 +174,11 @@ export const selectHistoryOpen = (state: RootState): boolean => state.aiChat.his
  */
 export const selectSendingByChat = (state: RootState): Record<number, boolean> =>
   state.aiChat.sendingByChat;
+
+/**
+ * Returns send failure messages keyed by chat id.
+ */
+export const selectSendErrorByChat = (state: RootState): Record<number, string> =>
+  state.aiChat.sendErrorByChat;
 
 export default aiChatSlice.reducer;

@@ -13,6 +13,7 @@ import type {
   AiSettings,
   AddChatMessageInput,
   ChatRole,
+  CompleteChatTurnInput,
   CreateChatInput,
   DatabaseConnection,
   GeneralSettings,
@@ -288,6 +289,11 @@ export const chatAddMessageInput = z.object({
   model: z.string().optional()
 }) satisfies z.ZodType<AddChatMessageInput>;
 
+export const chatCompleteTurnInput = z.object({
+  chatId: dbId,
+  model: z.string().min(1)
+}) satisfies z.ZodType<CompleteChatTurnInput>;
+
 export const sidebarExpansion = z.object({
   sections: z.object({
     collections: z.boolean(),
@@ -324,6 +330,7 @@ export const ipcArgSchemas = {
   chatCreate: z.tuple([chatCreateInput]),
   chatGet: z.tuple([dbId]),
   chatAddMessage: z.tuple([chatAddMessageInput]),
+  chatCompleteTurn: z.tuple([chatCompleteTurnInput]),
   chatDelete: z.tuple([dbId]),
   saveRequest: z.tuple([saveRequestInput]),
   sendRequest: z.tuple([sendRequestInput, requestId.optional()]),

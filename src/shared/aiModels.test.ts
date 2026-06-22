@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AI_MODELS, getAvailableModels } from '#/shared/aiModels';
+import { AI_MODELS, getAiModelById, getAvailableModels } from '#/shared/aiModels';
 import type { AiSettings } from '#/shared/types';
 
 const EMPTY_SETTINGS: AiSettings = {
@@ -26,5 +26,15 @@ describe('getAvailableModels', () => {
       geminiApiKey: 'gemini-key'
     });
     expect(models).toEqual(AI_MODELS);
+  });
+});
+
+describe('getAiModelById', () => {
+  it('returns the catalog entry for a known model id', () => {
+    expect(getAiModelById('gpt-4o')).toEqual(AI_MODELS[0]);
+  });
+
+  it('returns undefined for an unknown model id', () => {
+    expect(getAiModelById('unknown-model')).toBeUndefined();
   });
 });

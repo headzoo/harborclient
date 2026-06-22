@@ -536,6 +536,27 @@ export class LocalRegistry {
   }
 
   /**
+   * Updates the last-selected model id stored on a chat row.
+   *
+   * @param chatId - Chat id to update.
+   * @param model - Provider-specific model id.
+   */
+  updateChatModel(chatId: number, model: string): void {
+    const trimmed = model.trim();
+    if (!trimmed) {
+      throw new Error('Model id is required');
+    }
+
+    const result = this.getDb()
+      .prepare('UPDATE chats SET model = ? WHERE id = ?')
+      .run(trimmed, chatId);
+
+    if (result.changes === 0) {
+      throw new Error('Chat not found');
+    }
+  }
+
+  /**
    * Reads a persisted setting by key.
    *
    * @param key - Setting key to look up.
