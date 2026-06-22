@@ -2,7 +2,7 @@
 
 HarborClient application settings control appearance, HTTP request defaults, and the database connections where collections, requests, and environments are stored. Open settings from **File → Settings** or **Cmd/Ctrl+,**.
 
-The settings panel has a sidebar with five sections: **General**, **Syntax highlighting**, **Shortcuts**, **Proxy**, and **Databases**. General covers appearance and request defaults; Syntax highlighting controls the code editor; Shortcuts lets you customize keyboard shortcuts; Proxy configures a global HTTP proxy for outbound requests; Databases manages the named database connections that hold your data.
+The settings panel has a sidebar with six sections: **General**, **Syntax highlighting**, **Shortcuts**, **Proxy**, **Databases**, and **AI**. General covers appearance and request defaults; Syntax highlighting controls the code editor; Shortcuts lets you customize keyboard shortcuts; Proxy configures a global HTTP proxy for outbound requests; Databases manages the named database connections that hold your data; AI stores API keys for future assistant features.
 
 Appearance, request defaults, and connection definitions are stored in electron-store on your machine. Collections, requests, and environments live in the database connections you configure.
 
@@ -130,6 +130,20 @@ Stores data on a remote PostgreSQL server. Use this type for self-hosted or team
 | **Database** | PostgreSQL database name | (empty) |
 
 When you use a remote type such as Firestore, MySQL, or PostgreSQL, multiple HarborClient instances can point at the same database to share collections, environments, and saved requests across your team. Changes from other users appear when you reload data (for example, after restarting the app or refreshing collections); HarborClient does not live-sync in the background.
+
+## AI
+
+The **AI** section stores API keys for OpenAI, Claude, and Google Gemini. Keys are encrypted and saved locally on your machine. HarborClient uses the OS keychain when available; on systems without Secret Service support it falls back to a local encryption key in your application data directory. They are not used by HarborClient yet.
+
+On Linux, OS-backed encryption typically requires **GNOME Keyring** or **KWallet** to be running.
+
+| Field | Description |
+| --- | --- |
+| **OpenAI API key** | API key for OpenAI models |
+| **Claude API key** | API key for Anthropic Claude models |
+| **Google Gemini API key** | API key for Google Gemini models |
+
+Click **Save** to persist API keys.
 
 ## What's next
 

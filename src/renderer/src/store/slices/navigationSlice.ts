@@ -17,6 +17,7 @@ export interface NavigationState {
   collectionSettingsDirty: boolean;
   environmentSettingsDirty: boolean;
   showSidebar: boolean;
+  showAiSidebar: boolean;
   showConsole: boolean;
   showVariables: boolean;
 }
@@ -26,6 +27,7 @@ const initialState: NavigationState = {
   collectionSettingsDirty: false,
   environmentSettingsDirty: false,
   showSidebar: true,
+  showAiSidebar: false,
   showConsole: false,
   showVariables: false
 };
@@ -103,6 +105,12 @@ const navigationSlice = createSlice({
       state.showSidebar = !state.showSidebar;
     },
     /**
+     * Toggles AI sidebar visibility.
+     */
+    toggleAiSidebar(state) {
+      state.showAiSidebar = !state.showAiSidebar;
+    },
+    /**
      * Toggles the footer console panel.
      */
     toggleConsole(state) {
@@ -133,6 +141,7 @@ export const {
   setCollectionSettingsDirty,
   setEnvironmentSettingsDirty,
   toggleSidebar,
+  toggleAiSidebar,
   toggleConsole,
   toggleVariables
 } = navigationSlice.actions;
@@ -156,6 +165,10 @@ export const selectEnvironmentSettingsDirty = (state: RootState): boolean =>
  */
 export const selectShowSidebar = (state: RootState): boolean => state.navigation.showSidebar;
 /**
+ * Returns the user AI sidebar visibility preference.
+ */
+export const selectShowAiSidebar = (state: RootState): boolean => state.navigation.showAiSidebar;
+/**
  * Returns whether the console panel is open.
  */
 export const selectShowConsole = (state: RootState): boolean => state.navigation.showConsole;
@@ -172,6 +185,20 @@ export const selectSidebarVisible = (state: RootState): boolean => {
   const { mainView, showSidebar } = state.navigation;
   return (
     showSidebar &&
+    mainView.type !== 'settings' &&
+    mainView.type !== 'service-hubs' &&
+    mainView.type !== 'certificates'
+  );
+};
+
+/**
+ * AI sidebar is hidden when app settings, service hubs, or certificates are open, even if the
+ * user has not toggled it off manually.
+ */
+export const selectAiSidebarVisible = (state: RootState): boolean => {
+  const { mainView, showAiSidebar } = state.navigation;
+  return (
+    showAiSidebar &&
     mainView.type !== 'settings' &&
     mainView.type !== 'service-hubs' &&
     mainView.type !== 'certificates'

@@ -1030,6 +1030,26 @@ export interface GeneralSettings {
 }
 
 /**
+ * AI provider API keys stored locally for future assistant features.
+ */
+export interface AiSettings {
+  /**
+   * OpenAI API key.
+   */
+  openaiApiKey: string;
+
+  /**
+   * Anthropic Claude API key.
+   */
+  claudeApiKey: string;
+
+  /**
+   * Google Gemini API key.
+   */
+  geminiApiKey: string;
+}
+
+/**
  * Firebase Firestore connection settings.
  */
 export interface FirestoreSettings {
@@ -1276,6 +1296,8 @@ export type MenuActionId =
   | 'certificates'
   | 'accept-invite'
   | 'sync'
+  | 'toggle-sidebar'
+  | 'toggle-ai-sidebar'
   | 'about'
   | 'check-for-updates';
 
@@ -1595,6 +1617,20 @@ export interface Api {
   onMenuAction: (callback: (action: MenuActionId) => void) => () => void;
 
   /**
+   * Syncs sidebar visibility to the View menu checkbox in the main process.
+   *
+   * @param visible - Whether the sidebar is currently visible in the renderer.
+   */
+  setMenuSidebarVisible: (visible: boolean) => Promise<void>;
+
+  /**
+   * Syncs AI sidebar visibility to the View menu checkbox in the main process.
+   *
+   * @param visible - Whether the AI sidebar is currently visible in the renderer.
+   */
+  setMenuAiSidebarVisible: (visible: boolean) => Promise<void>;
+
+  /**
    * Returns the application version from package.json.
    */
   getAppVersion: () => Promise<string>;
@@ -1627,6 +1663,18 @@ export interface Api {
    * @param settings - General configuration to store.
    */
   setGeneralSettings: (settings: GeneralSettings) => Promise<void>;
+
+  /**
+   * Returns persisted AI provider API keys.
+   */
+  getAiSettings: () => Promise<AiSettings>;
+
+  /**
+   * Persists AI provider API keys.
+   *
+   * @param settings - AI configuration to store.
+   */
+  setAiSettings: (settings: AiSettings) => Promise<void>;
 
   /**
    * Lists all configured database connections.

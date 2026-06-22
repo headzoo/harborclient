@@ -21,6 +21,7 @@ import {
   listServiceHubs,
   saveServiceHub
 } from '#/main/settings/serviceHubSettings';
+import { getAiSettings, setAiSettings } from '#/main/settings/aiSettings';
 import { getGeneralSettings, setGeneralSettings } from '#/main/settings/generalSettings';
 import {
   deleteRequestEditorTab,
@@ -95,6 +96,14 @@ export function registerSettingsHandlers(db: IDatabase): void {
   // Persists general HTTP execution settings.
   handle('general:setSettings', ipcArgSchemas.generalSettings, (_event, settings) => {
     setGeneralSettings(settings);
+  });
+
+  // Returns persisted AI provider API keys.
+  handle('ai:getSettings', ipcArgSchemas.none, () => getAiSettings());
+
+  // Persists AI provider API keys.
+  handle('ai:setSettings', ipcArgSchemas.aiSettings, (_event, settings) => {
+    setAiSettings(settings);
   });
 
   // Lists configured database connections.

@@ -5,11 +5,30 @@ import {
   faChevronRight,
   faGripVertical,
   faPlus,
+  faRobot,
   faTableColumns,
   faXmark
 } from '@fortawesome/free-solid-svg-icons';
 
-library.add(faXmark, faPlus, faBars, faTableColumns, faChevronDown, faChevronRight, faGripVertical);
+library.add(
+  faXmark,
+  faPlus,
+  faBars,
+  faTableColumns,
+  faChevronDown,
+  faChevronRight,
+  faGripVertical,
+  faRobot
+);
 config.autoAddCss = false;
 
-export { faBars, faChevronDown, faChevronRight, faGripVertical, faPlus, faTableColumns, faXmark };
+export {
+  faBars,
+  faChevronDown,
+  faChevronRight,
+  faGripVertical,
+  faPlus,
+  faRobot,
+  faTableColumns,
+  faXmark
+};

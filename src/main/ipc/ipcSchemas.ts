@@ -10,6 +10,7 @@ import { authConfig, bodyType, httpMethod, keyValue, variable } from '#/main/sch
 import { CODE_EDITOR_THEME_IDS } from '#/shared/codeEditorSettings';
 import { requestExportSchema } from '#/main/db/collectionSchemas';
 import type {
+  AiSettings,
   DatabaseConnection,
   GeneralSettings,
   SaveRequestInput,
@@ -261,6 +262,15 @@ export const serviceHub = z.object({
   token: z.string().trim().min(1)
 }) satisfies z.ZodType<ServiceHub>;
 
+/**
+ * Zod schema for persisted AI provider API keys.
+ */
+export const aiSettings = z.object({
+  openaiApiKey: z.string(),
+  claudeApiKey: z.string(),
+  geminiApiKey: z.string()
+}) satisfies z.ZodType<AiSettings>;
+
 export const sidebarExpansion = z.object({
   sections: z.object({
     collections: z.boolean(),
@@ -292,11 +302,14 @@ export const ipcArgSchemas = {
   labelAndPublicKey: z.tuple([label, publicKeyPem]),
   themeSet: z.tuple([themeSource]),
   closeDecision: z.tuple([z.boolean()]),
+  menuSidebarVisible: z.tuple([z.boolean()]),
+  menuAiSidebarVisible: z.tuple([z.boolean()]),
   saveRequest: z.tuple([saveRequestInput]),
   sendRequest: z.tuple([sendRequestInput, requestId.optional()]),
   cancelRequest: z.tuple([requestId]),
   scriptRun: z.tuple([scriptRunInput]),
   generalSettings: z.tuple([generalSettings]),
+  aiSettings: z.tuple([aiSettings]),
   databaseConnection: z.tuple([databaseConnection]),
   serviceHub: z.tuple([serviceHub]),
   providerSync: z.tuple([connectionId]),

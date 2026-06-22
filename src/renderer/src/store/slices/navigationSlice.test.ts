@@ -8,6 +8,7 @@ import navigationReducer, {
   openSettings,
   setCollectionSettingsDirty,
   setEnvironmentSettingsDirty,
+  toggleAiSidebar,
   toggleConsole,
   toggleSidebar,
   toggleVariables
@@ -18,6 +19,7 @@ describe('navigationSlice', () => {
     const state = navigationReducer(undefined, { type: 'unknown' });
     expect(state.mainView).toEqual({ type: 'request' });
     expect(state.showSidebar).toBe(true);
+    expect(state.showAiSidebar).toBe(false);
     expect(state.showConsole).toBe(false);
     expect(state.showVariables).toBe(false);
     expect(state.collectionSettingsDirty).toBe(false);
@@ -76,5 +78,12 @@ describe('navigationSlice', () => {
     expect(state.showSidebar).toBe(false);
     state = navigationReducer(state, toggleSidebar());
     expect(state.showSidebar).toBe(true);
+  });
+
+  it('toggles AI sidebar visibility', () => {
+    let state = navigationReducer(undefined, toggleAiSidebar());
+    expect(state.showAiSidebar).toBe(true);
+    state = navigationReducer(state, toggleAiSidebar());
+    expect(state.showAiSidebar).toBe(false);
   });
 });

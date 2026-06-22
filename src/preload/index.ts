@@ -8,6 +8,7 @@ import type {
   EditorTab,
   Environment,
   Folder,
+  AiSettings,
   GeneralSettings,
   ImportEntityResult,
   InviteIdentity,
@@ -406,6 +407,24 @@ function onMenuAction(callback: (action: MenuActionId) => void): () => void {
 }
 
 /**
+ * Syncs sidebar visibility to the View menu checkbox in the main process.
+ *
+ * @param visible - Whether the sidebar is currently visible in the renderer.
+ */
+function setMenuSidebarVisible(visible: boolean): Promise<void> {
+  return ipcRenderer.invoke('menu:setSidebarVisible', visible);
+}
+
+/**
+ * Syncs AI sidebar visibility to the View menu checkbox in the main process.
+ *
+ * @param visible - Whether the AI sidebar is currently visible in the renderer.
+ */
+function setMenuAiSidebarVisible(visible: boolean): Promise<void> {
+  return ipcRenderer.invoke('menu:setAiSidebarVisible', visible);
+}
+
+/**
  * Returns the application version from package.json.
  */
 function getAppVersion(): Promise<string> {
@@ -449,6 +468,22 @@ function getGeneralSettings(): Promise<GeneralSettings> {
  */
 function setGeneralSettings(settings: GeneralSettings): Promise<void> {
   return ipcRenderer.invoke('general:setSettings', settings);
+}
+
+/**
+ * Returns persisted AI provider API keys.
+ */
+function getAiSettings(): Promise<AiSettings> {
+  return ipcRenderer.invoke('ai:getSettings');
+}
+
+/**
+ * Persists AI provider API keys.
+ *
+ * @param settings - AI configuration to store.
+ */
+function setAiSettings(settings: AiSettings): Promise<void> {
+  return ipcRenderer.invoke('ai:setSettings', settings);
 }
 
 /**
@@ -752,12 +787,16 @@ const api: Api = {
   setCookies,
   runScript,
   onMenuAction,
+  setMenuSidebarVisible,
+  setMenuAiSidebarVisible,
   getAppVersion,
   checkForUpdates,
   getTheme,
   setTheme,
   getGeneralSettings,
   setGeneralSettings,
+  getAiSettings,
+  setAiSettings,
   listDatabaseConnections,
   saveDatabaseConnection,
   deleteDatabaseConnection,

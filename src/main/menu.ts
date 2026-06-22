@@ -28,9 +28,15 @@ function acceleratorFor(accelerators: Map<ShortcutId, string>, id: ShortcutId): 
  * Builds the application menu with File, Edit, View, and Help menus.
  *
  * @param window - Browser window that receives custom menu actions.
+ * @param sidebarVisible - Whether the sidebar checkbox should appear checked.
+ * @param aiSidebarVisible - Whether the AI sidebar checkbox should appear checked.
  * @returns The constructed application menu.
  */
-export function buildMenu(window: BrowserWindow): Menu {
+export function buildMenu(
+  window: BrowserWindow,
+  sidebarVisible = true,
+  aiSidebarVisible = false
+): Menu {
   const accelerators = resolveAcceleratorMap(getShortcutOverrides());
 
   const template: MenuItemConstructorOptions[] = [
@@ -98,6 +104,19 @@ export function buildMenu(window: BrowserWindow): Menu {
     {
       label: 'View',
       submenu: [
+        {
+          label: 'Sidebar',
+          type: 'checkbox',
+          checked: sidebarVisible,
+          click: () => sendMenuAction(window, 'toggle-sidebar')
+        },
+        {
+          label: 'AI',
+          type: 'checkbox',
+          checked: aiSidebarVisible,
+          click: () => sendMenuAction(window, 'toggle-ai-sidebar')
+        },
+        { type: 'separator' },
         {
           role: 'togglefullscreen',
           accelerator: acceleratorFor(accelerators, 'toggle-fullscreen')

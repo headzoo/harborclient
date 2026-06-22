@@ -2,7 +2,7 @@ import { useMemo, type JSX } from 'react';
 import type { Variable } from '#/shared/types';
 import type { ConsoleEntry } from '#/renderer/src/store';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
-import { faTableColumns } from '#/renderer/src/fontawesome';
+import { faRobot, faTableColumns } from '#/renderer/src/fontawesome';
 import { segmentGroup } from '#/renderer/src/ui/shared/classes';
 import { ConsolePanel } from './ConsolePanel';
 import { VariablesPanel } from './VariablesPanel';
@@ -74,6 +74,16 @@ interface Props {
    * Toggles the sidebar visible/hidden.
    */
   onToggleSidebar: () => void;
+
+  /**
+   * Whether the AI sidebar is currently visible.
+   */
+  aiSidebarOpen: boolean;
+
+  /**
+   * Toggles the AI sidebar visible/hidden.
+   */
+  onToggleAiSidebar: () => void;
 }
 
 /**
@@ -92,7 +102,9 @@ export function Footer({
   collectionName,
   environmentName,
   sidebarOpen,
-  onToggleSidebar
+  onToggleSidebar,
+  aiSidebarOpen,
+  onToggleAiSidebar
 }: Props): JSX.Element {
   /**
    * Merges collection and environment variables for the footer variables panel.
@@ -102,6 +114,8 @@ export function Footer({
     [collectionVariables, environmentVariables]
   );
   const variableCount = effectiveCount(resolvedVariables);
+  const iconButtonClassName =
+    'inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted hover:bg-selection hover:text-text app-no-drag';
 
   return (
     <div className="relative shrink-0">
@@ -143,15 +157,26 @@ export function Footer({
             )}
           </button>
         </div>
-        <button
-          type="button"
-          className="inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md border-none bg-transparent text-muted hover:bg-selection hover:text-text app-no-drag"
-          onClick={onToggleSidebar}
-          aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
-          title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
-        >
-          <FaIcon icon={faTableColumns} className="h-3.5 w-3.5" />
-        </button>
+        <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            className={iconButtonClassName}
+            onClick={onToggleSidebar}
+            aria-label={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+            title={sidebarOpen ? 'Hide sidebar' : 'Show sidebar'}
+          >
+            <FaIcon icon={faTableColumns} className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            className={iconButtonClassName}
+            onClick={onToggleAiSidebar}
+            aria-label={aiSidebarOpen ? 'Hide AI sidebar' : 'Show AI sidebar'}
+            title={aiSidebarOpen ? 'Hide AI sidebar' : 'Show AI sidebar'}
+          >
+            <FaIcon icon={faRobot} className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </footer>
     </div>
   );

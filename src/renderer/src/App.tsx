@@ -18,12 +18,14 @@ import {
   closeOverlay,
   openCollectionSettings,
   openEnvironmentSettings,
+  selectAiSidebarVisible,
   selectMainView,
   selectShowConsole,
   selectShowVariables,
   selectSidebarVisible,
   setCollectionSettingsDirty,
   setEnvironmentSettingsDirty,
+  toggleAiSidebar,
   toggleConsole,
   toggleSidebar,
   toggleVariables
@@ -47,6 +49,7 @@ import { InviteModal } from '#/renderer/src/ui/modals/InviteModal';
 import { QuitPrompt } from '#/renderer/src/ui/modals/QuitPrompt';
 import { UnsavedLoadPrompt } from '#/renderer/src/ui/modals/UnsavedLoadPrompt';
 import { formatErrorMessage, showAlert } from '#/renderer/src/ui/modals/dialogHelpers';
+import { AiSidebar } from '#/renderer/src/ui/AiSidebar';
 import { Configuration } from '#/renderer/src/ui/Configuration';
 import { Sidebar } from '#/renderer/src/ui/Sidebar';
 import { Request } from '#/renderer/src/ui/Request';
@@ -70,6 +73,7 @@ export default function App(): JSX.Element {
   const consoleEntries = useAppSelector(selectConsoleEntries);
   const mainView = useAppSelector(selectMainView);
   const sidebarVisible = useAppSelector(selectSidebarVisible);
+  const aiSidebarVisible = useAppSelector(selectAiSidebarVisible);
   const showConsole = useAppSelector(selectShowConsole);
   const showVariables = useAppSelector(selectShowVariables);
   const foldersByCollection = useAppSelector(selectFoldersByCollection);
@@ -225,6 +229,8 @@ export default function App(): JSX.Element {
             />
           )}
         </main>
+
+        {aiSidebarVisible && <AiSidebar />}
       </div>
 
       <Footer
@@ -241,6 +247,8 @@ export default function App(): JSX.Element {
         environmentName={activeEnvironment?.name}
         sidebarOpen={sidebarVisible}
         onToggleSidebar={() => dispatch(toggleSidebar())}
+        aiSidebarOpen={aiSidebarVisible}
+        onToggleAiSidebar={() => dispatch(toggleAiSidebar())}
       />
 
       <CollectionModal />

@@ -2,6 +2,7 @@ import { useState, type JSX } from 'react';
 import { Button } from '#/renderer/src/components/Button';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faXmark } from '#/renderer/src/fontawesome';
+import { AiSection } from './AiSection';
 import { DatabasesSection } from './DatabasesSection';
 import { GeneralSection } from './GeneralSection';
 import { ProxySection } from './ProxySection';
@@ -47,6 +48,7 @@ export function Settings({ onClose }: Props): JSX.Element {
           {section === 'shortcuts' && <ShortcutsSection />}
           {section === 'proxy' && <ProxySection />}
           {section === 'databases' && <DatabasesSection />}
+          {section === 'ai' && <AiSection />}
         </div>
       </div>
     </div>

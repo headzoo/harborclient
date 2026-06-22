@@ -1,4 +1,5 @@
 import type {
+  AiSettings,
   DatabaseConnection,
   DatabaseProvider,
   FirestoreSettings,
@@ -81,12 +82,19 @@ export const DEFAULT_POSTGRES_SETTINGS: PostgresSettings = {
   database: ''
 };
 
+export const DEFAULT_AI_SETTINGS: AiSettings = {
+  openaiApiKey: '',
+  claudeApiKey: '',
+  geminiApiKey: ''
+};
+
 export const SETTINGS_SECTIONS: Array<{ value: SettingsSection; label: string }> = [
   { value: 'general', label: 'General' },
   { value: 'syntax', label: 'Syntax highlighting' },
   { value: 'shortcuts', label: 'Shortcuts' },
   { value: 'proxy', label: 'Proxy' },
-  { value: 'databases', label: 'Databases' }
+  { value: 'databases', label: 'Databases' },
+  { value: 'ai', label: 'AI' }
 ];
 
 /**

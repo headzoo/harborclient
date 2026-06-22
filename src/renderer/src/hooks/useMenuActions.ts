@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useAppDispatch } from '#/renderer/src/store/hooks';
+import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import {
   openAboutModal,
   openCollectionModal,
@@ -9,7 +9,11 @@ import {
 import {
   openCertificates,
   openServiceHubs,
-  openSettings
+  openSettings,
+  selectAiSidebarVisible,
+  selectSidebarVisible,
+  toggleAiSidebar,
+  toggleSidebar
 } from '#/renderer/src/store/slices/navigationSlice';
 import {
   dispatchNewRequest,
@@ -24,6 +28,22 @@ import { formatErrorMessage, showAlert } from '#/renderer/src/ui/modals/dialogHe
  */
 export function useMenuActions(): void {
   const dispatch = useAppDispatch();
+  const sidebarVisible = useAppSelector(selectSidebarVisible);
+  const aiSidebarVisible = useAppSelector(selectAiSidebarVisible);
+
+  /**
+   * Keeps the View menu Sidebar checkbox aligned with effective sidebar visibility.
+   */
+  useEffect(() => {
+    void window.api.setMenuSidebarVisible(sidebarVisible);
+  }, [sidebarVisible]);
+
+  /**
+   * Keeps the View menu AI checkbox aligned with effective AI sidebar visibility.
+   */
+  useEffect(() => {
+    void window.api.setMenuAiSidebarVisible(aiSidebarVisible);
+  }, [aiSidebarVisible]);
 
   /**
    * Wires File menu shortcuts to navigation, modal, and thunk actions.
@@ -64,6 +84,12 @@ export function useMenuActions(): void {
           void dispatch(runSync()).catch((err: unknown) => {
             showAlert(dispatch, formatErrorMessage(err, 'Failed to sync'));
           });
+          break;
+        case 'toggle-sidebar':
+          dispatch(toggleSidebar());
+          break;
+        case 'toggle-ai-sidebar':
+          dispatch(toggleAiSidebar());
           break;
         case 'about':
           dispatch(openAboutModal());
