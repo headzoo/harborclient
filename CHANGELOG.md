@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.5.5 - 2026-06-22
+
 - feat: add global HTTP proxy configuration to settings. (`87e4373`)
 - feat: enhance keyboard shortcut management and update check functionality. (`89f6450`)
 
