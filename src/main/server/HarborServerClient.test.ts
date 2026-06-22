@@ -45,6 +45,283 @@ describe('HarborServerClient', () => {
     });
   });
 
+  describe('getSession', () => {
+    it('sends bearer auth and parses the session payload for a user-role token', async () => {
+      const session = {
+        user: {
+          id: '550e8400-e29b-41d4-a716-446655440000',
+          name: 'alice',
+          role: 'user' as const
+        },
+        token: {
+          id: '660e8400-e29b-41d4-a716-446655440001',
+          prefix: 'hbk_AbCd1234'
+        },
+        capabilities: {
+          dataApi: true,
+          managementApi: false,
+          llm: true
+        }
+      };
+
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(session), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      const result = await client.getSession();
+
+      expect(result).toEqual(session);
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://127.0.0.1:8788/auth/session',
+        expect.objectContaining({
+          method: 'GET',
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json'
+          })
+        })
+      );
+    });
+
+    it('parses admin capabilities from the session payload', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            user: {
+              id: '550e8400-e29b-41d4-a716-446655440000',
+              name: 'ops',
+              role: 'admin'
+            },
+            token: {
+              id: '660e8400-e29b-41d4-a716-446655440001',
+              prefix: 'hbk_AdMn5678'
+            },
+            capabilities: {
+              dataApi: false,
+              managementApi: true,
+              llm: false
+            }
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        )
+      );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      const result = await client.getSession();
+
+      expect(result.capabilities).toEqual({
+        dataApi: false,
+        managementApi: true,
+        llm: false
+      });
+    });
+
+    it('throws ServerClientError with status 401 for unauthorized requests', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+
+      await expect(client.getSession()).rejects.toMatchObject({
+        name: 'ServerClientError',
+        message: 'Unauthorized',
+        status: 401,
+        method: 'GET',
+        path: '/auth/session'
+      });
+    });
+  });
+
+  describe('listAdminUsers', () => {
+    it('sends bearer auth and parses the admin users list', async () => {
+      const user = {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        name: 'alice',
+        role: 'user' as const,
+        collectionAccess: ['*'],
+        environmentAccess: ['*'],
+        llmAccess: true,
+        llmModels: ['*'],
+        llmMonthlyTokenLimit: 100000,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z'
+      };
+
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ users: [user] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      const users = await client.listAdminUsers();
+
+      expect(users).toEqual([user]);
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://127.0.0.1:8788/admin/users',
+        expect.objectContaining({
+          method: 'GET',
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json'
+          })
+        })
+      );
+    });
+  });
+
+  describe('updateAdminUser', () => {
+    it('sends bearer auth and parses the updated user record', async () => {
+      const user = {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        name: 'alice-renamed',
+        role: 'user' as const,
+        collectionAccess: ['*'],
+        environmentAccess: ['*'],
+        llmAccess: true,
+        llmModels: ['*'],
+        llmMonthlyTokenLimit: 100000,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-02T00:00:00.000Z'
+      };
+
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(user), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      const updated = await client.updateAdminUser(user.id, { name: 'alice-renamed' });
+
+      expect(updated).toEqual(user);
+      expect(fetchMock).toHaveBeenCalledWith(
+        `http://127.0.0.1:8788/admin/users/${user.id}`,
+        expect.objectContaining({
+          method: 'PUT',
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+            'Content-Type': 'application/json'
+          }),
+          body: JSON.stringify({ name: 'alice-renamed' })
+        })
+      );
+    });
+  });
+
+  describe('deleteAdminUser', () => {
+    it('sends bearer auth and accepts 204 responses', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      await client.deleteAdminUser('550e8400-e29b-41d4-a716-446655440000');
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://127.0.0.1:8788/admin/users/550e8400-e29b-41d4-a716-446655440000',
+        expect.objectContaining({
+          method: 'DELETE',
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json'
+          })
+        })
+      );
+    });
+  });
+
+  describe('listAdminResourceOptions', () => {
+    it('loads collections, environments, and models in parallel', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ collections: [{ id: 'c-1', name: 'Shared API' }] }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        )
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ environments: [{ id: 'e-1', name: 'Production' }] }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        )
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              models: [{ id: 'gpt-4o', label: 'GPT-4o', provider: 'openai' }]
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      const options = await client.listAdminResourceOptions();
+
+      expect(options).toEqual({
+        collections: [{ id: 'c-1', name: 'Shared API' }],
+        environments: [{ id: 'e-1', name: 'Production' }],
+        models: [{ id: 'gpt-4o', label: 'GPT-4o', provider: 'openai' }]
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    });
+
+    it('treats LLM 503 responses as an empty model list', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ collections: [] }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        )
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ environments: [] }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        )
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({ error: 'LLM support is not configured on this Team Hub.' }),
+            {
+              status: 503,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      const options = await client.listAdminResourceOptions();
+
+      expect(options.models).toEqual([]);
+    });
+  });
+
   describe('listCollections', () => {
     it('sends bearer auth and parses the collections list', async () => {
       const collection = {

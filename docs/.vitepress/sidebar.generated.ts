@@ -110,6 +110,14 @@ export const sidebar: DefaultTheme.SidebarItem[] =
         "link": "/team-hubs#managing-team-hubs"
       },
       {
+        "text": "Admin tokens",
+        "link": "/team-hubs#admin-tokens"
+      },
+      {
+        "text": "Managing team users",
+        "link": "/team-hubs#managing-team-users"
+      },
+      {
         "text": "Collections on a team hub",
         "link": "/team-hubs#collections-on-a-team-hub"
       },
@@ -120,6 +128,10 @@ export const sidebar: DefaultTheme.SidebarItem[] =
       {
         "text": "Team hubs vs other sharing options",
         "link": "/team-hubs#team-hubs-vs-other-sharing-options"
+      },
+      {
+        "text": "Team Hub LLM access",
+        "link": "/team-hubs#team-hub-llm-access"
       },
       {
         "text": "Limitations",

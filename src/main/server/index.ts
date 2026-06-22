@@ -13,13 +13,18 @@ export type {
   EnvironmentRecord,
   FolderRecord,
   HealthResponse,
+  HubUserRecord,
+  HubUserRole,
   MoveRequestInput,
   RenameFolderInput,
   ReorderFoldersInput,
   ReorderRequestsInput,
   SavedRequestRecord,
   ServerClientConfig,
+  SessionCapabilities,
+  SessionResponse,
   UpdateCollectionInput,
   UpdateEnvironmentInput,
+  UpdateHubUserInput,
   UpdateRequestInput
 } from '#/main/server/types';

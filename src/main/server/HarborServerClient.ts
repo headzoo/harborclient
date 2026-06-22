@@ -13,9 +13,15 @@ import {
   listHubLlmModelsResponseSchema,
   listRequestsResponseSchema,
   hubChatStepResponseSchema,
-  savedRequestRecordSchema
+  savedRequestRecordSchema,
+  sessionResponseSchema,
+  listAdminUsersResponseSchema,
+  listAdminCollectionsResponseSchema,
+  listAdminEnvironmentsResponseSchema,
+  hubUserRecordSchema
 } from '#/main/server/schemas';
 import type {
+  AdminResourceOption,
   CollectionRecord,
   CreateCollectionInput,
   CreateEnvironmentInput,
@@ -24,14 +30,18 @@ import type {
   EnvironmentRecord,
   FolderRecord,
   HealthResponse,
+  HubUserRecord,
   MoveRequestInput,
   RenameFolderInput,
   ReorderFoldersInput,
   ReorderRequestsInput,
   SavedRequestRecord,
   ServerClientConfig,
+  SessionResponse,
+  TeamHubAdminResourceOptions,
   UpdateCollectionInput,
   UpdateEnvironmentInput,
+  UpdateHubUserInput,
   UpdateRequestInput
 } from '#/main/server/types';
 import type { ChatStepMessage, ChatStepResult, HubLlmModel } from '#/shared/types';
@@ -235,6 +245,102 @@ export class HarborServerClient implements IServerClient {
       schema: healthResponseSchema
     });
     return result as HealthResponse;
+  }
+
+  /**
+   * Returns the authenticated user, token metadata, and derived API capabilities.
+   */
+  async getSession(): Promise<SessionResponse> {
+    const result = await this.request('GET', '/auth/session', {
+      schema: sessionResponseSchema
+    });
+    return result as SessionResponse;
+  }
+
+  /**
+   * Lists all Team Hub user accounts visible to an admin-role token.
+   */
+  async listAdminUsers(): Promise<HubUserRecord[]> {
+    const result = await this.request('GET', '/admin/users', {
+      schema: listAdminUsersResponseSchema
+    });
+    return (result as { users: HubUserRecord[] }).users;
+  }
+
+  /**
+   * Updates a Team Hub user account via the management API.
+   *
+   * @param id - User account identifier.
+   * @param input - Partial user fields to apply.
+   */
+  async updateAdminUser(id: string, input: UpdateHubUserInput): Promise<HubUserRecord> {
+    const result = await this.request('PUT', `/admin/users/${id}`, {
+      body: input,
+      schema: hubUserRecordSchema
+    });
+    return result as HubUserRecord;
+  }
+
+  /**
+   * Deletes a Team Hub user account and their API tokens via the management API.
+   *
+   * @param id - User account identifier.
+   */
+  async deleteAdminUser(id: string): Promise<void> {
+    await this.request('DELETE', `/admin/users/${id}`);
+  }
+
+  /**
+   * Lists all collections as id/name metadata for admin user management.
+   */
+  async listAdminCollections(): Promise<AdminResourceOption[]> {
+    const result = await this.request('GET', '/admin/collections', {
+      schema: listAdminCollectionsResponseSchema
+    });
+    return (result as { collections: AdminResourceOption[] }).collections;
+  }
+
+  /**
+   * Lists all environments as id/name metadata for admin user management.
+   */
+  async listAdminEnvironments(): Promise<AdminResourceOption[]> {
+    const result = await this.request('GET', '/admin/environments', {
+      schema: listAdminEnvironmentsResponseSchema
+    });
+    return (result as { environments: AdminResourceOption[] }).environments;
+  }
+
+  /**
+   * Lists all hub-offered LLM models for admin user management.
+   *
+   * Returns an empty list when LLM support is not configured on the hub.
+   */
+  async listAdminLlmModels(): Promise<HubLlmModel[]> {
+    try {
+      const result = await this.request('GET', '/admin/llm/models', {
+        schema: listHubLlmModelsResponseSchema
+      });
+      return (result as { models: HubLlmModel[] }).models;
+    } catch (error) {
+      if (error instanceof ServerClientError && error.status === 503) {
+        return [];
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Loads collection, environment, and LLM model options for admin user forms.
+   */
+  async listAdminResourceOptions(): Promise<TeamHubAdminResourceOptions> {
+    const [collections, environments, models] = await Promise.all([
+      this.listAdminCollections(),
+      this.listAdminEnvironments(),
+      this.listAdminLlmModels()
+    ]);
+
+    return { collections, environments, models };
   }
 
   /**

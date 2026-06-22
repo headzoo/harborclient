@@ -27,16 +27,20 @@ const client = new HarborServerClient({
 });
 
 const health = await client.checkHealth();
+const session = await client.getSession();
+if (session.capabilities.managementApi) {
+  // show admin UI
+}
 const collections = await client.listCollections();
 ```
 
-Protected routes send `Authorization: Bearer hbk_...`. `checkHealth()` is the only public method that omits the token. Failed requests throw `ServerClientError` with `status`, `method`, and `path`.
+Protected routes send `Authorization: Bearer hbk_...`. `checkHealth()` is the only method that omits the token; `getSession()` requires a valid bearer token. Failed requests throw `ServerClientError` with `status`, `method`, and `path`.
 
 ## API coverage
 
 | Area           | Methods                                                                                             |
 | -------------- | --------------------------------------------------------------------------------------------------- |
-| Health         | `checkHealth`                                                                                       |
+| Health / auth  | `checkHealth`, `getSession`                                                                         |
 | Collections    | `listCollections`, `createCollection`, `updateCollection`, `deleteCollection`                       |
 | Environments   | `listEnvironments`, `createEnvironment`, `updateEnvironment`, `deleteEnvironment`                   |
 | Folders        | `listFolders`, `createFolder`, `renameFolder`, `deleteFolder`, `reorderFolders`                     |

@@ -384,7 +384,7 @@ Collections and saved requests are stored in your chosen provider:
 
 - **SQLite (default)** — `{userData}/harborclient.db`. The database filename can be changed in [Settings → SQLite](/settings#sqlite) (restart required).
 - **Firestore, MySQL, PostgreSQL** — remote storage when selected in [Settings → Databases](/settings#databases) (restart required).
-- **Team hubs** — collection data on [HarborClient Team Hub](/team-hubs); configured under **File → Team Hubs**, not in Settings.
+- **Team hubs** — collection data on [HarborClient Team Hub](/team-hubs); configured under **File → Team Hub**, not in Settings.
 
 See [Settings](/settings) for database configuration and [Team hubs](/team-hubs) for hub-backed collections.
 

@@ -1,4 +1,5 @@
 import type {
+  AdminResourceOption,
   CollectionRecord,
   CreateCollectionInput,
   CreateEnvironmentInput,
@@ -7,15 +8,20 @@ import type {
   EnvironmentRecord,
   FolderRecord,
   HealthResponse,
+  HubUserRecord,
   MoveRequestInput,
   RenameFolderInput,
   ReorderFoldersInput,
   ReorderRequestsInput,
   SavedRequestRecord,
+  SessionResponse,
+  TeamHubAdminResourceOptions,
   UpdateCollectionInput,
   UpdateEnvironmentInput,
+  UpdateHubUserInput,
   UpdateRequestInput
 } from '#/main/server/types';
+import type { HubLlmModel } from '#/shared/types';
 
 /**
  * Typed HTTP client for HarborClient Server entity and health routes.
@@ -25,6 +31,54 @@ export interface IServerClient {
    * Probes server availability via the public health endpoint.
    */
   checkHealth(): Promise<HealthResponse>;
+
+  /**
+   * Returns the authenticated user, token metadata, and derived API capabilities.
+   *
+   * Calls `GET /auth/session` with bearer auth. Use this to discover whether
+   * a token belongs to a `user` or `admin` account before gating management UI.
+   */
+  getSession(): Promise<SessionResponse>;
+
+  /**
+   * Lists all Team Hub user accounts visible to an admin-role token.
+   */
+  listAdminUsers(): Promise<HubUserRecord[]>;
+
+  /**
+   * Updates a Team Hub user account via the management API.
+   *
+   * @param id - User account identifier.
+   * @param input - Partial user fields to apply.
+   */
+  updateAdminUser(id: string, input: UpdateHubUserInput): Promise<HubUserRecord>;
+
+  /**
+   * Deletes a Team Hub user account and their API tokens via the management API.
+   *
+   * @param id - User account identifier.
+   */
+  deleteAdminUser(id: string): Promise<void>;
+
+  /**
+   * Lists all collections as id/name metadata for admin user management.
+   */
+  listAdminCollections(): Promise<AdminResourceOption[]>;
+
+  /**
+   * Lists all environments as id/name metadata for admin user management.
+   */
+  listAdminEnvironments(): Promise<AdminResourceOption[]>;
+
+  /**
+   * Lists all hub-offered LLM models for admin user management.
+   */
+  listAdminLlmModels(): Promise<HubLlmModel[]>;
+
+  /**
+   * Loads collection, environment, and LLM model options for admin user forms.
+   */
+  listAdminResourceOptions(): Promise<TeamHubAdminResourceOptions>;
 
   /**
    * Lists all collections visible to the authenticated token.

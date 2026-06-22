@@ -67,7 +67,7 @@ The **Databases** section lists every named database connection. The **active** 
 
 All configured databases are opened at launch, so shared collections from any connection are available immediately.
 
-**Team hubs** are configured separately under **File → Team Hubs**, not in this section. They connect to [HarborClient Team Hub](/team-hubs) for token-based shared collections. See [Team hubs](/team-hubs) for setup and sync behavior.
+**Team hubs** are configured separately under **File → Team Hub**, not in this section. They connect to [HarborClient Team Hub](/team-hubs) for token-based shared collections. See [Team hubs](/team-hubs) for setup and sync behavior.
 
 ### Managing connections
 

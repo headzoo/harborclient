@@ -22,11 +22,18 @@ Before adding a team hub in HarborClient, you need:
 | **Team hub URL**          | The team hub base URL (for example `http://127.0.0.1:8788` or `https://api.example.com`). HarborClient strips trailing slashes when saving.                                                                                                                               |
 | **API token**             | A bearer token prefixed with `hbk_` that authorizes your HarborClient instance against protected API routes. Obtain or create tokens according to your team hub's documentation.                                                                                          |
 
+Each token belongs to a Team Hub account with a **role** that determines what HarborClient can do with that connection:
+
+| Token role         | HarborClient behavior                                                    |
+| ------------------ | ------------------------------------------------------------------------ |
+| **user** (default) | Syncs collections; no **Manage team** access                             |
+| **admin**          | Enables **Manage team**; does **not** sync collections (management-only) |
+
 HarborClient verifies connectivity when a hub is saved or mounted at launch. If the team hub is unreachable or the token is invalid, the hub is skipped and a warning is logged — other providers continue to work.
 
 ## Managing team hubs
 
-Open **File → Team Hubs** to manage hub connections. The page lists every configured hub with its display name and URL.
+Open **File → Team Hub** to manage hub connections. The page lists every configured hub with its display name and URL.
 
 ### Add a team hub
 
@@ -53,6 +60,87 @@ Click **Delete** on a hub row and confirm. Deleting a hub:
 - Deletes the local id-map file HarborClient used to translate server UUIDs to numeric ids
 
 Deleting a hub does **not** delete collections on HarborClient Team Hub itself — teammates who still have access can continue to use server-side data. Your local sidebar entries for that hub are removed.
+
+## Admin tokens
+
+An **admin token** is an `hbk_` bearer token issued for a Team Hub account with `role: admin`. It authorizes the management API — user accounts, roles, and access settings — not collection data.
+
+Admin tokens are created on the Team Hub server, not in HarborClient. After your team hub is running and migrated, an operator can create an admin account and token from the server CLI:
+
+```bash
+team-hub user create --name ops --role admin
+team-hub user token create --user <user-id> --name "Ops laptop"
+```
+
+See the Team Hub [authentication documentation](https://headzoo.github.io/harborclient-service-hub/auth.html) for the full CLI workflow, including additional tokens and revocation.
+
+### Add an admin token in HarborClient
+
+Admin tokens use the same **API token** field as regular hub connections — there is no separate admin setting.
+
+| Step | Action                                                                           |
+| ---- | -------------------------------------------------------------------------------- |
+| 1    | Open **File → Team Hub**                                                         |
+| 2    | Click **Add team hub** (or **Edit** an existing hub)                             |
+| 3    | Enter a **Name**, **Team hub URL**, and paste the admin token into **API token** |
+| 4    | Click **Save**                                                                   |
+
+After save, HarborClient probes each hub with `GET /auth/session`. When the token reports `managementApi` capability:
+
+- The hub row shows a green check icon with tooltip **Admin token**
+- **Manage team** appears in the page header (when at least one admin hub is configured)
+
+### Admin tokens and collections
+
+Admin tokens cannot read or write collection data through HarborClient. The team hub API returns an empty collection list for admin tokens by design so the connection can still mount without errors.
+
+**Recommended pattern:** configure one hub connection with a **user** token for daily work (collections and requests) and a separate connection with an **admin** token for team administration. You can also keep an admin connection and use it only when managing users.
+
+## Managing team users
+
+When at least one configured hub has an admin token, **File → Team Hub** shows a **Manage team** button. Use it to list, edit, and delete user accounts on the selected Team Hub server.
+
+| Step | Action                                                                             |
+| ---- | ---------------------------------------------------------------------------------- |
+| 1    | Open **File → Team Hub**                                                           |
+| 2    | Click **Manage team**                                                              |
+| 3    | If multiple admin hubs exist, choose the target hub from the **Team hub** dropdown |
+| 4    | Review the user list (name, role badge, account id)                                |
+
+Click **Back** to return to the hub connection list.
+
+### Edit a user
+
+Click **Edit** on a user row to open the edit dialog. Available fields:
+
+| Field                       | Notes                                                                  |
+| --------------------------- | ---------------------------------------------------------------------- |
+| **Name**                    | Display name on the server                                             |
+| **Role**                    | `user` or `admin`                                                      |
+| **Collection access**       | `*` or comma-separated collection UUIDs (hidden when role is `admin`)  |
+| **Environment access**      | `*` or comma-separated environment UUIDs (hidden when role is `admin`) |
+| **LLM access**              | Checkbox — enable hub-provided AI models for this account              |
+| **LLM models**              | `*` or comma-separated model ids                                       |
+| **LLM monthly token limit** | Blank = unlimited                                                      |
+
+Click **Save** to apply changes. HarborClient shows **User updated.** on success.
+
+When you change a user's role to **admin**, collection and environment access fields are cleared on the server — admin accounts manage the hub but do not access entity data through the data API.
+
+### Delete a user
+
+Click **Delete** on a user row. Type `DELETE` in the confirmation field and click **Delete** again. This permanently removes the account and revokes all of its API tokens. HarborClient shows **User deleted.** on success.
+
+### Create users
+
+HarborClient does not create user accounts. Operators create them on the Team Hub server:
+
+```bash
+team-hub user create --name alice --role user
+team-hub user token create --user <user-id> --name "Alice laptop"
+```
+
+Teammates then add their **user** token in HarborClient as described in [Add a team hub](#add-a-team-hub).
 
 ## Collections on a team hub
 
@@ -125,12 +213,12 @@ HarborClient offers several ways to work with others. Pick the approach that mat
 
 When your HarborClient Team Hub administrator enables LLM support, HarborClient can run AI chat through the hub instead of your personal provider keys. The hub holds the OpenAI, Claude, and Gemini keys in `server.yaml`; your desktop client only sends chat steps to the hub API.
 
-| Topic              | Behavior                                                                                   |
-| ------------------ | ------------------------------------------------------------------------------------------ |
-| **Model picker**   | Hub models are labeled **Team Hub** and preferred over personal keys for the same model id |
-| **Tool calling**   | HarborClient still executes tools locally against your open requests and collections       |
-| **Access control** | Administrators grant LLM access and monthly token limits per user through the team hub CLI |
-| **Fallback**       | Personal API keys in **Settings → AI** are used only for models your hubs do not offer     |
+| Topic              | Behavior                                                                                                                      |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| **Model picker**   | Hub models are labeled **Team Hub** and preferred over personal keys for the same model id                                    |
+| **Tool calling**   | HarborClient still executes tools locally against your open requests and collections                                          |
+| **Access control** | Administrators grant LLM access and monthly token limits per user through **Manage team** in HarborClient or the team hub CLI |
+| **Fallback**       | Personal API keys in **Settings → AI** are used only for models your hubs do not offer                                        |
 
 See the [AI assistant](/ai) guide and the team hub [LLM proxy documentation](https://headzoo.github.io/harborclient-service-hub/llm.html).
 
@@ -142,7 +230,7 @@ See the [AI assistant](/ai) guide and the team hub [LLM proxy documentation](htt
 | **Environments**           | Not shared via hubs. Each HarborClient instance keeps its own environment list locally.                        |
 | **Concurrent edits**       | Last write wins through the team hub API. HarborClient does not merge conflicting edits.                       |
 | **Offline team hub**       | Hub-backed collections may show warnings if the team hub is unreachable; sidebar entries are not auto-deleted. |
-| **Configuration location** | Team hubs are managed under **File → Team Hubs**, not under [Settings → Databases](/settings#databases).       |
+| **Configuration location** | Team hubs are managed under **File → Team Hub**, not under [Settings → Databases](/settings#databases).        |
 
 ## What's next
 
@@ -151,3 +239,4 @@ See the [AI assistant](/ai) guide and the team hub [LLM proxy documentation](htt
 - [Certificates](/certificates) — keys and trusted collaborators for encrypted invites
 - [Environments](/environments) — local variable groups that override collection variables at send time
 - [HarborClient Team Hub documentation](https://headzoo.github.io/harborclient-service-hub/) — install, configure, and run the central server
+- [Team Hub authentication](https://headzoo.github.io/harborclient-service-hub/auth.html) — user roles, token creation, and CLI administration beyond the HarborClient UI

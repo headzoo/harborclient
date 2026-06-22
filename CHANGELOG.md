@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat: implement Team Hub user management features. (`e2daef8`)
+
 ## 1.5.9 - 2026-06-22
 
 - feat: add keyboard shortcuts for toggling sidebars. (`8d9a916`)

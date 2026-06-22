@@ -1,4 +1,11 @@
-import type { AuthConfig, BodyType, HttpMethod, KeyValue, Variable } from '#/shared/types';
+import type {
+  AuthConfig,
+  BodyType,
+  HttpMethod,
+  HubLlmModel,
+  KeyValue,
+  Variable
+} from '#/shared/types';
 
 /**
  * Connection settings for {@link HarborServerClient}.
@@ -33,6 +40,206 @@ export interface HealthResponse {
    * HarborClient Server application version string.
    */
   version: string;
+}
+
+/**
+ * Team Hub account role returned by session introspection.
+ */
+export type HubUserRole = 'admin' | 'user';
+
+/**
+ * Capability flags derived from the authenticated Team Hub user account.
+ */
+export interface SessionCapabilities {
+  /**
+   * When true, the token may call entity data routes.
+   */
+  dataApi: boolean;
+
+  /**
+   * When true, the token may call management routes.
+   */
+  managementApi: boolean;
+
+  /**
+   * When true, the token may call hub-proxied LLM routes.
+   */
+  llm: boolean;
+}
+
+/**
+ * Response body from `GET /auth/session`.
+ */
+export interface SessionResponse {
+  /**
+   * User account owning the authenticated bearer token.
+   */
+  user: {
+    /**
+     * Stable user account identifier.
+     */
+    id: string;
+
+    /**
+     * Unique display name for the account.
+     */
+    name: string;
+
+    /**
+     * Account role determining API capabilities.
+     */
+    role: HubUserRole;
+  };
+
+  /**
+   * Metadata for the API token used to authenticate the request.
+   */
+  token: {
+    /**
+     * Stable token record identifier.
+     */
+    id: string;
+
+    /**
+     * Non-secret prefix shown in operator listings.
+     */
+    prefix: string;
+  };
+
+  /**
+   * Derived capability flags for clients such as HarborClient.
+   */
+  capabilities: SessionCapabilities;
+}
+
+/**
+ * Team Hub user account returned by management routes.
+ */
+export interface HubUserRecord {
+  /**
+   * Stable user account identifier.
+   */
+  id: string;
+
+  /**
+   * Unique display name for the account.
+   */
+  name: string;
+
+  /**
+   * Account role determining API capabilities.
+   */
+  role: HubUserRole;
+
+  /**
+   * Collection ids the user may access, or `['*']` for all collections.
+   */
+  collectionAccess: string[];
+
+  /**
+   * Environment ids the user may access, or `['*']` for all environments.
+   */
+  environmentAccess: string[];
+
+  /**
+   * When true, the user may call hub-proxied LLM routes.
+   */
+  llmAccess: boolean;
+
+  /**
+   * LLM model ids the user may use, or `['*']` for all hub-offered models.
+   */
+  llmModels: string[];
+
+  /**
+   * Maximum total tokens per UTC calendar month, or null for unlimited.
+   */
+  llmMonthlyTokenLimit: number | null;
+
+  /**
+   * ISO 8601 timestamp when the account was created.
+   */
+  createdAt: string;
+
+  /**
+   * ISO 8601 timestamp when the account was last updated.
+   */
+  updatedAt: string;
+}
+
+/**
+ * Lightweight id/name record returned by admin list routes for autocomplete.
+ */
+export interface AdminResourceOption {
+  /**
+   * Stable resource identifier stored in access lists.
+   */
+  id: string;
+
+  /**
+   * Human-readable label shown in autocomplete suggestions.
+   */
+  name: string;
+}
+
+/**
+ * Collection, environment, and LLM model options for admin user management forms.
+ */
+export interface TeamHubAdminResourceOptions {
+  /**
+   * All hub collections available when assigning collection access.
+   */
+  collections: AdminResourceOption[];
+
+  /**
+   * All hub environments available when assigning environment access.
+   */
+  environments: AdminResourceOption[];
+
+  /**
+   * All hub-offered LLM models available when assigning model access.
+   */
+  models: HubLlmModel[];
+}
+
+/**
+ * Partial fields accepted when updating a Team Hub user via management routes.
+ */
+export interface UpdateHubUserInput {
+  /**
+   * New unique display name, when changing the account label.
+   */
+  name?: string;
+
+  /**
+   * New role, when changing account capabilities.
+   */
+  role?: HubUserRole;
+
+  /**
+   * Replacement collection access list.
+   */
+  collectionAccess?: string[];
+
+  /**
+   * Replacement environment access list.
+   */
+  environmentAccess?: string[];
+
+  /**
+   * Whether the user may use hub-proxied LLM routes.
+   */
+  llmAccess?: boolean;
+
+  /**
+   * Replacement LLM model access list.
+   */
+  llmModels?: string[];
+
+  /**
+   * Replacement monthly token limit, or null for unlimited.
+   */
+  llmMonthlyTokenLimit?: number | null;
 }
 
 /**

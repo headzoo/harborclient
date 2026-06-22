@@ -1504,6 +1504,156 @@ export interface TeamHub {
 }
 
 /**
+ * Result of probing a team hub token via `GET /auth/session`.
+ */
+export interface TeamHubSessionScanResult {
+  /**
+   * Team hub connection id that was scanned.
+   */
+  hubId: string;
+
+  /**
+   * When true, the hub token has management API capabilities.
+   */
+  managementApi: boolean;
+
+  /**
+   * Human-readable error when the scan failed; omitted on success.
+   */
+  error?: string;
+}
+
+/**
+ * Team Hub user account returned by management routes.
+ */
+export interface HubUserRecord {
+  /**
+   * Stable user account identifier.
+   */
+  id: string;
+
+  /**
+   * Unique display name for the account.
+   */
+  name: string;
+
+  /**
+   * Account role determining API capabilities.
+   */
+  role: 'admin' | 'user';
+
+  /**
+   * Collection ids the user may access, or `['*']` for all collections.
+   */
+  collectionAccess: string[];
+
+  /**
+   * Environment ids the user may access, or `['*']` for all environments.
+   */
+  environmentAccess: string[];
+
+  /**
+   * When true, the user may call hub-proxied LLM routes.
+   */
+  llmAccess: boolean;
+
+  /**
+   * LLM model ids the user may use, or `['*']` for all hub-offered models.
+   */
+  llmModels: string[];
+
+  /**
+   * Maximum total tokens per UTC calendar month, or null for unlimited.
+   */
+  llmMonthlyTokenLimit: number | null;
+
+  /**
+   * ISO 8601 timestamp when the account was created.
+   */
+  createdAt: string;
+
+  /**
+   * ISO 8601 timestamp when the account was last updated.
+   */
+  updatedAt: string;
+}
+
+/**
+ * Lightweight id/name record returned by admin list routes for autocomplete.
+ */
+export interface AdminResourceOption {
+  /**
+   * Stable resource identifier stored in access lists.
+   */
+  id: string;
+
+  /**
+   * Human-readable label shown in autocomplete suggestions.
+   */
+  name: string;
+}
+
+/**
+ * Collection, environment, and LLM model options for admin user management forms.
+ */
+export interface TeamHubAdminResourceOptions {
+  /**
+   * All hub collections available when assigning collection access.
+   */
+  collections: AdminResourceOption[];
+
+  /**
+   * All hub environments available when assigning environment access.
+   */
+  environments: AdminResourceOption[];
+
+  /**
+   * All hub-offered LLM models available when assigning model access.
+   */
+  models: HubLlmModel[];
+}
+
+/**
+ * Partial fields accepted when updating a Team Hub user via management routes.
+ */
+export interface UpdateHubUserInput {
+  /**
+   * New unique display name, when changing the account label.
+   */
+  name?: string;
+
+  /**
+   * New role, when changing account capabilities.
+   */
+  role?: 'admin' | 'user';
+
+  /**
+   * Replacement collection access list.
+   */
+  collectionAccess?: string[];
+
+  /**
+   * Replacement environment access list.
+   */
+  environmentAccess?: string[];
+
+  /**
+   * Whether the user may use hub-proxied LLM routes.
+   */
+  llmAccess?: boolean;
+
+  /**
+   * Replacement LLM model access list.
+   */
+  llmModels?: string[];
+
+  /**
+   * Replacement monthly token limit, or null for unlimited.
+   */
+  llmMonthlyTokenLimit?: number | null;
+}
+
+/**
  * Local RSA identity used to sign and decrypt invites.
  */
 export interface InviteIdentity {
@@ -2052,6 +2202,46 @@ export interface Api {
    * @returns Updated list of all team hubs.
    */
   deleteTeamHub: (id: string) => Promise<TeamHub[]>;
+
+  /**
+   * Probes each configured team hub for session capabilities via `GET /auth/session`.
+   */
+  scanTeamHubSessions: () => Promise<TeamHubSessionScanResult[]>;
+
+  /**
+   * Lists Team Hub user accounts using an admin token on the given hub connection.
+   *
+   * @param hubId - Team hub connection id with an admin token.
+   */
+  listTeamHubUsers: (hubId: string) => Promise<HubUserRecord[]>;
+
+  /**
+   * Updates a Team Hub user account using an admin token on the given hub connection.
+   *
+   * @param hubId - Team hub connection id with an admin token.
+   * @param userId - User account identifier to update.
+   * @param input - Partial user fields to apply.
+   */
+  updateTeamHubUser: (
+    hubId: string,
+    userId: string,
+    input: UpdateHubUserInput
+  ) => Promise<HubUserRecord>;
+
+  /**
+   * Deletes a Team Hub user account using an admin token on the given hub connection.
+   *
+   * @param hubId - Team hub connection id with an admin token.
+   * @param userId - User account identifier to delete.
+   */
+  deleteTeamHubUser: (hubId: string, userId: string) => Promise<void>;
+
+  /**
+   * Loads collection, environment, and LLM model options for admin user management.
+   *
+   * @param hubId - Team hub connection id with an admin token.
+   */
+  listTeamHubAdminResourceOptions: (hubId: string) => Promise<TeamHubAdminResourceOptions>;
 
   /**
    * Re-reads collection data from a single provider (database or team hub).

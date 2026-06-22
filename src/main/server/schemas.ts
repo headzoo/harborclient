@@ -4,7 +4,9 @@ import type {
   EnvironmentRecord,
   FolderRecord,
   HealthResponse,
-  SavedRequestRecord
+  HubUserRecord,
+  SavedRequestRecord,
+  SessionResponse
 } from '#/main/server/types';
 import { authConfig, bodyType, httpMethod, keyValue, variable } from '#/main/schemas/common';
 
@@ -85,6 +87,84 @@ export const healthResponseSchema = z.object({
   status: z.literal('ok'),
   version: z.string()
 }) satisfies z.ZodType<HealthResponse>;
+
+/**
+ * Response body schema for `GET /auth/session`.
+ */
+export const sessionResponseSchema = z.object({
+  user: z.object({
+    id: z.string(),
+    name: z.string(),
+    role: z.enum(['admin', 'user'])
+  }),
+  token: z.object({
+    id: z.string(),
+    prefix: z.string()
+  }),
+  capabilities: z.object({
+    dataApi: z.boolean(),
+    managementApi: z.boolean(),
+    llm: z.boolean()
+  })
+}) satisfies z.ZodType<SessionResponse>;
+
+/**
+ * JSON shape for a Team Hub user account returned by management routes.
+ */
+export const hubUserRecordSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  role: z.enum(['admin', 'user']),
+  collectionAccess: z.array(z.string()),
+  environmentAccess: z.array(z.string()),
+  llmAccess: z.boolean(),
+  llmModels: z.array(z.string()),
+  llmMonthlyTokenLimit: z.number().int().nonnegative().nullable(),
+  createdAt: timestampSchema,
+  updatedAt: timestampSchema
+}) satisfies z.ZodType<HubUserRecord>;
+
+/**
+ * List response wrapper for admin user listings.
+ */
+export const listAdminUsersResponseSchema = z.object({
+  users: z.array(hubUserRecordSchema)
+});
+
+/**
+ * Lightweight id/name record returned by admin list routes.
+ */
+export const adminResourceOptionSchema = z.object({
+  id: z.string(),
+  name: z.string()
+});
+
+/**
+ * List response wrapper for admin collection listings.
+ */
+export const listAdminCollectionsResponseSchema = z.object({
+  collections: z.array(adminResourceOptionSchema)
+});
+
+/**
+ * List response wrapper for admin environment listings.
+ */
+export const listAdminEnvironmentsResponseSchema = z.object({
+  environments: z.array(adminResourceOptionSchema)
+});
+
+/**
+ * Request body schema for `PUT /admin/users/:id`.
+ */
+export const updateAdminUserBodySchema = z.object({
+  name: z.string().trim().min(1).optional(),
+  role: z.enum(['admin', 'user']).optional(),
+  collectionAccess: z.array(z.string()).optional(),
+  environmentAccess: z.array(z.string()).optional(),
+  llmAccess: z.boolean().optional(),
+  llmModels: z.array(z.string()).optional(),
+  llmMonthlyTokenLimit: z.number().int().nonnegative().nullable().optional()
+});
 
 /**
  * List response wrapper for collections.

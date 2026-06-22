@@ -69,7 +69,7 @@ export function buildMenu(
           click: () => sendMenuAction(window, 'settings')
         },
         {
-          label: 'Team Hubs',
+          label: 'Team Hub',
           click: () => sendMenuAction(window, 'team-hubs')
         },
         {

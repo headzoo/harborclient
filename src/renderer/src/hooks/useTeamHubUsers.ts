@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { TeamHub } from '#/shared/types';
+import type { HubUserRecord } from '#/shared/types';
 
 /**
- * Loaded team hub list and bootstrap state from IPC.
+ * Loaded Team Hub user list and bootstrap state from IPC.
  */
-export interface TeamHubsState {
+export interface TeamHubUsersState {
   /**
-   * Configured team hubs from settings.
+   * User accounts returned by the management API.
    */
-  teamHubs: TeamHub[];
+  users: HubUserRecord[];
 
   /**
    * True while the initial or retried IPC load is in flight.
@@ -21,25 +21,20 @@ export interface TeamHubsState {
   error: string | null;
 
   /**
-   * Re-runs the IPC bootstrap (clears error and sets loading).
+   * Re-runs the IPC bootstrap for the current hub id.
    */
   reload: () => void;
-
-  /**
-   * Increments whenever {@link TeamHubsState.reload} runs; use to re-trigger dependent scans.
-   */
-  reloadToken: number;
 }
 
 /**
- * Loads team hubs via IPC. Handles cancellation on unmount, rejection with a
- * stable error message, and manual retry through {@link TeamHubsState.reload}.
+ * Loads Team Hub users for an admin hub connection via IPC.
  *
- * @returns Team hub list, loading/error flags, and a reload callback.
+ * @param hubId - Team hub connection id with an admin token, or null to skip loading.
+ * @returns User list, loading/error flags, and a reload callback.
  */
-export function useTeamHubs(): TeamHubsState {
-  const [teamHubs, setTeamHubs] = useState<TeamHub[]>([]);
-  const [loading, setLoading] = useState(true);
+export function useTeamHubUsers(hubId: string | null): TeamHubUsersState {
+  const [users, setUsers] = useState<HubUserRecord[]>([]);
+  const [loading, setLoading] = useState(Boolean(hubId));
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -50,10 +45,11 @@ export function useTeamHubs(): TeamHubsState {
     setReloadToken((token) => token + 1);
   }, []);
 
-  /**
-   * Fetches team hubs; ignores results after cleanup or a newer run.
-   */
   useEffect(() => {
+    if (!hubId) {
+      return;
+    }
+
     let cancelled = false;
 
     void Promise.resolve()
@@ -61,11 +57,11 @@ export function useTeamHubs(): TeamHubsState {
         if (cancelled) return;
         setLoading(true);
         setError(null);
-        return window.api.listTeamHubs();
+        return window.api.listTeamHubUsers(hubId);
       })
       .then((result) => {
         if (cancelled || result === undefined) return;
-        setTeamHubs(result);
+        setUsers(result);
         setLoading(false);
       })
       .catch((err: unknown) => {
@@ -77,7 +73,11 @@ export function useTeamHubs(): TeamHubsState {
     return () => {
       cancelled = true;
     };
-  }, [reloadToken]);
+  }, [hubId, reloadToken]);
 
-  return { teamHubs, loading, error, reload, reloadToken };
+  if (!hubId) {
+    return { users: [], loading: false, error: null, reload };
+  }
+
+  return { users, loading, error, reload };
 }

@@ -269,6 +269,19 @@ export const teamHub = z.object({
 }) satisfies z.ZodType<TeamHub>;
 
 /**
+ * Zod schema for partial Team Hub user updates sent over IPC.
+ */
+export const updateHubUserInput = z.object({
+  name: z.string().trim().min(1).optional(),
+  role: z.enum(['admin', 'user']).optional(),
+  collectionAccess: z.array(z.string()).optional(),
+  environmentAccess: z.array(z.string()).optional(),
+  llmAccess: z.boolean().optional(),
+  llmModels: z.array(z.string()).optional(),
+  llmMonthlyTokenLimit: z.number().int().nonnegative().nullable().optional()
+});
+
+/**
  * Zod schema for persisted AI provider API keys.
  */
 export const aiSettings = z.object({
@@ -369,6 +382,8 @@ export const ipcArgSchemas = {
   aiSettings: z.tuple([aiSettings]),
   databaseConnection: z.tuple([databaseConnection]),
   teamHub: z.tuple([teamHub]),
+  teamHubUserUpdate: z.tuple([connectionId, connectionId, updateHubUserInput]),
+  teamHubUserDelete: z.tuple([connectionId, connectionId]),
   providerSync: z.tuple([connectionId]),
   setEditorTab: z.tuple([storageKey, editorTab]),
   sidebarExpansionSet: z.tuple([sidebarExpansion]),

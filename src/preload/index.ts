@@ -34,6 +34,10 @@ import type {
   SendResult,
   SaveTextFileResult,
   TeamHub,
+  TeamHubSessionScanResult,
+  HubUserRecord,
+  TeamHubAdminResourceOptions,
+  UpdateHubUserInput,
   ShortcutBinding,
   ShortcutOverrides,
   SidebarExpansionState,
@@ -606,6 +610,56 @@ function deleteTeamHub(id: string): Promise<TeamHub[]> {
 }
 
 /**
+ * Probes configured team hubs for session capabilities via IPC.
+ */
+function scanTeamHubSessions(): Promise<TeamHubSessionScanResult[]> {
+  return ipcRenderer.invoke('teamHubs:scanSessions');
+}
+
+/**
+ * Lists Team Hub user accounts via IPC using an admin token on the given hub.
+ *
+ * @param hubId - Team hub connection id with an admin token.
+ */
+function listTeamHubUsers(hubId: string): Promise<HubUserRecord[]> {
+  return ipcRenderer.invoke('teamHubs:listUsers', hubId);
+}
+
+/**
+ * Updates a Team Hub user account via IPC using an admin token on the given hub.
+ *
+ * @param hubId - Team hub connection id with an admin token.
+ * @param userId - User account identifier to update.
+ * @param input - Partial user fields to apply.
+ */
+function updateTeamHubUser(
+  hubId: string,
+  userId: string,
+  input: UpdateHubUserInput
+): Promise<HubUserRecord> {
+  return ipcRenderer.invoke('teamHubs:updateUser', hubId, userId, input);
+}
+
+/**
+ * Deletes a Team Hub user account via IPC using an admin token on the given hub.
+ *
+ * @param hubId - Team hub connection id with an admin token.
+ * @param userId - User account identifier to delete.
+ */
+function deleteTeamHubUser(hubId: string, userId: string): Promise<void> {
+  return ipcRenderer.invoke('teamHubs:deleteUser', hubId, userId);
+}
+
+/**
+ * Loads admin resource options for user management forms via IPC.
+ *
+ * @param hubId - Team hub connection id with an admin token.
+ */
+function listTeamHubAdminResourceOptions(hubId: string): Promise<TeamHubAdminResourceOptions> {
+  return ipcRenderer.invoke('teamHubs:listAdminResourceOptions', hubId);
+}
+
+/**
  * Re-reads collection data from a single provider via IPC.
  *
  * @param connectionId - Provider connection id to sync.
@@ -911,6 +965,11 @@ const api: Api = {
   listTeamHubs,
   saveTeamHub,
   deleteTeamHub,
+  scanTeamHubSessions,
+  listTeamHubUsers,
+  updateTeamHubUser,
+  deleteTeamHubUser,
+  listTeamHubAdminResourceOptions,
   syncProvider,
   getActiveDatabaseId,
   setActiveDatabaseId,

@@ -1,15 +1,66 @@
 import { useEffect, useState, type JSX } from 'react';
 import type { TeamHub } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
-import { useTeamHubs } from '#/renderer/src/hooks/useTeamHubs';
+import { FaIcon } from '#/renderer/src/components/FaIcon';
+import { faCircleCheck } from '#/renderer/src/fontawesome';
 import { createBlankTeamHub, validateTeamHubForm } from './constants';
 import { TeamHubForm } from './TeamHubForm';
+
+interface Props {
+  /**
+   * Configured team hubs from settings.
+   */
+  teamHubs: TeamHub[];
+
+  /**
+   * True while the hub list is loading from IPC.
+   */
+  loading: boolean;
+
+  /**
+   * Bootstrap error from loading team hubs, if any.
+   */
+  bootstrapError: string | null;
+
+  /**
+   * Reloads the team hub list from IPC.
+   */
+  reload: () => void;
+
+  /**
+   * When true, shows the Manage team button.
+   */
+  showManageTeam: boolean;
+
+  /**
+   * Hub ids whose tokens report management API capabilities.
+   */
+  adminHubIds: Set<string>;
+
+  /**
+   * True while admin capability scanning is in flight.
+   */
+  scanning: boolean;
+
+  /**
+   * Opens the manage team view.
+   */
+  onManageTeam: () => void;
+}
 
 /**
  * Lists configured team hubs with add, edit, and delete actions.
  */
-export function TeamHubList(): JSX.Element {
-  const { teamHubs, loading, error: bootstrapError, reload } = useTeamHubs();
+export function TeamHubList({
+  teamHubs,
+  loading,
+  bootstrapError,
+  reload,
+  showManageTeam,
+  adminHubIds,
+  scanning,
+  onManageTeam
+}: Props): JSX.Element {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [editingHub, setEditingHub] = useState<TeamHub | null>(null);
@@ -141,14 +192,21 @@ export function TeamHubList(): JSX.Element {
               Connect to HarborClient Team Hub instances for shared collections and environments.
             </p>
           </div>
-          <Button
-            type="button"
-            className="shrink-0 whitespace-nowrap"
-            disabled={loading}
-            onClick={handleAdd}
-          >
-            Add team hub
-          </Button>
+          <div className="flex shrink-0 items-center gap-2">
+            {showManageTeam && (
+              <Button type="button" variant="secondary" onClick={onManageTeam}>
+                Manage team
+              </Button>
+            )}
+            <Button
+              type="button"
+              className="whitespace-nowrap"
+              disabled={loading}
+              onClick={handleAdd}
+            >
+              Add team hub
+            </Button>
+          </div>
         </div>
 
         {loading ? (
@@ -170,8 +228,17 @@ export function TeamHubList(): JSX.Element {
                 className="flex items-center justify-between gap-3 rounded-md border border-separator px-3 py-2"
               >
                 <div className="min-w-0">
-                  <div className="truncate text-[14px] font-medium text-text">
-                    {hub.name || 'Untitled'}
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="truncate text-[14px] font-medium text-text">
+                      {hub.name || 'Untitled'}
+                    </span>
+                    {!scanning && adminHubIds.has(hub.id) && (
+                      <FaIcon
+                        icon={faCircleCheck}
+                        className="h-3.5 w-3.5 shrink-0 text-success"
+                        title="Admin token"
+                      />
+                    )}
                   </div>
                   <span className="truncate text-[14px] text-muted">{hub.baseUrl}</span>
                 </div>

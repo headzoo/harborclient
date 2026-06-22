@@ -17,6 +17,8 @@ import {
   removeSlotForConnection
 } from '#/main/settings/databaseSlots';
 import { deleteTeamHub, listTeamHubs, saveTeamHub } from '#/main/settings/teamHubSettings';
+import { scanTeamHubSessions } from '#/main/settings/teamHubSessionScan';
+import { HarborServerClient } from '#/main/server/HarborServerClient';
 import { getAiSettings, setAiSettings } from '#/main/settings/aiSettings';
 import { getGeneralSettings, setGeneralSettings } from '#/main/settings/generalSettings';
 import {
@@ -119,6 +121,57 @@ export function registerSettingsHandlers(db: IDatabase): void {
 
   // Lists configured team hubs.
   handle('teamHubs:list', ipcArgSchemas.none, () => listTeamHubs());
+
+  // Probes configured team hubs for session capabilities.
+  handle('teamHubs:scanSessions', ipcArgSchemas.none, () => scanTeamHubSessions(listTeamHubs()));
+
+  // Lists Team Hub user accounts using an admin token on the given hub connection.
+  handle('teamHubs:listUsers', ipcArgSchemas.connectionId, async (_event, hubId) => {
+    const hub = listTeamHubs().find((entry) => entry.id === hubId);
+    if (!hub) {
+      throw new Error(`Unknown team hub: ${hubId}`);
+    }
+
+    const client = new HarborServerClient({ baseUrl: hub.baseUrl, token: hub.token });
+    return client.listAdminUsers();
+  });
+
+  // Updates a Team Hub user account using an admin token on the given hub connection.
+  handle(
+    'teamHubs:updateUser',
+    ipcArgSchemas.teamHubUserUpdate,
+    async (_event, hubId, userId, input) => {
+      const hub = listTeamHubs().find((entry) => entry.id === hubId);
+      if (!hub) {
+        throw new Error(`Unknown team hub: ${hubId}`);
+      }
+
+      const client = new HarborServerClient({ baseUrl: hub.baseUrl, token: hub.token });
+      return client.updateAdminUser(userId, input);
+    }
+  );
+
+  // Deletes a Team Hub user account using an admin token on the given hub connection.
+  handle('teamHubs:deleteUser', ipcArgSchemas.teamHubUserDelete, async (_event, hubId, userId) => {
+    const hub = listTeamHubs().find((entry) => entry.id === hubId);
+    if (!hub) {
+      throw new Error(`Unknown team hub: ${hubId}`);
+    }
+
+    const client = new HarborServerClient({ baseUrl: hub.baseUrl, token: hub.token });
+    await client.deleteAdminUser(userId);
+  });
+
+  // Loads admin resource options for user management forms on the given hub connection.
+  handle('teamHubs:listAdminResourceOptions', ipcArgSchemas.connectionId, async (_event, hubId) => {
+    const hub = listTeamHubs().find((entry) => entry.id === hubId);
+    if (!hub) {
+      throw new Error(`Unknown team hub: ${hubId}`);
+    }
+
+    const client = new HarborServerClient({ baseUrl: hub.baseUrl, token: hub.token });
+    return client.listAdminResourceOptions();
+  });
 
   // Creates or updates a team hub.
   handle('teamHubs:save', ipcArgSchemas.teamHub, async (_event, hub) => {
