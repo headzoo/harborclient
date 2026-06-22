@@ -23,6 +23,6 @@ vi.mock('electron', () => ({
     encryptString: vi.fn((value: string) => Buffer.from(value, 'utf8')),
     decryptString: vi.fn((buffer: Buffer) => buffer.toString('utf8'))
   },
-  BrowserWindow: class { },
+  BrowserWindow: class {},
   screen: { getAllDisplays: () => [] }
 }));

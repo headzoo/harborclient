@@ -299,13 +299,13 @@ function getSidebarRequest(state: RootState): {
  */
 function getActiveRequest(state: RootState):
   | {
-    tabId: string;
-    name: string;
-    method: string;
-    url: string;
-    savedRequestId: number | null;
-    isDirty: boolean;
-  }
+      tabId: string;
+      name: string;
+      method: string;
+      url: string;
+      savedRequestId: number | null;
+      isDirty: boolean;
+    }
   | { error: string } {
   const tab = selectActiveTab(state);
   if (!tab) {
@@ -329,18 +329,18 @@ function getActiveRequest(state: RootState):
  */
 async function getActiveRequestDetails(state: RootState): Promise<
   | {
-    method: string;
-    url: string;
-    headers: KeyValue[];
-    params: KeyValue[];
-    auth: AuthConfig;
-    body: string;
-    body_type: string;
-    pre_request_script: string;
-    post_request_script: string;
-    comment: string;
-    cookies: KeyValue[];
-  }
+      method: string;
+      url: string;
+      headers: KeyValue[];
+      params: KeyValue[];
+      auth: AuthConfig;
+      body: string;
+      body_type: string;
+      pre_request_script: string;
+      post_request_script: string;
+      comment: string;
+      cookies: KeyValue[];
+    }
   | { error: string }
 > {
   const tab = selectActiveTab(state);
@@ -586,16 +586,16 @@ async function updateActiveRequest(
   ctx: AiToolContext
 ): Promise<
   | {
-    ok: true;
-    changedFields: string[];
-    isDirty: boolean;
-    summary: {
-      name: string;
-      method: string;
-      url: string;
-      body_type: string;
-    };
-  }
+      ok: true;
+      changedFields: string[];
+      isDirty: boolean;
+      summary: {
+        name: string;
+        method: string;
+        url: string;
+        body_type: string;
+      };
+    }
   | { error: string }
 > {
   const tab = selectActiveTab(ctx.getState());
