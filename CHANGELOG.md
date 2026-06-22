@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- refactor: update RowActionsMenu to support grouped menu items. (`98748c5`)
+
 ## 1.5.3 - 2026-06-22
 
 - feat: implement splash screen functionality during application startup. (`96085d3`)

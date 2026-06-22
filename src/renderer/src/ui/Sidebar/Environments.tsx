@@ -65,25 +65,32 @@ export function Environments({
               menuId={`environment-${environment.id}`}
               openMenuId={openMenuId}
               onOpenChange={setOpenMenuId}
-              items={[
-                { label: 'Settings', onSelect: () => onConfigureEnvironment(environment.id) },
-                {
-                  label: 'Delete',
-                  variant: 'danger',
-                  onSelect: () => {
-                    void (async () => {
-                      const confirmed = await confirm({
-                        title: 'Delete environment',
-                        message: `Delete environment "${environment.name}"?`,
-                        confirmLabel: 'Delete',
-                        variant: 'danger'
-                      });
-                      if (confirmed) {
-                        void onDeleteEnvironment(environment.id);
-                      }
-                    })();
+              groups={[
+                [
+                  {
+                    label: 'Settings',
+                    onSelect: () => onConfigureEnvironment(environment.id)
                   }
-                }
+                ],
+                [
+                  {
+                    label: 'Delete',
+                    variant: 'danger',
+                    onSelect: () => {
+                      void (async () => {
+                        const confirmed = await confirm({
+                          title: 'Delete environment',
+                          message: `Delete environment "${environment.name}"?`,
+                          confirmLabel: 'Delete',
+                          variant: 'danger'
+                        });
+                        if (confirmed) {
+                          void onDeleteEnvironment(environment.id);
+                        }
+                      })();
+                    }
+                  }
+                ]
               ]}
             />
           </div>

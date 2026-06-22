@@ -77,11 +77,11 @@ export function RequestRow({
   const moveItems =
     folders.length > 0
       ? [
-          {
-            label: 'Move to root',
-            onSelect: () => onMoveRequest(req.id, null)
-          }
-        ]
+        {
+          label: 'Move to root',
+          onSelect: () => onMoveRequest(req.id, null)
+        }
+      ]
       : [];
 
   return (
@@ -101,33 +101,37 @@ export function RequestRow({
         menuId={`request-${req.id}`}
         openMenuId={openMenuId}
         onOpenChange={onOpenChange}
-        items={[
-          ...moveItems,
-          {
-            label: 'Duplicate',
-            onSelect: () => void onDuplicateRequest(req)
-          },
-          {
-            label: 'Export',
-            onSelect: () => void onExportRequest(req)
-          },
-          {
-            label: 'Delete',
-            variant: 'danger' as const,
-            onSelect: () => {
-              void (async () => {
-                const confirmed = await confirm({
-                  title: 'Delete request',
-                  message: `Delete request "${req.name}"?`,
-                  confirmLabel: 'Delete',
-                  variant: 'danger'
-                });
-                if (confirmed) {
-                  void onDeleteRequest(req.id);
-                }
-              })();
+        groups={[
+          ...(moveItems.length > 0 ? [moveItems] : []),
+          [
+            {
+              label: 'Duplicate',
+              onSelect: () => void onDuplicateRequest(req)
+            },
+            {
+              label: 'Export',
+              onSelect: () => void onExportRequest(req)
             }
-          }
+          ],
+          [
+            {
+              label: 'Delete',
+              variant: 'danger' as const,
+              onSelect: () => {
+                void (async () => {
+                  const confirmed = await confirm({
+                    title: 'Delete request',
+                    message: `Delete request "${req.name}"?`,
+                    confirmLabel: 'Delete',
+                    variant: 'danger'
+                  });
+                  if (confirmed) {
+                    void onDeleteRequest(req.id);
+                  }
+                })();
+              }
+            }
+          ]
         ]}
       />
     </SortableRow>

@@ -3,7 +3,7 @@ import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faBars } from '#/renderer/src/fontawesome';
 import { iconButton } from '#/renderer/src/ui/shared/classes';
 
-type MenuItem = {
+export type MenuItem = {
   label: string;
   onSelect: () => void;
   variant?: 'default' | 'danger';
@@ -11,9 +11,10 @@ type MenuItem = {
 
 interface Props {
   /**
-   * Menu entries shown when the trigger is open.
+   * Grouped menu entries shown when the trigger is open. Each inner array is
+   * one visual group separated by a divider line.
    */
-  items: MenuItem[];
+  groups: MenuItem[][];
 
   /**
    * Unique id for this menu instance (e.g. "collection-3").
@@ -34,9 +35,23 @@ interface Props {
 }
 
 /**
+ * Tailwind classes for a single menu item button.
+ *
+ * @param variant - Visual variant for default or destructive actions.
+ */
+function menuItemClass(variant: MenuItem['variant']): string {
+  const base =
+    'block w-full cursor-pointer border-none bg-transparent px-3.5 py-1.5 text-left text-[13px] app-no-drag';
+
+  return variant === 'danger'
+    ? `${base} text-text hover:bg-danger/15 hover:text-danger`
+    : `${base} text-text hover:bg-selection`;
+}
+
+/**
  * Hamburger-triggered dropdown for row-level actions (rename, delete, etc.).
  */
-export function RowActionsMenu({ items, menuId, openMenuId, onOpenChange }: Props): JSX.Element {
+export function RowActionsMenu({ groups, menuId, openMenuId, onOpenChange }: Props): JSX.Element {
   const isOpen = openMenuId === menuId;
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -84,26 +99,30 @@ export function RowActionsMenu({ items, menuId, openMenuId, onOpenChange }: Prop
       {isOpen && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-10 mt-0.5 min-w-[120px] rounded-md border border-separator bg-surface py-0.5 shadow-md app-no-drag"
+          className="absolute right-0 top-full z-10 mt-0.5 min-w-[120px] rounded-md border border-separator bg-surface py-1 shadow-md app-no-drag"
         >
-          {items.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              role="menuitem"
-              className={
-                item.variant === 'danger'
-                  ? 'block w-full cursor-pointer border-none bg-transparent px-3 py-1 text-left text-[13px] text-text hover:bg-danger/15 hover:text-danger app-no-drag'
-                  : 'block w-full cursor-pointer border-none bg-transparent px-3 py-1 text-left text-[13px] text-text hover:bg-selection app-no-drag'
-              }
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpenChange(null);
-                item.onSelect();
-              }}
+          {groups.map((group, groupIndex) => (
+            <div
+              key={groupIndex}
+              role="group"
+              className={groupIndex > 0 ? 'border-t border-separator' : undefined}
             >
-              {item.label}
-            </button>
+              {group.map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  role="menuitem"
+                  className={menuItemClass(item.variant)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenChange(null);
+                    item.onSelect();
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
           ))}
         </div>
       )}

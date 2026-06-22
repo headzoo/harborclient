@@ -620,47 +620,61 @@ export function Collections({
                     menuId={`collection-${collection.id}`}
                     openMenuId={openMenuId}
                     onOpenChange={setOpenMenuId}
-                    items={[
-                      { label: 'Settings', onSelect: () => onConfigureCollection(collection.id) },
-                      { label: 'New Folder', onSelect: () => void onNewFolder(collection.id) },
-                      {
-                        label: 'New Request',
-                        onSelect: () => void onNewRequestInCollection(collection.id)
-                      },
-                      {
-                        label: 'Import Request',
-                        onSelect: () => void onImportRequest(collection.id)
-                      },
-                      { label: 'Export', onSelect: () => void onExportCollection(collection.id) },
-                      {
-                        label: 'Duplicate',
-                        onSelect: () => void onDuplicateCollection(collection.id)
-                      },
-                      ...(canInvite
-                        ? [
+                    groups={[
+                      [
+                        {
+                          label: 'Settings',
+                          onSelect: () => onConfigureCollection(collection.id)
+                        }
+                      ],
+                      [
+                        { label: 'New Folder', onSelect: () => void onNewFolder(collection.id) },
+                        {
+                          label: 'New Request',
+                          onSelect: () => void onNewRequestInCollection(collection.id)
+                        },
+                        {
+                          label: 'Import Request',
+                          onSelect: () => void onImportRequest(collection.id)
+                        }
+                      ],
+                      [
+                        {
+                          label: 'Export',
+                          onSelect: () => void onExportCollection(collection.id)
+                        },
+                        {
+                          label: 'Duplicate',
+                          onSelect: () => void onDuplicateCollection(collection.id)
+                        },
+                        ...(canInvite
+                          ? [
                             {
                               label: 'Invite',
                               onSelect: () => onInviteCollection(collection.id, collection.name)
                             }
                           ]
-                        : []),
-                      {
-                        label: 'Delete',
-                        variant: 'danger',
-                        onSelect: () => {
-                          void (async () => {
-                            const confirmed = await confirm({
-                              title: 'Delete collection',
-                              message: `Delete collection "${collection.name}"?`,
-                              confirmLabel: 'Delete',
-                              variant: 'danger'
-                            });
-                            if (confirmed) {
-                              void onDeleteCollection(collection.id);
-                            }
-                          })();
+                          : [])
+                      ],
+                      [
+                        {
+                          label: 'Delete',
+                          variant: 'danger',
+                          onSelect: () => {
+                            void (async () => {
+                              const confirmed = await confirm({
+                                title: 'Delete collection',
+                                message: `Delete collection "${collection.name}"?`,
+                                confirmLabel: 'Delete',
+                                variant: 'danger'
+                              });
+                              if (confirmed) {
+                                void onDeleteCollection(collection.id);
+                              }
+                            })();
+                          }
                         }
-                      }
+                      ]
                     ]}
                   />
                 </SortableRow>
@@ -779,39 +793,45 @@ export function Collections({
                                     menuId={`folder-${folder.id}`}
                                     openMenuId={openMenuId}
                                     onOpenChange={setOpenMenuId}
-                                    items={[
-                                      {
-                                        label: 'New Request',
-                                        onSelect: () =>
-                                          void onNewRequestInFolder(collection.id, folder.id)
-                                      },
-                                      {
-                                        label: 'Import Request',
-                                        onSelect: () =>
-                                          void onImportRequest(collection.id, folder.id)
-                                      },
-                                      {
-                                        label: 'Rename',
-                                        onSelect: () =>
-                                          void onRenameFolder(folder.id, collection.id)
-                                      },
-                                      {
-                                        label: 'Delete',
-                                        variant: 'danger',
-                                        onSelect: () =>
-                                          void onDeleteFolder(
-                                            folder.id,
-                                            collection.id,
-                                            folderRequests.map((req) => req.id)
-                                          )
-                                      }
+                                    groups={[
+                                      [
+                                        {
+                                          label: 'New Request',
+                                          onSelect: () =>
+                                            void onNewRequestInFolder(collection.id, folder.id)
+                                        },
+                                        {
+                                          label: 'Import Request',
+                                          onSelect: () =>
+                                            void onImportRequest(collection.id, folder.id)
+                                        }
+                                      ],
+                                      [
+                                        {
+                                          label: 'Rename',
+                                          onSelect: () =>
+                                            void onRenameFolder(folder.id, collection.id)
+                                        }
+                                      ],
+                                      [
+                                        {
+                                          label: 'Delete',
+                                          variant: 'danger',
+                                          onSelect: () =>
+                                            void onDeleteFolder(
+                                              folder.id,
+                                              collection.id,
+                                              folderRequests.map((req) => req.id)
+                                            )
+                                        }
+                                      ]
                                     ]}
                                   />
                                 </SortableRow>
                               </DropZone>
 
                               {folderExpanded && (
-                                <div className="ml-4 flex flex-col gap-0.5 py-0.5">
+                                <div className="ml-6 flex flex-col gap-0.5 py-0.5">
                                   <SortableContext
                                     items={folderRequestIds}
                                     strategy={verticalListSortingStrategy}
@@ -858,8 +878,8 @@ export function Collections({
 
                     <DragOverlay>
                       {dragCollectionId === collection.id &&
-                      activeDragKind === 'request' &&
-                      activeDragRequest ? (
+                        activeDragKind === 'request' &&
+                        activeDragRequest ? (
                         <div className="flex items-center gap-1.5 rounded border border-separator bg-surface px-2 py-1 shadow-md">
                           <span
                             className={`shrink-0 rounded px-1 py-px text-[10px] font-semibold ${METHOD_CLASSES[activeDragRequest.method.toLowerCase()] ?? 'bg-info text-white'}`}
