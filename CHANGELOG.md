@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat: update Vitest configuration to include setup files. (`8721783`)
 - feat: add markdown rendering to message bubbles. (`09694af`)
 - feat: add AI assistant feature and update documentation. (`ce70937`)
 - feat: transition from service hubs to team hubs and add jmespath dependency. (`c4b2d7b`)
