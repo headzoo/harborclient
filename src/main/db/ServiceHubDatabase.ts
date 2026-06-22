@@ -142,7 +142,7 @@ export class ServiceHubDatabase implements IDatabase {
   constructor(
     private readonly client: HarborServerClient,
     private readonly idMap: ServiceHubIdMap
-  ) { }
+  ) {}
 
   /**
    * Verifies connectivity to HarborClient Server before the router mounts this backend.

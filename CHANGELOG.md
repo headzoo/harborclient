@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- refactor: standardize constructor formatting in database classes. (`b3d76a8`)
 - feat: implement sync functionality for providers. (`2686d5a`)
 - feat: enhance service hubs integration and provider selection. (`ec321fd`)
 - feat: add service hubs functionality. (`70c0c38`)

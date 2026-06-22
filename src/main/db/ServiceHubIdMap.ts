@@ -19,7 +19,7 @@ export class ServiceHubIdMap {
   /**
    * @param dbPath - Absolute path to the SQLite file (`service-hub-<hubId>.db`).
    */
-  constructor(private readonly dbPath: string) { }
+  constructor(private readonly dbPath: string) {}
 
   /**
    * Opens the SQLite database and ensures the id map schema exists.
