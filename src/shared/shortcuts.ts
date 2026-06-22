@@ -14,6 +14,8 @@ export type ShortcutId =
   | 'copy'
   | 'paste'
   | 'select-all'
+  | 'toggle-sidebar'
+  | 'toggle-ai-sidebar'
   | 'toggle-fullscreen'
   | 'zoom-in'
   | 'zoom-out';
@@ -152,6 +154,20 @@ export const SHORTCUT_DEFS: ShortcutDef[] = [
     defaultAccelerator: 'CmdOrCtrl+A',
     kind: 'role',
     role: 'selectAll'
+  },
+  {
+    id: 'toggle-sidebar',
+    label: 'Toggle sidebar',
+    defaultAccelerator: 'CmdOrCtrl+B',
+    kind: 'action',
+    actionId: 'toggle-sidebar'
+  },
+  {
+    id: 'toggle-ai-sidebar',
+    label: 'Toggle AI sidebar',
+    defaultAccelerator: 'CmdOrCtrl+Shift+B',
+    kind: 'action',
+    actionId: 'toggle-ai-sidebar'
   },
   {
     id: 'toggle-fullscreen',

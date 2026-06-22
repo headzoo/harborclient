@@ -108,12 +108,14 @@ export function buildMenu(
           label: 'Sidebar',
           type: 'checkbox',
           checked: sidebarVisible,
+          accelerator: acceleratorFor(accelerators, 'toggle-sidebar'),
           click: () => sendMenuAction(window, 'toggle-sidebar')
         },
         {
           label: 'AI',
           type: 'checkbox',
           checked: aiSidebarVisible,
+          accelerator: acceleratorFor(accelerators, 'toggle-ai-sidebar'),
           click: () => sendMenuAction(window, 'toggle-ai-sidebar')
         },
         { type: 'separator' },

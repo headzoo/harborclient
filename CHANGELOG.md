@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat: add keyboard shortcuts for toggling sidebars. (`8d9a916`)
 - fix: update font sizes for improved readability in chat components. (`86de51d`)
 
 ## 1.5.8 - 2026-06-22
