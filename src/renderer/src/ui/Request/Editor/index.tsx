@@ -1,7 +1,7 @@
 import { useMemo, type JSX } from 'react';
 import type { KeyValue, Variable } from '#/shared/types';
 import { applyParamsToUrl, mergeParamsFromUrl } from '#/shared/queryParams';
-import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
+import { SegmentedTabs, SegmentedTabsGroup } from '#/renderer/src/components/SegmentedTabs';
 import type { RequestDraft } from '#/renderer/src/store/drafts';
 import { Name } from './Name';
 import { TabContent } from './TabContent';
@@ -160,32 +160,31 @@ export function Editor({
         onEditVariables={onEditVariables}
       />
 
-      <div className="mt-2">
-        <SegmentedTabs
-          value={tab}
-          onChange={setTab}
-          tabs={[
-            { value: 'params', label: 'Params', indicator: tabIndicators.params },
-            { value: 'headers', label: 'Headers', indicator: tabIndicators.headers },
-            { value: 'auth', label: 'Authorization', indicator: tabIndicators.auth },
-            { value: 'cookies', label: 'Cookies', indicator: tabIndicators.cookies },
-            { value: 'body', label: 'Body', hidden: !showBody, indicator: tabIndicators.body },
-            { value: 'pre', label: 'PreRequest', indicator: tabIndicators.pre },
-            { value: 'post', label: 'PostRequest', indicator: tabIndicators.post },
-            { value: 'comment', label: 'Comment', indicator: tabIndicators.comment }
-          ]}
-        />
-      </div>
+      <SegmentedTabsGroup value={tab} onChange={setTab} ariaLabel="Request editor sections">
+        <div className="mt-2">
+          <SegmentedTabs
+            tabs={[
+              { value: 'params', label: 'Params', indicator: tabIndicators.params },
+              { value: 'headers', label: 'Headers', indicator: tabIndicators.headers },
+              { value: 'auth', label: 'Authorization', indicator: tabIndicators.auth },
+              { value: 'cookies', label: 'Cookies', indicator: tabIndicators.cookies },
+              { value: 'body', label: 'Body', hidden: !showBody, indicator: tabIndicators.body },
+              { value: 'pre', label: 'PreRequest', indicator: tabIndicators.pre },
+              { value: 'post', label: 'PostRequest', indicator: tabIndicators.post },
+              { value: 'comment', label: 'Comment', indicator: tabIndicators.comment }
+            ]}
+          />
+        </div>
 
-      <TabContent
-        tab={tab}
-        draft={draft}
-        showBody={showBody}
-        update={update}
-        onParamsChange={handleParamsChange}
-        variables={variables}
-        onEditVariables={onEditVariables}
-      />
+        <TabContent
+          draft={draft}
+          showBody={showBody}
+          update={update}
+          onParamsChange={handleParamsChange}
+          variables={variables}
+          onEditVariables={onEditVariables}
+        />
+      </SegmentedTabsGroup>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState, type JSX } from 'react';
 import type { DatabaseConnection } from '#/shared/types';
 import { useDatabaseConnections } from '#/renderer/src/hooks/useDatabaseConnections';
-import { primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
+import { Button } from '#/renderer/src/components/Button';
 import { createBlankConnection, providerLabel } from './constants';
 import { DatabaseConnectionForm } from './DatabaseConnectionForm';
 
@@ -158,14 +158,14 @@ export function DatabasesSection(): JSX.Element {
               imports.
             </p>
           </div>
-          <button
+          <Button
             type="button"
-            className={`${primaryButton} shrink-0 whitespace-nowrap`}
+            className="shrink-0 whitespace-nowrap"
             disabled={loading}
             onClick={handleAdd}
           >
             Add database
-          </button>
+          </Button>
         </div>
 
         {loading ? (
@@ -173,9 +173,9 @@ export function DatabasesSection(): JSX.Element {
         ) : bootstrapError ? (
           <div className="flex flex-wrap items-center gap-2">
             <p className="mb-0 text-[12px] text-danger">{bootstrapError}</p>
-            <button type="button" className={secondaryButton} onClick={reloadConnections}>
+            <Button type="button" variant="secondary" onClick={reloadConnections}>
               Retry
-            </button>
+            </Button>
           </div>
         ) : (
           <ul className="m-0 flex list-none flex-col gap-2 p-0">
@@ -210,29 +210,29 @@ export function DatabasesSection(): JSX.Element {
 
                   <div className="flex shrink-0 items-center gap-2">
                     {!isActive && (
-                      <button
+                      <Button
                         type="button"
-                        className={secondaryButton}
+                        variant="secondary"
                         onClick={() => void handleSetActive(connection.id)}
                       >
                         Set active
-                      </button>
+                      </Button>
                     )}
-                    <button
+                    <Button
                       type="button"
-                      className={secondaryButton}
+                      variant="secondary"
                       onClick={() => handleEdit(connection)}
                     >
                       Edit
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
-                      className={secondaryButton}
+                      variant="secondary"
                       disabled={cannotDelete}
                       onClick={() => setDeletingConnection(connection)}
                     >
                       Delete
-                    </button>
+                    </Button>
                   </div>
                 </li>
               );
@@ -277,22 +277,17 @@ export function DatabasesSection(): JSX.Element {
             {error && <p className="mt-4 text-[12px] text-danger">{error}</p>}
 
             <div className="mt-4 flex justify-end gap-2">
-              <button
+              <Button
                 type="button"
-                className={secondaryButton}
+                variant="secondary"
                 disabled={saving}
                 onClick={handleCancelEdit}
               >
                 Cancel
-              </button>
-              <button
-                type="button"
-                className={primaryButton}
-                disabled={saving}
-                onClick={() => void handleSave()}
-              >
+              </Button>
+              <Button type="button" disabled={saving} onClick={() => void handleSave()}>
                 {saving ? 'Saving…' : 'Save'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -320,20 +315,16 @@ export function DatabasesSection(): JSX.Element {
             {deletingConnection.id !== activeId && <div className="mb-4" />}
 
             <div className="flex justify-end gap-2">
-              <button
-                type="button"
-                className={secondaryButton}
-                onClick={() => setDeletingConnection(null)}
-              >
+              <Button type="button" variant="secondary" onClick={() => setDeletingConnection(null)}>
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className={`${secondaryButton} text-danger hover:bg-danger/15`}
+                variant="secondaryDanger"
                 onClick={() => void handleDelete(deletingConnection.id)}
               >
                 Delete
-              </button>
+              </Button>
             </div>
           </div>
         </div>

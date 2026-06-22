@@ -7,7 +7,8 @@ import {
   setInviteRecipientKid
 } from '#/renderer/src/store/slices/modalsSlice';
 import { generateInviteToken } from '#/renderer/src/store/thunks';
-import { field, primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
+import { Button } from '#/renderer/src/components/Button';
+import { field } from '#/renderer/src/ui/shared/classes';
 import { Modal } from '#/renderer/src/ui/shared/Modal';
 
 /**
@@ -27,8 +28,10 @@ export function InviteModal(): JSX.Element | null {
   if (!invite) return null;
 
   return (
-    <Modal onClose={handleClose} className="w-[32rem]">
-      <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">Invite to collection</h2>
+    <Modal onClose={handleClose} className="w-[32rem]" labelledBy="invite-modal-title">
+      <h2 id="invite-modal-title" className="m-0 mb-1 text-[13px] font-semibold text-text">
+        Invite to collection
+      </h2>
       <p className="mb-3 text-[12px] text-muted">
         Create an encrypted invite for &ldquo;{invite.collectionName}&rdquo;. Only the selected
         recipient can decrypt it. Invites expire after seven days.
@@ -70,21 +73,19 @@ export function InviteModal(): JSX.Element | null {
         />
       ) : null}
       <div className="mt-4 flex justify-end gap-2">
-        <button className={secondaryButton} onClick={handleClose}>
+        <Button variant="secondary" onClick={handleClose}>
           Close
-        </button>
+        </Button>
         {!invite.token && invite.trustedKeys.length > 0 && (
-          <button
-            className={primaryButton}
+          <Button
             disabled={!invite.recipientKid || invite.tokenLoading || invite.trustedKeysLoading}
             onClick={() => void dispatch(generateInviteToken())}
           >
             Generate invite
-          </button>
+          </Button>
         )}
         {invite.token && (
-          <button
-            className={primaryButton}
+          <Button
             disabled={invite.tokenLoading}
             onClick={() => {
               void navigator.clipboard.writeText(invite.token).then(
@@ -94,7 +95,7 @@ export function InviteModal(): JSX.Element | null {
             }}
           >
             Copy
-          </button>
+          </Button>
         )}
       </div>
     </Modal>

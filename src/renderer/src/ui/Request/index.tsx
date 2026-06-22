@@ -19,8 +19,8 @@ import {
 import { setActiveDraft, newTab, setActiveTab } from '#/renderer/src/store/slices/tabsSlice';
 import { setActiveEnvironmentId } from '#/renderer/src/store/slices/environmentsSlice';
 import { sendRequest, cancelRequest, closeRequestTab } from '#/renderer/src/store/thunks';
+import { Button } from '#/renderer/src/components/Button';
 import { ResizeHandle, useResizable } from '#/renderer/src/components/Resizable';
-import { primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
 import { Editor } from './Editor';
 import { Response } from './Response';
 import { TabBar } from './TabBar';
@@ -72,8 +72,14 @@ export function Request({ onEditVariables }: Props): JSX.Element {
   const selectedCollectionId = useAppSelector(selectSelectedCollectionId);
 
   const [closeTabPrompt, setCloseTabPrompt] = useState<CloseTabPrompt | null>(null);
-  const splitRef = useRef<HTMLDivElement>(null);
-  const { size: editorHeight, onResizeStart } = useResizable({
+  const splitRef = useRef<HTMLElement>(null);
+  const {
+    size: editorHeight,
+    minSize: editorMinSize,
+    maxSize: editorMaxSize,
+    onResizeStart,
+    onKeyboardResize
+  } = useResizable({
     axis: 'y',
     direction: 1,
     defaultSize: 340,
@@ -144,32 +150,50 @@ export function Request({ onEditVariables }: Props): JSX.Element {
         onNew={() => dispatch(newTab())}
         onEnvironmentChange={(id) => dispatch(setActiveEnvironmentId(id))}
       />
-      <div ref={splitRef} style={{ height: editorHeight }} className="shrink-0 overflow-auto">
-        <Editor
-          key={`editor-${activeTabId}`}
-          tabId={activeTabId}
-          draft={draft}
-          onChange={(next) => dispatch(setActiveDraft(next))}
-          onSend={() => void dispatch(sendRequest())}
-          sending={sending}
-          variables={activeVariables}
-          collectionName={activeCollectionName}
-          folderName={activeFolderName}
-          onEditVariables={onEditVariables}
+      <div
+        role="tabpanel"
+        id={`request-tabpanel-${activeTabId}`}
+        aria-labelledby={`request-tab-${activeTabId}`}
+        className="flex min-h-0 flex-1 flex-col"
+      >
+        <section
+          aria-label="Request editor"
+          ref={splitRef}
+          style={{ height: editorHeight }}
+          className="shrink-0 overflow-auto"
+        >
+          <Editor
+            key={`editor-${activeTabId}`}
+            tabId={activeTabId}
+            draft={draft}
+            onChange={(next) => dispatch(setActiveDraft(next))}
+            onSend={() => void dispatch(sendRequest())}
+            sending={sending}
+            variables={activeVariables}
+            collectionName={activeCollectionName}
+            folderName={activeFolderName}
+            onEditVariables={onEditVariables}
+          />
+        </section>
+        <ResizeHandle
+          orientation="horizontal"
+          value={editorHeight}
+          min={editorMinSize}
+          max={editorMaxSize}
+          onResizeStart={onResizeStart}
+          onKeyboardResize={onKeyboardResize}
+          ariaLabel="Resize request editor"
         />
+        <section aria-label="Response" className="flex min-h-0 flex-1 flex-col">
+          <Response
+            key={`response-${activeTabId}`}
+            response={response}
+            sending={sending}
+            testResults={testResults}
+            onCancel={() => void dispatch(cancelRequest(activeTabId))}
+          />
+        </section>
       </div>
-      <ResizeHandle
-        orientation="horizontal"
-        onResizeStart={onResizeStart}
-        ariaLabel="Resize request editor"
-      />
-      <Response
-        key={`response-${activeTabId}`}
-        response={response}
-        sending={sending}
-        testResults={testResults}
-        onCancel={() => void dispatch(cancelRequest(activeTabId))}
-      />
 
       {closeTabPrompt && (
         <div
@@ -185,18 +209,17 @@ export function Request({ onEditVariables }: Props): JSX.Element {
               &ldquo;{closeTabPrompt.name}&rdquo; has unsaved changes. Close without saving?
             </p>
             <div className="flex justify-end gap-2">
-              <button className={secondaryButton} onClick={() => setCloseTabPrompt(null)}>
+              <Button variant="secondary" onClick={() => setCloseTabPrompt(null)}>
                 Cancel
-              </button>
-              <button
-                className={primaryButton}
+              </Button>
+              <Button
                 onClick={() => {
                   void dispatch(closeRequestTab(closeTabPrompt.tabId));
                   setCloseTabPrompt(null);
                 }}
               >
                 Close without saving
-              </button>
+              </Button>
             </div>
           </div>
         </div>

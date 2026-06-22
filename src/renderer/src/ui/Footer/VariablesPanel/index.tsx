@@ -44,7 +44,13 @@ export function VariablesPanel({
   environmentName
 }: Props): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { size: height, onResizeStart } = useResizable({
+  const {
+    size: height,
+    minSize: panelMinSize,
+    maxSize: panelMaxSize,
+    onResizeStart,
+    onKeyboardResize
+  } = useResizable({
     axis: 'y',
     direction: -1,
     defaultSize: DEFAULT_HEIGHT,
@@ -76,10 +82,20 @@ export function VariablesPanel({
   ].join(' ');
 
   return (
-    <div ref={containerRef} className={panelClassName} style={{ height }} aria-hidden={!open}>
+    <div
+      ref={containerRef}
+      id="footer-variables-panel"
+      className={panelClassName}
+      style={{ height }}
+      aria-hidden={!open}
+    >
       <ResizeHandle
         orientation="horizontal"
+        value={height}
+        min={panelMinSize}
+        max={panelMaxSize}
         onResizeStart={onResizeStart}
+        onKeyboardResize={onKeyboardResize}
         ariaLabel="Resize variables panel"
       />
 

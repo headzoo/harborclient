@@ -51,6 +51,7 @@ import { Request } from '#/renderer/src/ui/Request';
 import { TitleBar } from '#/renderer/src/ui/TitleBar';
 import { BusyIndicator } from '#/renderer/src/ui/shared/BusyIndicator';
 import { Footer } from '#/renderer/src/ui/Footer';
+import { applyThemeAttribute } from '#/renderer/src/theme';
 
 const isMac = window.platform === 'darwin';
 
@@ -80,6 +81,21 @@ export default function App(): JSX.Element {
   useEffect(() => {
     initializeStore(dispatch);
   }, [dispatch]);
+
+  /**
+   * Applies the persisted high-contrast CSS override on launch.
+   */
+  useEffect(() => {
+    let cancelled = false;
+    window.api.getTheme().then((theme) => {
+      if (!cancelled) {
+        applyThemeAttribute(theme);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const activeCollectionId = draft.collection_id ?? selectedCollectionId;
 
@@ -122,6 +138,12 @@ export default function App(): JSX.Element {
     <div className={`flex h-screen flex-col overflow-hidden ${isMac ? 'platform-darwin' : ''}`}>
       <BusyIndicator />
       <TitleBar />
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-[100] focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:text-[13px] focus:text-text focus:shadow-md focus:outline focus:outline-2 focus:outline-accent"
+      >
+        Skip to main content
+      </a>
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
         {sidebarVisible && (
           <Sidebar
@@ -136,7 +158,7 @@ export default function App(): JSX.Element {
           />
         )}
 
-        <main className="flex min-w-0 flex-1 flex-col bg-surface">
+        <main id="main-content" tabIndex={-1} className="flex min-w-0 flex-1 flex-col bg-surface">
           {showConfiguration ? (
             <Configuration
               showSettings={mainView.type === 'settings'}

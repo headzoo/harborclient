@@ -36,7 +36,8 @@ import {
   reorderFolders,
   reorderRequests
 } from '#/renderer/src/store/thunks';
-import { field, primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
+import { Button } from '#/renderer/src/components/Button';
+import { field } from '#/renderer/src/ui/shared/classes';
 import { Modal } from '#/renderer/src/ui/shared/Modal';
 import { formatErrorMessage, showAlert, showConfirm } from '#/renderer/src/ui/modals/dialogHelpers';
 import { Collections } from './Collections';
@@ -128,7 +129,13 @@ export function Sidebar({
     primaryConnectionId,
     error: connectionsError
   } = useDatabaseConnections();
-  const { size: width, onResizeStart } = useResizable({
+  const {
+    size: width,
+    minSize: sidebarMinSize,
+    maxSize: sidebarMaxSize,
+    onResizeStart,
+    onKeyboardResize
+  } = useResizable({
     axis: 'x',
     direction: 1,
     defaultSize: 400,
@@ -230,168 +237,181 @@ export function Sidebar({
     <>
       <aside className="flex shrink-0 flex-col bg-sidebar" style={{ width }}>
         <div className="flex-1 overflow-y-auto px-2 pb-3">
-          <Section
-            title="Collections"
-            expanded={collectionsSectionExpanded}
-            onToggle={toggleCollectionsSection}
-            onAdd={onAddCollection}
-            addLabel="Add Collection"
-          >
-            <Collections
-              collections={collections}
-              foldersByCollection={foldersByCollection}
-              requestsByCollection={requestsByCollection}
-              selectedCollectionId={selectedCollectionId}
-              primaryConnectionId={primaryConnectionId}
-              connectionNamesById={connectionNamesById}
-              connectionTypesById={connectionTypesById}
-              activeRequestId={draft.id}
-              expandedCollectionIds={expandedCollectionIds}
-              expandedFolderIds={expandedFolderIds}
-              setExpandedCollectionIds={setExpandedCollectionIds}
-              setExpandedFolderIds={setExpandedFolderIds}
-              onSelectCollection={(id) => dispatch(setSelectedCollectionId(id))}
-              onExpandCollection={handleExpandCollection}
-              onConfigureCollection={onConfigureCollection}
-              onDeleteCollection={async (id) => {
-                await dispatch(deleteCollection(id));
-              }}
-              onExportCollection={async (id) => {
-                const result = await dispatch(exportCollection(id)).unwrap();
-                if (!result.canceled) {
-                  toast.success('Collection exported');
-                }
-              }}
-              onDuplicateCollection={async (id) => {
-                try {
-                  await dispatch(duplicateCollection(id)).unwrap();
-                  toast.success('Collection duplicated');
-                } catch (err) {
-                  showAlert(dispatch, formatErrorMessage(err, 'Failed to duplicate collection'));
-                }
-              }}
-              onInviteCollection={onInviteCollection}
-              onNewFolder={(collectionId) => {
-                setFolderModal({ mode: 'create', collectionId, name: '', error: null });
-              }}
-              onNewRequestInCollection={async (id) => {
-                try {
-                  await dispatch(newRequestInCollection(id)).unwrap();
-                } catch (err) {
-                  showAlert(dispatch, formatErrorMessage(err, 'Failed to create request'));
-                }
-              }}
-              onImportRequest={async (collectionId, folderId) => {
-                try {
-                  const saved = await dispatch(importRequest({ collectionId, folderId })).unwrap();
-                  if (saved) {
-                    toast.success('Request imported');
+          <nav aria-label="Collections">
+            <Section
+              title="Collections"
+              expanded={collectionsSectionExpanded}
+              onToggle={toggleCollectionsSection}
+              onAdd={onAddCollection}
+              addLabel="Add Collection"
+            >
+              <Collections
+                collections={collections}
+                foldersByCollection={foldersByCollection}
+                requestsByCollection={requestsByCollection}
+                selectedCollectionId={selectedCollectionId}
+                primaryConnectionId={primaryConnectionId}
+                connectionNamesById={connectionNamesById}
+                connectionTypesById={connectionTypesById}
+                activeRequestId={draft.id}
+                expandedCollectionIds={expandedCollectionIds}
+                expandedFolderIds={expandedFolderIds}
+                setExpandedCollectionIds={setExpandedCollectionIds}
+                setExpandedFolderIds={setExpandedFolderIds}
+                onSelectCollection={(id) => dispatch(setSelectedCollectionId(id))}
+                onExpandCollection={handleExpandCollection}
+                onConfigureCollection={onConfigureCollection}
+                onDeleteCollection={async (id) => {
+                  await dispatch(deleteCollection(id));
+                }}
+                onExportCollection={async (id) => {
+                  const result = await dispatch(exportCollection(id)).unwrap();
+                  if (!result.canceled) {
+                    toast.success('Collection exported');
                   }
-                } catch (err) {
-                  showAlert(dispatch, formatErrorMessage(err, 'Failed to import request'));
-                }
-              }}
-              onNewRequestInFolder={async (collectionId, folderId) => {
-                try {
-                  await dispatch(newRequestInFolder({ collectionId, folderId })).unwrap();
-                } catch (err) {
-                  showAlert(dispatch, formatErrorMessage(err, 'Failed to create request'));
-                }
-              }}
-              onRenameFolder={(id, collectionId) => {
-                const folders = foldersByCollection[collectionId] ?? [];
-                const folder = folders.find((item) => item.id === id);
-                setFolderModal({
-                  mode: 'rename',
-                  collectionId,
-                  folderId: id,
-                  name: folder?.name ?? '',
-                  error: null
-                });
-              }}
-              onDeleteFolder={async (id, collectionId, requestIds) => {
-                const count = requestIds.length;
-                const message =
-                  count > 0
-                    ? `Delete this folder and ${count} request${count === 1 ? '' : 's'} inside it?`
-                    : 'Delete this folder?';
-                const confirmed = await showConfirm(dispatch, {
-                  title: 'Delete folder',
-                  message,
-                  confirmLabel: 'Delete',
-                  variant: 'danger'
-                });
-                if (!confirmed) return;
-                try {
-                  await dispatch(deleteFolder({ id, collectionId, requestIds })).unwrap();
-                } catch (err) {
-                  showAlert(dispatch, formatErrorMessage(err, 'Failed to delete folder'));
-                }
-              }}
-              onReorderCollections={async (orderedCollectionIds) => {
-                await dispatch(reorderCollections({ orderedCollectionIds }));
-              }}
-              onReorderFolders={async (collectionId, orderedFolderIds) => {
-                await dispatch(reorderFolders({ collectionId, orderedFolderIds }));
-              }}
-              onReorderRequests={async (collectionId, folderId, orderedRequestIds) => {
-                await dispatch(reorderRequests({ collectionId, folderId, orderedRequestIds }));
-              }}
-              onMoveRequest={async (collectionId, requestId, folderId, index) => {
-                await dispatch(moveRequestToFolder({ collectionId, requestId, folderId, index }));
-              }}
-              onLoadRequest={onLoadRequest}
-              onDeleteRequest={async (id) => {
-                await dispatch(deleteRequest(id));
-              }}
-              onDuplicateRequest={async (req) => {
-                try {
-                  await dispatch(duplicateRequest(req)).unwrap();
-                } catch (err) {
-                  showAlert(dispatch, formatErrorMessage(err, 'Failed to duplicate request'));
-                }
-              }}
-              onExportRequest={async (req) => {
-                const result = await dispatch(exportRequest(req)).unwrap();
-                if (!result.canceled) {
-                  toast.success('Request exported');
-                }
-              }}
-            />
-          </Section>
+                }}
+                onDuplicateCollection={async (id) => {
+                  try {
+                    await dispatch(duplicateCollection(id)).unwrap();
+                    toast.success('Collection duplicated');
+                  } catch (err) {
+                    showAlert(dispatch, formatErrorMessage(err, 'Failed to duplicate collection'));
+                  }
+                }}
+                onInviteCollection={onInviteCollection}
+                onNewFolder={(collectionId) => {
+                  setFolderModal({ mode: 'create', collectionId, name: '', error: null });
+                }}
+                onNewRequestInCollection={async (id) => {
+                  try {
+                    await dispatch(newRequestInCollection(id)).unwrap();
+                  } catch (err) {
+                    showAlert(dispatch, formatErrorMessage(err, 'Failed to create request'));
+                  }
+                }}
+                onImportRequest={async (collectionId, folderId) => {
+                  try {
+                    const saved = await dispatch(
+                      importRequest({ collectionId, folderId })
+                    ).unwrap();
+                    if (saved) {
+                      toast.success('Request imported');
+                    }
+                  } catch (err) {
+                    showAlert(dispatch, formatErrorMessage(err, 'Failed to import request'));
+                  }
+                }}
+                onNewRequestInFolder={async (collectionId, folderId) => {
+                  try {
+                    await dispatch(newRequestInFolder({ collectionId, folderId })).unwrap();
+                  } catch (err) {
+                    showAlert(dispatch, formatErrorMessage(err, 'Failed to create request'));
+                  }
+                }}
+                onRenameFolder={(id, collectionId) => {
+                  const folders = foldersByCollection[collectionId] ?? [];
+                  const folder = folders.find((item) => item.id === id);
+                  setFolderModal({
+                    mode: 'rename',
+                    collectionId,
+                    folderId: id,
+                    name: folder?.name ?? '',
+                    error: null
+                  });
+                }}
+                onDeleteFolder={async (id, collectionId, requestIds) => {
+                  const count = requestIds.length;
+                  const message =
+                    count > 0
+                      ? `Delete this folder and ${count} request${count === 1 ? '' : 's'} inside it?`
+                      : 'Delete this folder?';
+                  const confirmed = await showConfirm(dispatch, {
+                    title: 'Delete folder',
+                    message,
+                    confirmLabel: 'Delete',
+                    variant: 'danger'
+                  });
+                  if (!confirmed) return;
+                  try {
+                    await dispatch(deleteFolder({ id, collectionId, requestIds })).unwrap();
+                  } catch (err) {
+                    showAlert(dispatch, formatErrorMessage(err, 'Failed to delete folder'));
+                  }
+                }}
+                onReorderCollections={async (orderedCollectionIds) => {
+                  await dispatch(reorderCollections({ orderedCollectionIds }));
+                }}
+                onReorderFolders={async (collectionId, orderedFolderIds) => {
+                  await dispatch(reorderFolders({ collectionId, orderedFolderIds }));
+                }}
+                onReorderRequests={async (collectionId, folderId, orderedRequestIds) => {
+                  await dispatch(reorderRequests({ collectionId, folderId, orderedRequestIds }));
+                }}
+                onMoveRequest={async (collectionId, requestId, folderId, index) => {
+                  await dispatch(moveRequestToFolder({ collectionId, requestId, folderId, index }));
+                }}
+                onLoadRequest={onLoadRequest}
+                onDeleteRequest={async (id) => {
+                  await dispatch(deleteRequest(id));
+                }}
+                onDuplicateRequest={async (req) => {
+                  try {
+                    await dispatch(duplicateRequest(req)).unwrap();
+                  } catch (err) {
+                    showAlert(dispatch, formatErrorMessage(err, 'Failed to duplicate request'));
+                  }
+                }}
+                onExportRequest={async (req) => {
+                  const result = await dispatch(exportRequest(req)).unwrap();
+                  if (!result.canceled) {
+                    toast.success('Request exported');
+                  }
+                }}
+              />
+            </Section>
+          </nav>
 
-          <Section
-            title="Environments"
-            expanded={environmentsSectionExpanded}
-            onToggle={toggleEnvironmentsSection}
-            onAdd={() => {
-              setNewEnvironmentName('');
-              setEnvironmentModalError(null);
-              setShowEnvironmentModal(true);
-            }}
-            addLabel="Add Environment"
-          >
-            <Environments
-              environments={environments}
-              activeEnvironmentId={activeEnvironmentId}
-              onSelectEnvironment={(id) => dispatch(setActiveEnvironmentId(id))}
-              onConfigureEnvironment={onConfigureEnvironment}
-              onDeleteEnvironment={async (id) => {
-                await dispatch(deleteEnvironment(id));
+          <nav aria-label="Environments">
+            <Section
+              title="Environments"
+              expanded={environmentsSectionExpanded}
+              onToggle={toggleEnvironmentsSection}
+              onAdd={() => {
+                setNewEnvironmentName('');
+                setEnvironmentModalError(null);
+                setShowEnvironmentModal(true);
               }}
-            />
-          </Section>
+              addLabel="Add Environment"
+            >
+              <Environments
+                environments={environments}
+                activeEnvironmentId={activeEnvironmentId}
+                onSelectEnvironment={(id) => dispatch(setActiveEnvironmentId(id))}
+                onConfigureEnvironment={onConfigureEnvironment}
+                onDeleteEnvironment={async (id) => {
+                  await dispatch(deleteEnvironment(id));
+                }}
+              />
+            </Section>
+          </nav>
         </div>
       </aside>
       <ResizeHandle
         orientation="vertical"
+        value={width}
+        min={sidebarMinSize}
+        max={sidebarMaxSize}
         onResizeStart={onResizeStart}
+        onKeyboardResize={onKeyboardResize}
         ariaLabel="Resize sidebar"
       />
 
       {folderModal && (
-        <Modal onClose={closeFolderModal}>
-          <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">
+        <Modal onClose={closeFolderModal} labelledBy="sidebar-folder-modal-title">
+          <h2
+            id="sidebar-folder-modal-title"
+            className="m-0 mb-1 text-[13px] font-semibold text-text"
+          >
             {folderModal.mode === 'create' ? 'New folder' : 'Rename folder'}
           </h2>
           <input
@@ -411,23 +431,27 @@ export function Sidebar({
           />
           {folderModal.error && <p className="mt-3 text-[12px] text-danger">{folderModal.error}</p>}
           <div className="mt-4 flex justify-end gap-2">
-            <button className={secondaryButton} onClick={closeFolderModal}>
+            <Button variant="secondary" onClick={closeFolderModal}>
               Cancel
-            </button>
-            <button
-              className={primaryButton}
+            </Button>
+            <Button
               onClick={() => void handleFolderModalSubmit()}
               disabled={!folderModal.name.trim()}
             >
               {folderModal.mode === 'create' ? 'Create' : 'Save'}
-            </button>
+            </Button>
           </div>
         </Modal>
       )}
 
       {showEnvironmentModal && (
-        <Modal onClose={closeEnvironmentModal}>
-          <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">New environment</h2>
+        <Modal onClose={closeEnvironmentModal} labelledBy="sidebar-environment-modal-title">
+          <h2
+            id="sidebar-environment-modal-title"
+            className="m-0 mb-1 text-[13px] font-semibold text-text"
+          >
+            New environment
+          </h2>
           <input
             className={`${field} mt-3 w-full`}
             type="text"
@@ -446,16 +470,15 @@ export function Sidebar({
             <p className="mt-3 text-[12px] text-danger">{environmentModalError}</p>
           )}
           <div className="mt-4 flex justify-end gap-2">
-            <button className={secondaryButton} onClick={closeEnvironmentModal}>
+            <Button variant="secondary" onClick={closeEnvironmentModal}>
               Cancel
-            </button>
-            <button
-              className={primaryButton}
+            </Button>
+            <Button
               onClick={() => void handleEnvironmentModalSubmit()}
               disabled={!newEnvironmentName.trim()}
             >
               Create
-            </button>
+            </Button>
           </div>
         </Modal>
       )}

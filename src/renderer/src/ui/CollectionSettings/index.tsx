@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import type { AuthConfig, Collection, KeyValue, Variable } from '#/shared/types';
 import { normalizeAuth } from '#/shared/auth';
+import { Button } from '#/renderer/src/components/Button';
 import { cleanVariables } from '#/renderer/src/components/variableUtils';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
-import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
+import {
+  SegmentedTabs,
+  SegmentedTabPanel,
+  SegmentedTabsGroup
+} from '#/renderer/src/components/SegmentedTabs';
 import { useDatabaseConnections } from '#/renderer/src/hooks/useDatabaseConnections';
 import { emptyKeyValue } from '#/renderer/src/store/drafts';
 import { faXmark } from '#/renderer/src/fontawesome';
-import { iconButton, primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
 import { AuthSection } from './AuthSection';
 import { GeneralSection } from './GeneralSection';
 import { HeadersSection } from './HeadersSection';
@@ -195,84 +199,88 @@ function CollectionSettingsForm({
       <div className="mx-auto w-full">
         <div className="mb-6 flex items-center justify-between gap-4">
           <h1 className="m-0 text-[15px] font-semibold text-text">Collection Settings</h1>
-          <button
+          <Button
             type="button"
-            className={`${iconButton} opacity-100 text-[28px]`}
+            variant="icon"
+            className="opacity-100 text-[28px]"
             title="Close"
             onClick={onClose}
           >
             <FaIcon icon={faXmark} className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
 
-        <div className="mb-6">
-          <SegmentedTabs
-            value={tab}
-            onChange={setTab}
-            tabs={[
-              { value: 'general', label: 'General' },
-              { value: 'variables', label: 'Variables', indicator: tabIndicators.variables },
-              { value: 'headers', label: 'Headers', indicator: tabIndicators.headers },
-              { value: 'auth', label: 'Authorization', indicator: tabIndicators.auth },
-              { value: 'pre', label: 'PreRequest', indicator: tabIndicators.pre },
-              { value: 'post', label: 'PostRequest', indicator: tabIndicators.post }
-            ]}
-          />
-        </div>
+        <SegmentedTabsGroup value={tab} onChange={setTab} ariaLabel="Collection settings sections">
+          <div className="mb-6">
+            <SegmentedTabs
+              tabs={[
+                { value: 'general', label: 'General' },
+                { value: 'variables', label: 'Variables', indicator: tabIndicators.variables },
+                { value: 'headers', label: 'Headers', indicator: tabIndicators.headers },
+                { value: 'auth', label: 'Authorization', indicator: tabIndicators.auth },
+                { value: 'pre', label: 'PreRequest', indicator: tabIndicators.pre },
+                { value: 'post', label: 'PostRequest', indicator: tabIndicators.post }
+              ]}
+            />
+          </div>
 
-        {tab === 'general' && (
-          <GeneralSection
-            name={name}
-            onNameChange={setName}
-            connectionId={resolvedConnectionId}
-            connections={connections}
-            onConnectionIdChange={setConnectionId}
-            connectionsLoading={connectionsLoading}
-            connectionsError={connectionsError}
-            onConnectionsRetry={reloadConnections}
-            onSave={() => void handleSave()}
-            onClose={onClose}
-          />
-        )}
-        {tab === 'variables' && <VariablesSection variables={variables} onChange={setVariables} />}
-        {tab === 'headers' && (
-          <HeadersSection headers={headers} variables={variables} onChange={setHeaders} />
-        )}
-        {tab === 'auth' && <AuthSection auth={auth} variables={variables} onChange={setAuth} />}
-        {tab === 'pre' && (
-          <ScriptSection
-            phase="pre"
-            description="Runs before every request in this collection, before the request-level pre-request script. Supports {{variable}} syntax."
-            placeholder="// hc.variables.set('token', 'abc');"
-            value={preRequestScript}
-            onChange={setPreRequestScript}
-            variables={variables}
-          />
-        )}
-        {tab === 'post' && (
-          <ScriptSection
-            phase="post"
-            description="Runs after every request in this collection, after the request-level post-request script. Supports {{variable}} syntax."
-            placeholder={
-              '// hc.test("status is 200", () => {\n//   hc.expect(hc.response.code).to.equal(200);\n// });'
-            }
-            value={postRequestScript}
-            onChange={setPostRequestScript}
-            variables={variables}
-          />
-        )}
+          <SegmentedTabPanel value="general">
+            <GeneralSection
+              name={name}
+              onNameChange={setName}
+              connectionId={resolvedConnectionId}
+              connections={connections}
+              onConnectionIdChange={setConnectionId}
+              connectionsLoading={connectionsLoading}
+              connectionsError={connectionsError}
+              onConnectionsRetry={reloadConnections}
+              onSave={() => void handleSave()}
+              onClose={onClose}
+            />
+          </SegmentedTabPanel>
+          <SegmentedTabPanel value="variables">
+            <VariablesSection variables={variables} onChange={setVariables} />
+          </SegmentedTabPanel>
+          <SegmentedTabPanel value="headers">
+            <HeadersSection headers={headers} variables={variables} onChange={setHeaders} />
+          </SegmentedTabPanel>
+          <SegmentedTabPanel value="auth">
+            <AuthSection auth={auth} variables={variables} onChange={setAuth} />
+          </SegmentedTabPanel>
+          <SegmentedTabPanel value="pre">
+            <ScriptSection
+              phase="pre"
+              description="Runs before every request in this collection, before the request-level pre-request script. Supports {{variable}} syntax."
+              placeholder="// hc.variables.set('token', 'abc');"
+              value={preRequestScript}
+              onChange={setPreRequestScript}
+              variables={variables}
+            />
+          </SegmentedTabPanel>
+          <SegmentedTabPanel value="post">
+            <ScriptSection
+              phase="post"
+              description="Runs after every request in this collection, after the request-level post-request script. Supports {{variable}} syntax."
+              placeholder={
+                '// hc.test("status is 200", () => {\n//   hc.expect(hc.response.code).to.equal(200);\n// });'
+              }
+              value={postRequestScript}
+              onChange={setPostRequestScript}
+              variables={variables}
+            />
+          </SegmentedTabPanel>
+        </SegmentedTabsGroup>
 
         <div className="flex justify-end gap-2">
-          <button className={secondaryButton} onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            className={primaryButton}
+          </Button>
+          <Button
             onClick={() => void handleSave()}
             disabled={!name.trim() || !resolvedConnectionId || saving}
           >
             {saving ? 'Saving…' : 'Save'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

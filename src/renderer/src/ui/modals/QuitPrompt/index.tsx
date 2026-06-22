@@ -1,7 +1,7 @@
 import { useCallback, type JSX } from 'react';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import { selectQuitPrompt, setQuitPrompt } from '#/renderer/src/store/slices/modalsSlice';
-import { primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
+import { Button } from '#/renderer/src/components/Button';
 import { Modal } from '#/renderer/src/ui/shared/Modal';
 
 /**
@@ -30,8 +30,10 @@ export function QuitPrompt(): JSX.Element | null {
   if (!quitPrompt) return null;
 
   return (
-    <Modal onClose={handleCancel}>
-      <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">Unsaved changes</h2>
+    <Modal onClose={handleCancel} labelledBy="quit-prompt-title">
+      <h2 id="quit-prompt-title" className="m-0 mb-1 text-[13px] font-semibold text-text">
+        Unsaved changes
+      </h2>
       <p className="mb-4 text-[12px] text-muted">
         {quitPrompt.length === 1 ? (
           <>&ldquo;{quitPrompt[0]}&rdquo; has unsaved changes. Quit without saving?</>
@@ -40,12 +42,10 @@ export function QuitPrompt(): JSX.Element | null {
         )}
       </p>
       <div className="flex justify-end gap-2">
-        <button className={secondaryButton} onClick={handleCancel}>
+        <Button variant="secondary" onClick={handleCancel}>
           Cancel
-        </button>
-        <button className={primaryButton} onClick={handleConfirm}>
-          Quit without saving
-        </button>
+        </Button>
+        <Button onClick={handleConfirm}>Quit without saving</Button>
       </div>
     </Modal>
   );

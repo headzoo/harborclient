@@ -1,10 +1,11 @@
 import { useMemo, type JSX } from 'react';
 import type { FormDataPart, FormDataPartType, Variable } from '#/shared/types';
 import { emptyFormPart } from '#/shared/formData';
+import { Button } from '#/renderer/src/components/Button';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { VariableInput } from '#/renderer/src/components/VariableInput';
 import { faXmark } from '#/renderer/src/fontawesome';
-import { field, iconButtonDanger, secondaryButton } from '#/renderer/src/ui/shared/classes';
+import { field } from '#/renderer/src/ui/shared/classes';
 
 interface Props {
   /**
@@ -148,6 +149,7 @@ export function FormDataEditor({ parts, onChange, variables, onEditVariable }: P
                   className="app-no-drag"
                   checked={row.enabled}
                   onChange={(e) => updateRow(index, { enabled: e.target.checked })}
+                  aria-label={`Enable row ${index + 1}`}
                   title="Enable"
                 />
               </td>
@@ -157,6 +159,7 @@ export function FormDataEditor({ parts, onChange, variables, onEditVariable }: P
                   className={`${field} w-full`}
                   value={row.key}
                   placeholder="field"
+                  aria-label={`Key, row ${index + 1}`}
                   onChange={(e) => updateRow(index, { key: e.target.value })}
                 />
               </td>
@@ -164,6 +167,7 @@ export function FormDataEditor({ parts, onChange, variables, onEditVariable }: P
                 <select
                   className={`${field} w-full`}
                   value={row.type}
+                  aria-label={`Type, row ${index + 1}`}
                   onChange={(e) => {
                     const type = e.target.value as FormDataPartType;
                     updateRow(index, {
@@ -186,18 +190,20 @@ export function FormDataEditor({ parts, onChange, variables, onEditVariable }: P
                       onChange={(value) => updateRow(index, { value })}
                       variables={variables}
                       placeholder="value"
+                      aria-label={`Value, row ${index + 1}`}
                       onEditVariable={onEditVariable}
                     />
                   </div>
                 ) : (
                   <div className="flex flex-col gap-1.5">
-                    <button
+                    <Button
                       type="button"
-                      className={`${secondaryButton} self-start px-2 py-0.5 text-[13px]`}
+                      variant="secondary"
+                      className="self-start px-2 py-0.5 text-[13px]"
                       onClick={() => void chooseFiles(index)}
                     >
                       Choose files
-                    </button>
+                    </Button>
                     {row.files.length > 0 && (
                       <div className="flex flex-wrap gap-1">
                         {row.files.map((filePath) => (
@@ -223,14 +229,14 @@ export function FormDataEditor({ parts, onChange, variables, onEditVariable }: P
                 )}
               </td>
               <td className={`${tdClass} w-7 p-1 text-center`}>
-                <button
+                <Button
                   type="button"
-                  className={iconButtonDanger}
+                  variant="iconDanger"
                   onClick={() => removeRow(index)}
                   title="Remove"
                 >
                   <FaIcon icon={faXmark} className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </td>
             </tr>
           ))}

@@ -88,6 +88,21 @@ interface Props {
    * When set, overrides persisted basicSetup options (used by the settings preview).
    */
   setupOverride?: CodeEditorSetup;
+
+  /**
+   * DOM id applied to the editable region for label association.
+   */
+  id?: string;
+
+  /**
+   * Accessible name when no visible label is associated via `htmlFor`.
+   */
+  'aria-label'?: string;
+
+  /**
+   * Id of the element that labels this editor when using `aria-labelledby`.
+   */
+  'aria-labelledby'?: string;
 }
 
 const lightHighlight = HighlightStyle.define([
@@ -299,7 +314,10 @@ export function CodeEditor({
   onEditVariable,
   scriptPhase,
   themeOverride,
-  setupOverride
+  setupOverride,
+  id,
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledBy
 }: Props): JSX.Element {
   const storeTheme = useAppSelector(selectCodeEditorTheme);
   const storeSetup = useAppSelector(selectCodeEditorSetup);
@@ -347,8 +365,25 @@ export function CodeEditor({
     if (variables) {
       next.push(variableHighlighter, variableTooltip(variables, onEditVariable));
     }
+    const contentAttrs: Record<string, string> = {};
+    if (id) contentAttrs.id = id;
+    if (ariaLabel) contentAttrs['aria-label'] = ariaLabel;
+    if (ariaLabelledBy) contentAttrs['aria-labelledby'] = ariaLabelledBy;
+    if (Object.keys(contentAttrs).length > 0) {
+      next.push(EditorView.contentAttributes.of(contentAttrs));
+    }
     return next;
-  }, [resolvedTheme, isDark, language, variables, onEditVariable, scriptPhase]);
+  }, [
+    resolvedTheme,
+    isDark,
+    language,
+    variables,
+    onEditVariable,
+    scriptPhase,
+    id,
+    ariaLabel,
+    ariaLabelledBy
+  ]);
 
   /**
    * Resolves CodeMirror basicSetup from persisted settings or read-only defaults.

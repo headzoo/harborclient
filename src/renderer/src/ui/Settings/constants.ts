@@ -14,6 +14,7 @@ import type { SettingsSection } from './types';
 export const THEME_OPTIONS: Array<{ value: ThemeSource; label: string }> = [
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
+  { value: 'high-contrast', label: 'High contrast' },
   { value: 'system', label: 'System' }
 ];
 

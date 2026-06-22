@@ -1,7 +1,7 @@
 import type { JSX, ReactNode } from 'react';
+import { Button } from '#/renderer/src/components/Button';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faChevronDown, faChevronRight, faPlus } from '#/renderer/src/fontawesome';
-import { toolbarButton } from '#/renderer/src/ui/shared/classes';
 
 interface Props {
   /**
@@ -66,13 +66,16 @@ export function Section({
           </h2>
         </button>
         {onAdd && (
-          <button
+          <Button
+            type="button"
+            variant="toolbar"
             title={addLabel ?? 'Add'}
-            className={`${toolbarButton} inline-flex items-center gap-1`}
+            aria-label={addLabel ?? 'Add'}
+            className="inline-flex items-center gap-1"
             onClick={onAdd}
           >
             <FaIcon icon={faPlus} className="h-3 w-3" />
-          </button>
+          </Button>
         )}
       </div>
       {expanded && children}

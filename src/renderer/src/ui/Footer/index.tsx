@@ -120,11 +120,23 @@ export function Footer({
       />
       <footer className="relative z-50 flex shrink-0 items-center justify-between border-t border-separator bg-control px-2 py-0.5 app-no-drag">
         <div className={segmentGroup}>
-          <button className={footerSegment(consoleOpen)} onClick={onToggleConsole}>
+          <button
+            type="button"
+            className={footerSegment(consoleOpen)}
+            aria-expanded={consoleOpen}
+            aria-controls="footer-console-panel"
+            onClick={onToggleConsole}
+          >
             Console
             {entryCount > 0 && <span className="ml-1 text-[11px] text-muted">({entryCount})</span>}
           </button>
-          <button className={footerSegment(variablesOpen)} onClick={onToggleVariables}>
+          <button
+            type="button"
+            className={footerSegment(variablesOpen)}
+            aria-expanded={variablesOpen}
+            aria-controls="footer-variables-panel"
+            onClick={onToggleVariables}
+          >
             Variables
             {variableCount > 0 && (
               <span className="ml-1 text-[11px] text-muted">({variableCount})</span>

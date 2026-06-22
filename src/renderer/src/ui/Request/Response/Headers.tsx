@@ -1,6 +1,9 @@
 import type { JSX } from 'react';
 
 interface Props {
+  /**
+   * HTTP response headers from the last send.
+   */
   headers: Record<string, string>;
 }
 

@@ -1,9 +1,10 @@
 import type { JSX } from 'react';
 import type { KeyValue, Variable } from '#/shared/types';
+import { Button } from '#/renderer/src/components/Button';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { VariableInput } from '#/renderer/src/components/VariableInput';
 import { faXmark } from '#/renderer/src/fontawesome';
-import { field, iconButtonDanger } from '#/renderer/src/ui/shared/classes';
+import { field } from '#/renderer/src/ui/shared/classes';
 
 interface Props {
   /**
@@ -102,6 +103,7 @@ export function KeyValueEditor({
                   className="app-no-drag"
                   checked={row.enabled}
                   onChange={(e) => updateRow(index, { enabled: e.target.checked })}
+                  aria-label={`Enable row ${index + 1}`}
                   title="Enable"
                 />
               </td>
@@ -111,6 +113,7 @@ export function KeyValueEditor({
                   className={`${field} w-full`}
                   value={row.key}
                   placeholder={placeholderKey}
+                  aria-label={`Key, row ${index + 1}`}
                   onChange={(e) => updateRow(index, { key: e.target.value })}
                 />
               </td>
@@ -122,19 +125,20 @@ export function KeyValueEditor({
                     onChange={(value) => updateRow(index, { value })}
                     variables={variables}
                     placeholder={placeholderValue}
+                    aria-label={`Value, row ${index + 1}`}
                     onEditVariable={onEditVariable}
                   />
                 </div>
               </td>
               <td className={`${tdClass} w-7 p-1 text-center`}>
-                <button
+                <Button
                   type="button"
-                  className={iconButtonDanger}
+                  variant="iconDanger"
                   onClick={() => removeRow(index)}
                   title="Remove"
                 >
                   <FaIcon icon={faXmark} className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               </td>
             </tr>
           ))}

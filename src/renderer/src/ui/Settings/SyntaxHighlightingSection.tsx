@@ -4,7 +4,8 @@ import { CODE_EDITOR_THEME_OPTIONS } from '#/renderer/src/components/codeEditorT
 import { useAppDispatch } from '#/renderer/src/store/hooks';
 import { setGeneralSettingsState } from '#/renderer/src/store/slices/settingsSlice';
 import type { CodeEditorSetup, GeneralSettings } from '#/shared/types';
-import { field, primaryButton } from '#/renderer/src/ui/shared/classes';
+import { Button } from '#/renderer/src/components/Button';
+import { field } from '#/renderer/src/ui/shared/classes';
 import { DEFAULT_GENERAL_SETTINGS } from './constants';
 
 const PREVIEW_SAMPLE = `const response = hc.response.json();
@@ -119,14 +120,9 @@ export function SyntaxHighlightingSection(): JSX.Element {
         ))}
 
         <div className="flex items-center gap-3">
-          <button
-            type="button"
-            className={primaryButton}
-            disabled={loading || saving}
-            onClick={() => void handleSave()}
-          >
+          <Button type="button" disabled={loading || saving} onClick={() => void handleSave()}>
             {saving ? 'Saving…' : 'Save'}
-          </button>
+          </Button>
           {saved && <span className="text-[12px] text-success">Settings saved.</span>}
         </div>
       </div>

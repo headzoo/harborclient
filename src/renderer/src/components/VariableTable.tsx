@@ -1,8 +1,9 @@
 import type { JSX } from 'react';
 import type { Variable } from '#/shared/types';
+import { Button } from '#/renderer/src/components/Button';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faPlus, faXmark } from '#/renderer/src/fontawesome';
-import { field, iconButtonDanger, toolbarButton } from '#/renderer/src/ui/shared/classes';
+import { field } from '#/renderer/src/ui/shared/classes';
 
 /**
  * Returns a blank variable row for new table entries.
@@ -86,6 +87,7 @@ export function VariableTable({ variables, onChange, description }: Props): JSX.
                     className={`${field} w-full`}
                     value={variable.key}
                     placeholder="variable"
+                    aria-label={`Key, row ${index + 1}`}
                     onChange={(e) => updateVariable(index, { key: e.target.value })}
                   />
                 </td>
@@ -95,6 +97,7 @@ export function VariableTable({ variables, onChange, description }: Props): JSX.
                     className={`${field} w-full`}
                     value={variable.value}
                     placeholder="value"
+                    aria-label={`Value, row ${index + 1}`}
                     onChange={(e) => updateVariable(index, { value: e.target.value })}
                   />
                 </td>
@@ -104,6 +107,7 @@ export function VariableTable({ variables, onChange, description }: Props): JSX.
                     className={`${field} w-full`}
                     value={variable.defaultValue}
                     placeholder="default"
+                    aria-label={`Default, row ${index + 1}`}
                     onChange={(e) => updateVariable(index, { defaultValue: e.target.value })}
                   />
                 </td>
@@ -112,31 +116,33 @@ export function VariableTable({ variables, onChange, description }: Props): JSX.
                     type="checkbox"
                     checked={variable.share}
                     onChange={(e) => updateVariable(index, { share: e.target.checked })}
+                    aria-label={`Include value in export, row ${index + 1}`}
                     title="Include value in export"
                   />
                 </td>
                 <td className="w-7 p-0 text-center">
-                  <button
+                  <Button
                     type="button"
-                    className={iconButtonDanger}
+                    variant="iconDanger"
                     onClick={() => removeVariable(index)}
                     title="Remove"
                   >
                     <FaIcon icon={faXmark} className="h-3.5 w-3.5" />
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <button
+        <Button
           type="button"
-          className={`${toolbarButton} inline-flex items-center gap-1 self-start`}
+          variant="toolbar"
+          className="inline-flex items-center gap-1 self-start"
           onClick={addVariable}
         >
           <FaIcon icon={faPlus} className="h-3 w-3" />
           Add variable
-        </button>
+        </Button>
       </div>
     </div>
   );

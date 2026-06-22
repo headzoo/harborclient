@@ -80,6 +80,7 @@ export function AuthEditor({ auth, onChange, variables, onEditVariables }: Props
               </label>
               <div className={variableFieldShell}>
                 <VariableInput
+                  id="auth-username"
                   value={auth.basic.username}
                   onChange={(username) => onChange({ ...auth, basic: { ...auth.basic, username } })}
                   variables={variables}
@@ -95,6 +96,7 @@ export function AuthEditor({ auth, onChange, variables, onEditVariables }: Props
               </label>
               <div className={variableFieldShell}>
                 <VariableInput
+                  id="auth-password"
                   value={auth.basic.password}
                   onChange={(password) => onChange({ ...auth, basic: { ...auth.basic, password } })}
                   variables={variables}
@@ -113,6 +115,7 @@ export function AuthEditor({ auth, onChange, variables, onEditVariables }: Props
               Token
             </label>
             <CodeEditor
+              id="auth-token"
               value={auth.bearer.token}
               onChange={(token) => onChange({ ...auth, bearer: { token } })}
               language="text"

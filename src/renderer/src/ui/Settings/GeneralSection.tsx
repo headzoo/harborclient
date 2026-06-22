@@ -1,6 +1,8 @@
 import { useEffect, useState, type JSX } from 'react';
 import type { GeneralSettings, ThemeSource } from '#/shared/types';
-import { field, primaryButton } from '#/renderer/src/ui/shared/classes';
+import { Button } from '#/renderer/src/components/Button';
+import { applyThemeAttribute } from '#/renderer/src/theme';
+import { field } from '#/renderer/src/ui/shared/classes';
 import { DEFAULT_GENERAL_SETTINGS, THEME_OPTIONS } from './constants';
 
 /**
@@ -53,6 +55,7 @@ export function GeneralSection(): JSX.Element {
    */
   const handleThemeChange = async (next: ThemeSource): Promise<void> => {
     setTheme(next);
+    applyThemeAttribute(next);
     await window.api.setTheme(next);
   };
 
@@ -147,14 +150,13 @@ export function GeneralSection(): JSX.Element {
       </div>
 
       <div className="flex items-center gap-3">
-        <button
+        <Button
           type="button"
-          className={primaryButton}
           disabled={generalLoading || generalSaving}
           onClick={() => void handleGeneralSave()}
         >
           {generalSaving ? 'Saving…' : 'Save'}
-        </button>
+        </Button>
         {generalSaved && <span className="text-[12px] text-success">Settings saved.</span>}
       </div>
     </div>

@@ -92,13 +92,28 @@ async function createDatabase(): Promise<RoutingDatabase> {
 }
 
 /**
+ * Maps a persisted theme preference to Electron's nativeTheme.themeSource.
+ *
+ * High contrast is stored separately but applied as dark so native chrome and
+ * prefers-color-scheme consumers stay on the dark palette.
+ *
+ * @param theme - Persisted theme preference.
+ * @returns Value suitable for nativeTheme.themeSource.
+ */
+function resolveNativeThemeSource(theme: ThemeSource): 'light' | 'dark' | 'system' {
+  return theme === 'high-contrast' ? 'dark' : theme;
+}
+
+/**
  * Applies a persisted or default theme to nativeTheme.
  */
 async function applyPersistedTheme(): Promise<void> {
   const stored = await db.getSetting(THEME_SETTING_KEY);
   const theme: ThemeSource =
-    stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
-  nativeTheme.themeSource = theme;
+    stored === 'light' || stored === 'dark' || stored === 'system' || stored === 'high-contrast'
+      ? stored
+      : 'system';
+  nativeTheme.themeSource = resolveNativeThemeSource(theme);
 }
 
 /**

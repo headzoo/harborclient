@@ -59,6 +59,72 @@ They block the Electron renderer thread and break visual consistency.
 Helpers live in [`dialogHelpers.ts`](src/renderer/src/ui/modals/dialogHelpers.ts)
 (`showAlert`, `showConfirm`) and [`useConfirm`](src/renderer/src/hooks/useConfirm.ts).
 
+### Accessibility
+
+Treat accessibility as a first-class requirement for renderer UI work — not an
+optional follow-up. When adding or changing UI, keyboard and screen-reader
+support should be designed in from the start. See [FIXES.md](./FIXES.md) for a
+detailed audit of known gaps and proposed fixes.
+
+**Interactive elements**
+
+- Use native `<button>`, `<input>`, `<select>`, and `<textarea>` where
+  possible. Do not attach `onClick` to `<div>`/`<span>` without `role`,
+  `tabIndex`, and keyboard handlers — prefer a real `<button type="button">`.
+- Icon-only buttons must have an `aria-label`. Do not rely on `title` as the
+  sole accessible name. Keep inner icons decorative (`FaIcon` defaults to
+  `aria-hidden`).
+- Controls hidden until hover must still appear on keyboard focus — use
+  `focus-visible:opacity-100` / `group-focus-within:opacity-100`, not hover
+  alone (see `iconButton` in [`classes.ts`](src/renderer/src/ui/shared/classes.ts)).
+- Set `type="button"` on buttons that are not form submit actions.
+
+**Forms and labels**
+
+- Every control needs a programmatic label: `<label htmlFor>` + matching `id`,
+  wrapping `<label>`, or `aria-label` / `aria-labelledby`. Placeholder text is
+  not a label.
+- When a label targets a child component (`VariableInput`, `CodeEditor`), that
+  component must accept and forward `id` and/or `aria-*` props to the underlying
+  control.
+- Validation errors need more than color: set `aria-invalid` and link the error
+  text with `aria-describedby`.
+
+**Dialogs and dynamic content**
+
+- Build blocking dialogs on [`Modal`](src/renderer/src/ui/shared/Modal.tsx) with
+  `role="dialog"`, `aria-modal`, an accessible name (`aria-labelledby` or
+  `aria-label`), focus trap, initial focus, and focus restoration on close. Do
+  not hand-roll one-off overlays.
+- Announce important status changes (loading, sending, errors) with
+  `role="status"` or `aria-live="polite"`. Follow the pattern in
+  [`BusyIndicator`](src/renderer/src/ui/shared/BusyIndicator.tsx).
+- Expose selection and expansion state with `aria-current`, `aria-selected`, and
+  `aria-expanded` — not color or background alone.
+
+**Custom widgets**
+
+- Tab bars and segmented controls must follow a WAI-ARIA pattern (`tablist` /
+  `tab` / `tabpanel`, or `radiogroup` / `radio` for single-choice pickers). See
+  [`SegmentedTabs`](src/renderer/src/components/SegmentedTabs.tsx).
+- Drag-and-drop must have a keyboard-operable alternative (e.g. dnd-kit
+  `KeyboardSensor` or explicit move actions in a menu).
+- Resize handles and other custom controls need keyboard support and a visible
+  focus indicator.
+
+**Visual design**
+
+- Do not convey information by color alone (status dots, pass/fail, errors).
+  Pair color with text or an accessible name; mark decorative indicators
+  `aria-hidden`.
+- Check contrast for `text-muted` and small labels against WCAG 4.5:1 where
+  they carry meaning.
+- Respect `prefers-reduced-motion` for animations and spinners.
+
+When fixing existing UI, prefer improving shared primitives (`Modal`,
+`SegmentedTabs`, `VariableInput`, shared button classes) so one change lifts
+many call sites.
+
 ## Documentation
 
 Always add clear, useful documentation when you write or change code. Match the

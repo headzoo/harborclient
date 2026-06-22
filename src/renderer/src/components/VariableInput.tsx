@@ -46,6 +46,21 @@ interface Props {
    * Opens collection settings to edit the hovered variable.
    */
   onEditVariable?: () => void;
+
+  /**
+   * DOM id forwarded to the underlying input for label association.
+   */
+  id?: string;
+
+  /**
+   * Accessible name when no visible label is associated via `htmlFor`.
+   */
+  'aria-label'?: string;
+
+  /**
+   * Id of the element that labels this input when using `aria-labelledby`.
+   */
+  'aria-labelledby'?: string;
 }
 
 /**
@@ -58,7 +73,10 @@ export function VariableInput({
   placeholder,
   onKeyDown,
   className = '',
-  onEditVariable
+  onEditVariable,
+  id,
+  'aria-label': ariaLabel,
+  'aria-labelledby': ariaLabelledBy
 }: Props): JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -170,6 +188,9 @@ export function VariableInput({
 
       <input
         ref={inputRef}
+        id={id}
+        aria-label={ariaLabel}
+        aria-labelledby={ariaLabelledBy}
         className={`relative w-full min-w-0 border-none bg-transparent px-2 py-1.5 text-[13px] text-transparent caret-text focus-visible:shadow-none ${className}`}
         type="text"
         placeholder={placeholder}

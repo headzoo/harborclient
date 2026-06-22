@@ -1,7 +1,7 @@
 import type { HttpMethod, Variable } from '#/shared/types';
+import { Button } from '#/renderer/src/components/Button';
 import { MethodSelect } from '#/renderer/src/components/MethodSelect';
 import { VariableInput } from '#/renderer/src/components/VariableInput';
-import { primaryButton } from '#/renderer/src/ui/shared/classes';
 import type { JSX } from 'react';
 
 interface Props {
@@ -70,15 +70,16 @@ export function UrlBar({
           onChange={onUrlChange}
           variables={variables}
           placeholder="Enter request URL"
+          aria-label="Request URL"
           onEditVariable={onEditVariables}
           onKeyDown={(e) => {
             if (e.key === 'Enter') onSend();
           }}
         />
       </div>
-      <button className={primaryButton} onClick={onSend} disabled={sending}>
+      <Button onClick={onSend} disabled={sending}>
         {sending ? 'Sending…' : 'Send'}
-      </button>
+      </Button>
     </div>
   );
 }

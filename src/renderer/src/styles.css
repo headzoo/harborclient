@@ -37,14 +37,14 @@
     --mac-separator: rgba(0, 0, 0, 0.08);
     --mac-text: rgba(0, 0, 0, 0.85);
     --mac-text-secondary: rgba(0, 0, 0, 0.65);
-    --mac-muted: rgba(0, 0, 0, 0.45);
+    --mac-muted: rgba(0, 0, 0, 0.58);
     --mac-accent: #007aff;
     --mac-selection: rgba(0, 122, 255, 0.18);
     --mac-danger: #ff3b30;
     --mac-danger-light: #d70015;
     --mac-warning: #ff9500;
     --mac-success: #34c759;
-    --mac-info: rgba(0, 0, 0, 0.35);
+    --mac-info: rgba(0, 0, 0, 0.55);
     --mac-method-get: #2d8a4e;
     --mac-method-post: #0066cc;
     --mac-method-put: #b8860b;
@@ -73,14 +73,14 @@
       --mac-separator: rgba(255, 255, 255, 0.08);
       --mac-text: rgba(255, 255, 255, 0.85);
       --mac-text-secondary: rgba(255, 255, 255, 0.65);
-      --mac-muted: rgba(255, 255, 255, 0.45);
+      --mac-muted: rgba(255, 255, 255, 0.58);
       --mac-accent: #0a84ff;
       --mac-selection: rgba(10, 132, 255, 0.22);
       --mac-danger: #ff453a;
       --mac-danger-light: #ff6961;
       --mac-warning: #ff9f0a;
       --mac-success: #30d158;
-      --mac-info: rgba(255, 255, 255, 0.35);
+      --mac-info: rgba(255, 255, 255, 0.55);
       --mac-method-get: #3d9960;
       --mac-method-post: #409cff;
       --mac-method-put: #d4a017;
@@ -89,6 +89,45 @@
       --mac-method-head: #8e8e93;
       --mac-method-options: #8e8e93;
     }
+  }
+
+  :root[data-theme='high-contrast'] {
+    color-scheme: dark;
+
+    --mac-surface: #000000;
+    --mac-sidebar: #000000;
+    --mac-sidebar-section: #000000;
+    --mac-control: #000000;
+    --mac-separator: rgba(255, 255, 255, 0.6);
+    --mac-text: #ffffff;
+    --mac-text-secondary: #ffffff;
+    --mac-muted: rgba(255, 255, 255, 0.85);
+    --mac-accent: #4dabff;
+    --mac-selection: rgba(77, 171, 255, 0.4);
+    --mac-danger: #ff6961;
+    --mac-danger-light: #ffb4af;
+    --mac-warning: #ffb340;
+    --mac-success: #5ce06a;
+    --mac-info: #ffffff;
+    --mac-method-get: #5ce06a;
+    --mac-method-post: #4dabff;
+    --mac-method-put: #ffd60a;
+    --mac-method-patch: #bf9bff;
+    --mac-method-delete: #ff6961;
+    --mac-method-head: #ffffff;
+    --mac-method-options: #ffffff;
+  }
+
+  :root[data-theme='high-contrast'] input:focus-visible,
+  :root[data-theme='high-contrast'] select:focus-visible,
+  :root[data-theme='high-contrast'] textarea:focus-visible,
+  :root[data-theme='high-contrast'] button:focus-visible,
+  :root[data-theme='high-contrast'] a:focus-visible,
+  :root[data-theme='high-contrast'] [tabindex]:not([tabindex='-1']):focus-visible,
+  :root[data-theme='high-contrast'] [role='button']:focus-visible {
+    outline: 2px solid var(--mac-accent);
+    outline-offset: 1px;
+    box-shadow: none;
   }
 
   * {
@@ -124,7 +163,10 @@
   input:focus-visible,
   select:focus-visible,
   textarea:focus-visible,
-  button:focus-visible {
+  button:focus-visible,
+  a:focus-visible,
+  [tabindex]:not([tabindex='-1']):focus-visible,
+  [role='button']:focus-visible {
     outline: none;
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--mac-accent) 35%, transparent);
   }
@@ -156,5 +198,17 @@
 
   100% {
     transform: translateX(400%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .busy-progress-bar {
+    animation: none;
+    width: 100%;
+    transform: none;
+  }
+
+  .animate-spin {
+    animation: none;
   }
 }

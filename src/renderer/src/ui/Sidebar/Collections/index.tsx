@@ -1,6 +1,7 @@
 import {
   DndContext,
   DragOverlay,
+  KeyboardSensor,
   PointerSensor,
   closestCenter,
   useSensor,
@@ -9,7 +10,12 @@ import {
   type DragOverEvent,
   type DragStartEvent
 } from '@dnd-kit/core';
-import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable';
 import {
   useEffect,
   useMemo,
@@ -270,7 +276,10 @@ export function Collections({
   const activeDragKindRef = useRef<DragKind | null>(null);
   const dragCollectionIdRef = useRef<number | null>(null);
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   /**
    * Clears drag state for request-row dragging.
@@ -357,6 +366,66 @@ export function Collections({
    */
   const getFolderRequests = (collectionId: number, folderId: number): SavedRequest[] =>
     (requestsByCollection[collectionId] ?? []).filter((req) => req.folder_id === folderId);
+
+  /**
+   * Moves a collection one position up or down in the sidebar list.
+   *
+   * @param collectionId The collection to move.
+   * @param direction Whether to move toward the top or bottom of the list.
+   */
+  const moveCollection = async (collectionId: number, direction: 'up' | 'down'): Promise<void> => {
+    const ids = collections.map((collection) => collection.id);
+    const index = ids.findIndex((id) => id === collectionId);
+    if (index < 0) return;
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= ids.length) return;
+    await onReorderCollections(arrayMove(ids, index, targetIndex));
+  };
+
+  /**
+   * Moves a folder one position up or down within its collection.
+   *
+   * @param collectionId The owning collection id.
+   * @param folderId The folder to move.
+   * @param direction Whether to move toward the top or bottom of the list.
+   */
+  const moveFolder = async (
+    collectionId: number,
+    folderId: number,
+    direction: 'up' | 'down'
+  ): Promise<void> => {
+    const folders = foldersByCollection[collectionId] ?? [];
+    const ids = folders.map((folder) => folder.id);
+    const index = ids.findIndex((id) => id === folderId);
+    if (index < 0) return;
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= ids.length) return;
+    await onReorderFolders(collectionId, arrayMove(ids, index, targetIndex));
+  };
+
+  /**
+   * Moves a request one position up or down within its folder or collection root list.
+   *
+   * @param collectionId The owning collection id.
+   * @param folderId The request's folder id, or null for collection root.
+   * @param requestId The request to move.
+   * @param direction Whether to move toward the top or bottom of the list.
+   */
+  const moveRequestInList = async (
+    collectionId: number,
+    folderId: number | null,
+    requestId: number,
+    direction: 'up' | 'down'
+  ): Promise<void> => {
+    const list =
+      folderId == null ? getRootRequests(collectionId) : getFolderRequests(collectionId, folderId);
+    const ids = list.map((req) => req.id);
+    const index = ids.findIndex((id) => id === requestId);
+    if (index < 0) return;
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= ids.length) return;
+    await onReorderRequests(collectionId, folderId, arrayMove(ids, index, targetIndex));
+  };
 
   /**
    * Precomputes per-collection folder and root-request groupings for rendering.
@@ -566,7 +635,7 @@ export function Collections({
         )}
 
         <SortableContext items={collectionIds} strategy={verticalListSortingStrategy}>
-          {collectionTrees.map(({ collection, folders, rootRequests }) => {
+          {collectionTrees.map(({ collection, folders, rootRequests }, collectionIndex) => {
             const expanded = expandedCollectionIds.has(collection.id);
             const selected = selectedCollectionId === collection.id;
             const loaded =
@@ -591,16 +660,24 @@ export function Collections({
 
             return (
               <div key={collection.id}>
-                <SortableRow id={collectionDragId(collection.id)} className={sourceRow(selected)}>
+                <SortableRow
+                  id={collectionDragId(collection.id)}
+                  className={sourceRow(selected)}
+                  dragHandleLabel={`Reorder collection "${collection.name}"`}
+                >
                   <button
+                    type="button"
                     className="inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-muted hover:text-text app-no-drag"
                     onClick={() => toggleCollection(collection.id)}
+                    aria-expanded={expanded}
                     aria-label={expanded ? 'Collapse' : 'Expand'}
                   >
                     <FaIcon icon={expanded ? faChevronDown : faChevronRight} className="h-3 w-3" />
                   </button>
                   <button
+                    type="button"
                     className="min-w-0 flex-1 cursor-pointer truncate border-none bg-transparent py-0.5 text-left text-[13px] text-inherit app-no-drag"
+                    aria-current={selected ? 'true' : undefined}
                     onClick={() => onSelectCollection(collection.id)}
                     onDoubleClick={() => onConfigureCollection(collection.id)}
                   >
@@ -621,6 +698,28 @@ export function Collections({
                     openMenuId={openMenuId}
                     onOpenChange={setOpenMenuId}
                     groups={[
+                      ...(collectionIndex > 0 || collectionIndex < collections.length - 1
+                        ? [
+                            [
+                              ...(collectionIndex > 0
+                                ? [
+                                    {
+                                      label: 'Move up',
+                                      onSelect: () => void moveCollection(collection.id, 'up')
+                                    }
+                                  ]
+                                : []),
+                              ...(collectionIndex < collections.length - 1
+                                ? [
+                                    {
+                                      label: 'Move down',
+                                      onSelect: () => void moveCollection(collection.id, 'down')
+                                    }
+                                  ]
+                                : [])
+                            ]
+                          ]
+                        : []),
                       [
                         {
                           label: 'Settings',
@@ -649,11 +748,11 @@ export function Collections({
                         },
                         ...(canInvite
                           ? [
-                            {
-                              label: 'Invite',
-                              onSelect: () => onInviteCollection(collection.id, collection.name)
-                            }
-                          ]
+                              {
+                                label: 'Invite',
+                                onSelect: () => onInviteCollection(collection.id, collection.name)
+                              }
+                            ]
                           : [])
                       ],
                       [
@@ -719,7 +818,7 @@ export function Collections({
                           strategy={verticalListSortingStrategy}
                         >
                           <div className="flex flex-col gap-0.5">
-                            {rootRequests.map((req) => (
+                            {rootRequests.map((req, requestIndex) => (
                               <RequestRow
                                 key={req.id}
                                 req={req}
@@ -727,6 +826,14 @@ export function Collections({
                                 openMenuId={openMenuId}
                                 onOpenChange={setOpenMenuId}
                                 folders={folders}
+                                canMoveUp={requestIndex > 0}
+                                canMoveDown={requestIndex < rootRequests.length - 1}
+                                onMoveUp={() =>
+                                  void moveRequestInList(collection.id, null, req.id, 'up')
+                                }
+                                onMoveDown={() =>
+                                  void moveRequestInList(collection.id, null, req.id, 'down')
+                                }
                                 onLoadRequest={onLoadRequest}
                                 onDeleteRequest={onDeleteRequest}
                                 onDuplicateRequest={onDuplicateRequest}
@@ -750,7 +857,7 @@ export function Collections({
                       </DropZone>
 
                       <SortableContext items={folderIds} strategy={verticalListSortingStrategy}>
-                        {folders.map((folder) => {
+                        {folders.map((folder, folderIndex) => {
                           const folderExpanded = expandedFolderIds.has(folder.id);
                           const folderRequests = getFolderRequests(collection.id, folder.id);
                           const folderRequestIds = folderRequests.map((req) =>
@@ -768,10 +875,13 @@ export function Collections({
                                 <SortableRow
                                   id={folderDragId(folder.id)}
                                   className={sourceRow(false)}
+                                  dragHandleLabel={`Reorder folder "${folder.name}"`}
                                 >
                                   <button
+                                    type="button"
                                     className="inline-flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded border-none bg-transparent p-0 text-muted hover:text-text app-no-drag"
                                     onClick={() => toggleFolder(folder.id)}
+                                    aria-expanded={folderExpanded}
                                     aria-label={
                                       folderExpanded ? 'Collapse folder' : 'Expand folder'
                                     }
@@ -794,6 +904,38 @@ export function Collections({
                                     openMenuId={openMenuId}
                                     onOpenChange={setOpenMenuId}
                                     groups={[
+                                      ...(folderIndex > 0 || folderIndex < folders.length - 1
+                                        ? [
+                                            [
+                                              ...(folderIndex > 0
+                                                ? [
+                                                    {
+                                                      label: 'Move up',
+                                                      onSelect: () =>
+                                                        void moveFolder(
+                                                          collection.id,
+                                                          folder.id,
+                                                          'up'
+                                                        )
+                                                    }
+                                                  ]
+                                                : []),
+                                              ...(folderIndex < folders.length - 1
+                                                ? [
+                                                    {
+                                                      label: 'Move down',
+                                                      onSelect: () =>
+                                                        void moveFolder(
+                                                          collection.id,
+                                                          folder.id,
+                                                          'down'
+                                                        )
+                                                    }
+                                                  ]
+                                                : [])
+                                            ]
+                                          ]
+                                        : []),
                                       [
                                         {
                                           label: 'New Request',
@@ -836,7 +978,7 @@ export function Collections({
                                     items={folderRequestIds}
                                     strategy={verticalListSortingStrategy}
                                   >
-                                    {folderRequests.map((req) => (
+                                    {folderRequests.map((req, requestIndex) => (
                                       <RequestRow
                                         key={req.id}
                                         req={req}
@@ -844,6 +986,24 @@ export function Collections({
                                         openMenuId={openMenuId}
                                         onOpenChange={setOpenMenuId}
                                         folders={folders}
+                                        canMoveUp={requestIndex > 0}
+                                        canMoveDown={requestIndex < folderRequests.length - 1}
+                                        onMoveUp={() =>
+                                          void moveRequestInList(
+                                            collection.id,
+                                            folder.id,
+                                            req.id,
+                                            'up'
+                                          )
+                                        }
+                                        onMoveDown={() =>
+                                          void moveRequestInList(
+                                            collection.id,
+                                            folder.id,
+                                            req.id,
+                                            'down'
+                                          )
+                                        }
                                         onLoadRequest={onLoadRequest}
                                         onDeleteRequest={onDeleteRequest}
                                         onDuplicateRequest={onDuplicateRequest}
@@ -878,8 +1038,8 @@ export function Collections({
 
                     <DragOverlay>
                       {dragCollectionId === collection.id &&
-                        activeDragKind === 'request' &&
-                        activeDragRequest ? (
+                      activeDragKind === 'request' &&
+                      activeDragRequest ? (
                         <div className="flex items-center gap-1.5 rounded border border-separator bg-surface px-2 py-1 shadow-md">
                           <span
                             className={`shrink-0 rounded px-1 py-px text-[10px] font-semibold ${METHOD_CLASSES[activeDragRequest.method.toLowerCase()] ?? 'bg-info text-white'}`}

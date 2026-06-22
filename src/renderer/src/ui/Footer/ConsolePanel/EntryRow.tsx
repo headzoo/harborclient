@@ -26,10 +26,13 @@ export function EntryRow({ entry, expanded, onToggle }: Props): JSX.Element {
       <button
         type="button"
         className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-[13px] hover:bg-selection/60 app-no-drag"
+        aria-expanded={expanded}
+        aria-controls={`console-entry-${entry.id}-details`}
         onClick={onToggle}
       >
         <span
           className={`inline-block h-2 w-2 shrink-0 rounded-full ${statusDotClass(result.status)}`}
+          aria-hidden="true"
         />
         <span
           className={`shrink-0 rounded px-1.5 py-0.5 text-[11px] font-semibold uppercase ${methodClass}`}
@@ -49,14 +52,18 @@ export function EntryRow({ entry, expanded, onToggle }: Props): JSX.Element {
             {entry.requestName}
           </span>
         )}
-        <span className="shrink-0 text-muted">{expanded ? '▾' : '▸'}</span>
+        <span className="shrink-0 text-muted" aria-hidden="true">
+          {expanded ? '▾' : '▸'}
+        </span>
       </button>
-      {expanded && (
-        <div className="border-t border-separator bg-surface px-3 py-3">
-          <ScriptDetails entry={entry} />
-          <RequestDetails result={result} />
-        </div>
-      )}
+      <div
+        id={`console-entry-${entry.id}-details`}
+        hidden={!expanded}
+        className="border-t border-separator bg-surface px-3 py-3"
+      >
+        <ScriptDetails entry={entry} />
+        <RequestDetails result={result} />
+      </div>
     </div>
   );
 }

@@ -1,6 +1,8 @@
 import type { JSX } from 'react';
+import { useId } from 'react';
 import type { DatabaseConnection } from '#/shared/types';
-import { field, secondaryButton } from '#/renderer/src/ui/shared/classes';
+import { Button } from '#/renderer/src/components/Button';
+import { field } from '#/renderer/src/ui/shared/classes';
 import { providerLabel } from '#/renderer/src/ui/Settings/constants';
 
 interface Props {
@@ -40,13 +42,18 @@ export function GeneralSection({
   onSave,
   onClose
 }: Props): JSX.Element {
+  const nameId = useId();
+  const databaseId = useId();
   const databaseSelectDisabled = connectionsLoading || connectionsError != null;
 
   return (
     <div className="mb-6 flex flex-col gap-4">
       <div>
-        <label className="mb-1 block text-[13px] text-muted">Name</label>
+        <label className="mb-1 block text-[13px] text-muted" htmlFor={nameId}>
+          Name
+        </label>
         <input
+          id={nameId}
           className={`${field} w-full`}
           type="text"
           value={name}
@@ -59,8 +66,11 @@ export function GeneralSection({
       </div>
 
       <div>
-        <label className="mb-1 block text-[13px] text-muted">Database</label>
+        <label className="mb-1 block text-[13px] text-muted" htmlFor={databaseId}>
+          Database
+        </label>
         <select
+          id={databaseId}
           className={`${field} w-full`}
           value={connectionId}
           disabled={databaseSelectDisabled}
@@ -76,9 +86,9 @@ export function GeneralSection({
         {connectionsError && (
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <p className="mb-0 text-[12px] text-danger">{connectionsError}</p>
-            <button type="button" className={secondaryButton} onClick={onConnectionsRetry}>
+            <Button type="button" variant="secondary" onClick={onConnectionsRetry}>
               Retry
-            </button>
+            </Button>
           </div>
         )}
         {!connectionsLoading && !connectionsError && (

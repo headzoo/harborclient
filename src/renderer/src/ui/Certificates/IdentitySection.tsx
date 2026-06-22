@@ -1,7 +1,8 @@
 import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { InviteIdentity } from '#/shared/types';
-import { field, primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
+import { Button } from '#/renderer/src/components/Button';
+import { field } from '#/renderer/src/ui/shared/classes';
 
 /**
  * Local invite identity: fingerprint, export, and import.
@@ -107,7 +108,9 @@ export function IdentitySection(): JSX.Element {
       </div>
 
       {loading ? (
-        <p className="text-[12px] text-muted">Loading…</p>
+        <p role="status" className="text-[12px] text-muted">
+          Loading…
+        </p>
       ) : identity ? (
         <>
           <label className="mb-1 block text-[12px] font-medium text-text">Fingerprint</label>
@@ -122,38 +125,33 @@ export function IdentitySection(): JSX.Element {
           />
 
           <div className="flex flex-wrap gap-2">
-            <button
+            <Button
               type="button"
-              className={secondaryButton}
+              variant="secondary"
               disabled={busy}
               onClick={() => void handleCopyPublicKey()}
             >
               Copy public key
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className={secondaryButton}
+              variant="secondary"
               disabled={busy}
               onClick={() => void handleExportPublicKey()}
             >
               Export public key
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className={`${secondaryButton} text-danger hover:bg-danger/15`}
+              variant="secondaryDanger"
               disabled={busy}
               onClick={() => void handleExportPrivateKey()}
             >
               Export private key
-            </button>
-            <button
-              type="button"
-              className={primaryButton}
-              disabled={busy}
-              onClick={() => void handleImportKeyPair()}
-            >
+            </Button>
+            <Button type="button" disabled={busy} onClick={() => void handleImportKeyPair()}>
               Import key pair
-            </button>
+            </Button>
           </div>
 
           <p className="mb-0 mt-4 text-[12px] text-danger">

@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import type { JSX, KeyboardEvent } from 'react';
 import type { RequestTab } from '#/renderer/src/store/drafts';
 import { isTabDirty } from '#/renderer/src/store/drafts';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
@@ -15,6 +15,11 @@ interface Props {
    * Whether this tab is the currently selected tab.
    */
   active: boolean;
+
+  /**
+   * Roving tabindex for the tab control: `0` when selected, `-1` otherwise.
+   */
+  tabIndex: number;
 
   /**
    * Called when the user selects this tab.
@@ -36,7 +41,11 @@ interface Props {
  */
 function SendingIndicator(): JSX.Element {
   return (
-    <span className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center" title="Sending…">
+    <span
+      className="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center"
+      role="status"
+      aria-label="Sending…"
+    >
       <svg
         className="h-3 w-3 animate-spin text-accent"
         viewBox="0 0 24 24"
@@ -62,17 +71,46 @@ function SendingIndicator(): JSX.Element {
 }
 
 /**
+ * Builds the accessible name for a request tab, including unsaved state.
+ *
+ * @param tab - Tab whose label is composed for screen readers.
+ * @returns Comma-separated method, name, and optional unsaved suffix.
+ */
+function requestTabAccessibleName(tab: RequestTab): string {
+  const parts = [tab.draft.method, tab.draft.name];
+  if (isTabDirty(tab)) parts.push('unsaved');
+  return parts.join(', ');
+}
+
+/**
  * Single request tab with method badge, dirty indicator, and close button.
  */
-export function TabItem({ tab, active, onSelect, onClose }: Props): JSX.Element {
+export function TabItem({ tab, active, tabIndex, onSelect, onClose }: Props): JSX.Element {
+  /**
+   * Activates this tab when the user presses Enter or Space on the tab control.
+   *
+   * @param event - Keyboard event from the tab element.
+   */
+  const handleTabKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onSelect(tab.tabId);
+    }
+  };
+
   return (
     <div
-      className={`group -mb-1 flex max-w-[220px] shrink-0 self-stretch items-stretch gap-1.5 rounded-t-md border border-b-0 px-4 ${requestTabItem(active)}`}
+      role="tab"
+      id={`request-tab-${tab.tabId}`}
+      aria-controls={`request-tabpanel-${tab.tabId}`}
+      aria-selected={active}
+      aria-label={requestTabAccessibleName(tab)}
+      tabIndex={tabIndex}
+      className={`group -mb-1 flex max-w-[220px] shrink-0 cursor-pointer self-stretch items-stretch gap-1.5 rounded-t-md border border-b-0 px-4 ${requestTabItem(active)}`}
+      onClick={() => onSelect(tab.tabId)}
+      onKeyDown={handleTabKeyDown}
     >
-      <button
-        className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 border-none bg-transparent p-0 py-2 text-inherit app-no-drag"
-        onClick={() => onSelect(tab.tabId)}
-      >
+      <span className="flex min-w-0 flex-1 items-center gap-1.5 py-2 text-inherit app-no-drag">
         <span
           className={`shrink-0 rounded px-1 py-px text-[10px] font-semibold ${METHOD_CLASSES[tab.draft.method.toLowerCase()] ?? 'bg-info text-white'}`}
         >
@@ -80,13 +118,15 @@ export function TabItem({ tab, active, onSelect, onClose }: Props): JSX.Element 
         </span>
         {tab.sending && <SendingIndicator />}
         {isTabDirty(tab) && (
-          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted" title="Unsaved changes" />
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted" aria-hidden="true" />
         )}
         <span className="truncate text-[13px]">{tab.draft.name}</span>
-      </button>
+      </span>
       <button
-        className="inline-flex aspect-square shrink-0 cursor-pointer items-center justify-center self-stretch rounded-md border-none bg-transparent text-[14px] text-muted opacity-0 transition-opacity group-hover:opacity-100 hover:bg-selection hover:text-text app-no-drag"
+        type="button"
+        className="inline-flex aspect-square shrink-0 cursor-pointer items-center justify-center self-stretch rounded-md border-none bg-transparent text-[14px] text-muted opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 focus-visible:opacity-100 hover:bg-selection hover:text-text app-no-drag"
         title="Close tab"
+        aria-label="Close tab"
         onClick={(e) => {
           e.stopPropagation();
           onClose(tab.tabId);

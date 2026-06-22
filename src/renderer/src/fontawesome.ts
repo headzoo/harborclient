@@ -3,12 +3,13 @@ import {
   faBars,
   faChevronDown,
   faChevronRight,
+  faGripVertical,
   faPlus,
   faTableColumns,
   faXmark
 } from '@fortawesome/free-solid-svg-icons';
 
-library.add(faXmark, faPlus, faBars, faTableColumns, faChevronDown, faChevronRight);
+library.add(faXmark, faPlus, faBars, faTableColumns, faChevronDown, faChevronRight, faGripVertical);
 config.autoAddCss = false;
 
-export { faBars, faChevronDown, faChevronRight, faPlus, faTableColumns, faXmark };
+export { faBars, faChevronDown, faChevronRight, faGripVertical, faPlus, faTableColumns, faXmark };

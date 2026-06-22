@@ -1,9 +1,14 @@
 import { useMemo, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { ScriptTestResult, SendResult } from '#/shared/types';
+import { Button } from '#/renderer/src/components/Button';
 import { CodeEditor } from '#/renderer/src/components/CodeEditor';
-import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
-import { secondaryButton, statusDotClass, toolbarButton } from '#/renderer/src/ui/shared/classes';
+import {
+  SegmentedTabs,
+  SegmentedTabPanel,
+  SegmentedTabsGroup
+} from '#/renderer/src/components/SegmentedTabs';
+import { statusDotClass } from '#/renderer/src/ui/shared/classes';
 import {
   bodyLanguage,
   formatBody,
@@ -108,10 +113,12 @@ export function Response({ response, sending, testResults, onCancel }: Props): J
     return (
       <div className="flex flex-1 flex-col p-3">
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-[13px] text-muted">
-          <span>Sending request…</span>
-          <button className={secondaryButton} onClick={onCancel}>
+          <div role="status" aria-label="Sending request">
+            <span>Sending request…</span>
+          </div>
+          <Button variant="secondary" onClick={onCancel}>
             Cancel
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -127,6 +134,7 @@ export function Response({ response, sending, testResults, onCancel }: Props): J
         <span className="inline-flex items-center gap-1.5 font-medium text-text">
           <span
             className={`inline-block h-2 w-2 shrink-0 rounded-full ${statusDotClass(response.status)}`}
+            aria-hidden="true"
           />
           {response.error ? 'Error' : `${response.status} ${response.statusText}`}
         </span>
@@ -140,50 +148,56 @@ export function Response({ response, sending, testResults, onCancel }: Props): J
         </div>
       )}
 
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <SegmentedTabs
-          value={effectiveTab}
-          onChange={setTab}
-          tabs={[
-            { value: 'body', label: 'Body' },
-            { value: 'headers', label: 'Headers' },
-            {
-              value: 'tests',
-              hidden: !hasTests,
-              label: (
-                <>
-                  Tests
-                  <span
-                    className={`ml-1.5 text-[12px] ${failedCount > 0 ? 'text-danger' : 'text-muted'}`}
-                  >
-                    {passedCount}/{testResults.length}
-                  </span>
-                </>
-              )
-            }
-          ]}
-        />
-        <div className="flex shrink-0 items-center gap-1">
-          <button type="button" className={toolbarButton} onClick={() => void handleCopy()}>
-            Copy
-          </button>
-          <button type="button" className={toolbarButton} onClick={() => void handleExport()}>
-            Export
-          </button>
-        </div>
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-auto">
-        {effectiveTab === 'body' && (
-          <CodeEditor
-            readOnly
-            value={formattedBody || '(empty body)'}
-            language={responseBodyLanguage}
+      <SegmentedTabsGroup value={effectiveTab} onChange={setTab} ariaLabel="Response view">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <SegmentedTabs
+            tabs={[
+              { value: 'body', label: 'Body' },
+              { value: 'headers', label: 'Headers' },
+              {
+                value: 'tests',
+                hidden: !hasTests,
+                label: (
+                  <>
+                    Tests
+                    <span
+                      className={`ml-1.5 text-[12px] ${failedCount > 0 ? 'text-danger' : 'text-muted'}`}
+                    >
+                      {passedCount}/{testResults.length}
+                    </span>
+                  </>
+                )
+              }
+            ]}
           />
-        )}
-        {effectiveTab === 'headers' && <Headers headers={response.headers} />}
-        {effectiveTab === 'tests' && hasTests && <Tests testResults={testResults} />}
-      </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button type="button" variant="toolbar" onClick={() => void handleCopy()}>
+              Copy
+            </Button>
+            <Button type="button" variant="toolbar" onClick={() => void handleExport()}>
+              Export
+            </Button>
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-auto">
+          <SegmentedTabPanel value="body">
+            <CodeEditor
+              readOnly
+              value={formattedBody || '(empty body)'}
+              language={responseBodyLanguage}
+            />
+          </SegmentedTabPanel>
+          <SegmentedTabPanel value="headers">
+            <Headers headers={response.headers} />
+          </SegmentedTabPanel>
+          {hasTests && (
+            <SegmentedTabPanel value="tests">
+              <Tests testResults={testResults} />
+            </SegmentedTabPanel>
+          )}
+        </div>
+      </SegmentedTabsGroup>
     </div>
   );
 }

@@ -1,15 +1,11 @@
-import { useEffect, useMemo, useState, type JSX } from 'react';
+import { useEffect, useId, useMemo, useState, type JSX } from 'react';
 import type { Environment, Variable } from '#/shared/types';
 import { VariableTable } from '#/renderer/src/components/VariableTable';
 import { cleanVariables } from '#/renderer/src/components/variableUtils';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faXmark } from '#/renderer/src/fontawesome';
-import {
-  field,
-  iconButton,
-  primaryButton,
-  secondaryButton
-} from '#/renderer/src/ui/shared/classes';
+import { Button } from '#/renderer/src/components/Button';
+import { field } from '#/renderer/src/ui/shared/classes';
 import { serializeEnvironmentForm } from './serialize';
 
 interface Props {
@@ -61,6 +57,7 @@ function EnvironmentSettingsForm({
       : [{ key: '', value: '', defaultValue: '', share: false }]
   );
   const [saving, setSaving] = useState(false);
+  const nameId = useId();
 
   /**
    * Compares serialized form state to the saved environment to detect unsaved edits.
@@ -101,19 +98,23 @@ function EnvironmentSettingsForm({
       <div className="mx-auto w-full">
         <div className="mb-6 flex items-center justify-between gap-4">
           <h1 className="m-0 text-[15px] font-semibold text-text">Environment Settings</h1>
-          <button
+          <Button
             type="button"
-            className={`${iconButton} opacity-100 text-[28px]`}
+            variant="icon"
+            className="opacity-100 text-[28px]"
             title="Close"
             onClick={onClose}
           >
             <FaIcon icon={faXmark} className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
 
         <div className="mb-6">
-          <label className="mb-1 block text-[13px] text-muted">Name</label>
+          <label className="mb-1 block text-[13px] text-muted" htmlFor={nameId}>
+            Name
+          </label>
           <input
+            id={nameId}
             className={`${field} w-full`}
             type="text"
             value={name}
@@ -134,16 +135,12 @@ function EnvironmentSettingsForm({
         </div>
 
         <div className="flex justify-end gap-2">
-          <button className={secondaryButton} onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             Cancel
-          </button>
-          <button
-            className={primaryButton}
-            onClick={() => void handleSave()}
-            disabled={!name.trim() || saving}
-          >
+          </Button>
+          <Button onClick={() => void handleSave()} disabled={!name.trim() || saving}>
             {saving ? 'Saving…' : 'Save'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

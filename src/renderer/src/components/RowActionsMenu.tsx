@@ -1,7 +1,7 @@
 import { useEffect, useRef, type JSX } from 'react';
+import { Button } from '#/renderer/src/components/Button';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faBars } from '#/renderer/src/fontawesome';
-import { iconButton } from '#/renderer/src/ui/shared/classes';
 
 export type MenuItem = {
   label: string;
@@ -83,10 +83,12 @@ export function RowActionsMenu({ groups, menuId, openMenuId, onOpenChange }: Pro
 
   return (
     <div ref={rootRef} className="relative shrink-0">
-      <button
+      <Button
         type="button"
-        className={`${iconButton} ${isOpen ? 'opacity-100' : ''}`}
+        variant="icon"
+        className={isOpen ? 'opacity-100' : undefined}
         title="Actions"
+        aria-label="Row actions"
         aria-haspopup="menu"
         aria-expanded={isOpen}
         onClick={(e) => {
@@ -95,7 +97,7 @@ export function RowActionsMenu({ groups, menuId, openMenuId, onOpenChange }: Pro
         }}
       >
         <FaIcon icon={faBars} className="h-3.5 w-3.5" />
-      </button>
+      </Button>
       {isOpen && (
         <div
           role="menu"

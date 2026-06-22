@@ -85,6 +85,8 @@ export function DatabaseConnectionForm({
         <div>
           <span className="mb-2 block text-[12px] font-medium text-text">Type</span>
           <SegmentedTabs
+            pattern="radiogroup"
+            ariaLabel="Database type"
             value={connection.type}
             onChange={handleTypeChange}
             tabs={PROVIDER_OPTIONS}

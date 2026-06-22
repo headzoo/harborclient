@@ -56,7 +56,7 @@ export const publicKeyPem = z.string();
  */
 export const name = z.string().trim().min(1, 'name is required');
 
-export const themeSource = z.enum(['light', 'dark', 'system']);
+export const themeSource = z.enum(['light', 'dark', 'system', 'high-contrast']);
 
 export const editorTab = z.enum([
   'params',

@@ -1,7 +1,7 @@
 import { useCallback, type JSX } from 'react';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import { selectConfirmModal } from '#/renderer/src/store/slices/modalsSlice';
-import { primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
+import { Button } from '#/renderer/src/components/Button';
 import { Modal } from '#/renderer/src/ui/shared/Modal';
 import { resolveConfirm } from '#/renderer/src/ui/modals/dialogHelpers';
 
@@ -28,22 +28,22 @@ export function ConfirmModal(): JSX.Element | null {
 
   if (!confirmModal) return null;
 
-  const confirmButtonClass =
-    confirmModal.variant === 'danger'
-      ? 'cursor-pointer rounded-md border border-transparent bg-danger px-3 py-1 text-[15px] font-medium text-white shadow-sm hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50 app-no-drag'
-      : primaryButton;
-
   return (
-    <Modal onClose={handleCancel}>
-      <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">{confirmModal.title}</h2>
+    <Modal onClose={handleCancel} labelledBy="confirm-modal-title">
+      <h2 id="confirm-modal-title" className="m-0 mb-1 text-[13px] font-semibold text-text">
+        {confirmModal.title}
+      </h2>
       <p className="mb-4 text-[12px] text-muted">{confirmModal.message}</p>
       <div className="flex justify-end gap-2">
-        <button className={secondaryButton} onClick={handleCancel}>
+        <Button variant="secondary" onClick={handleCancel}>
           {confirmModal.cancelLabel}
-        </button>
-        <button className={confirmButtonClass} onClick={handleConfirm}>
+        </Button>
+        <Button
+          variant={confirmModal.variant === 'danger' ? 'primaryDanger' : 'primary'}
+          onClick={handleConfirm}
+        >
           {confirmModal.confirmLabel}
-        </button>
+        </Button>
       </div>
     </Modal>
   );

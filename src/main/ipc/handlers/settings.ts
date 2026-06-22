@@ -27,10 +27,23 @@ const THEME_SETTING_KEY = 'theme';
  * @returns A valid theme source, defaulting to system.
  */
 function parseThemeSource(value: string | undefined): ThemeSource {
-  if (value === 'light' || value === 'dark' || value === 'system') {
+  if (value === 'light' || value === 'dark' || value === 'system' || value === 'high-contrast') {
     return value;
   }
   return 'system';
+}
+
+/**
+ * Maps a persisted theme preference to Electron's nativeTheme.themeSource.
+ *
+ * High contrast is stored separately but applied as dark so native chrome and
+ * prefers-color-scheme consumers stay on the dark palette.
+ *
+ * @param theme - Persisted theme preference.
+ * @returns Value suitable for nativeTheme.themeSource.
+ */
+function resolveNativeThemeSource(theme: ThemeSource): 'light' | 'dark' | 'system' {
+  return theme === 'high-contrast' ? 'dark' : theme;
 }
 
 /**
@@ -43,14 +56,14 @@ export function registerSettingsHandlers(db: IDatabase): void {
   // Returns the application semver from package metadata.
   handle('app:getVersion', ipcArgSchemas.none, () => app.getVersion());
 
-  // Returns the persisted light/dark/system theme preference.
+  // Returns the persisted light/dark/system/high-contrast theme preference.
   handle('theme:get', ipcArgSchemas.none, async () =>
     parseThemeSource(await db.getSetting(THEME_SETTING_KEY))
   );
 
-  // Persists and applies the light/dark/system theme preference.
+  // Persists and applies the light/dark/system/high-contrast theme preference.
   handle('theme:set', ipcArgSchemas.themeSet, async (_event, theme) => {
-    nativeTheme.themeSource = theme;
+    nativeTheme.themeSource = resolveNativeThemeSource(theme);
     await db.setSetting(THEME_SETTING_KEY, theme);
   });
 

@@ -1,7 +1,7 @@
 import { useCallback, type JSX } from 'react';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import { selectAlertModal, setAlertModal } from '#/renderer/src/store/slices/modalsSlice';
-import { primaryButton } from '#/renderer/src/ui/shared/classes';
+import { Button } from '#/renderer/src/components/Button';
 import { Modal } from '#/renderer/src/ui/shared/Modal';
 
 /**
@@ -21,13 +21,13 @@ export function AlertModal(): JSX.Element | null {
   if (!alertModal) return null;
 
   return (
-    <Modal onClose={handleClose}>
-      <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">{alertModal.title}</h2>
+    <Modal onClose={handleClose} labelledBy="alert-modal-title">
+      <h2 id="alert-modal-title" className="m-0 mb-1 text-[13px] font-semibold text-text">
+        {alertModal.title}
+      </h2>
       <p className="mb-4 text-[12px] text-muted">{alertModal.message}</p>
       <div className="flex justify-end gap-2">
-        <button className={primaryButton} onClick={handleClose}>
-          OK
-        </button>
+        <Button onClick={handleClose}>OK</Button>
       </div>
     </Modal>
   );

@@ -2,19 +2,14 @@ import type { JSX } from 'react';
 import type { KeyValue, Variable } from '#/shared/types';
 import { CodeEditor } from '#/renderer/src/components/CodeEditor';
 import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
+import { SegmentedTabPanel } from '#/renderer/src/components/SegmentedTabs';
 import type { RequestDraft } from '#/renderer/src/store/drafts';
 import { field } from '#/renderer/src/ui/shared/classes';
 import { AuthEditor } from './AuthEditor';
 import { BodyEditor } from './BodyEditor';
 import { CookiesEditor } from './CookiesEditor';
-import type { EditorTab } from './types';
 
 interface Props {
-  /**
-   * Active editor tab.
-   */
-  tab: EditorTab;
-
   /**
    * Current request being edited.
    */
@@ -52,7 +47,6 @@ interface Props {
  * Tab panel content for params, headers, body, and scripts.
  */
 export function TabContent({
-  tab,
   draft,
   showBody,
   update,
@@ -62,7 +56,7 @@ export function TabContent({
 }: Props): JSX.Element {
   return (
     <div className="min-h-[160px] pt-2">
-      {tab === 'params' && (
+      <SegmentedTabPanel value="params">
         <KeyValueEditor
           rows={draft.params}
           onChange={onParamsChange}
@@ -71,8 +65,8 @@ export function TabContent({
           variables={variables}
           onEditVariable={onEditVariables}
         />
-      )}
-      {tab === 'headers' && (
+      </SegmentedTabPanel>
+      <SegmentedTabPanel value="headers">
         <KeyValueEditor
           rows={draft.headers}
           onChange={(headers) => update({ headers })}
@@ -81,27 +75,30 @@ export function TabContent({
           variables={variables}
           onEditVariable={onEditVariables}
         />
-      )}
-      {tab === 'auth' && (
+      </SegmentedTabPanel>
+      <SegmentedTabPanel value="auth">
         <AuthEditor
           auth={draft.auth}
           onChange={(auth) => update({ auth })}
           variables={variables}
           onEditVariables={onEditVariables}
         />
+      </SegmentedTabPanel>
+      <SegmentedTabPanel value="cookies">
+        <CookiesEditor url={draft.url} variables={variables} />
+      </SegmentedTabPanel>
+      {showBody && (
+        <SegmentedTabPanel value="body">
+          <BodyEditor
+            bodyType={draft.body_type}
+            body={draft.body}
+            update={update}
+            variables={variables}
+            onEditVariables={onEditVariables}
+          />
+        </SegmentedTabPanel>
       )}
-      {tab === 'cookies' && <CookiesEditor url={draft.url} variables={variables} />}
-
-      {tab === 'body' && showBody && (
-        <BodyEditor
-          bodyType={draft.body_type}
-          body={draft.body}
-          update={update}
-          variables={variables}
-          onEditVariables={onEditVariables}
-        />
-      )}
-      {tab === 'pre' && (
+      <SegmentedTabPanel value="pre">
         <CodeEditor
           value={draft.pre_request_script}
           onChange={(pre_request_script) => update({ pre_request_script })}
@@ -112,8 +109,8 @@ export function TabContent({
           onEditVariable={onEditVariables}
           minHeight="200px"
         />
-      )}
-      {tab === 'post' && (
+      </SegmentedTabPanel>
+      <SegmentedTabPanel value="post">
         <CodeEditor
           value={draft.post_request_script}
           onChange={(post_request_script) => update({ post_request_script })}
@@ -126,15 +123,15 @@ export function TabContent({
           onEditVariable={onEditVariables}
           minHeight="200px"
         />
-      )}
-      {tab === 'comment' && (
+      </SegmentedTabPanel>
+      <SegmentedTabPanel value="comment">
         <textarea
           className={`${field} w-full min-h-[200px] resize-y`}
           value={draft.comment}
           onChange={(event) => update({ comment: event.target.value })}
           placeholder="Notes for this request"
         />
-      )}
+      </SegmentedTabPanel>
     </div>
   );
 }

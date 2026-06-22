@@ -71,6 +71,7 @@ describe('enum schemas', () => {
   it('themeSource rejects unknown values', () => {
     expect(themeSource.safeParse('auto').success).toBe(false);
     expect(themeSource.safeParse('system').success).toBe(true);
+    expect(themeSource.safeParse('high-contrast').success).toBe(true);
   });
 
   it('editorTab rejects unknown values', () => {

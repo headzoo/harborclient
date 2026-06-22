@@ -15,8 +15,13 @@ import {
   importCollection,
   saveRequest
 } from '#/renderer/src/store/thunks';
-import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
-import { field, primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
+import {
+  SegmentedTabs,
+  SegmentedTabPanel,
+  SegmentedTabsGroup
+} from '#/renderer/src/components/SegmentedTabs';
+import { Button } from '#/renderer/src/components/Button';
+import { field } from '#/renderer/src/ui/shared/classes';
 import { Modal } from '#/renderer/src/ui/shared/Modal';
 import { formatErrorMessage } from '#/renderer/src/ui/modals/dialogHelpers';
 
@@ -100,8 +105,8 @@ export function CollectionModal(): JSX.Element | null {
   const showImportTab = collectionModal.mode === 'create';
 
   return (
-    <Modal onClose={handleClose} className="w-[32rem]">
-      <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">
+    <Modal onClose={handleClose} className="w-[32rem]" labelledBy="collection-modal-title">
+      <h2 id="collection-modal-title" className="m-0 mb-1 text-[13px] font-semibold text-text">
         {showImportTab ? 'Add collection' : 'New collection'}
       </h2>
       {collectionModal.mode === 'create-and-save' && (
@@ -110,53 +115,92 @@ export function CollectionModal(): JSX.Element | null {
         </p>
       )}
 
-      {showImportTab && (
-        <SegmentedTabs
+      {showImportTab ? (
+        <SegmentedTabsGroup
           value={collectionModal.tab}
           onChange={(tab) => dispatch(setCollectionModalTab(tab))}
-          fullWidth
-          className="mb-3"
-          tabs={[
-            { value: 'create', label: 'Create new' },
-            { value: 'import', label: 'Import from file' },
-            { value: 'invite', label: 'Accept invite' }
-          ]}
-        />
-      )}
-
-      {collectionModal.submitError && (
-        <p className="mb-3 text-[12px] text-danger">{collectionModal.submitError}</p>
-      )}
-
-      {collectionModal.tab === 'invite' && showImportTab ? (
-        <>
-          <p className="mb-3 text-[12px] text-muted">
-            Paste an invite token from a trusted sender. Add their public key under File →
-            Certificates first. Restart HarborClient after accepting to load collections from that
-            database.
-          </p>
-          <textarea
-            className={`${field} min-h-28 w-full resize-y font-mono text-[12px]`}
-            autoFocus
-            placeholder="Paste invite token"
-            value={collectionModal.inviteTokenInput}
-            onChange={(e) => dispatch(setCollectionModalInviteTokenInput(e.target.value))}
+          ariaLabel="Add collection options"
+        >
+          <SegmentedTabs
+            fullWidth
+            className="mb-3"
+            tabs={[
+              { value: 'create', label: 'Create new' },
+              { value: 'import', label: 'Import from file' },
+              { value: 'invite', label: 'Accept invite' }
+            ]}
           />
-          <div className="mt-4 flex justify-end gap-2">
-            <button className={secondaryButton} onClick={handleClose}>
-              Cancel
-            </button>
-            <button
-              className={primaryButton}
-              onClick={() => void handleAcceptInvite()}
-              disabled={!collectionModal.inviteTokenInput.trim()}
-            >
-              Accept
-            </button>
-          </div>
-        </>
-      ) : collectionModal.tab === 'create' || !showImportTab ? (
+
+          {collectionModal.submitError && (
+            <p className="mb-3 text-[12px] text-danger">{collectionModal.submitError}</p>
+          )}
+
+          <SegmentedTabPanel value="invite">
+            <p className="mb-3 text-[12px] text-muted">
+              Paste an invite token from a trusted sender. Add their public key under File →
+              Certificates first. Restart HarborClient after accepting to load collections from that
+              database.
+            </p>
+            <textarea
+              className={`${field} min-h-28 w-full resize-y font-mono text-[12px]`}
+              autoFocus
+              placeholder="Paste invite token"
+              value={collectionModal.inviteTokenInput}
+              onChange={(e) => dispatch(setCollectionModalInviteTokenInput(e.target.value))}
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="secondary" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => void handleAcceptInvite()}
+                disabled={!collectionModal.inviteTokenInput.trim()}
+              >
+                Accept
+              </Button>
+            </div>
+          </SegmentedTabPanel>
+
+          <SegmentedTabPanel value="create">
+            <input
+              className={`${field} w-full`}
+              type="text"
+              autoFocus
+              placeholder="Collection name"
+              value={collectionModal.name}
+              onChange={(e) => dispatch(setCollectionModalName(e.target.value))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void handleSubmit();
+              }}
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="secondary" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button onClick={() => void handleSubmit()} disabled={!collectionModal.name.trim()}>
+                {collectionModal.mode === 'create-and-save' ? 'Create & Save' : 'Create'}
+              </Button>
+            </div>
+          </SegmentedTabPanel>
+
+          <SegmentedTabPanel value="import">
+            <p className="mb-4 text-[12px] text-muted">
+              Choose a HarborClient or Postman collection export (.json) to import all saved
+              requests.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button onClick={() => void handleImport()}>Import .json</Button>
+            </div>
+          </SegmentedTabPanel>
+        </SegmentedTabsGroup>
+      ) : (
         <>
+          {collectionModal.submitError && (
+            <p className="mb-3 text-[12px] text-danger">{collectionModal.submitError}</p>
+          )}
           <input
             className={`${field} w-full`}
             type="text"
@@ -169,30 +213,12 @@ export function CollectionModal(): JSX.Element | null {
             }}
           />
           <div className="mt-4 flex justify-end gap-2">
-            <button className={secondaryButton} onClick={handleClose}>
+            <Button variant="secondary" onClick={handleClose}>
               Cancel
-            </button>
-            <button
-              className={primaryButton}
-              onClick={() => void handleSubmit()}
-              disabled={!collectionModal.name.trim()}
-            >
+            </Button>
+            <Button onClick={() => void handleSubmit()} disabled={!collectionModal.name.trim()}>
               {collectionModal.mode === 'create-and-save' ? 'Create & Save' : 'Create'}
-            </button>
-          </div>
-        </>
-      ) : (
-        <>
-          <p className="mb-4 text-[12px] text-muted">
-            Choose a HarborClient or Postman collection export (.json) to import all saved requests.
-          </p>
-          <div className="flex justify-end gap-2">
-            <button className={secondaryButton} onClick={handleClose}>
-              Cancel
-            </button>
-            <button className={primaryButton} onClick={() => void handleImport()}>
-              Import .json
-            </button>
+            </Button>
           </div>
         </>
       )}

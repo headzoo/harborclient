@@ -819,9 +819,9 @@ export interface ScriptRunResult {
 }
 
 /**
- * Theme preference for light, dark, or system appearance.
+ * Theme preference for light, dark, system, or high-contrast appearance.
  */
-export type ThemeSource = 'light' | 'dark' | 'system';
+export type ThemeSource = 'light' | 'dark' | 'system' | 'high-contrast';
 
 /**
  * Named CodeMirror syntax themes available in settings.

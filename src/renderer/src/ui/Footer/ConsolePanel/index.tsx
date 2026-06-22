@@ -1,9 +1,9 @@
 import { useCallback, useRef, useState, type JSX } from 'react';
 import type { ConsoleEntry } from '#/renderer/src/store';
+import { Button } from '#/renderer/src/components/Button';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { ResizeHandle, useResizable } from '#/renderer/src/components/Resizable';
 import { faXmark } from '#/renderer/src/fontawesome';
-import { secondaryButton } from '#/renderer/src/ui/shared/classes';
 import { EntryRow } from './EntryRow';
 import { DEFAULT_HEIGHT, MIN_HEIGHT } from './constants';
 
@@ -35,7 +35,13 @@ interface Props {
 export function ConsolePanel({ entries, open, onClose, onClear }: Props): JSX.Element {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const { size: height, onResizeStart } = useResizable({
+  const {
+    size: height,
+    minSize: panelMinSize,
+    maxSize: panelMaxSize,
+    onResizeStart,
+    onKeyboardResize
+  } = useResizable({
     axis: 'y',
     direction: -1,
     defaultSize: DEFAULT_HEIGHT,
@@ -72,10 +78,20 @@ export function ConsolePanel({ entries, open, onClose, onClear }: Props): JSX.El
   ].join(' ');
 
   return (
-    <div ref={containerRef} className={panelClassName} style={{ height }} aria-hidden={!open}>
+    <div
+      ref={containerRef}
+      id="footer-console-panel"
+      className={panelClassName}
+      style={{ height }}
+      aria-hidden={!open}
+    >
       <ResizeHandle
         orientation="horizontal"
+        value={height}
+        min={panelMinSize}
+        max={panelMaxSize}
         onResizeStart={onResizeStart}
+        onKeyboardResize={onKeyboardResize}
         ariaLabel="Resize console panel"
       />
 
@@ -85,14 +101,14 @@ export function ConsolePanel({ entries, open, onClose, onClear }: Props): JSX.El
           {entries.length > 0 && (
             <span className="text-[12px] font-normal text-muted">({entries.length})</span>
           )}
-          <button
+          <Button
             type="button"
-            className={secondaryButton}
+            variant="secondary"
             onClick={onClear}
             disabled={entries.length === 0}
           >
             Clear
-          </button>
+          </Button>
         </div>
         <div className="flex items-center gap-2">
           <button

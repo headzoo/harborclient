@@ -33,6 +33,26 @@ interface Props {
   folders: Folder[];
 
   /**
+   * Whether the request can move one position up within its list.
+   */
+  canMoveUp: boolean;
+
+  /**
+   * Whether the request can move one position down within its list.
+   */
+  canMoveDown: boolean;
+
+  /**
+   * Moves the request one position up within its current folder or root list.
+   */
+  onMoveUp: () => void;
+
+  /**
+   * Moves the request one position down within its current folder or root list.
+   */
+  onMoveDown: () => void;
+
+  /**
    * Loads the request into the editor.
    */
   onLoadRequest: (req: SavedRequest) => void;
@@ -67,6 +87,10 @@ export function RequestRow({
   openMenuId,
   onOpenChange,
   folders,
+  canMoveUp,
+  canMoveDown,
+  onMoveUp,
+  onMoveDown,
   onLoadRequest,
   onDeleteRequest,
   onDuplicateRequest,
@@ -74,20 +98,36 @@ export function RequestRow({
   onMoveRequest
 }: Props): JSX.Element {
   const confirm = useConfirm();
-  const moveItems =
-    folders.length > 0
-      ? [
-        {
-          label: 'Move to root',
-          onSelect: () => onMoveRequest(req.id, null)
-        }
-      ]
-      : [];
+
+  const reorderItems = [
+    ...(canMoveUp ? [{ label: 'Move up', onSelect: onMoveUp }] : []),
+    ...(canMoveDown ? [{ label: 'Move down', onSelect: onMoveDown }] : [])
+  ];
+
+  const moveToItems = [
+    ...(req.folder_id != null
+      ? [{ label: 'Move to root', onSelect: () => onMoveRequest(req.id, null) }]
+      : []),
+    ...folders
+      .filter((folder) => folder.id !== req.folder_id)
+      .map((folder) => ({
+        label: `Move to ${folder.name}`,
+        onSelect: () => onMoveRequest(req.id, folder.id)
+      }))
+  ];
+
+  const moveGroup = [...reorderItems, ...moveToItems];
 
   return (
-    <SortableRow id={requestDragId(req.id)} className={sourceRow(activeRequestId === req.id)}>
+    <SortableRow
+      id={requestDragId(req.id)}
+      className={sourceRow(activeRequestId === req.id)}
+      dragHandleLabel={`Reorder request "${req.name}"`}
+    >
       <button
+        type="button"
         className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 border-none bg-transparent py-0.5 text-left text-inherit app-no-drag"
+        aria-current={activeRequestId === req.id ? 'true' : undefined}
         onClick={() => onLoadRequest(req)}
       >
         <span
@@ -102,7 +142,7 @@ export function RequestRow({
         openMenuId={openMenuId}
         onOpenChange={onOpenChange}
         groups={[
-          ...(moveItems.length > 0 ? [moveItems] : []),
+          ...(moveGroup.length > 0 ? [moveGroup] : []),
           [
             {
               label: 'Duplicate',

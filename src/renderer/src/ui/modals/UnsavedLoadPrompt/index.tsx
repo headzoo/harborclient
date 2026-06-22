@@ -5,7 +5,7 @@ import {
   setPendingLoadRequest
 } from '#/renderer/src/store/slices/modalsSlice';
 import { requestLoadRequest } from '#/renderer/src/store/thunks/requests';
-import { primaryButton, secondaryButton } from '#/renderer/src/ui/shared/classes';
+import { Button } from '#/renderer/src/components/Button';
 import { Modal } from '#/renderer/src/ui/shared/Modal';
 
 /**
@@ -44,8 +44,10 @@ export function UnsavedLoadPrompt(): JSX.Element | null {
   const isDirtyTab = reason === 'dirty-tab';
 
   return (
-    <Modal onClose={handleCancel}>
-      <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">Unsaved changes</h2>
+    <Modal onClose={handleCancel} labelledBy="unsaved-load-prompt-title">
+      <h2 id="unsaved-load-prompt-title" className="m-0 mb-1 text-[13px] font-semibold text-text">
+        Unsaved changes
+      </h2>
       <p className="mb-4 text-[12px] text-muted">
         {isDirtyTab ? (
           <>&ldquo;{req.name}&rdquo; has unsaved changes. Reload without saving?</>
@@ -54,12 +56,12 @@ export function UnsavedLoadPrompt(): JSX.Element | null {
         )}
       </p>
       <div className="flex justify-end gap-2">
-        <button className={secondaryButton} onClick={handleCancel}>
+        <Button variant="secondary" onClick={handleCancel}>
           Cancel
-        </button>
-        <button className={primaryButton} onClick={handleConfirm}>
+        </Button>
+        <Button onClick={handleConfirm}>
           {isDirtyTab ? 'Reload without saving' : 'Open without saving'}
-        </button>
+        </Button>
       </div>
     </Modal>
   );

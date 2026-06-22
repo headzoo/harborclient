@@ -55,7 +55,9 @@ export function Environments({
         return (
           <div key={environment.id} className={sourceRow(selected)}>
             <button
+              type="button"
               className="min-w-0 flex-1 cursor-pointer truncate border-none bg-transparent py-0.5 text-left text-[13px] text-inherit app-no-drag"
+              aria-current={selected ? 'true' : undefined}
               onClick={() => onSelectEnvironment(environment.id)}
               onDoubleClick={() => onConfigureEnvironment(environment.id)}
             >

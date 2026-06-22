@@ -25,6 +25,7 @@ export function EnvironmentSelect({
           const value = e.target.value;
           onEnvironmentChange(value ? Number(value) : null);
         }}
+        aria-label="Active environment"
         title="Active environment"
       >
         <option value="">No Environment</option>
