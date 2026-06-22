@@ -1,5 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import type { Environment, Variable } from '#/shared/types';
+import type { CollectionExportResult, Environment, Variable } from '#/shared/types';
 import {
   setActiveEnvironmentId,
   setEnvironments
@@ -69,5 +69,30 @@ export const deleteEnvironment = createAsyncThunk<void, number, ThunkApiConfig>(
       dispatch(setActiveEnvironmentId(null));
     }
     await dispatch(refreshEnvironments());
+  }
+);
+
+/**
+ * Exports an environment to a user-chosen file path.
+ */
+export const exportEnvironment = createAsyncThunk<CollectionExportResult, number, ThunkApiConfig>(
+  'environments/export',
+  async (id) => {
+    return window.api.exportEnvironment(id);
+  }
+);
+
+/**
+ * Imports an environment from disk and refreshes sidebar state.
+ */
+export const importEnvironment = createAsyncThunk<Environment | null, void, ThunkApiConfig>(
+  'environments/import',
+  async (_, { dispatch }) => {
+    const environment = await window.api.importEnvironment();
+    if (!environment) return null;
+
+    await dispatch(refreshEnvironments());
+    dispatch(setActiveEnvironmentId(environment.id));
+    return environment;
   }
 );

@@ -25,7 +25,9 @@ import {
   duplicateCollection,
   duplicateRequest,
   exportCollection,
+  exportEnvironment,
   exportRequest,
+  importEnvironment,
   importRequest,
   moveRequestToFolder,
   newRequestInCollection,
@@ -37,6 +39,11 @@ import {
   reorderRequests
 } from '#/renderer/src/store/thunks';
 import { Button } from '#/renderer/src/components/Button';
+import {
+  SegmentedTabs,
+  SegmentedTabPanel,
+  SegmentedTabsGroup
+} from '#/renderer/src/components/SegmentedTabs';
 import { field } from '#/renderer/src/ui/shared/classes';
 import { Modal } from '#/renderer/src/ui/shared/Modal';
 import { formatErrorMessage, showAlert, showConfirm } from '#/renderer/src/ui/modals/dialogHelpers';
@@ -115,6 +122,7 @@ export function Sidebar({
   });
 
   const [showEnvironmentModal, setShowEnvironmentModal] = useState(false);
+  const [environmentModalTab, setEnvironmentModalTab] = useState<'create' | 'import'>('create');
   const [newEnvironmentName, setNewEnvironmentName] = useState('');
   const [environmentModalError, setEnvironmentModalError] = useState<string | null>(null);
   const [folderModal, setFolderModal] = useState<{
@@ -179,6 +187,7 @@ export function Sidebar({
    */
   const closeEnvironmentModal = (): void => {
     setShowEnvironmentModal(false);
+    setEnvironmentModalTab('create');
     setNewEnvironmentName('');
     setEnvironmentModalError(null);
   };
@@ -230,6 +239,21 @@ export function Sidebar({
       closeEnvironmentModal();
     } catch (err) {
       setEnvironmentModalError(formatErrorMessage(err, 'Failed to create environment'));
+    }
+  };
+
+  /**
+   * Imports an environment from a JSON file selected via a native dialog.
+   */
+  const handleEnvironmentImport = async (): Promise<void> => {
+    setEnvironmentModalError(null);
+    try {
+      const environment = await dispatch(importEnvironment()).unwrap();
+      if (!environment) return;
+      toast.success('Environment imported');
+      closeEnvironmentModal();
+    } catch (err) {
+      setEnvironmentModalError(formatErrorMessage(err, 'Failed to import environment'));
     }
   };
 
@@ -377,6 +401,7 @@ export function Sidebar({
               expanded={environmentsSectionExpanded}
               onToggle={toggleEnvironmentsSection}
               onAdd={() => {
+                setEnvironmentModalTab('create');
                 setNewEnvironmentName('');
                 setEnvironmentModalError(null);
                 setShowEnvironmentModal(true);
@@ -390,6 +415,12 @@ export function Sidebar({
                 onConfigureEnvironment={onConfigureEnvironment}
                 onDeleteEnvironment={async (id) => {
                   await dispatch(deleteEnvironment(id));
+                }}
+                onExportEnvironment={async (id) => {
+                  const result = await dispatch(exportEnvironment(id)).unwrap();
+                  if (!result.canceled) {
+                    toast.success('Environment exported');
+                  }
                 }}
               />
             </Section>
@@ -450,36 +481,67 @@ export function Sidebar({
             id="sidebar-environment-modal-title"
             className="m-0 mb-1 text-[14px] font-semibold text-text"
           >
-            New environment
+            Add environment
           </h2>
-          <input
-            className={`${field} mt-3 w-full`}
-            type="text"
-            autoFocus
-            placeholder="Environment name"
-            value={newEnvironmentName}
-            onChange={(e) => {
-              setNewEnvironmentName(e.target.value);
-              setEnvironmentModalError(null);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') void handleEnvironmentModalSubmit();
-            }}
-          />
-          {environmentModalError && (
-            <p className="mt-3 text-[14px] text-danger">{environmentModalError}</p>
-          )}
-          <div className="mt-4 flex justify-end gap-2">
-            <Button variant="secondary" onClick={closeEnvironmentModal}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => void handleEnvironmentModalSubmit()}
-              disabled={!newEnvironmentName.trim()}
-            >
-              Create
-            </Button>
-          </div>
+
+          <SegmentedTabsGroup
+            value={environmentModalTab}
+            onChange={setEnvironmentModalTab}
+            ariaLabel="Add environment options"
+          >
+            <SegmentedTabs
+              fullWidth
+              className="mb-3 mt-3"
+              tabs={[
+                { value: 'create', label: 'Create new' },
+                { value: 'import', label: 'Import from file' }
+              ]}
+            />
+
+            {environmentModalError && (
+              <p className="mb-3 text-[14px] text-danger">{environmentModalError}</p>
+            )}
+
+            <SegmentedTabPanel value="create">
+              <input
+                className={`${field} w-full`}
+                type="text"
+                autoFocus
+                placeholder="Environment name"
+                value={newEnvironmentName}
+                onChange={(e) => {
+                  setNewEnvironmentName(e.target.value);
+                  setEnvironmentModalError(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void handleEnvironmentModalSubmit();
+                }}
+              />
+              <div className="mt-4 flex justify-end gap-2">
+                <Button variant="secondary" onClick={closeEnvironmentModal}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => void handleEnvironmentModalSubmit()}
+                  disabled={!newEnvironmentName.trim()}
+                >
+                  Create
+                </Button>
+              </div>
+            </SegmentedTabPanel>
+
+            <SegmentedTabPanel value="import">
+              <p className="mb-4 text-[14px] text-muted">
+                Choose a HarborClient environment export (.json) to import variables and settings.
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button variant="secondary" onClick={closeEnvironmentModal}>
+                  Cancel
+                </Button>
+                <Button onClick={() => void handleEnvironmentImport()}>Import .json</Button>
+              </div>
+            </SegmentedTabPanel>
+          </SegmentedTabsGroup>
         </Modal>
       )}
     </>

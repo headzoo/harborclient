@@ -1,10 +1,12 @@
 import {
   collectionExportSchema,
+  environmentExportSchema,
   formatCollectionImportError,
+  formatEnvironmentImportError,
   formatRequestImportError,
   requestExportSchema
 } from '#/main/db/collectionSchemas';
-import type { CollectionExport, RequestExport, Variable } from '#/shared/types';
+import type { CollectionExport, EnvironmentExport, RequestExport, Variable } from '#/shared/types';
 
 export { normalizeVariable } from '#/main/db/collectionVariables';
 
@@ -97,6 +99,26 @@ export function validateRequestExport(data: unknown): RequestExport {
   const result = requestExportSchema.safeParse(data);
   if (!result.success) {
     throw new Error(`Invalid request file: ${formatRequestImportError(result.error)}`);
+  }
+
+  return result.data;
+}
+
+/**
+ * Validates and normalizes imported environment export data.
+ *
+ * @param data - Parsed JSON payload from an export file.
+ * @returns Normalized environment export.
+ * @throws When the payload is invalid.
+ */
+export function validateEnvironmentExport(data: unknown): EnvironmentExport {
+  if (!data || typeof data !== 'object') {
+    throw new Error('Invalid environment file: expected a JSON object');
+  }
+
+  const result = environmentExportSchema.safeParse(data);
+  if (!result.success) {
+    throw new Error(`Invalid environment file: ${formatEnvironmentImportError(result.error)}`);
   }
 
   return result.data;

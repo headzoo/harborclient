@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat: implement environment import/export functionality. (`eed4be1`)
 - refactor: update menu labels and enhance UI text consistency. (`2a29420`)
 - fix: enforce HarborClient export version to 1. (`8485287`)
 

@@ -5,6 +5,7 @@ import type {
   Collection,
   CollectionExportResult,
   Folder,
+  ImportEntityResult,
   KeyValue,
   Variable
 } from '#/shared/types';
@@ -14,6 +15,7 @@ import {
   setRequestsForCollection,
   setSelectedCollectionId
 } from '#/renderer/src/store/slices/collectionsSlice';
+import { setActiveEnvironmentId } from '#/renderer/src/store/slices/environmentsSlice';
 import { closeTabsForCollection, closeTabsForRequest } from '#/renderer/src/store/slices/tabsSlice';
 import type { ThunkApiConfig } from '#/renderer/src/store/redux';
 import {
@@ -21,6 +23,7 @@ import {
   collectionRefreshKey,
   isLatestRefreshGeneration
 } from '#/renderer/src/store/refreshGeneration';
+import { refreshEnvironments } from '#/renderer/src/store/thunks/environments';
 
 const COLLECTIONS_REFRESH_KEY = 'collections';
 
@@ -246,6 +249,43 @@ export const importCollection = createAsyncThunk<Collection | null, void, ThunkA
     dispatch(setSelectedCollectionId(collection.id));
     await dispatch(refreshCollectionContents(collection.id));
     return collection;
+  }
+);
+
+/**
+ * Imports a collection, request, or environment from File -> Import.
+ */
+export const importFromMenu = createAsyncThunk<ImportEntityResult | null, void, ThunkApiConfig>(
+  'collections/importFromMenu',
+  async (_, { dispatch, getState }) => {
+    const selectedId = getState().collections.selectedCollectionId;
+    const result = await window.api.importEntity(selectedId);
+    if (!result) return null;
+
+    switch (result.kind) {
+      case 'collection': {
+        await dispatch(refreshCollections());
+        dispatch(setSelectedCollectionId(result.collection.id));
+        await dispatch(refreshCollectionContents(result.collection.id));
+        toast.success('Collection imported');
+        break;
+      }
+      case 'request': {
+        if (selectedId != null) {
+          await dispatch(refreshRequests(selectedId));
+        }
+        toast.success('Request imported');
+        break;
+      }
+      case 'environment': {
+        await dispatch(refreshEnvironments());
+        dispatch(setActiveEnvironmentId(result.environment.id));
+        toast.success('Environment imported');
+        break;
+      }
+    }
+
+    return result;
   }
 );
 

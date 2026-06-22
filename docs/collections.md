@@ -175,12 +175,24 @@ Variables with **Share** unchecked have their **Value** cleared in the export fi
 
 Import a collection from a `.json` file using either:
 
-- **File → Import**
+- **File → Import** (auto-detects collection, request, and environment exports — see below)
 - **Add collection → Import from file**
 
 Import always creates a **new** collection. It does not merge into or replace an existing collection. On success, HarborClient selects the imported collection and shows a **Collection imported** toast.
 
 If the file is invalid, HarborClient shows an alert with a descriptive error (for example, unsupported format version, missing collection name, or malformed request). Canceling the file dialog does nothing.
+
+#### File → Import (all export types)
+
+**File → Import** opens one file picker and auto-detects the export type from the file contents:
+
+| Export type | Behavior |
+| --- | --- |
+| Collection (HarborClient or Postman) | Creates a new collection and selects it |
+| Request | Imports into the **currently selected collection** at the root; requires a selected collection |
+| Environment | Creates a new environment and activates it |
+
+If you import a request file with no collection selected, HarborClient shows an alert asking you to select a collection first.
 
 #### Postman collections
 
@@ -271,7 +283,7 @@ Common validation errors:
 
 Individual requests can be exported from the request row menu in the sidebar. Request export files require `harborclientExport: "request"` and `harborclientVersion: 1`. They contain request fields only (name, method, URL, headers, params, auth, body, scripts, comment). Folder information is not included.
 
-Import a request export via **Import Request** in a collection or folder row menu. Collection root imports place the request at the root; folder imports place it inside that folder.
+Import a request export via **Import Request** in a collection or folder row menu, or via **File → Import** when a collection is selected in the sidebar. Collection root imports place the request at the root; folder imports place it inside that folder.
 
 Example (abbreviated):
 

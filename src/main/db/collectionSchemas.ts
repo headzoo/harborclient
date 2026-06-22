@@ -3,6 +3,7 @@ import { normalizeVariable } from '#/main/db/collectionVariables';
 import { authConfig, bodyType, httpMethod, keyValue } from '#/main/schemas/common';
 import type {
   CollectionExport,
+  EnvironmentExport,
   ExportedFolder,
   ExportedRequest,
   RequestExport,
@@ -338,5 +339,45 @@ export function formatRequestImportError(error: z.ZodError): string {
   }
 
   const pathLabel = path.length > 0 ? path.join('.') : 'request file';
+  return issue.message ? `${pathLabel}: ${issue.message}` : pathLabel;
+}
+
+/**
+ * Validates portable environment export files for import.
+ */
+export const environmentExportSchema = z.object({
+  harborclientVersion: z.literal(1),
+  harborclientExport: z.literal('environment'),
+  name: z.string().trim().min(1, 'environment name is required'),
+  variables: importVariables
+}) satisfies z.ZodType<EnvironmentExport>;
+
+/**
+ * Maps a Zod validation failure to a user-facing environment import error fragment.
+ *
+ * @param error - Zod error from environmentExportSchema.safeParse.
+ * @returns Message suffix after the "Invalid environment file:" prefix.
+ */
+export function formatEnvironmentImportError(error: z.ZodError): string {
+  const issue = error.issues[0];
+  if (!issue) {
+    return 'invalid environment file';
+  }
+
+  const path = issue.path;
+
+  if (path[0] === 'harborclientVersion') {
+    return 'unsupported format version';
+  }
+
+  if (path[0] === 'harborclientExport') {
+    return 'not a HarborClient environment export';
+  }
+
+  if (path[0] === 'name') {
+    return 'environment name is required';
+  }
+
+  const pathLabel = path.length > 0 ? path.join('.') : 'environment file';
   return issue.message ? `${pathLabel}: ${issue.message}` : pathLabel;
 }

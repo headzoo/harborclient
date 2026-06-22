@@ -9,6 +9,7 @@ import type {
   Environment,
   Folder,
   GeneralSettings,
+  ImportEntityResult,
   InviteIdentity,
   ListCollectionsResult,
   MenuActionId,
@@ -202,6 +203,35 @@ function updateEnvironment(id: number, name: string, variables: Variable[]): Pro
  */
 function deleteEnvironment(id: number): Promise<void> {
   return ipcRenderer.invoke('environments:delete', id);
+}
+
+/**
+ * Exports an environment to a JSON file via IPC.
+ *
+ * @param id - Environment ID to export.
+ * @returns Whether the dialog was canceled and the saved path when written.
+ */
+function exportEnvironment(id: number): Promise<CollectionExportResult> {
+  return ipcRenderer.invoke('environments:export', id);
+}
+
+/**
+ * Imports an environment from a JSON file via IPC.
+ *
+ * @returns The imported environment, or null when the dialog was canceled.
+ */
+function importEnvironment(): Promise<Environment | null> {
+  return ipcRenderer.invoke('environments:import');
+}
+
+/**
+ * Imports a collection, request, or environment from File -> Import via IPC.
+ *
+ * @param activeCollectionId - Selected collection id; required when importing a request.
+ * @returns The imported entity, or null when the dialog was canceled.
+ */
+function importEntity(activeCollectionId: number | null): Promise<ImportEntityResult | null> {
+  return ipcRenderer.invoke('imports:auto', activeCollectionId);
 }
 
 /**
@@ -667,6 +697,9 @@ const api: Api = {
   createEnvironment,
   updateEnvironment,
   deleteEnvironment,
+  exportEnvironment,
+  importEnvironment,
+  importEntity,
   listRequests,
   saveRequest,
   deleteRequest,

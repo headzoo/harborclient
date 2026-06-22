@@ -462,6 +462,39 @@ export interface CollectionExportResult {
 }
 
 /**
+ * Portable environment export file format.
+ */
+export interface EnvironmentExport {
+  /**
+   * HarborClient export schema version for forward compatibility.
+   */
+  harborclientVersion: 1;
+
+  /**
+   * Discriminator identifying this file as an environment export.
+   */
+  harborclientExport: 'environment';
+
+  /**
+   * Display name for the environment.
+   */
+  name: string;
+
+  /**
+   * Environment-scoped variables for {{key}} substitution in requests.
+   */
+  variables: Variable[];
+}
+
+/**
+ * Result of a unified File -> Import action that auto-detects export type.
+ */
+export type ImportEntityResult =
+  | { kind: 'collection'; collection: Collection }
+  | { kind: 'request'; request: SavedRequest }
+  | { kind: 'environment'; environment: Environment };
+
+/**
  * Portable single-request export file format.
  */
 export interface RequestExport {
@@ -1323,6 +1356,29 @@ export interface Api {
    * @returns The imported request, or null when the dialog was canceled.
    */
   importRequest: (collectionId: number, folderId?: number | null) => Promise<SavedRequest | null>;
+
+  /**
+   * Exports an environment to a JSON file via a native save dialog.
+   *
+   * @param id - Environment ID to export.
+   * @returns Whether the dialog was canceled and the saved path when written.
+   */
+  exportEnvironment: (id: number) => Promise<CollectionExportResult>;
+
+  /**
+   * Imports an environment from a JSON file via a native open dialog.
+   *
+   * @returns The imported environment, or null when the dialog was canceled.
+   */
+  importEnvironment: () => Promise<Environment | null>;
+
+  /**
+   * Imports a collection, request, or environment from a JSON file via File -> Import.
+   *
+   * @param activeCollectionId - Selected collection id; required when importing a request.
+   * @returns The imported entity, or null when the dialog was canceled.
+   */
+  importEntity: (activeCollectionId: number | null) => Promise<ImportEntityResult | null>;
 
   /**
    * Moves a collection and its requests to another database connection.

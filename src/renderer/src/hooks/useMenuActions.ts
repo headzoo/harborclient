@@ -6,7 +6,7 @@ import {
   openUpdateModal
 } from '#/renderer/src/store/slices/modalsSlice';
 import { openCertificates, openSettings } from '#/renderer/src/store/slices/navigationSlice';
-import { dispatchNewRequest, importCollection, saveFromMenu } from '#/renderer/src/store/thunks';
+import { dispatchNewRequest, importFromMenu, saveFromMenu } from '#/renderer/src/store/thunks';
 import { formatErrorMessage, showAlert } from '#/renderer/src/ui/modals/dialogHelpers';
 
 /**
@@ -28,7 +28,9 @@ export function useMenuActions(): void {
           dispatch(openCollectionModal({ mode: 'create' }));
           break;
         case 'import':
-          void dispatch(importCollection());
+          void dispatch(importFromMenu()).catch((err: unknown) => {
+            showAlert(dispatch, formatErrorMessage(err, 'Failed to import'));
+          });
           break;
         case 'save':
           void dispatch(saveFromMenu()).catch((err: unknown) => {

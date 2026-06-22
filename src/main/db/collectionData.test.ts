@@ -3,6 +3,7 @@ import {
   collectionExportContainsScripts,
   requestExportContainsScripts,
   validateCollectionExport,
+  validateEnvironmentExport,
   validateRequestExport
 } from '#/main/db/collectionData';
 
@@ -309,5 +310,49 @@ describe('validateRequestExport', () => {
         pre_request_script: 'console.log("pre");'
       })
     ).toBe(true);
+  });
+});
+
+describe('validateEnvironmentExport', () => {
+  const validEnvironmentExport = {
+    harborclientVersion: 1 as const,
+    harborclientExport: 'environment' as const,
+    name: 'Staging',
+    variables: [
+      { key: 'baseUrl', value: 'https://staging.example.com', defaultValue: '', share: true }
+    ]
+  };
+
+  it('accepts a minimal valid environment export', () => {
+    const result = validateEnvironmentExport(validEnvironmentExport);
+
+    expect(result.harborclientVersion).toBe(1);
+    expect(result.harborclientExport).toBe('environment');
+    expect(result.name).toBe('Staging');
+    expect(result.variables).toHaveLength(1);
+  });
+
+  it('rejects non-object payloads', () => {
+    expect(() => validateEnvironmentExport(null)).toThrow(
+      'Invalid environment file: expected a JSON object'
+    );
+  });
+
+  it('rejects wrong harborclientExport discriminator', () => {
+    expect(() =>
+      validateEnvironmentExport({ ...validEnvironmentExport, harborclientExport: 'collection' })
+    ).toThrow('Invalid environment file: not a HarborClient environment export');
+  });
+
+  it('rejects unsupported format versions', () => {
+    expect(() =>
+      validateEnvironmentExport({ ...validEnvironmentExport, harborclientVersion: 2 })
+    ).toThrow('Invalid environment file: unsupported format version');
+  });
+
+  it('rejects missing environment names', () => {
+    expect(() => validateEnvironmentExport({ ...validEnvironmentExport, name: '   ' })).toThrow(
+      'Invalid environment file: environment name is required'
+    );
   });
 });

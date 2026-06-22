@@ -29,6 +29,11 @@ interface Props {
    * Deletes an environment.
    */
   onDeleteEnvironment: (id: number) => Promise<void>;
+
+  /**
+   * Exports an environment to a JSON file.
+   */
+  onExportEnvironment: (id: number) => void;
 }
 
 /**
@@ -39,7 +44,8 @@ export function Environments({
   activeEnvironmentId,
   onSelectEnvironment,
   onConfigureEnvironment,
-  onDeleteEnvironment
+  onDeleteEnvironment,
+  onExportEnvironment
 }: Props): JSX.Element {
   const confirm = useConfirm();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -72,6 +78,10 @@ export function Environments({
                   {
                     label: 'Settings',
                     onSelect: () => onConfigureEnvironment(environment.id)
+                  },
+                  {
+                    label: 'Export',
+                    onSelect: () => onExportEnvironment(environment.id)
                   }
                 ],
                 [

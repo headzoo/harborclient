@@ -185,7 +185,7 @@ Request-level scripts in the **PreRequest** and **PostRequest** tabs run in addi
 
 Saving a request requires a collection. Use **File → Save** or **Cmd/Ctrl+S** — if no collection is selected, HarborClient prompts you to pick or create one.
 
-For sidebar management, settings, and import/export, see [Collections](/collections).
+For sidebar management, settings, and import/export, see [Collections](/collections). You can also import a single request export via **File → Import** when a collection is selected in the sidebar.
 
 ## Scripts at a glance
 
