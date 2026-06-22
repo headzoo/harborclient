@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.5.4 - 2026-06-22
+
 - feat: enhance accessibility and theme support in UI components. (`2bda03e`)
 - feat: add file handling and export functionality. (`7848c0f`)
 - refactor: update RowActionsMenu to support grouped menu items. (`98748c5`)
