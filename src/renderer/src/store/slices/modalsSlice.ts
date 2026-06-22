@@ -9,6 +9,7 @@ export interface CollectionModalState {
   mode: CollectionModalMode;
   tab: CollectionModalTab;
   name: string;
+  providerId: string;
   inviteTokenInput: string;
   submitError: string | null;
 }
@@ -94,6 +95,7 @@ const modalsSlice = createSlice({
         mode: action.payload.mode,
         tab: action.payload.tab ?? 'create',
         name: '',
+        providerId: '',
         inviteTokenInput: '',
         submitError: null
       };
@@ -119,6 +121,15 @@ const modalsSlice = createSlice({
     setCollectionModalName(state, action: PayloadAction<string>) {
       if (state.collectionModal) {
         state.collectionModal.name = action.payload;
+        state.collectionModal.submitError = null;
+      }
+    },
+    /**
+     * Updates the selected provider for a new collection.
+     */
+    setCollectionModalProviderId(state, action: PayloadAction<string>) {
+      if (state.collectionModal) {
+        state.collectionModal.providerId = action.payload;
         state.collectionModal.submitError = null;
       }
     },
@@ -293,6 +304,7 @@ export const {
   closeCollectionModal,
   setCollectionModalTab,
   setCollectionModalName,
+  setCollectionModalProviderId,
   setCollectionModalInviteTokenInput,
   setCollectionModalSubmitError,
   openInviteModal,

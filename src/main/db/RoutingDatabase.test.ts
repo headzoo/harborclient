@@ -68,7 +68,7 @@ async function createRoutingFixture(options?: { mountB?: boolean }): Promise<{
   await backendA.init();
   await backendB.init();
 
-  const router = new RoutingDatabase(registry, CONN_A.id);
+  const router = new RoutingDatabase(registry, CONN_A.id, rootDir);
   router.mount(0, CONN_A, backendA);
   if (options?.mountB !== false) {
     router.mount(1, CONN_B, backendB);

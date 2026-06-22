@@ -119,8 +119,15 @@ export function registerCollectionHandlers(db: IDatabase): void {
   });
 
   // Creates a new collection with the given display name.
-  handle('collections:create', ipcArgSchemas.name, (_event, collectionName) =>
-    db.createCollection(collectionName)
+  handle(
+    'collections:create',
+    ipcArgSchemas.collectionCreate,
+    (_event, collectionName, connectionId) => {
+      if (connectionId && db instanceof RoutingDatabase) {
+        return db.createCollectionInProvider(collectionName, connectionId);
+      }
+      return db.createCollection(collectionName);
+    }
   );
 
   // Updates a collection's name, variables, headers, and scripts.

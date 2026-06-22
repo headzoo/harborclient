@@ -40,6 +40,7 @@ describe('modalsSlice', () => {
       mode: 'create-and-save',
       tab: 'invite',
       name: '',
+      providerId: '',
       inviteTokenInput: '',
       submitError: null
     });

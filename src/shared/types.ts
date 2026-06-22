@@ -902,6 +902,11 @@ export interface CodeEditorSetup {
 export type DatabaseProvider = 'sqlite' | 'firestore' | 'mysql' | 'postgres';
 
 /**
+ * Kind of collection data provider, including remote service hubs.
+ */
+export type CollectionProviderKind = DatabaseProvider | 'service-hub';
+
+/**
  * Request editor tab identifiers.
  */
 export type EditorTab =
@@ -1310,9 +1315,10 @@ export interface Api {
    * Creates a new collection.
    *
    * @param name - Display name for the collection.
+   * @param connectionId - Optional provider id; defaults to the active database.
    * @returns The newly created collection.
    */
-  createCollection: (name: string) => Promise<Collection>;
+  createCollection: (name: string, connectionId?: string) => Promise<Collection>;
 
   /**
    * Updates a collection's name, variables, headers, and auth settings.

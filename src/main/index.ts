@@ -13,6 +13,7 @@ import {
   listDatabaseConnections
 } from '#/main/settings/databaseSettings';
 import { ensureDatabaseSlots } from '#/main/settings/databaseSlots';
+import { listServiceHubs } from '#/main/settings/serviceHubSettings';
 import { ensureInviteKeys } from '#/main/invite/inviteKeys';
 import { buildMenu } from '#/main/menu';
 import { setMenuWindow } from '#/main/appMenu';
@@ -50,13 +51,19 @@ async function createDatabase(): Promise<RoutingDatabase> {
   const userDataPath = app.getPath('userData');
   const registry = await initLocalRegistry(userDataPath);
   const connections = listDatabaseConnections();
+  const serviceHubs = listServiceHubs();
   const primaryConnectionId = getActiveDatabaseId();
-  const slots = ensureDatabaseSlots(connections, primaryConnectionId);
+  const slots = ensureDatabaseSlots(
+    connections,
+    primaryConnectionId,
+    serviceHubs.map((hub) => hub.id)
+  );
 
   const router = await RoutingDatabase.create(
     registry,
     primaryConnectionId,
     connections,
+    serviceHubs,
     slots,
     userDataPath
   );

@@ -57,7 +57,7 @@ The highlighted collection in the sidebar is remembered for the current session 
 
 In the **Add collection** modal you can:
 
-- **Create new** — enter a name and click **Create**
+- **Create new** — enter a name, choose a **Provider** (SQLite, a remote database, or a [service hub](/service-hubs)), and click **Create**
 - **Import from file** — pick a HarborClient `.json` export (same as **File → Import**)
 - **Accept invite** — paste an invite token to connect to a shared remote collection (see [Sharing collections](#sharing-collections))
 
@@ -311,7 +311,7 @@ Example (abbreviated):
 
 ## Sharing collections
 
-Use **Export/Import** when you want a portable snapshot of a collection — a `.json` file you can version, email, or archive. Use **invites** when you want another HarborClient user to connect to the same **live** collection on a remote database. Invited collections stay in sync with the shared backend; changes from other users appear when data is reloaded (for example, after restarting the app). See [Settings → Databases](/settings#databases) for how remote backends work.
+Use **Export/Import** when you want a portable snapshot of a collection — a `.json` file you can version, email, or archive. Use **invites** when you want another HarborClient user to connect to the same **live** collection on a remote database. Use **[service hubs](/service-hubs)** when your team shares collections through HarborClient Server with API tokens instead of shared database credentials. Invited and hub-backed collections stay in sync with the shared backend; changes from other users appear when data is reloaded (for example, after restarting the app). See [Settings → Databases](/settings#databases) for how remote backends work.
 
 Before sending or accepting invites, exchange public keys with your colleague — see [Certificates](/certificates).
 
@@ -380,13 +380,13 @@ For the full send pipeline and response handling, see [Making requests](/request
 
 ## Storage and backup
 
-Collections and saved requests are stored in your chosen database backend:
+Collections and saved requests are stored in your chosen provider:
 
 - **SQLite (default)** — `{userData}/harborclient.db`. The database filename can be changed in [Settings → SQLite](/settings#sqlite) (restart required).
-- **Firestore** — cloud storage when selected in [Settings → General](/settings#general) (restart required).
-- **MySQL** — remote storage when selected in [Settings → General](/settings#general) (restart required).
+- **Firestore, MySQL, PostgreSQL** — remote storage when selected in [Settings → Databases](/settings#databases) (restart required).
+- **Service hubs** — collection data on [HarborClient Server](/service-hubs); configured under **File → Service Hubs**, not in Settings.
 
-See [Settings](/settings) for full configuration details.
+See [Settings](/settings) for database configuration and [Service hubs](/service-hubs) for hub-backed collections.
 
 Open tab drafts are stored separately in browser `localStorage`. The selected collection in the sidebar is not persisted.
 

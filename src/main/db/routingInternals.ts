@@ -1,15 +1,24 @@
 import type { CollectionRegistryEntry, LocalRegistry } from '#/main/db/LocalRegistry';
 import type { IDatabase } from '#/main/db/IDatabase';
-import type { Collection, DatabaseProvider } from '#/shared/types';
+import type { Collection, CollectionProviderKind } from '#/shared/types';
 
 /**
- * A database provider mounted at a fixed slot for global id namespacing.
+ * Minimal descriptor for a mounted collection provider.
+ */
+export interface ProviderDescriptor {
+  id: string;
+  name: string;
+  type: CollectionProviderKind;
+}
+
+/**
+ * A collection provider mounted at a fixed slot for global id namespacing.
  */
 export interface MountedBackend {
   slot: number;
   connectionId: string;
   connectionName: string;
-  connectionType: DatabaseProvider;
+  connectionType: CollectionProviderKind;
   db: IDatabase;
 }
 
@@ -28,4 +37,6 @@ export interface RoutingInternals {
   resolveDefaultDataBackend(): MountedBackend;
   requireEntry(id: number): CollectionRegistryEntry;
   buildCollection(entry: CollectionRegistryEntry, record: Collection | undefined): Collection;
+  resolveCollectionServerId(connectionId: string, providerCollectionId: number): string | undefined;
+  addDetachedServiceHubCollection(hubId: string, serverCollectionId: string): void;
 }

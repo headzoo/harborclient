@@ -1,4 +1,4 @@
-import { useCallback, type JSX } from 'react';
+import { useCallback, useEffect, useId, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import {
@@ -6,6 +6,7 @@ import {
   selectCollectionModal,
   setCollectionModalInviteTokenInput,
   setCollectionModalName,
+  setCollectionModalProviderId,
   setCollectionModalSubmitError,
   setCollectionModalTab
 } from '#/renderer/src/store/slices/modalsSlice';
@@ -21,6 +22,7 @@ import {
   SegmentedTabsGroup
 } from '#/renderer/src/components/SegmentedTabs';
 import { Button } from '#/renderer/src/components/Button';
+import { providerOptionLabel, useProviders } from '#/renderer/src/hooks/useProviders';
 import { field } from '#/renderer/src/ui/shared/classes';
 import { Modal } from '#/renderer/src/ui/shared/Modal';
 import { formatErrorMessage } from '#/renderer/src/ui/modals/dialogHelpers';
@@ -31,6 +33,21 @@ import { formatErrorMessage } from '#/renderer/src/ui/modals/dialogHelpers';
 export function CollectionModal(): JSX.Element | null {
   const dispatch = useAppDispatch();
   const collectionModal = useAppSelector(selectCollectionModal);
+  const {
+    providers,
+    primaryProviderId,
+    loading: providersLoading,
+    error: providersError
+  } = useProviders();
+  const providerSelectId = useId();
+
+  /**
+   * Defaults the provider dropdown to the active database when the modal opens.
+   */
+  useEffect(() => {
+    if (!collectionModal || collectionModal.providerId || !primaryProviderId) return;
+    dispatch(setCollectionModalProviderId(primaryProviderId));
+  }, [collectionModal, dispatch, primaryProviderId]);
 
   /**
    * Closes the collection modal and resets modal state.
@@ -48,7 +65,8 @@ export function CollectionModal(): JSX.Element | null {
     if (!name) return;
     dispatch(setCollectionModalSubmitError(null));
     try {
-      const collection = await dispatch(createCollection(name)).unwrap();
+      const providerId = collectionModal.providerId || primaryProviderId || undefined;
+      const collection = await dispatch(createCollection({ name, providerId })).unwrap();
       if (collectionModal.mode === 'create-and-save') {
         await dispatch(saveRequest(collection.id)).unwrap();
         toast.success('Request saved');
@@ -66,7 +84,7 @@ export function CollectionModal(): JSX.Element | null {
         )
       );
     }
-  }, [collectionModal, dispatch]);
+  }, [collectionModal, dispatch, primaryProviderId]);
 
   /**
    * Imports a collection from a JSON file selected via a native dialog.
@@ -103,6 +121,35 @@ export function CollectionModal(): JSX.Element | null {
   if (!collectionModal) return null;
 
   const showImportTab = collectionModal.mode === 'create';
+  const resolvedProviderId = collectionModal.providerId || primaryProviderId;
+  const providerSelectDisabled =
+    providersLoading || providersError != null || providers.length === 0;
+
+  /**
+   * Renders the provider selector used when creating a collection.
+   */
+  const providerField = (
+    <div className="mt-3">
+      <label className="mb-1 block text-[14px] text-muted" htmlFor={providerSelectId}>
+        Provider
+      </label>
+      <select
+        id={providerSelectId}
+        className={`${field} w-full`}
+        value={resolvedProviderId}
+        disabled={providerSelectDisabled}
+        onChange={(e) => dispatch(setCollectionModalProviderId(e.target.value))}
+      >
+        {providers.map((provider) => (
+          <option key={provider.id} value={provider.id}>
+            {provider.name || 'Untitled'} ({providerOptionLabel(provider)})
+          </option>
+        ))}
+      </select>
+      {providersLoading && <p className="mb-0 mt-1 text-[14px] text-muted">Loading…</p>}
+      {providersError && <p className="mb-0 mt-1 text-[14px] text-danger">{providersError}</p>}
+    </div>
+  );
 
   return (
     <Modal onClose={handleClose} className="w-[32rem]" labelledBy="collection-modal-title">
@@ -173,11 +220,15 @@ export function CollectionModal(): JSX.Element | null {
                 if (e.key === 'Enter') void handleSubmit();
               }}
             />
+            {providerField}
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="secondary" onClick={handleClose}>
                 Cancel
               </Button>
-              <Button onClick={() => void handleSubmit()} disabled={!collectionModal.name.trim()}>
+              <Button
+                onClick={() => void handleSubmit()}
+                disabled={!collectionModal.name.trim() || providerSelectDisabled}
+              >
                 {collectionModal.mode === 'create-and-save' ? 'Create & Save' : 'Create'}
               </Button>
             </div>
@@ -212,11 +263,15 @@ export function CollectionModal(): JSX.Element | null {
               if (e.key === 'Enter') void handleSubmit();
             }}
           />
+          {providerField}
           <div className="mt-4 flex justify-end gap-2">
             <Button variant="secondary" onClick={handleClose}>
               Cancel
             </Button>
-            <Button onClick={() => void handleSubmit()} disabled={!collectionModal.name.trim()}>
+            <Button
+              onClick={() => void handleSubmit()}
+              disabled={!collectionModal.name.trim() || providerSelectDisabled}
+            >
               {collectionModal.mode === 'create-and-save' ? 'Create & Save' : 'Create'}
             </Button>
           </div>

@@ -46,10 +46,11 @@ function listCollections(): Promise<ListCollectionsResult> {
  * Creates a new collection via IPC.
  *
  * @param name - Display name for the collection.
+ * @param connectionId - Optional provider id; defaults to the active database.
  * @returns The newly created collection.
  */
-function createCollection(name: string): Promise<Collection> {
-  return ipcRenderer.invoke('collections:create', name);
+function createCollection(name: string, connectionId?: string): Promise<Collection> {
+  return ipcRenderer.invoke('collections:create', name, connectionId);
 }
 
 /**

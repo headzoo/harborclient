@@ -41,8 +41,8 @@ export class MoveCoordinator {
       const sourceBackend = this.internals.getBackend(entry.connectionId);
       const record = sourceBackend
         ? (await sourceBackend.db.listCollections()).find(
-            (item) => item.id === entry.providerCollectionId
-          )
+          (item) => item.id === entry.providerCollectionId
+        )
         : undefined;
       return this.internals.buildCollection(entry, record);
     }
@@ -85,18 +85,34 @@ export class MoveCoordinator {
         providerCollectionId: updated.id
       });
 
-      this.writePendingMoveCleanup(
-        globalCollectionId,
-        sourceConnectionId,
-        sourceProviderCollectionId
-      );
+      const leaveSourceIntact = sourceBackend.connectionType === 'service-hub';
+
+      if (!leaveSourceIntact) {
+        this.writePendingMoveCleanup(
+          globalCollectionId,
+          sourceConnectionId,
+          sourceProviderCollectionId
+        );
+      }
 
       try {
-        await sourceBackend.db.deleteCollection(sourceProviderCollectionId);
-        this.clearPendingMoveCleanup(globalCollectionId);
+        if (leaveSourceIntact) {
+          const serverCollectionId = this.internals.resolveCollectionServerId(
+            sourceConnectionId,
+            sourceProviderCollectionId
+          );
+          if (serverCollectionId) {
+            this.internals.addDetachedServiceHubCollection(sourceConnectionId, serverCollectionId);
+          }
+        } else {
+          await sourceBackend.db.deleteCollection(sourceProviderCollectionId);
+          this.clearPendingMoveCleanup(globalCollectionId);
+        }
       } catch (err) {
         console.warn(
-          `Collection moved but source cleanup failed; will retry on next launch (global id ${globalCollectionId}):`,
+          leaveSourceIntact
+            ? `Collection moved but failed to detach from service hub (global id ${globalCollectionId}):`
+            : `Collection moved but source cleanup failed; will retry on next launch (global id ${globalCollectionId}):`,
           err
         );
       }
@@ -182,7 +198,7 @@ export class MoveCoordinator {
         }
 
         const sourceBackend = this.internals.getBackend(cleanup.sourceConnectionId);
-        if (sourceBackend) {
+        if (sourceBackend && sourceBackend.connectionType !== 'service-hub') {
           try {
             await sourceBackend.db.deleteCollection(cleanup.sourceProviderCollectionId);
           } catch (err) {
@@ -192,6 +208,9 @@ export class MoveCoordinator {
             );
             continue;
           }
+        } else if (sourceBackend?.connectionType === 'service-hub') {
+          this.clearPendingMoveCleanup(globalId);
+          continue;
         }
 
         this.clearPendingMoveCleanup(globalId);

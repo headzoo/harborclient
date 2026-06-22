@@ -9,7 +9,7 @@ import {
   SegmentedTabPanel,
   SegmentedTabsGroup
 } from '#/renderer/src/components/SegmentedTabs';
-import { useDatabaseConnections } from '#/renderer/src/hooks/useDatabaseConnections';
+import { useProviders } from '#/renderer/src/hooks/useProviders';
 import { emptyKeyValue } from '#/renderer/src/store/drafts';
 import { faXmark } from '#/renderer/src/fontawesome';
 import { AuthSection } from './AuthSection';
@@ -95,14 +95,14 @@ function CollectionSettingsForm({
   const [saving, setSaving] = useState(false);
 
   const {
-    connections,
-    primaryConnectionId,
-    loading: connectionsLoading,
-    error: connectionsError,
-    reload: reloadConnections
-  } = useDatabaseConnections([collection.connectionId]);
+    providers,
+    primaryProviderId,
+    loading: providersLoading,
+    error: providersError,
+    reload: reloadProviders
+  } = useProviders([collection.connectionId]);
 
-  const resolvedConnectionId = connectionId || collection.connectionId || primaryConnectionId;
+  const resolvedConnectionId = connectionId || collection.connectionId || primaryProviderId;
 
   /**
    * Whether any editable field differs from the persisted collection snapshot.
@@ -127,7 +127,7 @@ function CollectionSettingsForm({
         collection.pre_request_script ?? '',
         collection.post_request_script ?? '',
         normalizeAuth(collection.auth),
-        collection.connectionId || primaryConnectionId
+        collection.connectionId || primaryProviderId
       ),
     [
       name,
@@ -138,18 +138,18 @@ function CollectionSettingsForm({
       auth,
       resolvedConnectionId,
       collection,
-      primaryConnectionId
+      primaryProviderId
     ]
   );
 
   /**
    * Notifies the parent when unsaved edits appear or are cleared. Reports clean
-   * until async connection bootstrap finishes so primaryConnectionId does not
+   * until async provider bootstrap finishes so primaryProviderId does not
    * cause a spurious dirty flicker during load.
    */
   useEffect(() => {
-    onDirtyChange?.(!connectionsLoading ? isDirty : false);
-  }, [isDirty, connectionsLoading, onDirtyChange]);
+    onDirtyChange?.(!providersLoading ? isDirty : false);
+  }, [isDirty, providersLoading, onDirtyChange]);
 
   /**
    * Dot indicators for tabs whose sections have content configured.
@@ -229,11 +229,11 @@ function CollectionSettingsForm({
               name={name}
               onNameChange={setName}
               connectionId={resolvedConnectionId}
-              connections={connections}
+              providers={providers}
               onConnectionIdChange={setConnectionId}
-              connectionsLoading={connectionsLoading}
-              connectionsError={connectionsError}
-              onConnectionsRetry={reloadConnections}
+              providersLoading={providersLoading}
+              providersError={providersError}
+              onProvidersRetry={reloadProviders}
               onSave={() => void handleSave()}
               onClose={onClose}
             />

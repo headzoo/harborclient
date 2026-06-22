@@ -48,12 +48,55 @@ export const sidebar: DefaultTheme.SidebarItem[] =
         "link": "/settings#general"
       },
       {
+        "text": "Shortcuts",
+        "link": "/settings#shortcuts"
+      },
+      {
+        "text": "Proxy",
+        "link": "/settings#proxy"
+      },
+      {
         "text": "Databases",
         "link": "/settings#databases"
       },
       {
         "text": "What's next",
         "link": "/settings#whats-next"
+      }
+    ],
+    "collapsed": false
+  },
+  {
+    "text": "Service hubs",
+    "link": "/service-hubs",
+    "items": [
+      {
+        "text": "Prerequisites",
+        "link": "/service-hubs#prerequisites"
+      },
+      {
+        "text": "Managing service hubs",
+        "link": "/service-hubs#managing-service-hubs"
+      },
+      {
+        "text": "Collections on a service hub",
+        "link": "/service-hubs#collections-on-a-service-hub"
+      },
+      {
+        "text": "Moving and deleting collections",
+        "link": "/service-hubs#moving-and-deleting-collections"
+      },
+      {
+        "text": "Service hubs vs other sharing options",
+        "link": "/service-hubs#service-hubs-vs-other-sharing-options"
+      },
+      {
+        "text": "Limitations",
+        "link": "/service-hubs#limitations"
+      },
+      {
+        "text": "What's next",
+        "link": "/service-hubs#whats-next"
       }
     ],
     "collapsed": false
@@ -304,6 +347,10 @@ export const sidebar: DefaultTheme.SidebarItem[] =
       {
         "text": "Storage",
         "link": "/environments#storage"
+      },
+      {
+        "text": "Export and import",
+        "link": "/environments#export-and-import"
       }
     ],
     "collapsed": false

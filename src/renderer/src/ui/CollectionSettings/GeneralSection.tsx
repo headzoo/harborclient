@@ -1,50 +1,50 @@
 import type { JSX } from 'react';
 import { useId } from 'react';
-import type { DatabaseConnection } from '#/shared/types';
+import type { ProviderOption } from '#/renderer/src/hooks/useProviders';
+import { providerOptionLabel } from '#/renderer/src/hooks/useProviders';
 import { Button } from '#/renderer/src/components/Button';
 import { field } from '#/renderer/src/ui/shared/classes';
-import { providerLabel } from '#/renderer/src/ui/Settings/constants';
 
 interface Props {
   name: string;
   onNameChange: (name: string) => void;
   connectionId: string;
-  connections: DatabaseConnection[];
+  providers: ProviderOption[];
   onConnectionIdChange: (connectionId: string) => void;
   /**
-   * True while database connections are loading from IPC.
+   * True while providers are loading from IPC.
    */
-  connectionsLoading: boolean;
+  providersLoading: boolean;
   /**
-   * Bootstrap error message when connection list IPC fails; null otherwise.
+   * Bootstrap error message when provider list IPC fails; null otherwise.
    */
-  connectionsError: string | null;
+  providersError: string | null;
   /**
-   * Retries loading database connections after a bootstrap failure.
+   * Retries loading providers after a bootstrap failure.
    */
-  onConnectionsRetry: () => void;
+  onProvidersRetry: () => void;
   onSave: () => void;
   onClose: () => void;
 }
 
 /**
- * Collection name and database selector for the General tab.
+ * Collection name and provider selector for the General tab.
  */
 export function GeneralSection({
   name,
   onNameChange,
   connectionId,
-  connections,
+  providers,
   onConnectionIdChange,
-  connectionsLoading,
-  connectionsError,
-  onConnectionsRetry,
+  providersLoading,
+  providersError,
+  onProvidersRetry,
   onSave,
   onClose
 }: Props): JSX.Element {
   const nameId = useId();
-  const databaseId = useId();
-  const databaseSelectDisabled = connectionsLoading || connectionsError != null;
+  const providerId = useId();
+  const providerSelectDisabled = providersLoading || providersError != null;
 
   return (
     <div className="mb-6 flex flex-col gap-4">
@@ -66,34 +66,34 @@ export function GeneralSection({
       </div>
 
       <div>
-        <label className="mb-1 block text-[14px] text-muted" htmlFor={databaseId}>
-          Database
+        <label className="mb-1 block text-[14px] text-muted" htmlFor={providerId}>
+          Provider
         </label>
         <select
-          id={databaseId}
+          id={providerId}
           className={`${field} w-full`}
           value={connectionId}
-          disabled={databaseSelectDisabled}
+          disabled={providerSelectDisabled}
           onChange={(e) => onConnectionIdChange(e.target.value)}
         >
-          {connections.map((connection) => (
-            <option key={connection.id} value={connection.id}>
-              {connection.name || 'Untitled'} ({providerLabel(connection.type)})
+          {providers.map((provider) => (
+            <option key={provider.id} value={provider.id}>
+              {provider.name || 'Untitled'} ({providerOptionLabel(provider)})
             </option>
           ))}
         </select>
-        {connectionsLoading && <p className="mb-0 mt-1 text-[14px] text-muted">Loading…</p>}
-        {connectionsError && (
+        {providersLoading && <p className="mb-0 mt-1 text-[14px] text-muted">Loading…</p>}
+        {providersError && (
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <p className="mb-0 text-[14px] text-danger">{connectionsError}</p>
-            <Button type="button" variant="secondary" onClick={onConnectionsRetry}>
+            <p className="mb-0 text-[14px] text-danger">{providersError}</p>
+            <Button type="button" variant="secondary" onClick={onProvidersRetry}>
               Retry
             </Button>
           </div>
         )}
-        {!connectionsLoading && !connectionsError && (
+        {!providersLoading && !providersError && (
           <p className="mb-0 mt-1 text-[14px] text-muted">
-            Changing the database moves this collection and all of its requests.
+            Changing the provider moves this collection and all of its requests.
           </p>
         )}
       </div>

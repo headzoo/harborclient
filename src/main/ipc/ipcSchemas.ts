@@ -281,6 +281,7 @@ export const shortcutOverrides = z.record(
 export const ipcArgSchemas = {
   none: z.tuple([]),
   name: z.tuple([name]),
+  collectionCreate: z.tuple([name, connectionId.optional()]),
   dbId: z.tuple([dbId]),
   collectionId: z.tuple([dbId]),
   connectionId: z.tuple([connectionId]),

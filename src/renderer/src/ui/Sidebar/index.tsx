@@ -2,7 +2,11 @@ import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { SavedRequest } from '#/shared/types';
 import { ResizeHandle, useResizable } from '#/renderer/src/components/Resizable';
-import { useDatabaseConnections } from '#/renderer/src/hooks/useDatabaseConnections';
+import {
+  isServiceHubProvider,
+  providerTypesById,
+  useProviders
+} from '#/renderer/src/hooks/useProviders';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import {
   selectActiveEnvironmentId,
@@ -133,10 +137,10 @@ export function Sidebar({
     error: string | null;
   } | null>(null);
   const {
-    connections: databaseConnections,
-    primaryConnectionId,
-    error: connectionsError
-  } = useDatabaseConnections();
+    providers,
+    primaryProviderId: primaryConnectionId,
+    error: providersError
+  } = useProviders();
   const {
     size: width,
     minSize: sidebarMinSize,
@@ -153,34 +157,28 @@ export function Sidebar({
   });
 
   /**
-   * Surfaces a one-time toast when database connection bootstrap fails so badges
+   * Surfaces a one-time toast when provider bootstrap fails so badges
    * may be missing without silent failure.
    */
   useEffect(() => {
-    if (connectionsError) {
-      toast.error(`Failed to load databases: ${connectionsError}`);
+    if (providersError) {
+      toast.error(`Failed to load providers: ${providersError}`);
     }
-  }, [connectionsError]);
+  }, [providersError]);
 
   /**
    * Maps connection ids to display names for sidebar badges.
    */
   const connectionNamesById = useMemo(
     () =>
-      Object.fromEntries(
-        databaseConnections.map((connection) => [connection.id, connection.name || 'Untitled'])
-      ),
-    [databaseConnections]
+      Object.fromEntries(providers.map((provider) => [provider.id, provider.name || 'Untitled'])),
+    [providers]
   );
 
   /**
    * Maps connection ids to provider types for sidebar badges.
    */
-  const connectionTypesById = useMemo(
-    () =>
-      Object.fromEntries(databaseConnections.map((connection) => [connection.id, connection.type])),
-    [databaseConnections]
-  );
+  const connectionTypesById = useMemo(() => providerTypesById(providers), [providers]);
 
   /**
    * Closes the new-environment modal and clears its form state.
@@ -286,7 +284,22 @@ export function Sidebar({
                 onExpandCollection={handleExpandCollection}
                 onConfigureCollection={onConfigureCollection}
                 onDeleteCollection={async (id) => {
-                  await dispatch(deleteCollection(id));
+                  const collection = collections.find((item) => item.id === id);
+                  if (collection && isServiceHubProvider(providers, collection.connectionId)) {
+                    const confirmed = await showConfirm(dispatch, {
+                      title: 'Delete collection',
+                      message:
+                        'Delete this collection from the service hub? Team members will lose access to it on the server.',
+                      confirmLabel: 'Delete',
+                      variant: 'danger'
+                    });
+                    if (!confirmed) return;
+                  }
+                  try {
+                    await dispatch(deleteCollection(id)).unwrap();
+                  } catch (err) {
+                    showAlert(dispatch, formatErrorMessage(err, 'Failed to delete collection'));
+                  }
                 }}
                 onExportCollection={async (id) => {
                   const result = await dispatch(exportCollection(id)).unwrap();

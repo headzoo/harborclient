@@ -1,5 +1,6 @@
 import { app, nativeTheme } from 'electron';
 import type { IDatabase } from '#/main/db/IDatabase';
+import { RoutingDatabase } from '#/main/db/RoutingDatabase';
 import { rebuildAppMenu } from '#/main/appMenu';
 import { handle } from '#/main/ipc/handle';
 import { ipcArgSchemas } from '#/main/ipc/ipcSchemas';
@@ -10,6 +11,11 @@ import {
   saveDatabaseConnection,
   setActiveDatabaseId
 } from '#/main/settings/databaseSettings';
+import {
+  assignSlotForNewServiceHub,
+  getSlotForConnection,
+  removeSlotForConnection
+} from '#/main/settings/databaseSlots';
 import {
   deleteServiceHub,
   listServiceHubs,
@@ -108,10 +114,37 @@ export function registerSettingsHandlers(db: IDatabase): void {
   handle('serviceHubs:list', ipcArgSchemas.none, () => listServiceHubs());
 
   // Creates or updates a service hub.
-  handle('serviceHubs:save', ipcArgSchemas.serviceHub, (_event, hub) => saveServiceHub(hub));
+  handle('serviceHubs:save', ipcArgSchemas.serviceHub, async (_event, hub) => {
+    const existingHubs = listServiceHubs();
+    const trimmedId = hub.id.trim();
+    const isNew = trimmedId.length === 0 || !existingHubs.some((item) => item.id === trimmedId);
+    const hubs = saveServiceHub(hub);
+    const saved =
+      hubs.find((item) => item.id === trimmedId) ??
+      (trimmedId.length === 0 ? hubs[hubs.length - 1] : undefined);
+
+    if (saved && db instanceof RoutingDatabase) {
+      if (isNew) {
+        assignSlotForNewServiceHub(saved.id);
+      }
+      const slot = getSlotForConnection(saved.id);
+      if (slot != null) {
+        await db.mountServiceHub(saved, slot);
+        await db.syncServiceHub(saved.id);
+      }
+    }
+
+    return hubs;
+  });
 
   // Deletes a service hub by id.
-  handle('serviceHubs:delete', ipcArgSchemas.connectionId, (_event, id) => deleteServiceHub(id));
+  handle('serviceHubs:delete', ipcArgSchemas.connectionId, async (_event, id) => {
+    if (db instanceof RoutingDatabase) {
+      await db.removeServiceHub(id);
+      removeSlotForConnection(id);
+    }
+    return deleteServiceHub(id);
+  });
 
   // Returns the id of the active database connection.
   handle('database:getActiveId', ipcArgSchemas.none, () => getActiveDatabaseId());

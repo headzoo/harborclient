@@ -100,15 +100,16 @@ export const refreshRequests = createAsyncThunk<
 /**
  * Creates a collection and selects it in the sidebar.
  */
-export const createCollection = createAsyncThunk<Collection, string, ThunkApiConfig>(
-  'collections/create',
-  async (name, { dispatch }) => {
-    const collection = await window.api.createCollection(name);
-    await dispatch(refreshCollections());
-    dispatch(setSelectedCollectionId(collection.id));
-    return collection;
-  }
-);
+export const createCollection = createAsyncThunk<
+  Collection,
+  { name: string; providerId?: string },
+  ThunkApiConfig
+>('collections/create', async ({ name, providerId }, { dispatch }) => {
+  const collection = await window.api.createCollection(name, providerId);
+  await dispatch(refreshCollections());
+  dispatch(setSelectedCollectionId(collection.id));
+  return collection;
+});
 
 /**
  * Updates collection metadata and optionally moves it to another database connection.

@@ -1,6 +1,7 @@
 import { getLocalRegistry } from '#/main/db/localRegistryInstance';
 import type { DatabaseConnection } from '#/shared/types';
 import { getActiveDatabaseId, listDatabaseConnections } from '#/main/settings/databaseSettings';
+import { listServiceHubs } from '#/main/settings/serviceHubSettings';
 import { parseJson } from '#/shared/parseJson';
 
 const SLOTS_KEY = 'databaseSlots';
@@ -39,11 +40,13 @@ function nextSlot(slots: Record<string, number>): number {
  *
  * @param connections - All configured database connections.
  * @param activeId - Primary connection id (slot 0 on first migration).
+ * @param serviceHubIds - Service hub connection ids that also need stable slots.
  * @returns Connection id to slot map.
  */
 export function ensureDatabaseSlots(
   connections: DatabaseConnection[],
-  activeId: string
+  activeId: string,
+  serviceHubIds: string[] = []
 ): Record<string, number> {
   const existing = readSlots();
   const slots: Record<string, number> = { ...existing };
@@ -74,6 +77,13 @@ export function ensureDatabaseSlots(
     }
   }
 
+  for (const hubId of serviceHubIds) {
+    if (slots[hubId] === undefined) {
+      slots[hubId] = nextSlot(slots);
+      changed = true;
+    }
+  }
+
   if (changed) {
     persistSlots(slots);
   }
@@ -88,8 +98,13 @@ export function ensureDatabaseSlots(
  */
 export function getSlotForConnection(connectionId: string): number | undefined {
   const connections = listDatabaseConnections();
+  const hubs = listServiceHubs();
   const activeId = getActiveDatabaseId();
-  const slots = ensureDatabaseSlots(connections, activeId);
+  const slots = ensureDatabaseSlots(
+    connections,
+    activeId,
+    hubs.map((hub) => hub.id)
+  );
   return slots[connectionId];
 }
 
@@ -100,11 +115,37 @@ export function getSlotForConnection(connectionId: string): number | undefined {
  */
 export function assignSlotForNewConnection(connectionId: string): void {
   const connections = listDatabaseConnections();
+  const hubs = listServiceHubs();
   const activeId = getActiveDatabaseId();
-  const slots = ensureDatabaseSlots(connections, activeId);
+  const slots = ensureDatabaseSlots(
+    connections,
+    activeId,
+    hubs.map((hub) => hub.id)
+  );
 
   if (slots[connectionId] !== undefined) return;
 
   slots[connectionId] = nextSlot(slots);
+  persistSlots(slots);
+}
+
+/**
+ * Assigns a slot to a newly created service hub connection.
+ *
+ * @param hubId - New service hub connection id.
+ */
+export function assignSlotForNewServiceHub(hubId: string): void {
+  assignSlotForNewConnection(hubId);
+}
+
+/**
+ * Removes a connection or service hub id from the persisted slot map.
+ *
+ * @param connectionId - Provider id whose slot entry should be removed.
+ */
+export function removeSlotForConnection(connectionId: string): void {
+  const slots = readSlots();
+  if (slots[connectionId] === undefined) return;
+  delete slots[connectionId];
   persistSlots(slots);
 }
