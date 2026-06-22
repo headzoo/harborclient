@@ -53,7 +53,7 @@ The highlighted collection in the sidebar is remembered for the current session 
 | --- | --- |
 | Sidebar **+** button | Opens the **Add collection** modal |
 | **File → New Collection** or **Cmd/Ctrl+Shift+N** | Same modal |
-| **File → Save** with no collection selected | Opens **Create & Save** — create a collection, then save the active request into it |
+| **File → Save Request** with no collection selected | Opens **Create & Save** — create a collection, then save the active request into it |
 
 In the **Add collection** modal you can:
 
@@ -156,7 +156,7 @@ Collection pre- and post-request scripts run for every request in the collection
 | **New Request in collection** | Collection row menu → **New Request**. HarborClient immediately saves an **Untitled Request** and opens it in a new tab. |
 | **Open saved request** | Click the request in the sidebar |
 | **Rename request** | Click the request name in the request editor (not in the sidebar) |
-| **Save changes** | **File → Save** or **Cmd/Ctrl+S** — saves to the **sidebar-selected** collection |
+| **Save changes** | **File → Save Request** or **Cmd/Ctrl+S** — saves to the **sidebar-selected** collection |
 | **Update vs copy** | If the tab already belongs to the target collection, HarborClient updates the existing request. Otherwise it creates a new saved request. Saving while a different collection is selected in the sidebar creates a **copy** in that collection — there is no move action. |
 
 When a request belongs to a collection, the request editor shows a breadcrumb: `CollectionName > Request name`.

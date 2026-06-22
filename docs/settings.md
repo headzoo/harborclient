@@ -43,7 +43,7 @@ The **Shortcuts** section lists every configurable keyboard shortcut in HarborCl
 
 Shortcut changes apply immediately when valid. Duplicate or invalid combinations are shown inline and are not saved.
 
-Configurable shortcuts include File menu actions (new request, save, settings), Edit menu actions (undo, copy, paste), and View menu actions (full screen, zoom). Some actions such as **Send** still use **Enter** when the URL field is focused and are not listed here.
+Configurable shortcuts include File menu actions (new request, save request, settings), Edit menu actions (undo, copy, paste), and View menu actions (full screen, zoom). Some actions such as **Send** still use **Enter** when the URL field is focused and are not listed here.
 
 ## Proxy
 

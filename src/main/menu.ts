@@ -54,11 +54,11 @@ export function buildMenu(
           click: () => sendMenuAction(window, 'new-collection')
         },
         {
-          label: 'Import',
-          click: () => sendMenuAction(window, 'import')
+          label: 'Sync Remotes',
+          click: () => sendMenuAction(window, 'sync')
         },
         {
-          label: 'Save',
+          label: 'Save Request',
           accelerator: acceleratorFor(accelerators, 'save'),
           click: () => sendMenuAction(window, 'save')
         },
@@ -72,6 +72,7 @@ export function buildMenu(
           label: 'Team Hub',
           click: () => sendMenuAction(window, 'team-hubs')
         },
+        { type: 'separator' },
         {
           label: 'Invite Certificates',
           click: () => sendMenuAction(window, 'certificates')
@@ -81,8 +82,8 @@ export function buildMenu(
           click: () => sendMenuAction(window, 'accept-invite')
         },
         {
-          label: 'Sync',
-          click: () => sendMenuAction(window, 'sync')
+          label: 'Import',
+          click: () => sendMenuAction(window, 'import')
         },
         { type: 'separator' },
         { role: 'quit' }

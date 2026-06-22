@@ -183,7 +183,7 @@ Each collection provides:
 
 Request-level scripts in the **PreRequest** and **PostRequest** tabs run in addition to collection scripts. See [Scripts at a glance](#scripts-at-a-glance) for execution order.
 
-Saving a request requires a collection. Use **File → Save** or **Cmd/Ctrl+S** — if no collection is selected, HarborClient prompts you to pick or create one.
+Saving a request requires a collection. Use **File → Save Request** or **Cmd/Ctrl+S** — if no collection is selected, HarborClient prompts you to pick or create one.
 
 For sidebar management, settings, and import/export, see [Collections](/collections). You can also import a single request export via **File → Import** when a collection is selected in the sidebar.
 
@@ -293,7 +293,7 @@ Click **Clear** to remove all entries. The Console is session-only — it does n
 
 ### Saving
 
-- **File → Save** or **Cmd/Ctrl+S** saves the active tab's request to a collection.
+- **File → Save Request** or **Cmd/Ctrl+S** saves the active tab's request to a collection.
 - If the request already exists in the collection, HarborClient updates it. Otherwise it creates a new saved request.
 - Empty key/value rows in params and headers are stripped on save.
 - A success toast confirms **Request saved**.
