@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.5.11 - 2026-06-22
+
 - docs: update terminology for saving requests in documentation. (`0fcdef5`)
 - refactor: update footer button styles and improve accessibility. (`d923d5d`)
 
