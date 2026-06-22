@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- fix: enforce HarborClient export version to 1. (`8485287`)
+
 ## 1.5.5 - 2026-06-22
 
 - feat: add global HTTP proxy configuration to settings. (`87e4373`)

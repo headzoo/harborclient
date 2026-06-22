@@ -158,7 +158,7 @@ describe('isPostmanCollection', () => {
   it('returns false for HarborClient export files', () => {
     expect(
       isPostmanCollection({
-        harborclientVersion: 2,
+        harborclientVersion: 1,
         harborclientExport: 'collection',
         name: 'My API',
         variables: [],
@@ -178,7 +178,7 @@ describe('convertPostmanCollection', () => {
   it('converts top-level requests, variables, and collection auth', () => {
     const result = convertPostmanCollection(pintailFixture);
 
-    expect(result.harborclientVersion).toBe(2);
+    expect(result.harborclientVersion).toBe(1);
     expect(result.harborclientExport).toBe('collection');
     expect(result.name).toBe('Pintail');
     expect(result.variables).toEqual([
@@ -336,14 +336,14 @@ describe('convertPostmanCollection', () => {
     const converted = convertPostmanCollection(pintailFixture);
     const validated = validateCollectionExport(converted);
 
-    expect(validated.harborclientVersion).toBe(2);
+    expect(validated.harborclientVersion).toBe(1);
     expect(validated.harborclientExport).toBe('collection');
     expect(validated.requests).toHaveLength(2);
   });
 
   it('throws when data is not a Postman collection', () => {
     expect(() =>
-      convertPostmanCollection({ harborclientVersion: 2, name: 'X', requests: [] })
+      convertPostmanCollection({ harborclientVersion: 1, name: 'X', requests: [] })
     ).toThrow('Invalid Postman collection file');
   });
 });

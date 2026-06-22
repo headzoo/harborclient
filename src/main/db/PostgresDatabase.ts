@@ -722,7 +722,7 @@ export class PostgresDatabase implements IDatabase {
     const auth = normalizeAuth(parseJson(row.auth as string, defaultAuth()));
 
     return {
-      harborclientVersion: 2,
+      harborclientVersion: 1,
       harborclientExport: 'collection',
       name: row.name as string,
       variables: maskVariablesForExport(variables),

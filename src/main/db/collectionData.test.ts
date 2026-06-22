@@ -57,26 +57,35 @@ describe('validateCollectionExport', () => {
     expect(result.name).toBe('Imported');
     expect(result.headers).toEqual([validKeyValue]);
     expect(result.requests).toHaveLength(1);
-    expect(result.folders).toBeUndefined();
+    expect(result.folders).toEqual([]);
   });
 
-  it('accepts a minimal valid format version 2 export with folders', () => {
+  it('accepts a valid export with folders', () => {
     const result = validateCollectionExport({
       ...validV1Export,
-      harborclientVersion: 2,
       folders: [{ name: 'API', sort_order: 0 }],
       requests: [{ ...validRequest, folder_name: 'API' }]
     });
 
-    expect(result.harborclientVersion).toBe(2);
+    expect(result.harborclientVersion).toBe(1);
     expect(result.folders).toEqual([{ name: 'API', sort_order: 0 }]);
+  });
+
+  it('rejects legacy format version 2 exports', () => {
+    expect(() =>
+      validateCollectionExport({
+        ...validV1Export,
+        harborclientVersion: 2,
+        folders: [{ name: 'API', sort_order: 0 }],
+        requests: [{ ...validRequest, folder_name: 'API' }]
+      })
+    ).toThrow('Invalid collection file: unsupported format version');
   });
 
   it('rejects duplicate folder names', () => {
     expect(() =>
       validateCollectionExport({
         ...validV1Export,
-        harborclientVersion: 2,
         folders: [
           { name: 'API', sort_order: 0 },
           { name: 'API', sort_order: 1 }
@@ -90,7 +99,6 @@ describe('validateCollectionExport', () => {
     expect(() =>
       validateCollectionExport({
         ...validV1Export,
-        harborclientVersion: 2,
         folders: [
           { name: ' API ', sort_order: 0 },
           { name: 'API', sort_order: 1 }
@@ -159,7 +167,7 @@ describe('validateCollectionExport', () => {
   it('rejects malformed collection header items', () => {
     expect(() =>
       validateCollectionExport({
-        harborclientVersion: 2,
+        harborclientVersion: 1,
         harborclientExport: 'collection',
         name: 'Test',
         variables: [],

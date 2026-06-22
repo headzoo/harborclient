@@ -210,7 +210,7 @@ Scripts imported from Postman use the `pm.*` API in Postman but run in HarborCli
 
 ### Export file format
 
-HarborClient export files require `harborclientExport: "collection"` and use `harborclientVersion: 1` or `harborclientVersion: 2` (with folders). They contain the collection name, variables, headers, authorization, scripts, and all saved requests. Database IDs are not included.
+HarborClient collection export files require `harborclientExport: "collection"` and `harborclientVersion: 1`. They contain the collection name, variables, headers, authorization, scripts, folders, and all saved requests. Database IDs are not included.
 
 Example (abbreviated):
 
@@ -232,6 +232,7 @@ Example (abbreviated):
   },
   "pre_request_script": "",
   "post_request_script": "",
+  "folders": [],
   "requests": [
     {
       "name": "Get status",
@@ -258,7 +259,7 @@ Common validation errors:
 
 | Error | Cause |
 | --- | --- |
-| `unsupported format version` | `harborclientVersion` is not `1` or `2` |
+| `unsupported format version` | `harborclientVersion` is not `1` |
 | `not a HarborClient collection export` | `harborclientExport` is not `"collection"` |
 | `collection name is required` | Name is missing or blank |
 | `requests must be an array` | `requests` field is missing or wrong type |

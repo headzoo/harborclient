@@ -163,17 +163,11 @@ const collectionExportFields = {
 /**
  * Validates portable collection export files for import.
  */
-export const collectionExportSchema = z.discriminatedUnion('harborclientVersion', [
-  z.object({
-    harborclientVersion: z.literal(1),
-    ...collectionExportFields
-  }),
-  z.object({
-    harborclientVersion: z.literal(2),
-    ...collectionExportFields,
-    folders: exportedFolders
-  })
-]) satisfies z.ZodType<CollectionExport>;
+export const collectionExportSchema = z.object({
+  harborclientVersion: z.literal(1),
+  ...collectionExportFields,
+  folders: exportedFolders
+}) satisfies z.ZodType<CollectionExport>;
 
 /**
  * Maps a Zod validation failure to a user-facing import error fragment.

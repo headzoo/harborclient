@@ -763,7 +763,7 @@ export class FirestoreDatabase implements IDatabase {
     );
 
     return {
-      harborclientVersion: 2,
+      harborclientVersion: 1,
       harborclientExport: 'collection',
       name: collectionRecord.name,
       variables: maskVariablesForExport(collectionRecord.variables),

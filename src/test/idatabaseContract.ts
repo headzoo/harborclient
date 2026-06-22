@@ -313,7 +313,7 @@ export function runIdatabaseContractSuite(label: string, createTestDb: CreateTes
       const exported = await db.exportCollectionData(collection.id);
 
       expect(exported).toEqual({
-        harborclientVersion: 2,
+        harborclientVersion: 1,
         harborclientExport: 'collection',
         name: 'Export Me',
         variables: [
@@ -397,6 +397,15 @@ export function runIdatabaseContractSuite(label: string, createTestDb: CreateTes
       );
       await expect(
         db.importCollectionData({
+          harborclientVersion: 2,
+          harborclientExport: 'collection',
+          name: 'Legacy',
+          folders: [],
+          requests: []
+        })
+      ).rejects.toThrow('Invalid collection file: unsupported format version');
+      await expect(
+        db.importCollectionData({
           harborclientVersion: 3,
           harborclientExport: 'collection',
           name: 'Bad',
@@ -429,7 +438,7 @@ export function runIdatabaseContractSuite(label: string, createTestDb: CreateTes
       ).rejects.toThrow('Invalid collection file: request 1 has an invalid body type');
       await expect(
         db.importCollectionData({
-          harborclientVersion: 2,
+          harborclientVersion: 1,
           harborclientExport: 'collection',
           name: 'Duplicate Folders',
           folders: [
@@ -543,7 +552,7 @@ export function runIdatabaseContractSuite(label: string, createTestDb: CreateTes
       );
 
       const exported = await db.exportCollectionData(collection.id);
-      expect(exported.harborclientVersion).toBe(2);
+      expect(exported.harborclientVersion).toBe(1);
       expect(exported.harborclientExport).toBe('collection');
       expect(exported.folders).toEqual([{ name: 'Auth', sort_order: 0 }]);
       expect(exported.requests[0]?.folder_name).toBe('Auth');

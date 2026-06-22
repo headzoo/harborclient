@@ -398,7 +398,7 @@ export interface CollectionExport {
   /**
    * HarborClient export schema version for forward compatibility.
    */
-  harborclientVersion: 1 | 2;
+  harborclientVersion: 1;
 
   /**
    * Discriminator identifying this file as a collection export.
@@ -436,7 +436,7 @@ export interface CollectionExport {
   post_request_script: string;
 
   /**
-   * Folders for organizing requests; present in format version 2 exports.
+   * Folders for organizing requests within the collection.
    */
   folders?: ExportedFolder[];
 
