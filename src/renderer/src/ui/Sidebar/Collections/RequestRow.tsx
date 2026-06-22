@@ -77,11 +77,11 @@ export function RequestRow({
   const moveItems =
     folders.length > 0
       ? [
-        {
-          label: 'Move to root',
-          onSelect: () => onMoveRequest(req.id, null)
-        }
-      ]
+          {
+            label: 'Move to root',
+            onSelect: () => onMoveRequest(req.id, null)
+          }
+        ]
       : [];
 
   return (
