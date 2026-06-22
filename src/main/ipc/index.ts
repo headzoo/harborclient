@@ -4,6 +4,7 @@ import type { IDatabase } from '#/main/db/IDatabase';
 import { registerCollectionHandlers } from '#/main/ipc/handlers/collections';
 import { registerCookieHandlers } from '#/main/ipc/handlers/cookies';
 import { registerEnvironmentHandlers } from '#/main/ipc/handlers/environments';
+import { registerFileHandlers } from '#/main/ipc/handlers/files';
 import { registerInviteHandlers } from '#/main/ipc/handlers/invites';
 import { registerNetworkHandlers } from '#/main/ipc/handlers/network';
 import { registerRequestHandlers } from '#/main/ipc/handlers/requests';
@@ -24,4 +25,5 @@ export function registerIpcHandlers(db: IDatabase): void {
   registerSettingsHandlers(db);
   registerCookieHandlers(cookieJar);
   registerInviteHandlers(db);
+  registerFileHandlers();
 }

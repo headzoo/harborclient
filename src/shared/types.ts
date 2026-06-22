@@ -1134,6 +1134,21 @@ export interface PemExportResult {
 }
 
 /**
+ * Result of saving arbitrary text to disk via a native save dialog.
+ */
+export interface SaveTextFileResult {
+  /**
+   * True when the user canceled the save dialog.
+   */
+  canceled: boolean;
+
+  /**
+   * Absolute path written when not canceled.
+   */
+  path?: string;
+}
+
+/**
  * Menu action identifiers sent from the main process menu.
  */
 export type MenuActionId =
@@ -1595,6 +1610,14 @@ export interface Api {
    * @param id - SHA-256 fingerprint of the key to remove.
    */
   removeTrustedKey: (id: string) => Promise<TrustedInviteKey[]>;
+
+  /**
+   * Writes text to a file chosen via a native save dialog.
+   *
+   * @param content - UTF-8 text to write.
+   * @param defaultPath - Suggested filename for the save dialog.
+   */
+  saveTextFile: (content: string, defaultPath: string) => Promise<SaveTextFileResult>;
 }
 
 declare global {

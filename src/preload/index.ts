@@ -20,6 +20,7 @@ import type {
   ScriptRunResult,
   SendRequestInput,
   SendResult,
+  SaveTextFileResult,
   SidebarExpansionState,
   ThemeSource,
   TrustedInviteKey,
@@ -607,6 +608,16 @@ function removeTrustedKey(id: string): Promise<TrustedInviteKey[]> {
   return ipcRenderer.invoke('certs:removeTrustedKey', id);
 }
 
+/**
+ * Writes text to a file via a native save dialog.
+ *
+ * @param content - UTF-8 text to write.
+ * @param defaultPath - Suggested filename for the save dialog.
+ */
+function saveTextFile(content: string, defaultPath: string): Promise<SaveTextFileResult> {
+  return ipcRenderer.invoke('files:saveText', content, defaultPath);
+}
+
 const api: Api = {
   listCollections,
   createCollection,
@@ -666,7 +677,8 @@ const api: Api = {
   listTrustedKeys,
   addTrustedKey,
   importTrustedPublicKey,
-  removeTrustedKey
+  removeTrustedKey,
+  saveTextFile
 };
 
 contextBridge.exposeInMainWorld('api', api);

@@ -1,4 +1,4 @@
-import type { BodyType } from '#/shared/types';
+import type { BodyType, ScriptTestResult } from '#/shared/types';
 
 /**
  * Pretty-prints JSON response bodies when valid; returns raw text otherwise.
@@ -94,4 +94,79 @@ export function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/**
+ * Serializes response headers as HTTP-style `Key: Value` lines for copy/export.
+ *
+ * @param headers - Response headers map.
+ * @returns Header lines joined by newlines, or an empty string when none.
+ */
+export function formatHeadersText(headers: Record<string, string>): string {
+  return Object.entries(headers)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join('\n');
+}
+
+/**
+ * Serializes script test results as plain text for copy/export.
+ *
+ * @param testResults - hc.test results from the last send.
+ * @returns One line per test (`PASS name` or `FAIL name — error`).
+ */
+export function formatTestsText(testResults: ScriptTestResult[]): string {
+  return testResults
+    .map((test) =>
+      test.passed ? `PASS ${test.name}` : `FAIL ${test.name}${test.error ? ` — ${test.error}` : ''}`
+    )
+    .join('\n');
+}
+
+/**
+ * Default save-dialog filename for a response body export.
+ *
+ * @param body - Raw response body string.
+ * @param headers - Response headers map.
+ * @returns `response.json` when JSON, otherwise `response.txt`.
+ */
+export function responseBodyExportPath(body: string, headers?: Record<string, string>): string {
+  return bodyLanguage(body, headers) === 'json' ? 'response.json' : 'response.txt';
+}
+
+/**
+ * Default save-dialog filename for the active response viewer tab.
+ *
+ * @param tab - Active Body, Headers, or Tests tab.
+ * @param body - Raw response body string.
+ * @param headers - Response headers map.
+ * @returns Suggested filename for the native save dialog.
+ */
+export function responseTabExportPath(
+  tab: 'body' | 'headers' | 'tests',
+  body: string,
+  headers: Record<string, string>
+): string {
+  if (tab === 'headers') return 'response-headers.txt';
+  if (tab === 'tests') return 'response-tests.txt';
+  return responseBodyExportPath(body, headers);
+}
+
+/**
+ * Text content for the active response viewer tab (copy/export).
+ *
+ * @param tab - Active Body, Headers, or Tests tab.
+ * @param body - Raw response body string.
+ * @param headers - Response headers map.
+ * @param testResults - hc.test results from the last send.
+ * @returns Serialized tab content.
+ */
+export function responseTabText(
+  tab: 'body' | 'headers' | 'tests',
+  body: string,
+  headers: Record<string, string>,
+  testResults: ScriptTestResult[]
+): string {
+  if (tab === 'headers') return formatHeadersText(headers);
+  if (tab === 'tests') return formatTestsText(testResults);
+  return formatBody(body);
 }

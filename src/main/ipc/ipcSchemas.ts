@@ -293,5 +293,6 @@ export const ipcArgSchemas = {
   requestMove: z.tuple([dbId, nullableFolderId, dbId]),
   requestExport: z.tuple([requestExportSchema]),
   requestImport: z.tuple([dbId, nullableFolderId.optional()]),
-  inviteCreate: z.tuple([dbId, recipientKid.optional()])
+  inviteCreate: z.tuple([dbId, recipientKid.optional()]),
+  saveTextFile: z.tuple([z.string().max(MAX_IPC_REQUEST_BODY_CHARS), z.string()])
 } as const;

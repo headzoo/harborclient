@@ -1,12 +1,15 @@
 import { useMemo, useState, type JSX } from 'react';
+import toast from 'react-hot-toast';
 import type { ScriptTestResult, SendResult } from '#/shared/types';
 import { CodeEditor } from '#/renderer/src/components/CodeEditor';
 import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
-import { secondaryButton, statusDotClass } from '#/renderer/src/ui/shared/classes';
+import { secondaryButton, statusDotClass, toolbarButton } from '#/renderer/src/ui/shared/classes';
 import {
   bodyLanguage,
   formatBody,
-  formatBytes
+  formatBytes,
+  responseTabExportPath,
+  responseTabText
 } from '#/renderer/src/ui/shared/responseFormatUtils';
 import { Headers } from './Headers';
 import { Tests } from './Tests';
@@ -59,6 +62,36 @@ export function Response({ response, sending, testResults, onCancel }: Props): J
   const effectiveTab = tab === 'tests' && !hasTests ? 'body' : tab;
 
   /**
+   * Copies the active tab content to the clipboard.
+   */
+  const handleCopy = async (): Promise<void> => {
+    if (!response) return;
+    const text = responseTabText(effectiveTab, response.body, response.headers, testResults);
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success('Copied to clipboard');
+    } catch {
+      toast.error('Failed to copy');
+    }
+  };
+
+  /**
+   * Exports the active tab content to a file via a native save dialog.
+   */
+  const handleExport = async (): Promise<void> => {
+    if (!response) return;
+    const content = responseTabText(effectiveTab, response.body, response.headers, testResults);
+    const defaultPath = responseTabExportPath(effectiveTab, response.body, response.headers);
+    try {
+      const result = await window.api.saveTextFile(content, defaultPath);
+      if (result.canceled) return;
+      toast.success('Response exported');
+    } catch {
+      toast.error('Failed to export response');
+    }
+  };
+
+  /**
    * Renders a centered placeholder when there is no response content to show.
    *
    * @param message - User-facing empty-state text.
@@ -107,7 +140,7 @@ export function Response({ response, sending, testResults, onCancel }: Props): J
         </div>
       )}
 
-      <div className="mb-2">
+      <div className="mb-2 flex items-center justify-between gap-2">
         <SegmentedTabs
           value={effectiveTab}
           onChange={setTab}
@@ -130,6 +163,14 @@ export function Response({ response, sending, testResults, onCancel }: Props): J
             }
           ]}
         />
+        <div className="flex shrink-0 items-center gap-1">
+          <button type="button" className={toolbarButton} onClick={() => void handleCopy()}>
+            Copy
+          </button>
+          <button type="button" className={toolbarButton} onClick={() => void handleExport()}>
+            Export
+          </button>
+        </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-auto">
