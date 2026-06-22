@@ -141,7 +141,7 @@ const editorTheme = EditorView.theme({
   '.cm-content': {
     padding: '8px 0',
     fontFamily: 'var(--font-mono)',
-    fontSize: '12px',
+    fontSize: '14px',
     caretColor: 'var(--mac-accent)'
   },
   '.cm-line': {
@@ -181,7 +181,7 @@ const editorTheme = EditorView.theme({
     flexDirection: 'column',
     gap: '6px',
     padding: '8px 12px',
-    fontSize: '13px',
+    fontSize: '14px',
     color: 'var(--mac-text)'
   },
   '.cm-variable-tooltip-muted': {
@@ -193,7 +193,7 @@ const editorTheme = EditorView.theme({
     border: 'none',
     padding: '0',
     cursor: 'pointer',
-    fontSize: '12px',
+    fontSize: '14px',
     color: 'var(--mac-accent)'
   },
   '.cm-tooltip.cm-tooltip-autocomplete': {
@@ -201,7 +201,7 @@ const editorTheme = EditorView.theme({
     backgroundColor: 'var(--mac-surface)',
     borderRadius: '6px',
     boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-    fontSize: '12px'
+    fontSize: '14px'
   },
   '.cm-completionLabel': {
     fontFamily: 'var(--font-mono)'

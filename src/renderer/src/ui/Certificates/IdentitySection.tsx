@@ -100,25 +100,36 @@ export function IdentitySection(): JSX.Element {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="m-0 mb-1 text-[13px] font-medium text-text">My identity</h2>
-        <p className="m-0 text-[12px] text-muted">
+        <h2 className="m-0 mb-1 text-[14px] font-medium text-text">My identity</h2>
+        <p className="m-0 text-[14px] text-muted">
           Your key pair signs invites you send and decrypts invites addressed to you. Share your
           public key so collaborators can trust and encrypt to you.
         </p>
       </div>
 
       {loading ? (
-        <p role="status" className="text-[12px] text-muted">
+        <p role="status" className="text-[14px] text-muted">
           Loading…
         </p>
       ) : identity ? (
         <>
-          <label className="mb-1 block text-[12px] font-medium text-text">Fingerprint</label>
-          <p className="mb-4 font-mono text-[12px] text-muted break-all">{identity.fingerprint}</p>
+          <label
+            htmlFor="identity-fingerprint"
+            className="mb-1 block text-[14px] font-medium text-text"
+          >
+            Fingerprint
+          </label>
+          <input
+            id="identity-fingerprint"
+            className={`${field} mb-4 w-full font-mono text-[14px]`}
+            readOnly
+            value={identity.fingerprint}
+            onFocus={(event) => event.target.select()}
+          />
 
-          <label className="mb-1 block text-[12px] font-medium text-text">Public key</label>
+          <label className="mb-1 block text-[14px] font-medium text-text">Public key</label>
           <textarea
-            className={`${field} mb-4 min-h-28 w-full resize-y font-mono text-[12px]`}
+            className={`${field} mb-4 min-h-28 w-full resize-y font-mono text-[14px]`}
             readOnly
             value={identity.publicKeyPem}
             onFocus={(event) => event.target.select()}
@@ -154,13 +165,13 @@ export function IdentitySection(): JSX.Element {
             </Button>
           </div>
 
-          <p className="mb-0 mt-4 text-[12px] text-danger">
+          <p className="mb-0 mt-4 text-[14px] text-danger">
             Keep your private key secret. Anyone with it can sign invites as you.
           </p>
         </>
       ) : null}
 
-      {error && <p className="mt-3 text-[12px] text-danger">{error}</p>}
+      {error && <p className="mt-3 text-[14px] text-danger">{error}</p>}
     </div>
   );
 }

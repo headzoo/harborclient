@@ -27,7 +27,7 @@ interface Props {
 export function AuthSection({ auth, variables, onChange }: Props): JSX.Element {
   return (
     <div className="mb-6">
-      <p className="mb-3 text-[12px] text-muted">
+      <p className="mb-3 text-[14px] text-muted">
         Default authorization for every request in this collection. Requests can override these
         settings on their Authorization tab. Values support {'{{variable}}'} syntax.
       </p>

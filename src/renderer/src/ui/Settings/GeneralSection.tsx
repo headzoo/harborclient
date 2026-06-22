@@ -91,7 +91,7 @@ export function GeneralSection(): JSX.Element {
     <div className="mb-6 flex flex-col gap-2">
       <div className="mb-6 flex flex-col gap-6">
         <label className="flex flex-col gap-1">
-          <span className="text-[12px] font-medium text-text">Theme</span>
+          <span className="text-[14px] font-medium text-text">Theme</span>
           <select
             className={field}
             value={theme}
@@ -107,7 +107,7 @@ export function GeneralSection(): JSX.Element {
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-[12px] font-medium text-text">Request timeout (ms)</span>
+          <span className="text-[14px] font-medium text-text">Request timeout (ms)</span>
           <input
             type="number"
             min={0}
@@ -118,11 +118,11 @@ export function GeneralSection(): JSX.Element {
               handleGeneralFieldChange('requestTimeoutMs', Number(event.target.value))
             }
           />
-          <p className="m-0 text-[12px] text-muted">Set to 0 to disable the limit.</p>
+          <p className="m-0 text-[14px] text-muted">Set to 0 to disable the limit.</p>
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-[12px] font-medium text-text">Max response size (MB)</span>
+          <span className="text-[14px] font-medium text-text">Max response size (MB)</span>
           <input
             type="number"
             min={0}
@@ -133,7 +133,7 @@ export function GeneralSection(): JSX.Element {
               handleGeneralFieldChange('maxResponseSizeMb', Number(event.target.value))
             }
           />
-          <p className="m-0 text-[12px] text-muted">
+          <p className="m-0 text-[14px] text-muted">
             Set to 0 for no configurable limit (512 MB hard cap still applies).
           </p>
         </label>
@@ -145,7 +145,7 @@ export function GeneralSection(): JSX.Element {
             disabled={generalLoading || generalSaving}
             onChange={(event) => handleGeneralFieldChange('verifySsl', event.target.checked)}
           />
-          <span className="text-[12px] font-medium text-text">SSL certificate verification</span>
+          <span className="text-[14px] font-medium text-text">SSL certificate verification</span>
         </label>
       </div>
 
@@ -157,7 +157,7 @@ export function GeneralSection(): JSX.Element {
         >
           {generalSaving ? 'Saving…' : 'Save'}
         </Button>
-        {generalSaved && <span className="text-[12px] text-success">Settings saved.</span>}
+        {generalSaved && <span className="text-[14px] text-success">Settings saved.</span>}
       </div>
     </div>
   );

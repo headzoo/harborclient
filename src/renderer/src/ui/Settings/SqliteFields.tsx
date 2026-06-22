@@ -36,7 +36,7 @@ export function SqliteFields({ settings, disabled = false, onChange }: Props): J
   return (
     <div className="flex flex-col gap-4">
       <label className="flex flex-col gap-1">
-        <span className="text-[12px] font-medium text-text">Database filename</span>
+        <span className="text-[14px] font-medium text-text">Database filename</span>
         <input
           type="text"
           className={field}
@@ -44,7 +44,7 @@ export function SqliteFields({ settings, disabled = false, onChange }: Props): J
           disabled={disabled}
           onChange={(event) => handleFieldChange('dbFilename', event.target.value)}
         />
-        <p className="m-0 text-[12px] text-muted">Stored in the application data directory.</p>
+        <p className="m-0 text-[14px] text-muted">Stored in the application data directory.</p>
       </label>
     </div>
   );

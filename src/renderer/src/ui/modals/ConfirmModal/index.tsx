@@ -30,10 +30,10 @@ export function ConfirmModal(): JSX.Element | null {
 
   return (
     <Modal onClose={handleCancel} labelledBy="confirm-modal-title">
-      <h2 id="confirm-modal-title" className="m-0 mb-1 text-[13px] font-semibold text-text">
+      <h2 id="confirm-modal-title" className="m-0 mb-1 text-[14px] font-semibold text-text">
         {confirmModal.title}
       </h2>
-      <p className="mb-4 text-[12px] text-muted">{confirmModal.message}</p>
+      <p className="mb-4 text-[14px] text-muted">{confirmModal.message}</p>
       <div className="flex justify-end gap-2">
         <Button variant="secondary" onClick={handleCancel}>
           {confirmModal.cancelLabel}

@@ -31,7 +31,7 @@ function UpdateCheckSpinner(): JSX.Element {
           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
         />
       </svg>
-      <p className="m-0 text-[13px] text-muted">Checking for updates...</p>
+      <p className="m-0 text-[14px] text-muted">Checking for updates...</p>
     </div>
   );
 }
@@ -66,13 +66,13 @@ export function UpdateModal(): JSX.Element | null {
       {update.loading && <UpdateCheckSpinner />}
 
       {!update.loading && update.error && (
-        <p className="m-0 text-[13px] text-danger" role="alert">
+        <p className="m-0 text-[14px] text-danger" role="alert">
           {update.error}
         </p>
       )}
 
       {!update.loading && !update.error && update.result?.updateAvailable && (
-        <div className="space-y-3 text-[13px] text-text">
+        <div className="space-y-3 text-[14px] text-text">
           <p className="m-0">
             A new version is available: v{update.result.latestVersion} (you have v
             {update.result.currentVersion}).
@@ -89,7 +89,7 @@ export function UpdateModal(): JSX.Element | null {
       )}
 
       {!update.loading && !update.error && update.result && !update.result.updateAvailable && (
-        <p className="m-0 text-[13px] text-text">
+        <p className="m-0 text-[14px] text-text">
           You&apos;re on the latest version (v{update.result.currentVersion}).
         </p>
       )}

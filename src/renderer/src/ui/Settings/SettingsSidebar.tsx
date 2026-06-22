@@ -32,7 +32,7 @@ export function SettingsSidebar({ section, onSectionChange }: Props): JSX.Elemen
           <button
             key={item.value}
             type="button"
-            className={`${sourceRow(active)} w-full border-none text-left text-[13px] app-no-drag`}
+            className={`${sourceRow(active)} w-full border-none text-left text-[14px] app-no-drag`}
             aria-current={active ? 'page' : undefined}
             onClick={() => onSectionChange(item.value)}
           >

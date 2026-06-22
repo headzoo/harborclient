@@ -36,7 +36,7 @@ export function FirestoreFields({ settings, disabled = false, onChange }: Props)
   return (
     <div className="flex flex-col gap-4">
       <label className="flex flex-col gap-1">
-        <span className="text-[12px] font-medium text-text">API key</span>
+        <span className="text-[14px] font-medium text-text">API key</span>
         <input
           type="text"
           className={field}
@@ -47,7 +47,7 @@ export function FirestoreFields({ settings, disabled = false, onChange }: Props)
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[12px] font-medium text-text">Auth domain</span>
+        <span className="text-[14px] font-medium text-text">Auth domain</span>
         <input
           type="text"
           className={field}
@@ -58,7 +58,7 @@ export function FirestoreFields({ settings, disabled = false, onChange }: Props)
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[12px] font-medium text-text">Project ID</span>
+        <span className="text-[14px] font-medium text-text">Project ID</span>
         <input
           type="text"
           className={field}
@@ -69,7 +69,7 @@ export function FirestoreFields({ settings, disabled = false, onChange }: Props)
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[12px] font-medium text-text">App ID</span>
+        <span className="text-[14px] font-medium text-text">App ID</span>
         <input
           type="text"
           className={field}
@@ -80,7 +80,7 @@ export function FirestoreFields({ settings, disabled = false, onChange }: Props)
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[12px] font-medium text-text">Email</span>
+        <span className="text-[14px] font-medium text-text">Email</span>
         <input
           type="email"
           className={field}
@@ -91,7 +91,7 @@ export function FirestoreFields({ settings, disabled = false, onChange }: Props)
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[12px] font-medium text-text">Password</span>
+        <span className="text-[14px] font-medium text-text">Password</span>
         <input
           type="password"
           className={field}

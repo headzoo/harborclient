@@ -32,7 +32,7 @@ interface Props {
 }
 
 const thClass =
-  'border-r border-b border-separator px-1.5 py-1 text-left text-[11px] font-medium uppercase tracking-wide text-muted last:border-r-0';
+  'border-r border-b border-separator px-1.5 py-1 text-left text-[14px] font-medium uppercase tracking-wide text-muted last:border-r-0';
 const tdClass = 'border-r border-b border-separator p-1.5 align-top last:border-r-0';
 
 /**
@@ -199,7 +199,7 @@ export function FormDataEditor({ parts, onChange, variables, onEditVariable }: P
                     <Button
                       type="button"
                       variant="secondary"
-                      className="self-start px-2 py-0.5 text-[13px]"
+                      className="self-start px-2 py-0.5 text-[14px]"
                       onClick={() => void chooseFiles(index)}
                     >
                       Choose files
@@ -209,7 +209,7 @@ export function FormDataEditor({ parts, onChange, variables, onEditVariable }: P
                         {row.files.map((filePath) => (
                           <span
                             key={filePath}
-                            className="inline-flex max-w-full items-center gap-1 rounded-md border border-separator bg-control px-1.5 py-0.5 text-[12px] text-text"
+                            className="inline-flex max-w-full items-center gap-1 rounded-md border border-separator bg-control px-1.5 py-0.5 text-[14px] text-text"
                             title={filePath}
                           >
                             <span className="truncate">{fileBasename(filePath)}</span>

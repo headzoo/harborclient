@@ -36,7 +36,7 @@ export function MySqlFields({ settings, disabled = false, onChange }: Props): JS
   return (
     <div className="flex flex-col gap-4">
       <label className="flex flex-col gap-1">
-        <span className="text-[12px] font-medium text-text">Host</span>
+        <span className="text-[14px] font-medium text-text">Host</span>
         <input
           type="text"
           className={field}
@@ -47,7 +47,7 @@ export function MySqlFields({ settings, disabled = false, onChange }: Props): JS
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[12px] font-medium text-text">Port</span>
+        <span className="text-[14px] font-medium text-text">Port</span>
         <input
           type="number"
           className={field}
@@ -58,7 +58,7 @@ export function MySqlFields({ settings, disabled = false, onChange }: Props): JS
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[12px] font-medium text-text">User</span>
+        <span className="text-[14px] font-medium text-text">User</span>
         <input
           type="text"
           className={field}
@@ -69,7 +69,7 @@ export function MySqlFields({ settings, disabled = false, onChange }: Props): JS
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[12px] font-medium text-text">Password</span>
+        <span className="text-[14px] font-medium text-text">Password</span>
         <input
           type="password"
           className={field}
@@ -80,7 +80,7 @@ export function MySqlFields({ settings, disabled = false, onChange }: Props): JS
       </label>
 
       <label className="flex flex-col gap-1">
-        <span className="text-[12px] font-medium text-text">Database</span>
+        <span className="text-[14px] font-medium text-text">Database</span>
         <input
           type="text"
           className={field}

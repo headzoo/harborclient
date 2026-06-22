@@ -10,7 +10,7 @@ import { field } from '#/renderer/src/ui/shared/classes';
  */
 const emptyVariable = (): Variable => ({ key: '', value: '', defaultValue: '', share: false });
 
-const thClass = 'pb-1 text-left text-[11px] font-medium uppercase tracking-wide text-muted';
+const thClass = 'pb-1 text-left text-[14px] font-medium uppercase tracking-wide text-muted';
 
 interface Props {
   /**
@@ -65,7 +65,7 @@ export function VariableTable({ variables, onChange, description }: Props): JSX.
 
   return (
     <div>
-      {description && <p className="mb-3 text-[12px] text-muted">{description}</p>}
+      {description && <p className="mb-3 text-[14px] text-muted">{description}</p>}
 
       <div className="flex flex-col gap-1.5">
         <table className="w-full border-separate border-spacing-x-1.5 border-spacing-y-1.5">

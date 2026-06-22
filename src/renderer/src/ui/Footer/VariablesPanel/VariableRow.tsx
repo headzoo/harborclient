@@ -16,24 +16,24 @@ export function VariableRow({ variable }: Props): JSX.Element {
 
   return (
     <div
-      className={`flex items-center gap-3 border-b border-separator px-3 py-2 text-[13px] last:border-b-0 ${
+      className={`flex items-center gap-3 border-b border-separator px-3 py-2 text-[14px] last:border-b-0 ${
         overridden ? 'opacity-60' : ''
       }`}
     >
-      <span className="min-w-[120px] shrink-0 font-mono text-[12px] text-text">{key}</span>
+      <span className="min-w-[120px] shrink-0 font-mono text-[14px] text-text">{key}</span>
       <span
-        className={`min-w-0 flex-1 truncate font-mono text-[12px] ${
+        className={`min-w-0 flex-1 truncate font-mono text-[14px] ${
           overridden ? 'text-muted line-through' : 'text-text'
         }`}
       >
         {value !== '' ? value : <span className="text-muted">(empty)</span>}
       </span>
       <span
-        className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${scopeBadgeClass}`}
+        className={`shrink-0 rounded px-1.5 py-0.5 text-[14px] font-medium uppercase tracking-wide ${scopeBadgeClass}`}
       >
         {scopeLabel}
       </span>
-      {overridden && <span className="shrink-0 text-[11px] text-muted">overridden</span>}
+      {overridden && <span className="shrink-0 text-[14px] text-muted">overridden</span>}
     </div>
   );
 }

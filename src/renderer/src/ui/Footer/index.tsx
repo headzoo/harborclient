@@ -128,7 +128,7 @@ export function Footer({
             onClick={onToggleConsole}
           >
             Console
-            {entryCount > 0 && <span className="ml-1 text-[11px] text-muted">({entryCount})</span>}
+            {entryCount > 0 && <span className="ml-1 text-[14px] text-muted">({entryCount})</span>}
           </button>
           <button
             type="button"
@@ -139,7 +139,7 @@ export function Footer({
           >
             Variables
             {variableCount > 0 && (
-              <span className="ml-1 text-[11px] text-muted">({variableCount})</span>
+              <span className="ml-1 text-[14px] text-muted">({variableCount})</span>
             )}
           </button>
         </div>

@@ -7,7 +7,7 @@ import type { JSX } from 'react';
  */
 export function SectionTitle({ title }: { title: string }): JSX.Element {
   return (
-    <h3 className="m-0 mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted">
+    <h3 className="m-0 mb-1.5 text-[14px] font-medium uppercase tracking-wide text-muted">
       {title}
     </h3>
   );

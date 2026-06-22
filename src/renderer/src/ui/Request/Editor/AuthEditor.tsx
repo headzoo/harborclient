@@ -50,7 +50,7 @@ export function AuthEditor({ auth, onChange, variables, onEditVariables }: Props
   return (
     <div className="flex gap-6">
       <div className="w-[220px] shrink-0">
-        <label className="mb-1 block text-[12px] text-muted" htmlFor="auth-type">
+        <label className="mb-1 block text-[14px] text-muted" htmlFor="auth-type">
           Auth Type
         </label>
         <select
@@ -67,7 +67,7 @@ export function AuthEditor({ auth, onChange, variables, onEditVariables }: Props
 
       <div className="min-w-0 flex-1">
         {auth.type === 'none' && (
-          <p className="m-0 text-[13px] text-muted">
+          <p className="m-0 text-[14px] text-muted">
             No request-level authorization is configured. Collection authorization applies when set.
           </p>
         )}
@@ -75,7 +75,7 @@ export function AuthEditor({ auth, onChange, variables, onEditVariables }: Props
         {auth.type === 'basic' && (
           <div className="flex flex-col gap-3">
             <div>
-              <label className="mb-1 block text-[12px] text-muted" htmlFor="auth-username">
+              <label className="mb-1 block text-[14px] text-muted" htmlFor="auth-username">
                 Username
               </label>
               <div className={variableFieldShell}>
@@ -91,7 +91,7 @@ export function AuthEditor({ auth, onChange, variables, onEditVariables }: Props
               </div>
             </div>
             <div>
-              <label className="mb-1 block text-[12px] text-muted" htmlFor="auth-password">
+              <label className="mb-1 block text-[14px] text-muted" htmlFor="auth-password">
                 Password
               </label>
               <div className={variableFieldShell}>
@@ -111,7 +111,7 @@ export function AuthEditor({ auth, onChange, variables, onEditVariables }: Props
 
         {auth.type === 'bearer' && (
           <div>
-            <label className="mb-1 block text-[12px] text-muted" htmlFor="auth-token">
+            <label className="mb-1 block text-[14px] text-muted" htmlFor="auth-token">
               Token
             </label>
             <CodeEditor

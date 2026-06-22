@@ -75,11 +75,11 @@ export function ProxySection(): JSX.Element {
             disabled={fieldsDisabled}
             onChange={(event) => handleProxyFieldChange('enabled', event.target.checked)}
           />
-          <span className="text-[12px] font-medium text-text">Use a proxy</span>
+          <span className="text-[14px] font-medium text-text">Use a proxy</span>
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-[12px] font-medium text-text">Protocol</span>
+          <span className="text-[14px] font-medium text-text">Protocol</span>
           <select
             className={field}
             value={proxy.protocol}
@@ -97,7 +97,7 @@ export function ProxySection(): JSX.Element {
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-[12px] font-medium text-text">Host</span>
+          <span className="text-[14px] font-medium text-text">Host</span>
           <input
             type="text"
             className={field}
@@ -109,7 +109,7 @@ export function ProxySection(): JSX.Element {
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className="text-[12px] font-medium text-text">Port</span>
+          <span className="text-[14px] font-medium text-text">Port</span>
           <input
             type="number"
             min={1}
@@ -128,13 +128,13 @@ export function ProxySection(): JSX.Element {
             disabled={proxyFieldsDisabled}
             onChange={(event) => handleProxyFieldChange('authEnabled', event.target.checked)}
           />
-          <span className="text-[12px] font-medium text-text">Use basic authentication</span>
+          <span className="text-[14px] font-medium text-text">Use basic authentication</span>
         </label>
 
         {proxy.authEnabled && (
           <>
             <label className="flex flex-col gap-1">
-              <span className="text-[12px] font-medium text-text">Username</span>
+              <span className="text-[14px] font-medium text-text">Username</span>
               <input
                 type="text"
                 className={field}
@@ -146,7 +146,7 @@ export function ProxySection(): JSX.Element {
             </label>
 
             <label className="flex flex-col gap-1">
-              <span className="text-[12px] font-medium text-text">Password</span>
+              <span className="text-[14px] font-medium text-text">Password</span>
               <input
                 type="password"
                 className={field}
@@ -159,7 +159,7 @@ export function ProxySection(): JSX.Element {
           </>
         )}
 
-        <p className="m-0 text-[12px] text-muted">
+        <p className="m-0 text-[14px] text-muted">
           When enabled, every outbound request is routed through this proxy server.
         </p>
       </div>
@@ -168,7 +168,7 @@ export function ProxySection(): JSX.Element {
         <Button type="button" disabled={fieldsDisabled} onClick={() => void handleSave()}>
           {saving ? 'Saving…' : 'Save'}
         </Button>
-        {saved && <span className="text-[12px] text-success">Settings saved.</span>}
+        {saved && <span className="text-[14px] text-success">Settings saved.</span>}
       </div>
     </div>
   );

@@ -103,7 +103,7 @@ export function Response({ response, sending, testResults, onCancel }: Props): J
    */
   const emptyState = (message: string): JSX.Element => (
     <div className="flex flex-1 flex-col p-3">
-      <div className="flex flex-1 items-center justify-center text-[13px] text-muted">
+      <div className="flex flex-1 items-center justify-center text-[14px] text-muted">
         {message}
       </div>
     </div>
@@ -112,7 +112,7 @@ export function Response({ response, sending, testResults, onCancel }: Props): J
   if (sending) {
     return (
       <div className="flex flex-1 flex-col p-3">
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 text-[13px] text-muted">
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 text-[14px] text-muted">
           <div role="status" aria-label="Sending request">
             <span>Sending request…</span>
           </div>
@@ -130,7 +130,7 @@ export function Response({ response, sending, testResults, onCancel }: Props): J
 
   return (
     <div className="flex min-h-0 flex-1 flex-col p-3">
-      <div className="mb-2 flex items-center gap-3 text-[13px]">
+      <div className="mb-2 flex items-center gap-3 text-[14px]">
         <span className="inline-flex items-center gap-1.5 font-medium text-text">
           <span
             className={`inline-block h-2 w-2 shrink-0 rounded-full ${statusDotClass(response.status)}`}
@@ -143,7 +143,7 @@ export function Response({ response, sending, testResults, onCancel }: Props): J
       </div>
 
       {response.error && (
-        <div className="mb-2 rounded-md bg-danger/10 px-2.5 py-2 text-[13px] text-danger">
+        <div className="mb-2 rounded-md bg-danger/10 px-2.5 py-2 text-[14px] text-danger">
           {response.error}
         </div>
       )}
@@ -161,7 +161,7 @@ export function Response({ response, sending, testResults, onCancel }: Props): J
                   <>
                     Tests
                     <span
-                      className={`ml-1.5 text-[12px] ${failedCount > 0 ? 'text-danger' : 'text-muted'}`}
+                      className={`ml-1.5 text-[14px] ${failedCount > 0 ? 'text-danger' : 'text-muted'}`}
                     >
                       {passedCount}/{testResults.length}
                     </span>

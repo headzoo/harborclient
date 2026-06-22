@@ -63,11 +63,11 @@ export function buildMenu(window: BrowserWindow): Menu {
           click: () => sendMenuAction(window, 'settings')
         },
         {
-          label: 'Certificates',
+          label: 'Invite Certificates',
           click: () => sendMenuAction(window, 'certificates')
         },
         {
-          label: 'Accept invite',
+          label: 'Accept Invite',
           click: () => sendMenuAction(window, 'accept-invite')
         },
         { type: 'separator' },

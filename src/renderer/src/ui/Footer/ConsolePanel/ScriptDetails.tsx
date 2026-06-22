@@ -21,12 +21,12 @@ export function ScriptDetails({ entry }: Props): JSX.Element | null {
     <div className="mb-4">
       <SectionTitle title="Scripts" />
       {entry.scriptError && (
-        <div className="mb-2 rounded-md bg-danger/10 px-2.5 py-2 text-[13px] text-danger whitespace-pre-wrap">
+        <div className="mb-2 rounded-md bg-danger/10 px-2.5 py-2 text-[14px] text-danger whitespace-pre-wrap">
           {entry.scriptError}
         </div>
       )}
       {entry.logs && entry.logs.length > 0 && (
-        <pre className="mb-2 overflow-auto rounded-md border border-separator bg-control px-2.5 py-2 font-mono text-[12px] text-text">
+        <pre className="mb-2 overflow-auto rounded-md border border-separator bg-control px-2.5 py-2 font-mono text-[14px] text-text">
           {entry.logs.join('\n')}
         </pre>
       )}
@@ -40,9 +40,9 @@ export function ScriptDetails({ entry }: Props): JSX.Element | null {
               <span
                 className={`inline-block h-2 w-2 shrink-0 rounded-full ${test.passed ? 'bg-success' : 'bg-danger'}`}
               />
-              <span className="text-[13px] text-text">{test.name}</span>
+              <span className="text-[14px] text-text">{test.name}</span>
               {!test.passed && test.error && (
-                <span className="text-[12px] text-danger">{test.error}</span>
+                <span className="text-[14px] text-danger">{test.error}</span>
               )}
             </div>
           ))}

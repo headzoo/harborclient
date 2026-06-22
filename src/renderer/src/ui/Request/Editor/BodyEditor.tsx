@@ -58,11 +58,11 @@ export function BodyEditor({
   return (
     <div className="flex flex-col gap-2 mt-3">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-        <span className="text-[13px] text-muted">Body type</span>
+        <span className="text-[14px] text-muted">Body type</span>
         {BODY_TYPE_OPTIONS.map(({ value, label }) => (
           <label
             key={value}
-            className="inline-flex cursor-pointer items-center gap-1.5 text-[13px] text-text app-no-drag"
+            className="inline-flex cursor-pointer items-center gap-1.5 text-[14px] text-text app-no-drag"
           >
             <input
               type="radio"

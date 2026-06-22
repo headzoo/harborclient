@@ -110,7 +110,7 @@ function EnvironmentSettingsForm({
         </div>
 
         <div className="mb-6">
-          <label className="mb-1 block text-[13px] text-muted" htmlFor={nameId}>
+          <label className="mb-1 block text-[14px] text-muted" htmlFor={nameId}>
             Name
           </label>
           <input

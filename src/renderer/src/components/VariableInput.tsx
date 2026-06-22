@@ -162,7 +162,7 @@ export function VariableInput({
       <div
         ref={backdropRef}
         aria-hidden
-        className="pointer-events-none absolute inset-0 overflow-hidden whitespace-nowrap px-2 py-1.5 text-[13px] text-inherit"
+        className="pointer-events-none absolute inset-0 overflow-hidden whitespace-nowrap px-2 py-1.5 text-[14px] text-inherit"
       >
         {value ? (
           tokens.map((token, index) =>
@@ -191,7 +191,7 @@ export function VariableInput({
         id={id}
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
-        className={`relative w-full min-w-0 border-none bg-transparent px-2 py-1.5 text-[13px] text-transparent caret-text focus-visible:shadow-none ${className}`}
+        className={`relative w-full min-w-0 border-none bg-transparent px-2 py-1.5 text-[14px] text-transparent caret-text focus-visible:shadow-none ${className}`}
         type="text"
         placeholder={placeholder}
         value={value}
@@ -204,7 +204,7 @@ export function VariableInput({
 
       {tooltip && (
         <div
-          className="pointer-events-auto fixed z-50 flex max-w-sm -translate-x-1/2 -translate-y-full flex-col gap-1.5 rounded-md border border-separator bg-surface px-3 py-2 text-[13px] text-text shadow-md"
+          className="pointer-events-auto fixed z-50 flex max-w-sm -translate-x-1/2 -translate-y-full flex-col gap-1.5 rounded-md border border-separator bg-surface px-3 py-2 text-[14px] text-text shadow-md"
           style={{ top: tooltip.top - 4, left: tooltip.left }}
           onMouseEnter={cancelHide}
           onMouseLeave={() => setTooltip(null)}
@@ -217,7 +217,7 @@ export function VariableInput({
           {onEditVariable && (
             <button
               type="button"
-              className="self-start text-[12px] text-accent hover:underline app-no-drag"
+              className="self-start text-[14px] text-accent hover:underline app-no-drag"
               onClick={() => {
                 onEditVariable();
                 setTooltip(null);

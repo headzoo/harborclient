@@ -41,7 +41,7 @@ interface Props {
  */
 function menuItemClass(variant: MenuItem['variant']): string {
   const base =
-    'block w-full cursor-pointer border-none bg-transparent px-3.5 py-1.5 text-left text-[13px] app-no-drag';
+    'block w-full cursor-pointer border-none bg-transparent px-3.5 py-1.5 text-left text-[14px] app-no-drag';
 
   return variant === 'danger'
     ? `${base} text-text hover:bg-danger/15 hover:text-danger`

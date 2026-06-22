@@ -61,7 +61,7 @@ export function Section({
               className="h-3 w-3 text-muted"
             />
           </span>
-          <h2 className="m-0 text-[11px] font-medium uppercase tracking-wide text-muted">
+          <h2 className="m-0 text-[14px] font-medium uppercase tracking-wide text-muted">
             {title}
           </h2>
         </button>

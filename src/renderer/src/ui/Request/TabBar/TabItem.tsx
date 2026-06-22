@@ -112,7 +112,7 @@ export function TabItem({ tab, active, tabIndex, onSelect, onClose }: Props): JS
     >
       <span className="flex min-w-0 flex-1 items-center gap-1.5 py-2 text-inherit app-no-drag">
         <span
-          className={`shrink-0 rounded px-1 py-px text-[10px] font-semibold ${METHOD_CLASSES[tab.draft.method.toLowerCase()] ?? 'bg-info text-white'}`}
+          className={`shrink-0 rounded px-1 py-px text-[14px] font-semibold ${METHOD_CLASSES[tab.draft.method.toLowerCase()] ?? 'bg-info text-white'}`}
         >
           {tab.draft.method}
         </span>
@@ -120,7 +120,7 @@ export function TabItem({ tab, active, tabIndex, onSelect, onClose }: Props): JS
         {isTabDirty(tab) && (
           <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-muted" aria-hidden="true" />
         )}
-        <span className="truncate text-[13px]">{tab.draft.name}</span>
+        <span className="truncate text-[14px]">{tab.draft.name}</span>
       </span>
       <button
         type="button"

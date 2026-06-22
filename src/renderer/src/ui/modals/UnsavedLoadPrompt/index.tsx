@@ -45,10 +45,10 @@ export function UnsavedLoadPrompt(): JSX.Element | null {
 
   return (
     <Modal onClose={handleCancel} labelledBy="unsaved-load-prompt-title">
-      <h2 id="unsaved-load-prompt-title" className="m-0 mb-1 text-[13px] font-semibold text-text">
+      <h2 id="unsaved-load-prompt-title" className="m-0 mb-1 text-[14px] font-semibold text-text">
         Unsaved changes
       </h2>
-      <p className="mb-4 text-[12px] text-muted">
+      <p className="mb-4 text-[14px] text-muted">
         {isDirtyTab ? (
           <>&ldquo;{req.name}&rdquo; has unsaved changes. Reload without saving?</>
         ) : (

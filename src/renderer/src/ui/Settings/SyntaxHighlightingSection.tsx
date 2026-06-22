@@ -90,7 +90,7 @@ export function SyntaxHighlightingSection(): JSX.Element {
     <div className="mb-6 flex flex-col gap-6">
       <div className="flex flex-col gap-6">
         <label className="flex flex-col gap-1">
-          <span className="text-[12px] font-medium text-text">Theme</span>
+          <span className="text-[14px] font-medium text-text">Theme</span>
           <select
             className={field}
             value={generalSettings.codeEditorTheme}
@@ -115,7 +115,7 @@ export function SyntaxHighlightingSection(): JSX.Element {
               disabled={loading || saving}
               onChange={(event) => handleSetupChange(option.key, event.target.checked)}
             />
-            <span className="text-[12px] font-medium text-text">{option.label}</span>
+            <span className="text-[14px] font-medium text-text">{option.label}</span>
           </label>
         ))}
 
@@ -123,12 +123,12 @@ export function SyntaxHighlightingSection(): JSX.Element {
           <Button type="button" disabled={loading || saving} onClick={() => void handleSave()}>
             {saving ? 'Saving…' : 'Save'}
           </Button>
-          {saved && <span className="text-[12px] text-success">Settings saved.</span>}
+          {saved && <span className="text-[14px] text-success">Settings saved.</span>}
         </div>
       </div>
 
       <div className="flex flex-col gap-2">
-        <span className="text-[12px] font-medium text-text">Preview</span>
+        <span className="text-[14px] font-medium text-text">Preview</span>
         <CodeEditor
           value={PREVIEW_SAMPLE}
           readOnly

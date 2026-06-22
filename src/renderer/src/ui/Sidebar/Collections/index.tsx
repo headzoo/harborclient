@@ -631,7 +631,7 @@ export function Collections({
     >
       <div className="flex flex-col gap-0.5">
         {collections.length === 0 && (
-          <div className="px-2 py-1.5 text-[13px] text-muted">No collections yet</div>
+          <div className="px-2 py-1.5 text-[14px] text-muted">No collections yet</div>
         )}
 
         <SortableContext items={collectionIds} strategy={verticalListSortingStrategy}>
@@ -676,7 +676,7 @@ export function Collections({
                   </button>
                   <button
                     type="button"
-                    className="min-w-0 flex-1 cursor-pointer truncate border-none bg-transparent py-0.5 text-left text-[13px] text-inherit app-no-drag"
+                    className="min-w-0 flex-1 cursor-pointer truncate border-none bg-transparent py-0.5 text-left text-[14px] text-inherit app-no-drag"
                     aria-current={selected ? 'true' : undefined}
                     onClick={() => onSelectCollection(collection.id)}
                     onDoubleClick={() => onConfigureCollection(collection.id)}
@@ -685,7 +685,7 @@ export function Collections({
                       <span className="truncate">{collection.name}</span>
                       {connectionName != null && (
                         <span
-                          className="shrink-0 rounded bg-info/15 px-1.5 py-0.5 text-[10px] font-medium text-info"
+                          className="shrink-0 rounded bg-info/15 px-1.5 py-0.5 text-[14px] font-medium text-info"
                           title={`Stored in ${connectionName}`}
                         >
                           {connectionName}
@@ -789,7 +789,7 @@ export function Collections({
                   >
                     <div className="ml-4 flex flex-col gap-0.5 py-0.5">
                       {loaded && folders.length === 0 && rootRequests.length === 0 && (
-                        <div className="px-2 py-1 text-[12px] text-muted">No saved requests</div>
+                        <div className="px-2 py-1 text-[14px] text-muted">No saved requests</div>
                       )}
 
                       <DropZone
@@ -806,12 +806,12 @@ export function Collections({
                         }
                       >
                         {isRequestDragInCollection && dropTargetFolderId === null && (
-                          <div className="px-2 pb-0.5 text-[11px] text-info">
+                          <div className="px-2 pb-0.5 text-[14px] text-info">
                             Drop at collection root
                           </div>
                         )}
                         {isDraggingRequestHere && rootRequests.length === 0 && (
-                          <div className="px-2 py-1.5 text-[12px] text-muted">Collection root</div>
+                          <div className="px-2 py-1.5 text-[14px] text-muted">Collection root</div>
                         )}
                         <SortableContext
                           items={rootRequestIds}
@@ -891,10 +891,10 @@ export function Collections({
                                       className="h-3 w-3"
                                     />
                                   </button>
-                                  <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
+                                  <span className="min-w-0 flex-1 truncate text-[14px] font-medium">
                                     {folder.name}
                                     {folderHighlighted && (
-                                      <span className="ml-1.5 text-[11px] font-normal text-info">
+                                      <span className="ml-1.5 text-[14px] font-normal text-info">
                                         Drop here
                                       </span>
                                     )}
@@ -1024,7 +1024,7 @@ export function Collections({
                                     ))}
                                   </SortableContext>
                                   {folderRequests.length === 0 && (
-                                    <div className="px-2 py-1 text-[12px] text-muted">
+                                    <div className="px-2 py-1 text-[14px] text-muted">
                                       Empty folder
                                     </div>
                                   )}
@@ -1042,16 +1042,16 @@ export function Collections({
                       activeDragRequest ? (
                         <div className="flex items-center gap-1.5 rounded border border-separator bg-surface px-2 py-1 shadow-md">
                           <span
-                            className={`shrink-0 rounded px-1 py-px text-[10px] font-semibold ${METHOD_CLASSES[activeDragRequest.method.toLowerCase()] ?? 'bg-info text-white'}`}
+                            className={`shrink-0 rounded px-1 py-px text-[14px] font-semibold ${METHOD_CLASSES[activeDragRequest.method.toLowerCase()] ?? 'bg-info text-white'}`}
                           >
                             {activeDragRequest.method}
                           </span>
-                          <span className="truncate text-[13px]">{activeDragRequest.name}</span>
+                          <span className="truncate text-[14px]">{activeDragRequest.name}</span>
                         </div>
                       ) : dragCollectionId === collection.id &&
                         activeDragKind === 'folder' &&
                         activeDragFolder ? (
-                        <div className="rounded border border-separator bg-surface px-2 py-1 text-[13px] font-medium shadow-md">
+                        <div className="rounded border border-separator bg-surface px-2 py-1 text-[14px] font-medium shadow-md">
                           {activeDragFolder.name}
                         </div>
                       ) : null}
@@ -1066,7 +1066,7 @@ export function Collections({
 
       <DragOverlay>
         {activeDragCollection ? (
-          <div className="rounded border border-separator bg-surface px-2 py-1 text-[13px] font-medium shadow-md">
+          <div className="rounded border border-separator bg-surface px-2 py-1 text-[14px] font-medium shadow-md">
             {activeDragCollection.name}
           </div>
         ) : null}

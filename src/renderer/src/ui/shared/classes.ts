@@ -44,7 +44,7 @@ export function requestTabItem(active: boolean): string {
 
 export const separator = 'h-px bg-separator';
 
-export const sectionLabel = 'mb-1 px-2 text-[11px] font-medium uppercase tracking-wide text-muted';
+export const sectionLabel = 'mb-1 px-2 text-[14px] font-medium uppercase tracking-wide text-muted';
 
 export const METHOD_CLASSES: Record<string, string> = {
   get: 'bg-method-get/90 text-white',

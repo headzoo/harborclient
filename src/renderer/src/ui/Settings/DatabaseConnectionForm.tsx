@@ -70,7 +70,7 @@ export function DatabaseConnectionForm({
   return (
     <div className="flex flex-col gap-4">
       <label className="flex flex-col gap-1">
-        <span className="text-[12px] font-medium text-text">Name</span>
+        <span className="text-[14px] font-medium text-text">Name</span>
         <input
           type="text"
           className={field}
@@ -83,7 +83,7 @@ export function DatabaseConnectionForm({
 
       {isNew ? (
         <div>
-          <span className="mb-2 block text-[12px] font-medium text-text">Type</span>
+          <span className="mb-2 block text-[14px] font-medium text-text">Type</span>
           <SegmentedTabs
             pattern="radiogroup"
             ariaLabel="Database type"
@@ -94,8 +94,8 @@ export function DatabaseConnectionForm({
         </div>
       ) : (
         <div>
-          <span className="mb-1 block text-[12px] font-medium text-text">Type</span>
-          <p className="m-0 text-[13px] text-text">{providerLabel(connection.type)}</p>
+          <span className="mb-1 block text-[14px] font-medium text-text">Type</span>
+          <p className="m-0 text-[14px] text-text">{providerLabel(connection.type)}</p>
         </div>
       )}
 

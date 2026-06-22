@@ -41,7 +41,7 @@ interface Props {
 }
 
 const thClass =
-  'border-r border-b border-separator px-1.5 py-1 text-left text-[11px] font-medium uppercase tracking-wide text-muted last:border-r-0';
+  'border-r border-b border-separator px-1.5 py-1 text-left text-[14px] font-medium uppercase tracking-wide text-muted last:border-r-0';
 const tdClass = 'border-r border-b border-separator p-1.5 last:border-r-0';
 
 /**

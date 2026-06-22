@@ -34,7 +34,7 @@ export function AboutModal(): JSX.Element | null {
         <h2 id="about-modal-title" className="m-0 mb-1 text-[15px] font-semibold text-text">
           HarborClient
         </h2>
-        {about.version && <p className="m-0 text-[12px] text-muted">Version {about.version}</p>}
+        {about.version && <p className="m-0 text-[14px] text-muted">Version {about.version}</p>}
         <a
           href="https://harborclient.com/"
           target="_blank"

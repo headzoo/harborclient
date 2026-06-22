@@ -77,16 +77,16 @@ export function CookiesEditor({ url, variables }: Props): JSX.Element {
   };
 
   if (!host) {
-    return <p className="text-[13px] text-muted">Enter a valid URL to manage cookies.</p>;
+    return <p className="text-[14px] text-muted">Enter a valid URL to manage cookies.</p>;
   }
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="m-0 text-[12px] text-muted">
+      <p className="m-0 text-[14px] text-muted">
         Cookies for <span className="font-medium text-text">{host}</span>
       </p>
       {loading ? (
-        <p className="text-[13px] text-muted">Loading cookies…</p>
+        <p className="text-[14px] text-muted">Loading cookies…</p>
       ) : (
         <KeyValueEditor
           rows={rows}

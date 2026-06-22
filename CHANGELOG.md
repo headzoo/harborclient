@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- refactor: update menu labels and enhance UI text consistency. (`2a29420`)
 - fix: enforce HarborClient export version to 1. (`8485287`)
 
 ## 1.5.5 - 2026-06-22

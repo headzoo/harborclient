@@ -204,8 +204,8 @@ export function Request({ onEditVariables }: Props): JSX.Element {
             className="w-96 rounded-lg border border-separator bg-surface p-4 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">Unsaved changes</h2>
-            <p className="mb-4 text-[12px] text-muted">
+            <h2 className="m-0 mb-1 text-[14px] font-semibold text-text">Unsaved changes</h2>
+            <p className="mb-4 text-[14px] text-muted">
               &ldquo;{closeTabPrompt.name}&rdquo; has unsaved changes. Close without saving?
             </p>
             <div className="flex justify-end gap-2">

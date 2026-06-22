@@ -22,10 +22,10 @@ export function AlertModal(): JSX.Element | null {
 
   return (
     <Modal onClose={handleClose} labelledBy="alert-modal-title">
-      <h2 id="alert-modal-title" className="m-0 mb-1 text-[13px] font-semibold text-text">
+      <h2 id="alert-modal-title" className="m-0 mb-1 text-[14px] font-semibold text-text">
         {alertModal.title}
       </h2>
-      <p className="mb-4 text-[12px] text-muted">{alertModal.message}</p>
+      <p className="mb-4 text-[14px] text-muted">{alertModal.message}</p>
       <div className="flex justify-end gap-2">
         <Button onClick={handleClose}>OK</Button>
       </div>

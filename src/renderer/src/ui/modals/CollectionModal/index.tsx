@@ -106,11 +106,11 @@ export function CollectionModal(): JSX.Element | null {
 
   return (
     <Modal onClose={handleClose} className="w-[32rem]" labelledBy="collection-modal-title">
-      <h2 id="collection-modal-title" className="m-0 mb-1 text-[13px] font-semibold text-text">
+      <h2 id="collection-modal-title" className="m-0 mb-1 text-[14px] font-semibold text-text">
         {showImportTab ? 'Add collection' : 'New collection'}
       </h2>
       {collectionModal.mode === 'create-and-save' && (
-        <p className="mb-3 text-[12px] text-muted">
+        <p className="mb-3 text-[14px] text-muted">
           Create a collection to save this request into.
         </p>
       )}
@@ -132,17 +132,17 @@ export function CollectionModal(): JSX.Element | null {
           />
 
           {collectionModal.submitError && (
-            <p className="mb-3 text-[12px] text-danger">{collectionModal.submitError}</p>
+            <p className="mb-3 text-[14px] text-danger">{collectionModal.submitError}</p>
           )}
 
           <SegmentedTabPanel value="invite">
-            <p className="mb-3 text-[12px] text-muted">
+            <p className="mb-3 text-[14px] text-muted">
               Paste an invite token from a trusted sender. Add their public key under File →
               Certificates first. Restart HarborClient after accepting to load collections from that
               database.
             </p>
             <textarea
-              className={`${field} min-h-28 w-full resize-y font-mono text-[12px]`}
+              className={`${field} min-h-28 w-full resize-y font-mono text-[14px]`}
               autoFocus
               placeholder="Paste invite token"
               value={collectionModal.inviteTokenInput}
@@ -184,7 +184,7 @@ export function CollectionModal(): JSX.Element | null {
           </SegmentedTabPanel>
 
           <SegmentedTabPanel value="import">
-            <p className="mb-4 text-[12px] text-muted">
+            <p className="mb-4 text-[14px] text-muted">
               Choose a HarborClient or Postman collection export (.json) to import all saved
               requests.
             </p>
@@ -199,7 +199,7 @@ export function CollectionModal(): JSX.Element | null {
       ) : (
         <>
           {collectionModal.submitError && (
-            <p className="mb-3 text-[12px] text-danger">{collectionModal.submitError}</p>
+            <p className="mb-3 text-[14px] text-danger">{collectionModal.submitError}</p>
           )}
           <input
             className={`${field} w-full`}

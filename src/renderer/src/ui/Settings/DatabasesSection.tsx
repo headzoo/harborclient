@@ -152,8 +152,8 @@ export function DatabasesSection(): JSX.Element {
       <div>
         <div className="mb-4 flex items-end justify-between gap-4">
           <div className="min-w-0">
-            <h2 className="m-0 mb-1 text-[13px] font-medium text-text">Databases</h2>
-            <p className="m-0 text-[12px] text-muted">
+            <h2 className="m-0 mb-1 text-[14px] font-medium text-text">Databases</h2>
+            <p className="m-0 text-[14px] text-muted">
               Define database connections. The active database is used for new collections and
               imports.
             </p>
@@ -169,10 +169,10 @@ export function DatabasesSection(): JSX.Element {
         </div>
 
         {loading ? (
-          <p className="text-[12px] text-muted">Loading…</p>
+          <p className="text-[14px] text-muted">Loading…</p>
         ) : bootstrapError ? (
           <div className="flex flex-wrap items-center gap-2">
-            <p className="mb-0 text-[12px] text-danger">{bootstrapError}</p>
+            <p className="mb-0 text-[14px] text-danger">{bootstrapError}</p>
             <Button type="button" variant="secondary" onClick={reloadConnections}>
               Retry
             </Button>
@@ -191,18 +191,18 @@ export function DatabasesSection(): JSX.Element {
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="truncate text-[13px] font-medium text-text">
+                      <span className="truncate text-[14px] font-medium text-text">
                         {connection.name || 'Untitled'}
                       </span>
                       {isActive && (
-                        <span className="rounded bg-success/15 px-1.5 py-0.5 text-[11px] font-medium text-success">
+                        <span className="rounded bg-success/15 px-1.5 py-0.5 text-[14px] font-medium text-success">
                           Active
                         </span>
                       )}
                     </div>
-                    <span className="text-[12px] text-muted">{providerLabel(connection.type)}</span>
+                    <span className="text-[14px] text-muted">{providerLabel(connection.type)}</span>
                     {isLastSqlite && (
-                      <p className="mb-0 mt-1 text-[11px] text-muted">
+                      <p className="mb-0 mt-1 text-[14px] text-muted">
                         At least one SQLite connection must remain.
                       </p>
                     )}
@@ -241,11 +241,11 @@ export function DatabasesSection(): JSX.Element {
         )}
 
         {error && !editingConnection && !deletingConnection && (
-          <p className="mt-3 text-[12px] text-danger">{error}</p>
+          <p className="mt-3 text-[14px] text-danger">{error}</p>
         )}
-        {saved && <p className="mt-3 text-[12px] text-success">Settings saved.</p>}
+        {saved && <p className="mt-3 text-[14px] text-success">Settings saved.</p>}
 
-        <p className="mb-0 mt-4 text-[12px] text-muted">
+        <p className="mb-0 mt-4 text-[14px] text-muted">
           Connection changes take effect after restarting HarborClient. All configured databases are
           opened at launch so shared collections are available immediately.
         </p>
@@ -260,10 +260,10 @@ export function DatabasesSection(): JSX.Element {
             className="max-h-[85vh] w-[480px] overflow-y-auto rounded-lg border border-separator bg-surface p-4 shadow-xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">
+            <h2 className="m-0 mb-1 text-[14px] font-semibold text-text">
               {isNew ? 'Add database' : 'Edit database'}
             </h2>
-            <p className="mb-4 text-[12px] text-muted">
+            <p className="mb-4 text-[14px] text-muted">
               Choose a name and configure connection settings for this database.
             </p>
 
@@ -274,7 +274,7 @@ export function DatabasesSection(): JSX.Element {
               onChange={setEditingConnection}
             />
 
-            {error && <p className="mt-4 text-[12px] text-danger">{error}</p>}
+            {error && <p className="mt-4 text-[14px] text-danger">{error}</p>}
 
             <div className="mt-4 flex justify-end gap-2">
               <Button
@@ -302,13 +302,13 @@ export function DatabasesSection(): JSX.Element {
             className="w-96 rounded-lg border border-separator bg-surface p-4 shadow-xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <h2 className="m-0 mb-1 text-[13px] font-semibold text-text">Delete database?</h2>
-            <p className="mb-2 text-[12px] text-muted">
+            <h2 className="m-0 mb-1 text-[14px] font-semibold text-text">Delete database?</h2>
+            <p className="mb-2 text-[14px] text-muted">
               Are you sure you want to delete &ldquo;
               {deletingConnection.name || 'Untitled'}&rdquo;? This cannot be undone.
             </p>
             {deletingConnection.id === activeId && (
-              <p className="mb-4 text-[12px] text-muted">
+              <p className="mb-4 text-[14px] text-muted">
                 This is the active database. Another connection will become active after restart.
               </p>
             )}

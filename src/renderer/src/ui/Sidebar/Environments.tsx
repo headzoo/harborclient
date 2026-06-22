@@ -47,7 +47,7 @@ export function Environments({
   return (
     <div className="flex flex-col gap-0.5">
       {environments.length === 0 && (
-        <div className="px-2 py-1.5 text-[13px] text-muted">No environments yet</div>
+        <div className="px-2 py-1.5 text-[14px] text-muted">No environments yet</div>
       )}
       {environments.map((environment) => {
         const selected = activeEnvironmentId === environment.id;
@@ -56,7 +56,7 @@ export function Environments({
           <div key={environment.id} className={sourceRow(selected)}>
             <button
               type="button"
-              className="min-w-0 flex-1 cursor-pointer truncate border-none bg-transparent py-0.5 text-left text-[13px] text-inherit app-no-drag"
+              className="min-w-0 flex-1 cursor-pointer truncate border-none bg-transparent py-0.5 text-left text-[14px] text-inherit app-no-drag"
               aria-current={selected ? 'true' : undefined}
               onClick={() => onSelectEnvironment(environment.id)}
               onDoubleClick={() => onConfigureEnvironment(environment.id)}

@@ -14,7 +14,7 @@ interface Props {
 export function HeadersSection({ headers, variables, onChange }: Props): JSX.Element {
   return (
     <div className="mb-6">
-      <p className="mb-3 text-[12px] text-muted">
+      <p className="mb-3 text-[14px] text-muted">
         These headers are sent with every request in this collection. Header values support{' '}
         {'{{variable}}'} syntax. Request-level headers override collection headers with the same
         name.

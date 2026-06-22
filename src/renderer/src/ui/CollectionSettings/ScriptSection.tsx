@@ -24,7 +24,7 @@ export function ScriptSection({
 }: Props): JSX.Element {
   return (
     <div className="mb-6">
-      <p className="mb-3 text-[12px] text-muted">{description}</p>
+      <p className="mb-3 text-[14px] text-muted">{description}</p>
       <CodeEditor
         value={value}
         onChange={onChange}

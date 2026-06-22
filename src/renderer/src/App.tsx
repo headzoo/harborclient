@@ -141,7 +141,7 @@ export default function App(): JSX.Element {
       <TitleBar />
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-[100] focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:text-[13px] focus:text-text focus:shadow-md focus:outline focus:outline-2 focus:outline-accent"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-[100] focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:text-[14px] focus:text-text focus:shadow-md focus:outline focus:outline-2 focus:outline-accent"
       >
         Skip to main content
       </a>
@@ -257,7 +257,7 @@ export default function App(): JSX.Element {
             background: 'var(--mac-control)',
             color: 'var(--mac-text)',
             border: '1px solid var(--mac-separator)',
-            fontSize: '13px',
+            fontSize: '14px',
             boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
           }
         }}

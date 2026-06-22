@@ -49,7 +49,7 @@ export function GeneralSection({
   return (
     <div className="mb-6 flex flex-col gap-4">
       <div>
-        <label className="mb-1 block text-[13px] text-muted" htmlFor={nameId}>
+        <label className="mb-1 block text-[14px] text-muted" htmlFor={nameId}>
           Name
         </label>
         <input
@@ -66,7 +66,7 @@ export function GeneralSection({
       </div>
 
       <div>
-        <label className="mb-1 block text-[13px] text-muted" htmlFor={databaseId}>
+        <label className="mb-1 block text-[14px] text-muted" htmlFor={databaseId}>
           Database
         </label>
         <select
@@ -82,17 +82,17 @@ export function GeneralSection({
             </option>
           ))}
         </select>
-        {connectionsLoading && <p className="mb-0 mt-1 text-[12px] text-muted">Loading…</p>}
+        {connectionsLoading && <p className="mb-0 mt-1 text-[14px] text-muted">Loading…</p>}
         {connectionsError && (
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <p className="mb-0 text-[12px] text-danger">{connectionsError}</p>
+            <p className="mb-0 text-[14px] text-danger">{connectionsError}</p>
             <Button type="button" variant="secondary" onClick={onConnectionsRetry}>
               Retry
             </Button>
           </div>
         )}
         {!connectionsLoading && !connectionsError && (
-          <p className="mb-0 mt-1 text-[12px] text-muted">
+          <p className="mb-0 mt-1 text-[14px] text-muted">
             Changing the database moves this collection and all of its requests.
           </p>
         )}

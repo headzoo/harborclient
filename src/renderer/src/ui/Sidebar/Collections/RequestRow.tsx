@@ -131,11 +131,11 @@ export function RequestRow({
         onClick={() => onLoadRequest(req)}
       >
         <span
-          className={`shrink-0 rounded px-1 py-px text-[10px] font-semibold ${METHOD_CLASSES[req.method.toLowerCase()] ?? 'bg-info text-white'}`}
+          className={`shrink-0 rounded px-1 py-px text-[14px] font-semibold ${METHOD_CLASSES[req.method.toLowerCase()] ?? 'bg-info text-white'}`}
         >
           {req.method}
         </span>
-        <span className="truncate text-[13px]">{req.name}</span>
+        <span className="truncate text-[14px]">{req.name}</span>
       </button>
       <RowActionsMenu
         menuId={`request-${req.id}`}

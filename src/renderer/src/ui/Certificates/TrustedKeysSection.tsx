@@ -116,15 +116,15 @@ export function TrustedKeysSection(): JSX.Element {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="m-0 mb-1 text-[13px] font-medium text-text">Trusted keys</h2>
-        <p className="m-0 text-[12px] text-muted">
+        <h2 className="m-0 mb-1 text-[14px] font-medium text-text">Trusted keys</h2>
+        <p className="m-0 text-[14px] text-muted">
           Add public keys for people you trust. Invites must be signed by a trusted sender, and you
           can only create invites for keys listed here.
         </p>
       </div>
 
       <div className="mb-4 rounded-md border border-separator p-3">
-        <label className="mb-1 block text-[12px] font-medium text-text">Label</label>
+        <label className="mb-1 block text-[14px] font-medium text-text">Label</label>
         <input
           className={`${field} mb-3 w-full`}
           type="text"
@@ -134,9 +134,9 @@ export function TrustedKeysSection(): JSX.Element {
           onChange={(event) => setLabel(event.target.value)}
         />
 
-        <label className="mb-1 block text-[12px] font-medium text-text">Public key (PEM)</label>
+        <label className="mb-1 block text-[14px] font-medium text-text">Public key (PEM)</label>
         <textarea
-          className={`${field} mb-3 min-h-24 w-full resize-y font-mono text-[12px]`}
+          className={`${field} mb-3 min-h-24 w-full resize-y font-mono text-[14px]`}
           placeholder="-----BEGIN PUBLIC KEY-----"
           value={publicKeyPem}
           disabled={busy}
@@ -163,7 +163,7 @@ export function TrustedKeysSection(): JSX.Element {
       </div>
 
       {loading ? (
-        <p role="status" className="text-[12px] text-muted">
+        <p role="status" className="text-[14px] text-muted">
           Loading…
         </p>
       ) : (
@@ -174,8 +174,8 @@ export function TrustedKeysSection(): JSX.Element {
               className="flex items-center justify-between gap-3 rounded-md border border-separator px-3 py-2"
             >
               <div className="min-w-0">
-                <div className="truncate text-[13px] font-medium text-text">{key.label}</div>
-                <div className="truncate font-mono text-[11px] text-muted">{key.id}</div>
+                <div className="truncate text-[14px] font-medium text-text">{key.label}</div>
+                <div className="truncate font-mono text-[14px] text-muted">{key.id}</div>
               </div>
               <Button
                 type="button"
@@ -187,11 +187,11 @@ export function TrustedKeysSection(): JSX.Element {
               </Button>
             </li>
           ))}
-          {keys.length === 0 && <li className="text-[12px] text-muted">No trusted keys yet.</li>}
+          {keys.length === 0 && <li className="text-[14px] text-muted">No trusted keys yet.</li>}
         </ul>
       )}
 
-      {error && <p className="mt-3 text-[12px] text-danger">{error}</p>}
+      {error && <p className="mt-3 text-[14px] text-danger">{error}</p>}
     </div>
   );
 }

@@ -176,12 +176,12 @@ export function ShortcutsSection(): JSX.Element {
   return (
     <section className="max-w-3xl">
       <h2 className="m-0 mb-1 text-[15px] font-semibold text-text">Shortcuts</h2>
-      <p className="mt-0 mb-4 text-[13px] text-muted">
+      <p className="mt-0 mb-4 text-[14px] text-muted">
         Click a key combination to record a new shortcut. Changes apply immediately when valid.
       </p>
 
       <div className="overflow-x-auto rounded-md border border-separator">
-        <table className="w-full border-collapse text-[13px]">
+        <table className="w-full border-collapse text-[14px]">
           <caption className="sr-only">Keyboard shortcuts</caption>
           <thead>
             <tr className="border-b border-separator bg-sidebar/40 text-left">
@@ -213,7 +213,7 @@ export function ShortcutsSection(): JSX.Element {
                       {recording ? 'Press keys…' : formatAcceleratorDisplay(binding.accelerator)}
                     </button>
                     {error != null ? (
-                      <p id={errorId} className="mt-1 text-[12px] text-danger">
+                      <p id={errorId} className="mt-1 text-[14px] text-danger">
                         {error}
                       </p>
                     ) : null}
@@ -226,17 +226,17 @@ export function ShortcutsSection(): JSX.Element {
       </div>
 
       {globalError != null ? (
-        <p className="mt-3 text-[13px] text-danger" role="alert">
+        <p className="mt-3 text-[14px] text-danger" role="alert">
           {globalError}
         </p>
       ) : null}
 
-      <p id={statusId} className="mt-3 text-[13px] text-muted" role="status" aria-live="polite">
+      <p id={statusId} className="mt-3 text-[14px] text-muted" role="status" aria-live="polite">
         {statusMessage ?? ''}
       </p>
 
       <div className="mt-4 rounded-md border border-danger/30 bg-danger/5 p-3">
-        <p className="m-0 mb-2 text-[13px] text-text">
+        <p className="m-0 mb-2 text-[14px] text-text">
           Restore all shortcuts to their original defaults. This cannot be undone.
         </p>
         <Button

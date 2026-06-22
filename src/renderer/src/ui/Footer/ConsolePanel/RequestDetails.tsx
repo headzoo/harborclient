@@ -19,8 +19,8 @@ const detailRow =
 function DetailRow({ label, value }: { label: string; value: string }): JSX.Element {
   return (
     <div className={detailRow}>
-      <span className="break-words text-[13px] font-medium">{label}</span>
-      <span className="break-words font-mono text-[12px] text-text-secondary">{value}</span>
+      <span className="break-words text-[14px] font-medium">{label}</span>
+      <span className="break-words font-mono text-[14px] text-text-secondary">{value}</span>
     </div>
   );
 }
@@ -45,13 +45,13 @@ export function RequestDetails({ result }: Props): JSX.Element {
   const isMultipartSummary = result.request?.bodyType === 'multipart';
 
   if (!result.request) {
-    return <div className="text-[13px] text-muted">No request data</div>;
+    return <div className="text-[14px] text-muted">No request data</div>;
   }
 
   return (
     <div className="flex flex-col gap-4">
       {result.error && (
-        <div className="rounded-md bg-danger/10 px-2.5 py-2 text-[13px] text-danger">
+        <div className="rounded-md bg-danger/10 px-2.5 py-2 text-[14px] text-danger">
           {result.error}
         </div>
       )}
@@ -72,15 +72,15 @@ export function RequestDetails({ result }: Props): JSX.Element {
         <SectionTitle title="Request Headers" />
         <div className="overflow-hidden rounded-md border border-separator">
           {Object.entries(result.request.headers).length === 0 ? (
-            <div className="p-4 text-center text-[13px] text-muted">No headers</div>
+            <div className="p-4 text-center text-[14px] text-muted">No headers</div>
           ) : (
             Object.entries(result.request.headers).map(([key, value], index) => (
               <div
                 className={`grid grid-cols-[180px_1fr] gap-3 px-2.5 py-1.5 ${index > 0 ? 'border-t border-separator' : ''}`}
                 key={key}
               >
-                <span className="break-words text-[13px] font-medium">{key}</span>
-                <span className="break-words font-mono text-[12px] text-text-secondary">
+                <span className="break-words text-[14px] font-medium">{key}</span>
+                <span className="break-words font-mono text-[14px] text-text-secondary">
                   {value}
                 </span>
               </div>
@@ -92,14 +92,14 @@ export function RequestDetails({ result }: Props): JSX.Element {
       <div>
         <SectionTitle title={requestBodySectionTitle} />
         {isMultipartSummary && (
-          <p className="m-0 mb-1.5 text-[12px] text-muted">
+          <p className="m-0 mb-1.5 text-[14px] text-muted">
             Summary of fields sent — not the raw multipart body.
           </p>
         )}
         {result.request.body ? (
           <CodeEditor readOnly value={formattedRequestBody} language={requestBodyLanguage} />
         ) : (
-          <div className="rounded-md border border-separator px-2.5 py-2 text-[13px] text-muted">
+          <div className="rounded-md border border-separator px-2.5 py-2 text-[14px] text-muted">
             (no payload)
           </div>
         )}

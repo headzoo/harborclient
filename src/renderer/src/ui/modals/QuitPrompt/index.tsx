@@ -31,10 +31,10 @@ export function QuitPrompt(): JSX.Element | null {
 
   return (
     <Modal onClose={handleCancel} labelledBy="quit-prompt-title">
-      <h2 id="quit-prompt-title" className="m-0 mb-1 text-[13px] font-semibold text-text">
+      <h2 id="quit-prompt-title" className="m-0 mb-1 text-[14px] font-semibold text-text">
         Unsaved changes
       </h2>
-      <p className="mb-4 text-[12px] text-muted">
+      <p className="mb-4 text-[14px] text-muted">
         {quitPrompt.length === 1 ? (
           <>&ldquo;{quitPrompt[0]}&rdquo; has unsaved changes. Quit without saving?</>
         ) : (

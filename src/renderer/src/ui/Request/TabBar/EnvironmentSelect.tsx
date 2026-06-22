@@ -19,7 +19,7 @@ export function EnvironmentSelect({
   return (
     <div className="ms-auto flex shrink-0 self-stretch items-center">
       <select
-        className={`${field} max-w-[180px] cursor-pointer py-1 text-[13px] app-no-drag`}
+        className={`${field} max-w-[180px] cursor-pointer py-1 text-[14px] app-no-drag`}
         value={activeEnvironmentId ?? ''}
         onChange={(e) => {
           const value = e.target.value;

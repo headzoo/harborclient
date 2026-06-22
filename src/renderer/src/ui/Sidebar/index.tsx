@@ -410,7 +410,7 @@ export function Sidebar({
         <Modal onClose={closeFolderModal} labelledBy="sidebar-folder-modal-title">
           <h2
             id="sidebar-folder-modal-title"
-            className="m-0 mb-1 text-[13px] font-semibold text-text"
+            className="m-0 mb-1 text-[14px] font-semibold text-text"
           >
             {folderModal.mode === 'create' ? 'New folder' : 'Rename folder'}
           </h2>
@@ -429,7 +429,7 @@ export function Sidebar({
               if (e.key === 'Enter') void handleFolderModalSubmit();
             }}
           />
-          {folderModal.error && <p className="mt-3 text-[12px] text-danger">{folderModal.error}</p>}
+          {folderModal.error && <p className="mt-3 text-[14px] text-danger">{folderModal.error}</p>}
           <div className="mt-4 flex justify-end gap-2">
             <Button variant="secondary" onClick={closeFolderModal}>
               Cancel
@@ -448,7 +448,7 @@ export function Sidebar({
         <Modal onClose={closeEnvironmentModal} labelledBy="sidebar-environment-modal-title">
           <h2
             id="sidebar-environment-modal-title"
-            className="m-0 mb-1 text-[13px] font-semibold text-text"
+            className="m-0 mb-1 text-[14px] font-semibold text-text"
           >
             New environment
           </h2>
@@ -467,7 +467,7 @@ export function Sidebar({
             }}
           />
           {environmentModalError && (
-            <p className="mt-3 text-[12px] text-danger">{environmentModalError}</p>
+            <p className="mt-3 text-[14px] text-danger">{environmentModalError}</p>
           )}
           <div className="mt-4 flex justify-end gap-2">
             <Button variant="secondary" onClick={closeEnvironmentModal}>
