@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- fix(database): improve error handling during database initialization and migration. (`7acea77`)
+
 ## 1.5.11 - 2026-06-22
 
 - docs: update terminology for saving requests in documentation. (`0fcdef5`)

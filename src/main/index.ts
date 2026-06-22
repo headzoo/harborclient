@@ -61,19 +61,34 @@ async function createDatabase(): Promise<RoutingDatabase> {
     teamHubs.map((hub) => hub.id)
   );
 
-  const router = await RoutingDatabase.create(
-    registry,
-    primaryConnectionId,
-    connections,
-    teamHubs,
-    slots,
-    userDataPath
-  );
+  let router: RoutingDatabase;
+  try {
+    router = await RoutingDatabase.create(
+      registry,
+      primaryConnectionId,
+      connections,
+      teamHubs,
+      slots,
+      userDataPath
+    );
+  } catch (err) {
+    console.warn('Failed to initialize routing database; falling back to SQLite provider:', err);
+    const sqliteConnection: DatabaseConnection =
+      connections.find((conn) => conn.type === 'sqlite') ?? {
+        id: 'fallback-sqlite',
+        name: 'SQLite',
+        type: 'sqlite',
+        settings: getSqliteFallbackSettings()
+      };
+
+    const sqliteDb = await createDatabaseInstance(sqliteConnection, userDataPath);
+    const slot = slots[sqliteConnection.id] ?? 0;
+    router = new RoutingDatabase(registry, sqliteConnection.id, userDataPath);
+    router.mount(slot, sqliteConnection, sqliteDb);
+  }
 
   if (!router.hasDefaultProvider()) {
-    const sqliteConnection: DatabaseConnection = connections.find(
-      (conn) => conn.type === 'sqlite'
-    ) ?? {
+    const sqliteConnection: DatabaseConnection = connections.find((conn) => conn.type === 'sqlite') ?? {
       id: 'fallback-sqlite',
       name: 'SQLite',
       type: 'sqlite',
@@ -86,17 +101,17 @@ async function createDatabase(): Promise<RoutingDatabase> {
     router.setDefaultDataConnectionId(sqliteConnection.id);
   }
 
-  if (!router.hasDefaultProvider()) {
-    throw new Error('No database provider could be initialized.');
-  }
-
   const activeConnection = getActiveDatabaseConnection();
   const sqliteSettings =
     activeConnection.type === 'sqlite' ? activeConnection.settings : getSqliteFallbackSettings();
   const legacyProviderDbPath = join(userDataPath, sqliteSettings.dbFilename);
 
   setSplashStatus('Loading metadata...');
-  await router.migrateRegistryIfNeeded(legacyProviderDbPath);
+  try {
+    await router.migrateRegistryIfNeeded(legacyProviderDbPath);
+  } catch (err) {
+    console.warn('Database metadata migration failed; continuing startup without migration:', err);
+  }
 
   return router;
 }
