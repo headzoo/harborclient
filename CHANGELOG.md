@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.5.13 - 2026-06-22
+
 - fix(tsconfig): update ignoreDeprecations option to version 5.0. (`76a810a`)
 - feat(database): implement SQLite fallback logic and enhance connection validation. (`911e539`)
 - fix(tsconfig): add ignoreDeprecations option for better compatibility. (`8179f5e`)
