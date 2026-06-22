@@ -21,9 +21,12 @@ import type {
   SendRequestInput,
   SendResult,
   SaveTextFileResult,
+  ShortcutBinding,
+  ShortcutOverrides,
   SidebarExpansionState,
   ThemeSource,
   TrustedInviteKey,
+  UpdateCheckResult,
   Variable,
   KeyValue
 } from '#/shared/types';
@@ -378,6 +381,13 @@ function getAppVersion(): Promise<string> {
 }
 
 /**
+ * Compares the running version against the latest GitHub release.
+ */
+function checkForUpdates(): Promise<UpdateCheckResult> {
+  return ipcRenderer.invoke('app:checkForUpdates');
+}
+
+/**
  * Returns the persisted theme preference.
  */
 function getTheme(): Promise<ThemeSource> {
@@ -492,6 +502,29 @@ function getSidebarExpansion(): Promise<SidebarExpansionState> {
  */
 function setSidebarExpansion(state: SidebarExpansionState): Promise<void> {
   return ipcRenderer.invoke('sidebar:setExpansion', state);
+}
+
+/**
+ * Returns resolved keyboard shortcut bindings with user overrides applied.
+ */
+function getShortcuts(): Promise<ShortcutBinding[]> {
+  return ipcRenderer.invoke('shortcuts:get');
+}
+
+/**
+ * Persists keyboard shortcut overrides and rebuilds the application menu.
+ *
+ * @param overrides - Shortcut overrides keyed by shortcut id.
+ */
+function setShortcuts(overrides: ShortcutOverrides): Promise<ShortcutBinding[]> {
+  return ipcRenderer.invoke('shortcuts:set', overrides);
+}
+
+/**
+ * Clears keyboard shortcut overrides and restores default bindings.
+ */
+function resetShortcuts(): Promise<ShortcutBinding[]> {
+  return ipcRenderer.invoke('shortcuts:reset');
 }
 
 /**
@@ -651,6 +684,7 @@ const api: Api = {
   runScript,
   onMenuAction,
   getAppVersion,
+  checkForUpdates,
   getTheme,
   setTheme,
   getGeneralSettings,
@@ -665,6 +699,9 @@ const api: Api = {
   deleteRequestEditorTab,
   getSidebarExpansion,
   setSidebarExpansion,
+  getShortcuts,
+  setShortcuts,
+  resetShortcuts,
   onBeforeClose,
   confirmClose,
   selectFiles,

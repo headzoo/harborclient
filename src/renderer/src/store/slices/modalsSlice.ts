@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { SavedRequest, TrustedInviteKey } from '#/shared/types';
+import type { SavedRequest, TrustedInviteKey, UpdateCheckResult } from '#/shared/types';
 import type { RootState } from '#/renderer/src/store/redux';
 
 export type CollectionModalMode = 'create' | 'create-and-save';
@@ -42,6 +42,13 @@ export interface AboutModalState {
   version: string;
 }
 
+export interface UpdateModalState {
+  open: boolean;
+  loading: boolean;
+  result: UpdateCheckResult | null;
+  error: string | null;
+}
+
 /**
  * Saved request queued for load after the user confirms discarding unsaved edits.
  */
@@ -56,6 +63,7 @@ export interface ModalsState {
   pendingLoadRequest: PendingLoadRequest | null;
   quitPrompt: string[] | null;
   about: AboutModalState;
+  update: UpdateModalState;
   alertModal: AlertModalState | null;
   confirmModal: ConfirmModalState | null;
 }
@@ -66,6 +74,7 @@ const initialState: ModalsState = {
   pendingLoadRequest: null,
   quitPrompt: null,
   about: { open: false, version: '' },
+  update: { open: false, loading: false, result: null, error: null },
   alertModal: null,
   confirmModal: null
 };
@@ -235,6 +244,36 @@ const modalsSlice = createSlice({
       state.about.version = action.payload;
     },
     /**
+     * Opens the check-for-updates dialog.
+     */
+    openUpdateModal(state) {
+      state.update = { open: true, loading: false, result: null, error: null };
+    },
+    /**
+     * Closes the check-for-updates dialog.
+     */
+    closeUpdateModal(state) {
+      state.update = { open: false, loading: false, result: null, error: null };
+    },
+    /**
+     * Tracks update-check loading state in the modal.
+     */
+    setUpdateLoading(state, action: PayloadAction<boolean>) {
+      state.update.loading = action.payload;
+    },
+    /**
+     * Stores the update-check result shown in the modal.
+     */
+    setUpdateResult(state, action: PayloadAction<UpdateCheckResult | null>) {
+      state.update.result = action.payload;
+    },
+    /**
+     * Stores an update-check error message shown in the modal.
+     */
+    setUpdateError(state, action: PayloadAction<string | null>) {
+      state.update.error = action.payload;
+    },
+    /**
      * Opens or closes the global alert dialog.
      */
     setAlertModal(state, action: PayloadAction<AlertModalState | null>) {
@@ -269,6 +308,11 @@ export const {
   openAboutModal,
   closeAboutModal,
   setAboutVersion,
+  openUpdateModal,
+  closeUpdateModal,
+  setUpdateLoading,
+  setUpdateResult,
+  setUpdateError,
   setAlertModal,
   setConfirmModal
 } = modalsSlice.actions;
@@ -295,6 +339,10 @@ export const selectQuitPrompt = (state: RootState): string[] | null => state.mod
  * Returns about dialog open state and version.
  */
 export const selectAboutModal = (state: RootState): AboutModalState => state.modals.about;
+/**
+ * Returns check-for-updates dialog state.
+ */
+export const selectUpdateModal = (state: RootState): UpdateModalState => state.modals.update;
 /**
  * Returns alert dialog state when open.
  */

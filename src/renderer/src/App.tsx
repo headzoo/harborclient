@@ -38,6 +38,7 @@ import {
   updateEnvironment
 } from '#/renderer/src/store/thunks';
 import { AboutModal } from '#/renderer/src/ui/modals/AboutModal';
+import { UpdateModal } from '#/renderer/src/ui/modals/UpdateModal';
 import { AlertModal } from '#/renderer/src/ui/modals/AlertModal';
 import { CollectionModal } from '#/renderer/src/ui/modals/CollectionModal';
 import { ConfirmModal } from '#/renderer/src/ui/modals/ConfirmModal';
@@ -243,6 +244,7 @@ export default function App(): JSX.Element {
       <UnsavedLoadPrompt />
       <QuitPrompt />
       <AboutModal />
+      <UpdateModal />
       <AlertModal />
       <ConfirmModal />
 

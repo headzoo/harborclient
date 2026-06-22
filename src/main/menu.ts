@@ -1,4 +1,6 @@
 import { BrowserWindow, Menu, shell, type MenuItemConstructorOptions } from 'electron';
+import { getShortcutOverrides } from '#/main/settings/shortcutSettings';
+import { resolveAcceleratorMap, type ShortcutId } from '#/shared/shortcuts';
 import type { MenuActionId } from '#/shared/types';
 
 /**
@@ -12,24 +14,37 @@ function sendMenuAction(window: BrowserWindow, action: MenuActionId): void {
 }
 
 /**
+ * Returns the effective accelerator for a shortcut id.
+ *
+ * @param accelerators - Resolved accelerator map.
+ * @param id - Shortcut identifier.
+ * @returns Electron accelerator string.
+ */
+function acceleratorFor(accelerators: Map<ShortcutId, string>, id: ShortcutId): string {
+  return accelerators.get(id) ?? '';
+}
+
+/**
  * Builds the application menu with File, Edit, View, and Help menus.
  *
  * @param window - Browser window that receives custom menu actions.
  * @returns The constructed application menu.
  */
 export function buildMenu(window: BrowserWindow): Menu {
+  const accelerators = resolveAcceleratorMap(getShortcutOverrides());
+
   const template: MenuItemConstructorOptions[] = [
     {
       label: 'File',
       submenu: [
         {
           label: 'New Request',
-          accelerator: 'CmdOrCtrl+N',
+          accelerator: acceleratorFor(accelerators, 'new-request'),
           click: () => sendMenuAction(window, 'new-request')
         },
         {
           label: 'New Collection',
-          accelerator: 'CmdOrCtrl+Shift+N',
+          accelerator: acceleratorFor(accelerators, 'new-collection'),
           click: () => sendMenuAction(window, 'new-collection')
         },
         {
@@ -38,13 +53,13 @@ export function buildMenu(window: BrowserWindow): Menu {
         },
         {
           label: 'Save',
-          accelerator: 'CmdOrCtrl+S',
+          accelerator: acceleratorFor(accelerators, 'save'),
           click: () => sendMenuAction(window, 'save')
         },
         { type: 'separator' },
         {
           label: 'Settings',
-          accelerator: 'CmdOrCtrl+,',
+          accelerator: acceleratorFor(accelerators, 'settings'),
           click: () => sendMenuAction(window, 'settings')
         },
         {
@@ -62,19 +77,26 @@ export function buildMenu(window: BrowserWindow): Menu {
     {
       label: 'Edit',
       submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
+        { role: 'undo', accelerator: acceleratorFor(accelerators, 'undo') },
+        { role: 'redo', accelerator: acceleratorFor(accelerators, 'redo') },
         { type: 'separator' },
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' },
+        { role: 'cut', accelerator: acceleratorFor(accelerators, 'cut') },
+        { role: 'copy', accelerator: acceleratorFor(accelerators, 'copy') },
+        { role: 'paste', accelerator: acceleratorFor(accelerators, 'paste') },
         { type: 'separator' },
-        { role: 'selectAll' }
+        { role: 'selectAll', accelerator: acceleratorFor(accelerators, 'select-all') }
       ]
     },
     {
       label: 'View',
-      submenu: [{ role: 'togglefullscreen' }, { role: 'zoomIn' }, { role: 'zoomOut' }]
+      submenu: [
+        {
+          role: 'togglefullscreen',
+          accelerator: acceleratorFor(accelerators, 'toggle-fullscreen')
+        },
+        { role: 'zoomIn', accelerator: acceleratorFor(accelerators, 'zoom-in') },
+        { role: 'zoomOut', accelerator: acceleratorFor(accelerators, 'zoom-out') }
+      ]
     },
     {
       label: 'Help',
@@ -82,6 +104,10 @@ export function buildMenu(window: BrowserWindow): Menu {
         {
           label: 'Documentation',
           click: () => void shell.openExternal('https://harborclient.com/')
+        },
+        {
+          label: 'Check for Updates...',
+          click: () => sendMenuAction(window, 'check-for-updates')
         },
         {
           label: 'About',

@@ -18,6 +18,7 @@ import type {
   SendRequestInput,
   SendResult,
   SentRequest,
+  ShortcutOverrides,
   SidebarExpansionState
 } from '#/shared/types';
 
@@ -249,6 +250,11 @@ export const sidebarExpansion = z.object({
   folderIds: z.array(dbId)
 }) satisfies z.ZodType<SidebarExpansionState>;
 
+export const shortcutOverrides = z.record(
+  z.string(),
+  z.string()
+) satisfies z.ZodType<ShortcutOverrides>;
+
 /**
  * Tuple schemas for IPC handler argument validation.
  */
@@ -273,6 +279,7 @@ export const ipcArgSchemas = {
   databaseConnection: z.tuple([databaseConnection]),
   setEditorTab: z.tuple([storageKey, editorTab]),
   sidebarExpansionSet: z.tuple([sidebarExpansion]),
+  shortcutOverridesSet: z.tuple([shortcutOverrides]),
   setCookies: z.tuple([domain, z.array(keyValue)]),
   collectionUpdate: z.tuple([
     dbId,

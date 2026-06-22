@@ -7,7 +7,10 @@ import {
   setInviteTokenError,
   setInviteTokenLoading,
   setInviteTrustedKeys,
-  setInviteTrustedKeysLoading
+  setInviteTrustedKeysLoading,
+  setUpdateError,
+  setUpdateLoading,
+  setUpdateResult
 } from '#/renderer/src/store/slices/modalsSlice';
 import type { ThunkApiConfig } from '#/renderer/src/store/redux';
 import { refreshCollections } from '#/renderer/src/store/thunks/collections';
@@ -82,5 +85,26 @@ export const fetchAppVersion = createAsyncThunk<string, void, ThunkApiConfig>(
     const version = await window.api.getAppVersion();
     dispatch(setAboutVersion(version));
     return version;
+  }
+);
+
+/**
+ * Checks GitHub for a newer release and stores the result for the update modal.
+ */
+export const checkForUpdates = createAsyncThunk<void, void, ThunkApiConfig>(
+  'modals/checkForUpdates',
+  async (_, { dispatch }) => {
+    dispatch(setUpdateLoading(true));
+    dispatch(setUpdateError(null));
+    dispatch(setUpdateResult(null));
+
+    try {
+      const result = await window.api.checkForUpdates();
+      dispatch(setUpdateResult(result));
+    } catch (err) {
+      dispatch(setUpdateError(err instanceof Error ? err.message : 'Failed to check for updates'));
+    } finally {
+      dispatch(setUpdateLoading(false));
+    }
   }
 );

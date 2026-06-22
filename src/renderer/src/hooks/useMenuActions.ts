@@ -1,6 +1,10 @@
 import { useEffect } from 'react';
 import { useAppDispatch } from '#/renderer/src/store/hooks';
-import { openAboutModal, openCollectionModal } from '#/renderer/src/store/slices/modalsSlice';
+import {
+  openAboutModal,
+  openCollectionModal,
+  openUpdateModal
+} from '#/renderer/src/store/slices/modalsSlice';
 import { openCertificates, openSettings } from '#/renderer/src/store/slices/navigationSlice';
 import { dispatchNewRequest, importCollection, saveFromMenu } from '#/renderer/src/store/thunks';
 import { formatErrorMessage, showAlert } from '#/renderer/src/ui/modals/dialogHelpers';
@@ -42,6 +46,9 @@ export function useMenuActions(): void {
           break;
         case 'about':
           dispatch(openAboutModal());
+          break;
+        case 'check-for-updates':
+          dispatch(openUpdateModal());
           break;
       }
     });

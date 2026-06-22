@@ -15,6 +15,7 @@ import {
 import { ensureDatabaseSlots } from '#/main/settings/databaseSlots';
 import { ensureInviteKeys } from '#/main/invite/inviteKeys';
 import { buildMenu } from '#/main/menu';
+import { setMenuWindow } from '#/main/appMenu';
 import {
   loadWindowState,
   restoreWindowPresentation,
@@ -391,6 +392,7 @@ app.whenReady().then(async () => {
     }
 
     mainWindow = createWindow();
+    setMenuWindow(mainWindow);
     Menu.setApplicationMenu(buildMenu(mainWindow));
   } catch (err) {
     closeSplash();
@@ -407,6 +409,7 @@ app.whenReady().then(async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       isQuitting = false;
       mainWindow = createWindow();
+      setMenuWindow(mainWindow);
       Menu.setApplicationMenu(buildMenu(mainWindow));
     }
   });

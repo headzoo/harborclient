@@ -1,0 +1,253 @@
+import { useCallback, useEffect, useId, useState, type JSX } from 'react';
+import type { ShortcutBinding, ShortcutId } from '#/shared/types';
+import {
+  bindingsToOverrides,
+  formatAcceleratorDisplay,
+  validateShortcutOverrides
+} from '#/shared/shortcuts';
+import { Button } from '#/renderer/src/components/Button';
+import { useConfirm } from '#/renderer/src/hooks/useConfirm';
+import { field } from '#/renderer/src/ui/shared/classes';
+import { formatErrorMessage } from '#/renderer/src/ui/modals/dialogHelpers';
+import { acceleratorFromKeyboardEvent } from './acceleratorFromKeyboardEvent';
+
+/**
+ * Keyboard shortcut settings with press-to-record editing and restore defaults.
+ */
+export function ShortcutsSection(): JSX.Element {
+  const confirm = useConfirm();
+  const statusId = useId();
+  const [bindings, setBindings] = useState<ShortcutBinding[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [recordingId, setRecordingId] = useState<ShortcutId | null>(null);
+  const [errors, setErrors] = useState<Partial<Record<ShortcutId, string>>>({});
+  const [globalError, setGlobalError] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  /**
+   * Loads resolved shortcut bindings on mount.
+   */
+  useEffect(() => {
+    let cancelled = false;
+    window.api.getShortcuts().then((value) => {
+      if (!cancelled) {
+        setBindings(value);
+        setLoading(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /**
+   * Persists shortcut overrides after local validation succeeds.
+   *
+   * @param nextBindings - Candidate bindings to save.
+   */
+  const persistBindings = useCallback(async (nextBindings: ShortcutBinding[]): Promise<void> => {
+    const overrides = bindingsToOverrides(nextBindings);
+    const validation = validateShortcutOverrides(overrides);
+    setErrors(validation.errors);
+
+    if (!validation.valid) {
+      setGlobalError(null);
+      return;
+    }
+
+    try {
+      const saved = await window.api.setShortcuts(overrides);
+      setBindings(saved);
+      setErrors({});
+      setGlobalError(null);
+      setStatusMessage('Shortcut updated.');
+    } catch (err) {
+      setGlobalError(formatErrorMessage(err, 'Failed to save shortcut.'));
+    }
+  }, []);
+
+  /**
+   * Applies a newly recorded accelerator to one shortcut and persists when valid.
+   *
+   * @param id - Shortcut being edited.
+   * @param accelerator - Recorded Electron accelerator string.
+   */
+  const applyRecordedAccelerator = useCallback(
+    async (id: ShortcutId, accelerator: string): Promise<void> => {
+      const nextBindings = bindings.map((binding) =>
+        binding.id === id ? { ...binding, accelerator } : binding
+      );
+      setBindings(nextBindings);
+      await persistBindings(nextBindings);
+    },
+    [bindings, persistBindings]
+  );
+
+  /**
+   * Captures the next key press while a shortcut cell is in recording mode.
+   */
+  useEffect(() => {
+    if (recordingId == null) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const accelerator = acceleratorFromKeyboardEvent({
+        key: event.key,
+        ctrlKey: event.ctrlKey,
+        metaKey: event.metaKey,
+        altKey: event.altKey,
+        shiftKey: event.shiftKey
+      });
+
+      if (event.key === 'Escape') {
+        setRecordingId(null);
+        setStatusMessage('Recording canceled.');
+        return;
+      }
+
+      if (accelerator == null) {
+        return;
+      }
+
+      const currentId = recordingId;
+      setRecordingId(null);
+      void applyRecordedAccelerator(currentId, accelerator);
+    };
+
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [applyRecordedAccelerator, recordingId]);
+
+  /**
+   * Starts press-to-record editing for a shortcut row.
+   *
+   * @param id - Shortcut to edit.
+   */
+  const handleStartRecording = (id: ShortcutId): void => {
+    setGlobalError(null);
+    setStatusMessage(
+      `Recording shortcut for ${bindings.find((binding) => binding.id === id)?.label ?? 'shortcut'}. Press Escape to cancel.`
+    );
+    setRecordingId(id);
+  };
+
+  /**
+   * Restores all shortcuts to their default accelerators after confirmation.
+   */
+  const handleRestoreDefaults = async (): Promise<void> => {
+    const confirmed = await confirm({
+      title: 'Restore default shortcuts',
+      message:
+        'This will overwrite all your custom key combinations and restore the built-in defaults.',
+      confirmLabel: 'Restore defaults',
+      variant: 'danger'
+    });
+
+    if (!confirmed) {
+      return;
+    }
+
+    setRestoring(true);
+    setGlobalError(null);
+    try {
+      const restored = await window.api.resetShortcuts();
+      setBindings(restored);
+      setErrors({});
+      setRecordingId(null);
+      setStatusMessage('Default shortcuts restored.');
+    } catch (err) {
+      setGlobalError(formatErrorMessage(err, 'Failed to restore default shortcuts.'));
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  if (loading) {
+    return <p className="text-muted">Loading shortcuts…</p>;
+  }
+
+  return (
+    <section className="max-w-3xl">
+      <h2 className="m-0 mb-1 text-[15px] font-semibold text-text">Shortcuts</h2>
+      <p className="mt-0 mb-4 text-[13px] text-muted">
+        Click a key combination to record a new shortcut. Changes apply immediately when valid.
+      </p>
+
+      <div className="overflow-x-auto rounded-md border border-separator">
+        <table className="w-full border-collapse text-[13px]">
+          <caption className="sr-only">Keyboard shortcuts</caption>
+          <thead>
+            <tr className="border-b border-separator bg-sidebar/40 text-left">
+              <th scope="col" className="px-3 py-2 font-medium text-text">
+                Shortcut
+              </th>
+              <th scope="col" className="px-3 py-2 font-medium text-text">
+                Key combination
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {bindings.map((binding) => {
+              const recording = recordingId === binding.id;
+              const errorId = `${binding.id}-error`;
+              const error = errors[binding.id];
+              return (
+                <tr key={binding.id} className="border-b border-separator last:border-b-0">
+                  <td className="px-3 py-2 text-text">{binding.label}</td>
+                  <td className="px-3 py-2">
+                    <button
+                      type="button"
+                      className={`${field} min-w-[160px] cursor-pointer text-left ${recording ? 'ring-2 ring-accent' : ''}`}
+                      aria-label={`Change shortcut for ${binding.label}`}
+                      aria-invalid={error != null ? true : undefined}
+                      aria-describedby={error != null ? errorId : undefined}
+                      onClick={() => handleStartRecording(binding.id)}
+                    >
+                      {recording ? 'Press keys…' : formatAcceleratorDisplay(binding.accelerator)}
+                    </button>
+                    {error != null ? (
+                      <p id={errorId} className="mt-1 text-[12px] text-danger">
+                        {error}
+                      </p>
+                    ) : null}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {globalError != null ? (
+        <p className="mt-3 text-[13px] text-danger" role="alert">
+          {globalError}
+        </p>
+      ) : null}
+
+      <p id={statusId} className="mt-3 text-[13px] text-muted" role="status" aria-live="polite">
+        {statusMessage ?? ''}
+      </p>
+
+      <div className="mt-4 rounded-md border border-danger/30 bg-danger/5 p-3">
+        <p className="m-0 mb-2 text-[13px] text-text">
+          Restore all shortcuts to their original defaults. This cannot be undone.
+        </p>
+        <Button
+          type="button"
+          variant="secondaryDanger"
+          disabled={restoring}
+          onClick={() => void handleRestoreDefaults()}
+        >
+          {restoring ? 'Restoring…' : 'Restore defaults'}
+        </Button>
+      </div>
+    </section>
+  );
+}

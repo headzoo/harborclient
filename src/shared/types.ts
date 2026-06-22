@@ -1,6 +1,8 @@
 import type { AuthConfig } from '#/shared/auth';
+import type { ShortcutBinding, ShortcutOverrides } from '#/shared/shortcuts';
 
 export type { AuthConfig, AuthType } from '#/shared/auth';
+export type { ShortcutBinding, ShortcutId, ShortcutOverrides } from '#/shared/shortcuts';
 
 /**
  * Supported HTTP request methods.
@@ -1159,7 +1161,30 @@ export type MenuActionId =
   | 'settings'
   | 'certificates'
   | 'accept-invite'
-  | 'about';
+  | 'about'
+  | 'check-for-updates';
+
+/**
+ * Result of comparing the running app version against the latest GitHub release.
+ */
+export interface UpdateCheckResult {
+  /**
+   * Semver of the currently running application.
+   */
+  currentVersion: string;
+  /**
+   * Semver of the latest published release on GitHub.
+   */
+  latestVersion: string;
+  /**
+   * True when the latest release is newer than the running version.
+   */
+  updateAvailable: boolean;
+  /**
+   * URL where the user can download releases.
+   */
+  releaseUrl: string;
+}
 
 /**
  * IPC bridge API exposed to the renderer via contextBridge.
@@ -1436,6 +1461,11 @@ export interface Api {
   getAppVersion: () => Promise<string>;
 
   /**
+   * Fetches the latest GitHub release and compares it to the running version.
+   */
+  checkForUpdates: () => Promise<UpdateCheckResult>;
+
+  /**
    * Returns the persisted theme preference.
    */
   getTheme: () => Promise<ThemeSource>;
@@ -1525,6 +1555,23 @@ export interface Api {
    * @param state - Expansion snapshot to store.
    */
   setSidebarExpansion: (state: SidebarExpansionState) => Promise<void>;
+
+  /**
+   * Returns resolved keyboard shortcut bindings with user overrides applied.
+   */
+  getShortcuts: () => Promise<ShortcutBinding[]>;
+
+  /**
+   * Persists keyboard shortcut overrides and rebuilds the application menu.
+   *
+   * @param overrides - Shortcut overrides keyed by shortcut id.
+   */
+  setShortcuts: (overrides: ShortcutOverrides) => Promise<ShortcutBinding[]>;
+
+  /**
+   * Clears keyboard shortcut overrides and restores default bindings.
+   */
+  resetShortcuts: () => Promise<ShortcutBinding[]>;
 
   /**
    * Subscribes to window close and app quit attempts from the main process.

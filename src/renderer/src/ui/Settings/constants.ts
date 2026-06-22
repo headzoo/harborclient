@@ -67,6 +67,7 @@ export const DEFAULT_POSTGRES_SETTINGS: PostgresSettings = {
 export const SETTINGS_SECTIONS: Array<{ value: SettingsSection; label: string }> = [
   { value: 'general', label: 'General' },
   { value: 'syntax', label: 'Syntax highlighting' },
+  { value: 'shortcuts', label: 'Shortcuts' },
   { value: 'databases', label: 'Databases' }
 ];
 

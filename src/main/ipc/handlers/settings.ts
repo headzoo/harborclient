@@ -1,5 +1,6 @@
 import { app, nativeTheme } from 'electron';
 import type { IDatabase } from '#/main/db/IDatabase';
+import { rebuildAppMenu } from '#/main/appMenu';
 import { handle } from '#/main/ipc/handle';
 import { ipcArgSchemas } from '#/main/ipc/ipcSchemas';
 import {
@@ -16,6 +17,13 @@ import {
   setRequestEditorTab
 } from '#/main/settings/requestEditorSettings';
 import { getSidebarExpansion, setSidebarExpansion } from '#/main/settings/sidebarExpansionSettings';
+import { checkForUpdates } from '#/main/settings/updateCheck';
+import {
+  getResolvedShortcuts,
+  resetShortcuts,
+  setShortcutOverrides,
+  validateShortcuts
+} from '#/main/settings/shortcutSettings';
 import type { ThemeSource } from '#/shared/types';
 
 const THEME_SETTING_KEY = 'theme';
@@ -55,6 +63,9 @@ function resolveNativeThemeSource(theme: ThemeSource): 'light' | 'dark' | 'syste
 export function registerSettingsHandlers(db: IDatabase): void {
   // Returns the application semver from package metadata.
   handle('app:getVersion', ipcArgSchemas.none, () => app.getVersion());
+
+  // Compares the running version against the latest GitHub release.
+  handle('app:checkForUpdates', ipcArgSchemas.none, () => checkForUpdates());
 
   // Returns the persisted light/dark/system/high-contrast theme preference.
   handle('theme:get', ipcArgSchemas.none, async () =>
@@ -117,5 +128,26 @@ export function registerSettingsHandlers(db: IDatabase): void {
   // Persists sidebar expansion for sections, collections, and folders.
   handle('sidebar:setExpansion', ipcArgSchemas.sidebarExpansionSet, (_event, state) => {
     setSidebarExpansion(state);
+  });
+
+  // Returns resolved keyboard shortcut bindings.
+  handle('shortcuts:get', ipcArgSchemas.none, () => getResolvedShortcuts());
+
+  // Persists keyboard shortcut overrides and rebuilds the application menu.
+  handle('shortcuts:set', ipcArgSchemas.shortcutOverridesSet, (_event, overrides) => {
+    const validation = validateShortcuts(overrides);
+    if (!validation.valid) {
+      throw new Error('Invalid shortcut configuration.');
+    }
+    const bindings = setShortcutOverrides(overrides);
+    rebuildAppMenu();
+    return bindings;
+  });
+
+  // Clears keyboard shortcut overrides and rebuilds the application menu.
+  handle('shortcuts:reset', ipcArgSchemas.none, () => {
+    const bindings = resetShortcuts();
+    rebuildAppMenu();
+    return bindings;
   });
 }

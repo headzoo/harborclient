@@ -309,9 +309,12 @@ The environment dropdown on the far right of the TabBar selects the active envir
 | Action | Shortcut |
 | --- | --- |
 | Send (when URL field is focused) | Enter |
-| New request | Cmd/Ctrl+N |
-| Save request | Cmd/Ctrl+S |
-| New collection | Cmd/Ctrl+Shift+N |
+| New request | Cmd/Ctrl+N (default; customizable in Settings → Shortcuts) |
+| Save request | Cmd/Ctrl+S (default; customizable in Settings → Shortcuts) |
+| New collection | Cmd/Ctrl+Shift+N (default; customizable in Settings → Shortcuts) |
+| Settings | Cmd/Ctrl+, (default; customizable in Settings → Shortcuts) |
+
+Edit and View menu shortcuts (undo, copy, paste, zoom, full screen, and others) can also be changed under **Settings → Shortcuts**.
 
 ## Limitations
 
