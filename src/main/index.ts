@@ -73,13 +73,14 @@ async function createDatabase(): Promise<RoutingDatabase> {
     );
   } catch (err) {
     console.warn('Failed to initialize routing database; falling back to SQLite provider:', err);
-    const sqliteConnection: DatabaseConnection =
-      connections.find((conn) => conn.type === 'sqlite') ?? {
-        id: 'fallback-sqlite',
-        name: 'SQLite',
-        type: 'sqlite',
-        settings: getSqliteFallbackSettings()
-      };
+    const sqliteConnection: DatabaseConnection = connections.find(
+      (conn) => conn.type === 'sqlite'
+    ) ?? {
+      id: 'fallback-sqlite',
+      name: 'SQLite',
+      type: 'sqlite',
+      settings: getSqliteFallbackSettings()
+    };
 
     const sqliteDb = await createDatabaseInstance(sqliteConnection, userDataPath);
     const slot = slots[sqliteConnection.id] ?? 0;
@@ -88,7 +89,9 @@ async function createDatabase(): Promise<RoutingDatabase> {
   }
 
   if (!router.hasDefaultProvider()) {
-    const sqliteConnection: DatabaseConnection = connections.find((conn) => conn.type === 'sqlite') ?? {
+    const sqliteConnection: DatabaseConnection = connections.find(
+      (conn) => conn.type === 'sqlite'
+    ) ?? {
       id: 'fallback-sqlite',
       name: 'SQLite',
       type: 'sqlite',

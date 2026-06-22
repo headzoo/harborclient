@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- refactor(database): improve formatting of fallback SQLite connection logic. (`3424e82`)
 - fix(database): improve error handling during database initialization and migration. (`7acea77`)
 
 ## 1.5.11 - 2026-06-22
