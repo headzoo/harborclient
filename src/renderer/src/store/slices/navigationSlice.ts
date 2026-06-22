@@ -7,6 +7,7 @@ import type { RootState } from '#/renderer/src/store/redux';
 export type MainView =
   | { type: 'request' }
   | { type: 'settings' }
+  | { type: 'service-hubs' }
   | { type: 'certificates' }
   | { type: 'collection'; id: number }
   | { type: 'environment'; id: number };
@@ -47,6 +48,13 @@ const navigationSlice = createSlice({
     openSettings(state) {
       resetDirtyFlags(state);
       state.mainView = { type: 'settings' };
+    },
+    /**
+     * Shows the service hubs overlay and clears dirty flags.
+     */
+    openServiceHubs(state) {
+      resetDirtyFlags(state);
+      state.mainView = { type: 'service-hubs' };
     },
     /**
      * Shows the certificates overlay and clears dirty flags.
@@ -117,6 +125,7 @@ const navigationSlice = createSlice({
 
 export const {
   openSettings,
+  openServiceHubs,
   openCertificates,
   openCollectionSettings,
   openEnvironmentSettings,
@@ -156,12 +165,17 @@ export const selectShowConsole = (state: RootState): boolean => state.navigation
 export const selectShowVariables = (state: RootState): boolean => state.navigation.showVariables;
 
 /**
- * Sidebar is hidden when app settings or certificates are open, even if the
+ * Sidebar is hidden when app settings, service hubs, or certificates are open, even if the
  * user has not toggled it off manually.
  */
 export const selectSidebarVisible = (state: RootState): boolean => {
   const { mainView, showSidebar } = state.navigation;
-  return showSidebar && mainView.type !== 'settings' && mainView.type !== 'certificates';
+  return (
+    showSidebar &&
+    mainView.type !== 'settings' &&
+    mainView.type !== 'service-hubs' &&
+    mainView.type !== 'certificates'
+  );
 };
 
 export default navigationSlice.reducer;

@@ -5,7 +5,11 @@ import {
   openCollectionModal,
   openUpdateModal
 } from '#/renderer/src/store/slices/modalsSlice';
-import { openCertificates, openSettings } from '#/renderer/src/store/slices/navigationSlice';
+import {
+  openCertificates,
+  openServiceHubs,
+  openSettings
+} from '#/renderer/src/store/slices/navigationSlice';
 import { dispatchNewRequest, importFromMenu, saveFromMenu } from '#/renderer/src/store/thunks';
 import { formatErrorMessage, showAlert } from '#/renderer/src/ui/modals/dialogHelpers';
 
@@ -39,6 +43,9 @@ export function useMenuActions(): void {
           break;
         case 'settings':
           dispatch(openSettings());
+          break;
+        case 'service-hubs':
+          dispatch(openServiceHubs());
           break;
         case 'certificates':
           dispatch(openCertificates());

@@ -22,6 +22,7 @@ import type {
   SendRequestInput,
   SendResult,
   SaveTextFileResult,
+  ServiceHub,
   ShortcutBinding,
   ShortcutOverrides,
   SidebarExpansionState,
@@ -475,6 +476,31 @@ function deleteDatabaseConnection(id: string): Promise<DatabaseConnection[]> {
 }
 
 /**
+ * Lists all configured service hubs via IPC.
+ */
+function listServiceHubs(): Promise<ServiceHub[]> {
+  return ipcRenderer.invoke('serviceHubs:list');
+}
+
+/**
+ * Creates or updates a service hub via IPC.
+ *
+ * @param hub - Service hub to persist.
+ */
+function saveServiceHub(hub: ServiceHub): Promise<ServiceHub[]> {
+  return ipcRenderer.invoke('serviceHubs:save', hub);
+}
+
+/**
+ * Deletes a service hub via IPC.
+ *
+ * @param id - Service hub id to remove.
+ */
+function deleteServiceHub(id: string): Promise<ServiceHub[]> {
+  return ipcRenderer.invoke('serviceHubs:delete', id);
+}
+
+/**
  * Returns the active database connection id via IPC.
  */
 function getActiveDatabaseId(): Promise<string> {
@@ -725,6 +751,9 @@ const api: Api = {
   listDatabaseConnections,
   saveDatabaseConnection,
   deleteDatabaseConnection,
+  listServiceHubs,
+  saveServiceHub,
+  deleteServiceHub,
   getActiveDatabaseId,
   setActiveDatabaseId,
   getRequestEditorTab,

@@ -10,6 +10,11 @@ import {
   saveDatabaseConnection,
   setActiveDatabaseId
 } from '#/main/settings/databaseSettings';
+import {
+  deleteServiceHub,
+  listServiceHubs,
+  saveServiceHub
+} from '#/main/settings/serviceHubSettings';
 import { getGeneralSettings, setGeneralSettings } from '#/main/settings/generalSettings';
 import {
   deleteRequestEditorTab,
@@ -98,6 +103,15 @@ export function registerSettingsHandlers(db: IDatabase): void {
   handle('databaseConnections:delete', ipcArgSchemas.connectionId, (_event, id) =>
     deleteDatabaseConnection(id)
   );
+
+  // Lists configured service hubs.
+  handle('serviceHubs:list', ipcArgSchemas.none, () => listServiceHubs());
+
+  // Creates or updates a service hub.
+  handle('serviceHubs:save', ipcArgSchemas.serviceHub, (_event, hub) => saveServiceHub(hub));
+
+  // Deletes a service hub by id.
+  handle('serviceHubs:delete', ipcArgSchemas.connectionId, (_event, id) => deleteServiceHub(id));
 
   // Returns the id of the active database connection.
   handle('database:getActiveId', ipcArgSchemas.none, () => getActiveDatabaseId());

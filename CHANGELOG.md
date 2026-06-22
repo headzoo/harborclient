@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat: add service hubs functionality. (`70c0c38`)
 - fix: address issues with environment import/export validation. (`d2883dd`)
 
 ## 1.5.6 - 2026-06-22

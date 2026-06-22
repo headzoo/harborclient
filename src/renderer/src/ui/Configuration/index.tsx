@@ -1,6 +1,7 @@
 import type { JSX } from 'react';
 import type { AuthConfig, Collection, Environment, KeyValue, Variable } from '#/shared/types';
 import { Certificates } from '#/renderer/src/ui/Certificates';
+import { ServiceHubs } from '#/renderer/src/ui/ServiceHubs';
 import { CollectionSettings } from '../CollectionSettings';
 import { EnvironmentSettings } from '../EnvironmentSettings';
 import { Settings } from '../Settings';
@@ -25,6 +26,16 @@ interface Props {
    * Closes the certificates view.
    */
   onCloseCertificates: () => void;
+
+  /**
+   * Whether the service hubs view is shown.
+   */
+  showServiceHubs: boolean;
+
+  /**
+   * Closes the service hubs view.
+   */
+  onCloseServiceHubs: () => void;
 
   /**
    * Collection being configured, if any.
@@ -84,6 +95,8 @@ export function Configuration({
   onCloseAppSettings,
   showCertificates,
   onCloseCertificates,
+  showServiceHubs,
+  onCloseServiceHubs,
   collection,
   onCollectionDirtyChange,
   onCollectionSave,
@@ -99,6 +112,10 @@ export function Configuration({
 
   if (showCertificates) {
     return <Certificates onClose={onCloseCertificates} />;
+  }
+
+  if (showServiceHubs) {
+    return <ServiceHubs onClose={onCloseServiceHubs} />;
   }
 
   if (collection) {

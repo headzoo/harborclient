@@ -18,6 +18,7 @@ import type {
   SendRequestInput,
   SendResult,
   SentRequest,
+  ServiceHub,
   ShortcutOverrides,
   SidebarExpansionState
 } from '#/shared/types';
@@ -250,6 +251,16 @@ export const databaseConnection = z.discriminatedUnion('type', [
   })
 ]) satisfies z.ZodType<DatabaseConnection>;
 
+/**
+ * Zod schema for a persisted service hub connection.
+ */
+export const serviceHub = z.object({
+  id: z.string(),
+  name: z.string().trim().min(1),
+  baseUrl: z.string().trim().min(1),
+  token: z.string().trim().min(1)
+}) satisfies z.ZodType<ServiceHub>;
+
 export const sidebarExpansion = z.object({
   sections: z.object({
     collections: z.boolean(),
@@ -286,6 +297,7 @@ export const ipcArgSchemas = {
   scriptRun: z.tuple([scriptRunInput]),
   generalSettings: z.tuple([generalSettings]),
   databaseConnection: z.tuple([databaseConnection]),
+  serviceHub: z.tuple([serviceHub]),
   setEditorTab: z.tuple([storageKey, editorTab]),
   sidebarExpansionSet: z.tuple([sidebarExpansion]),
   shortcutOverridesSet: z.tuple([shortcutOverrides]),

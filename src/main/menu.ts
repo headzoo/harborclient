@@ -63,6 +63,10 @@ export function buildMenu(window: BrowserWindow): Menu {
           click: () => sendMenuAction(window, 'settings')
         },
         {
+          label: 'Service Hubs',
+          click: () => sendMenuAction(window, 'service-hubs')
+        },
+        {
           label: 'Invite Certificates',
           click: () => sendMenuAction(window, 'certificates')
         },

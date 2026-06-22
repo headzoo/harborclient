@@ -1164,6 +1164,31 @@ export type DatabaseConnection =
   | (DatabaseConnectionBase & { type: 'postgres'; settings: PostgresSettings });
 
 /**
+ * A configured HarborClient Server service hub connection.
+ */
+export interface ServiceHub {
+  /**
+   * Unique service hub identifier.
+   */
+  id: string;
+
+  /**
+   * User-defined display name.
+   */
+  name: string;
+
+  /**
+   * HarborClient Server base URL (for example `http://127.0.0.1:8788`).
+   */
+  baseUrl: string;
+
+  /**
+   * Bearer token prefixed with `hbk_` for protected routes.
+   */
+  token: string;
+}
+
+/**
  * Local RSA identity used to sign and decrypt invites.
  */
 export interface InviteIdentity {
@@ -1242,6 +1267,7 @@ export type MenuActionId =
   | 'import'
   | 'save'
   | 'settings'
+  | 'service-hubs'
   | 'certificates'
   | 'accept-invite'
   | 'about'
@@ -1615,6 +1641,27 @@ export interface Api {
    * @returns Updated list of all connections.
    */
   deleteDatabaseConnection: (id: string) => Promise<DatabaseConnection[]>;
+
+  /**
+   * Lists all configured service hubs.
+   */
+  listServiceHubs: () => Promise<ServiceHub[]>;
+
+  /**
+   * Creates or updates a service hub.
+   *
+   * @param hub - Service hub to persist.
+   * @returns Updated list of all service hubs.
+   */
+  saveServiceHub: (hub: ServiceHub) => Promise<ServiceHub[]>;
+
+  /**
+   * Deletes a service hub by id.
+   *
+   * @param id - Service hub id to remove.
+   * @returns Updated list of all service hubs.
+   */
+  deleteServiceHub: (id: string) => Promise<ServiceHub[]>;
 
   /**
    * Returns the id of the active database connection.

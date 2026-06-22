@@ -131,6 +131,7 @@ export default function App(): JSX.Element {
 
   const showConfiguration =
     mainView.type === 'settings' ||
+    mainView.type === 'service-hubs' ||
     mainView.type === 'certificates' ||
     configuringCollection != null ||
     configuringEnvironment != null;
@@ -166,6 +167,8 @@ export default function App(): JSX.Element {
               onCloseAppSettings={() => dispatch(closeOverlay())}
               showCertificates={mainView.type === 'certificates'}
               onCloseCertificates={() => dispatch(closeOverlay())}
+              showServiceHubs={mainView.type === 'service-hubs'}
+              onCloseServiceHubs={() => dispatch(closeOverlay())}
               collection={configuringCollection}
               onCollectionDirtyChange={(dirty) => dispatch(setCollectionSettingsDirty(dirty))}
               onCollectionSave={async (
