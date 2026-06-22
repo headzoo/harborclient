@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.5.14 - 2026-06-22
+
 - feat(logging): enhance verbose logging throughout application startup and database creation. (`b179303`)
 
 ## 1.5.13 - 2026-06-22
