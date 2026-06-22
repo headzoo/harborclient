@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat: implement splash screen functionality during application startup. (`96085d3`)
 - chore: update issue templates and improve formatting in various components. (`88d73b1`)
 - refactor: replace Font Awesome package and update icon usage. (`5f118f9`)
 - refactor: reorganize IPC structure and enhance cookie management. (`b83df70`)
