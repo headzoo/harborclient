@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.5.19 - 2026-06-23
+
 - feat(git): add unit tests for GitSyncManager functionality. (`4199783`)
 
 ## 1.5.18 - 2026-06-23
