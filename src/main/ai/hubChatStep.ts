@@ -1,4 +1,4 @@
-import { HarborServerClient } from '#/main/server/HarborServerClient';
+import { HarborTeamHubClient } from '#/main/teamHub/HarborTeamHubClient';
 import { listTeamHubs } from '#/main/settings/teamHubSettings';
 import { AI_SYSTEM_PROMPT, AI_TOOL_DEFINITIONS } from '#/shared/aiTools';
 import type { ChatStepInput, ChatStepResult, HubLlmModelGroup } from '#/shared/types';
@@ -20,7 +20,7 @@ export async function listHubLlmModels(): Promise<HubLlmModelGroup[]> {
   await Promise.all(
     hubs.map(async (hub) => {
       try {
-        const client = new HarborServerClient({
+        const client = new HarborTeamHubClient({
           baseUrl: hub.baseUrl,
           token: hub.token,
           requestTimeoutMs: HUB_LLM_REQUEST_TIMEOUT_MS
@@ -59,7 +59,7 @@ export async function runHubChatCompletionStep(input: ChatStepInput): Promise<Ch
     throw new Error('Team Hub not found.');
   }
 
-  const client = new HarborServerClient({
+  const client = new HarborTeamHubClient({
     baseUrl: hub.baseUrl,
     token: hub.token,
     requestTimeoutMs: HUB_LLM_REQUEST_TIMEOUT_MS

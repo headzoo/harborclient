@@ -20,13 +20,13 @@ import type {
   UpdateEnvironmentInput,
   UpdateHubUserInput,
   UpdateRequestInput
-} from '#/main/server/types';
+} from '#/main/teamHub/types';
 import type { HubLlmModel } from '#/shared/types';
 
 /**
  * Typed HTTP client for HarborClient Server entity and health routes.
  */
-export interface IServerClient {
+export interface ITeamHubClient {
   /**
    * Probes server availability via the public health endpoint.
    */

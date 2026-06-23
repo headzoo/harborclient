@@ -1,5 +1,5 @@
-import { HarborServerClient } from '#/main/server/HarborServerClient';
-import { ServerClientError } from '#/main/server/ServerClientError';
+import { HarborTeamHubClient } from '#/main/teamHub/HarborTeamHubClient';
+import { TeamHubClientError } from '#/main/teamHub/TeamHubClientError';
 import type { TeamHub, TeamHubSessionScanResult } from '#/shared/types';
 
 /**
@@ -9,7 +9,7 @@ import type { TeamHub, TeamHubSessionScanResult } from '#/shared/types';
  * @returns Scan result with management capability or a non-throwing error message.
  */
 async function scanTeamHubSession(hub: TeamHub): Promise<TeamHubSessionScanResult> {
-  const client = new HarborServerClient({ baseUrl: hub.baseUrl, token: hub.token });
+  const client = new HarborTeamHubClient({ baseUrl: hub.baseUrl, token: hub.token });
 
   try {
     const session = await client.getSession();
@@ -19,7 +19,7 @@ async function scanTeamHubSession(hub: TeamHub): Promise<TeamHubSessionScanResul
     };
   } catch (err) {
     const message =
-      err instanceof ServerClientError || err instanceof Error ? err.message : String(err);
+      err instanceof TeamHubClientError || err instanceof Error ? err.message : String(err);
 
     return {
       hubId: hub.id,

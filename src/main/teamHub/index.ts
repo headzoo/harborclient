@@ -1,9 +1,9 @@
-export type { IServerClient } from '#/main/server/IServerClient';
+export type { ITeamHubClient } from '#/main/teamHub/ITeamHubClient';
 export {
-  DEFAULT_SERVER_REQUEST_TIMEOUT_MS,
-  HarborServerClient
-} from '#/main/server/HarborServerClient';
-export { ServerClientError } from '#/main/server/ServerClientError';
+  DEFAULT_TEAM_HUB_REQUEST_TIMEOUT_MS,
+  HarborTeamHubClient
+} from '#/main/teamHub/HarborTeamHubClient';
+export { TeamHubClientError } from '#/main/teamHub/TeamHubClientError';
 export type {
   CollectionRecord,
   CreateCollectionInput,
@@ -20,11 +20,11 @@ export type {
   ReorderFoldersInput,
   ReorderRequestsInput,
   SavedRequestRecord,
-  ServerClientConfig,
+  TeamHubClientConfig,
   SessionCapabilities,
   SessionResponse,
   UpdateCollectionInput,
   UpdateEnvironmentInput,
   UpdateHubUserInput,
   UpdateRequestInput
-} from '#/main/server/types';
+} from '#/main/teamHub/types';

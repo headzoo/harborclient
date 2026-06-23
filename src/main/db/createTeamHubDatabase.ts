@@ -1,7 +1,7 @@
 import { join } from 'path';
 import { TeamHubDatabase } from '#/main/db/TeamHubDatabase';
 import { TeamHubIdMap } from '#/main/db/TeamHubIdMap';
-import { HarborServerClient } from '#/main/server/HarborServerClient';
+import { HarborTeamHubClient } from '#/main/teamHub/HarborTeamHubClient';
 import type { TeamHub } from '#/shared/types';
 
 /**
@@ -26,7 +26,7 @@ export async function createTeamHubDatabase(
 ): Promise<TeamHubDatabase> {
   const idMap = new TeamHubIdMap(teamHubIdMapPath(userDataPath, hub.id));
   idMap.init();
-  const client = new HarborServerClient({ baseUrl: hub.baseUrl, token: hub.token });
+  const client = new HarborTeamHubClient({ baseUrl: hub.baseUrl, token: hub.token });
   const db = new TeamHubDatabase(client, idMap);
   await db.init();
   return db;

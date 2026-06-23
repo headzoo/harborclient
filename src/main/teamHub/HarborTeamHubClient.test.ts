@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { HarborServerClient } from '#/main/server/HarborServerClient';
-import { ServerClientError } from '#/main/server/ServerClientError';
+import { HarborTeamHubClient } from '#/main/teamHub/HarborTeamHubClient';
+import { TeamHubClientError } from '#/main/teamHub/TeamHubClientError';
 
-describe('HarborServerClient', () => {
+describe('HarborTeamHubClient', () => {
   const originalFetch = globalThis.fetch;
   const baseUrl = 'http://127.0.0.1:8788';
   const token = 'hbk_test_token';
@@ -10,8 +10,8 @@ describe('HarborServerClient', () => {
   /**
    * Creates a client instance for tests with a fixed base URL and token.
    */
-  function createClient(): HarborServerClient {
-    return new HarborServerClient({ baseUrl, token });
+  function createClient(): HarborTeamHubClient {
+    return new HarborTeamHubClient({ baseUrl, token });
   }
 
   afterEach(() => {
@@ -125,7 +125,7 @@ describe('HarborServerClient', () => {
       });
     });
 
-    it('throws ServerClientError with status 401 for unauthorized requests', async () => {
+    it('throws TeamHubClientError with status 401 for unauthorized requests', async () => {
       const fetchMock = vi.fn().mockResolvedValue(
         new Response(JSON.stringify({ error: 'Unauthorized' }), {
           status: 401,
@@ -137,7 +137,7 @@ describe('HarborServerClient', () => {
       const client = createClient();
 
       await expect(client.getSession()).rejects.toMatchObject({
-        name: 'ServerClientError',
+        name: 'TeamHubClientError',
         message: 'Unauthorized',
         status: 401,
         method: 'GET',
@@ -449,7 +449,7 @@ describe('HarborServerClient', () => {
       [403, 'Forbidden'],
       [404, 'Not found']
     ] as const)(
-      'throws ServerClientError with status %i and server message',
+      'throws TeamHubClientError with status %i and server message',
       async (status, message) => {
         const fetchMock = vi.fn().mockResolvedValue(
           new Response(JSON.stringify({ error: message }), {
@@ -462,24 +462,24 @@ describe('HarborServerClient', () => {
         const client = createClient();
 
         await expect(client.listCollections()).rejects.toMatchObject({
-          name: 'ServerClientError',
+          name: 'TeamHubClientError',
           message,
           status,
           method: 'GET',
           path: '/collections'
         });
-        await expect(client.listCollections()).rejects.toBeInstanceOf(ServerClientError);
+        await expect(client.listCollections()).rejects.toBeInstanceOf(TeamHubClientError);
       }
     );
 
-    it('throws ServerClientError with status 0 on network failure', async () => {
+    it('throws TeamHubClientError with status 0 on network failure', async () => {
       const fetchMock = vi.fn().mockRejectedValue(new Error('Connection refused'));
       globalThis.fetch = fetchMock;
 
       const client = createClient();
 
       await expect(client.listCollections()).rejects.toMatchObject({
-        name: 'ServerClientError',
+        name: 'TeamHubClientError',
         message: 'Connection refused',
         status: 0,
         method: 'GET',

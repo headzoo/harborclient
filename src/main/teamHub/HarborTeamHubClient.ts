@@ -1,6 +1,6 @@
 import type { z } from 'zod';
-import type { IServerClient } from '#/main/server/IServerClient';
-import { ServerClientError } from '#/main/server/ServerClientError';
+import type { ITeamHubClient } from '#/main/teamHub/ITeamHubClient';
+import { TeamHubClientError } from '#/main/teamHub/TeamHubClientError';
 import {
   collectionRecordSchema,
   environmentRecordSchema,
@@ -19,7 +19,7 @@ import {
   listAdminCollectionsResponseSchema,
   listAdminEnvironmentsResponseSchema,
   hubUserRecordSchema
-} from '#/main/server/schemas';
+} from '#/main/teamHub/schemas';
 import type {
   AdminResourceOption,
   CollectionRecord,
@@ -36,20 +36,20 @@ import type {
   ReorderFoldersInput,
   ReorderRequestsInput,
   SavedRequestRecord,
-  ServerClientConfig,
+  TeamHubClientConfig,
   SessionResponse,
   TeamHubAdminResourceOptions,
   UpdateCollectionInput,
   UpdateEnvironmentInput,
   UpdateHubUserInput,
   UpdateRequestInput
-} from '#/main/server/types';
+} from '#/main/teamHub/types';
 import type { ChatStepMessage, ChatStepResult, HubLlmModel } from '#/shared/types';
 
 /**
- * Default request timeout when {@link ServerClientConfig.requestTimeoutMs} is omitted.
+ * Default request timeout when {@link TeamHubClientConfig.requestTimeoutMs} is omitted.
  */
-export const DEFAULT_SERVER_REQUEST_TIMEOUT_MS = 30_000;
+export const DEFAULT_TEAM_HUB_REQUEST_TIMEOUT_MS = 30_000;
 
 /**
  * Input for POST /llm/chat/step on Team Hub.
@@ -77,7 +77,7 @@ export interface HubChatStepRequest {
 }
 
 /**
- * Options passed to the internal {@link HarborServerClient.request} helper.
+ * Options passed to the internal {@link HarborTeamHubClient.request} helper.
  */
 interface RequestOptions<T> {
   /**
@@ -99,7 +99,7 @@ interface RequestOptions<T> {
 /**
  * Executes typed HTTP requests against HarborClient Server.
  */
-export class HarborServerClient implements IServerClient {
+export class HarborTeamHubClient implements ITeamHubClient {
   private readonly baseUrl: string;
   private readonly token: string;
   private readonly requestTimeoutMs: number;
@@ -109,10 +109,10 @@ export class HarborServerClient implements IServerClient {
    *
    * @param config - Base URL, token, and optional request timeout.
    */
-  constructor(config: ServerClientConfig) {
+  constructor(config: TeamHubClientConfig) {
     this.baseUrl = config.baseUrl.replace(/\/+$/, '');
     this.token = config.token;
-    this.requestTimeoutMs = config.requestTimeoutMs ?? DEFAULT_SERVER_REQUEST_TIMEOUT_MS;
+    this.requestTimeoutMs = config.requestTimeoutMs ?? DEFAULT_TEAM_HUB_REQUEST_TIMEOUT_MS;
   }
 
   /**
@@ -156,7 +156,7 @@ export class HarborServerClient implements IServerClient {
    * @param path - Path relative to the configured base URL.
    * @param options - Optional body, response schema, and auth flag.
    * @returns Parsed response body, or `undefined` for `204 No Content`.
-   * @throws {ServerClientError} When the request fails or the response is invalid.
+   * @throws {TeamHubClientError} When the request fails or the response is invalid.
    */
   private async request<T>(
     method: string,
@@ -193,7 +193,7 @@ export class HarborServerClient implements IServerClient {
           : err instanceof Error
             ? err.message
             : 'Unknown network error';
-      throw new ServerClientError(message, { status: 0, method, path });
+      throw new TeamHubClientError(message, { status: 0, method, path });
     }
 
     if (response.status === 204) {
@@ -202,7 +202,7 @@ export class HarborServerClient implements IServerClient {
 
     if (!response.ok) {
       const message = await this.parseErrorMessage(response);
-      throw new ServerClientError(message, {
+      throw new TeamHubClientError(message, {
         status: response.status,
         method,
         path
@@ -217,7 +217,7 @@ export class HarborServerClient implements IServerClient {
     try {
       json = await response.json();
     } catch {
-      throw new ServerClientError('Response body is not valid JSON', {
+      throw new TeamHubClientError('Response body is not valid JSON', {
         status: response.status,
         method,
         path
@@ -226,7 +226,7 @@ export class HarborServerClient implements IServerClient {
 
     const parsed = schema.safeParse(json);
     if (!parsed.success) {
-      throw new ServerClientError('Response body failed validation', {
+      throw new TeamHubClientError('Response body failed validation', {
         status: response.status,
         method,
         path
@@ -322,7 +322,7 @@ export class HarborServerClient implements IServerClient {
       });
       return (result as { models: HubLlmModel[] }).models;
     } catch (error) {
-      if (error instanceof ServerClientError && error.status === 503) {
+      if (error instanceof TeamHubClientError && error.status === 503) {
         return [];
       }
 

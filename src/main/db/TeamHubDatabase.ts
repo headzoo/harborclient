@@ -6,8 +6,8 @@ import {
 import type { TeamHubIdMap } from '#/main/db/TeamHubIdMap';
 import { trimRequiredName } from '#/main/db/trimRequiredName';
 import type { IDatabase } from '#/main/db/IDatabase';
-import type { HarborServerClient } from '#/main/server/HarborServerClient';
-import type { CollectionRecord, FolderRecord, SavedRequestRecord } from '#/main/server/types';
+import type { HarborTeamHubClient } from '#/main/teamHub/HarborTeamHubClient';
+import type { CollectionRecord, FolderRecord, SavedRequestRecord } from '#/main/teamHub/types';
 import { defaultAuth, normalizeAuth } from '#/shared/auth';
 import type {
   AuthConfig,
@@ -140,9 +140,9 @@ export class TeamHubDatabase implements IDatabase {
    * @param idMap - Persistent UUID to numeric id map for this hub.
    */
   constructor(
-    private readonly client: HarborServerClient,
+    private readonly client: HarborTeamHubClient,
     private readonly idMap: TeamHubIdMap
-  ) {}
+  ) { }
 
   /**
    * Verifies connectivity to HarborClient Server before the router mounts this backend.

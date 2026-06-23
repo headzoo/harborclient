@@ -1,7 +1,7 @@
 /**
  * Thrown when a HarborClient Server request fails or the response body is invalid.
  */
-export class ServerClientError extends Error {
+export class TeamHubClientError extends Error {
   /**
    * HTTP status code from the server, or `0` for network and parse failures.
    */
@@ -18,7 +18,7 @@ export class ServerClientError extends Error {
   readonly path: string;
 
   /**
-   * Creates a server client error with request context for logging and UI display.
+   * Creates a team hub client error with request context for logging and UI display.
    *
    * @param message - Human-readable error description.
    * @param options - HTTP status and request metadata.
@@ -32,7 +32,7 @@ export class ServerClientError extends Error {
     }
   ) {
     super(message);
-    this.name = 'ServerClientError';
+    this.name = 'TeamHubClientError';
     this.status = options.status;
     this.method = options.method;
     this.path = options.path;

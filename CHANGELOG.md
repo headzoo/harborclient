@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- refactor(teamHub): replace HarborServerClient with HarborTeamHubClient across the application. (`965efaa`)
 - feat(logging): enhance verbose logging throughout application startup and database creation. (`b179303`)
 
 ## 1.5.13 - 2026-06-22

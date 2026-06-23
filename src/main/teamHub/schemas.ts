@@ -7,7 +7,7 @@ import type {
   HubUserRecord,
   SavedRequestRecord,
   SessionResponse
-} from '#/main/server/types';
+} from '#/main/teamHub/types';
 import { authConfig, bodyType, httpMethod, keyValue, variable } from '#/main/schemas/common';
 
 /**

@@ -18,7 +18,7 @@ import {
 } from '#/main/settings/databaseSlots';
 import { deleteTeamHub, listTeamHubs, saveTeamHub } from '#/main/settings/teamHubSettings';
 import { scanTeamHubSessions } from '#/main/settings/teamHubSessionScan';
-import { HarborServerClient } from '#/main/server/HarborServerClient';
+import { HarborTeamHubClient } from '#/main/teamHub/HarborTeamHubClient';
 import { getAiSettings, setAiSettings } from '#/main/settings/aiSettings';
 import { getGeneralSettings, setGeneralSettings } from '#/main/settings/generalSettings';
 import {
@@ -132,7 +132,7 @@ export function registerSettingsHandlers(db: IDatabase): void {
       throw new Error(`Unknown team hub: ${hubId}`);
     }
 
-    const client = new HarborServerClient({ baseUrl: hub.baseUrl, token: hub.token });
+    const client = new HarborTeamHubClient({ baseUrl: hub.baseUrl, token: hub.token });
     return client.listAdminUsers();
   });
 
@@ -146,7 +146,7 @@ export function registerSettingsHandlers(db: IDatabase): void {
         throw new Error(`Unknown team hub: ${hubId}`);
       }
 
-      const client = new HarborServerClient({ baseUrl: hub.baseUrl, token: hub.token });
+      const client = new HarborTeamHubClient({ baseUrl: hub.baseUrl, token: hub.token });
       return client.updateAdminUser(userId, input);
     }
   );
@@ -158,7 +158,7 @@ export function registerSettingsHandlers(db: IDatabase): void {
       throw new Error(`Unknown team hub: ${hubId}`);
     }
 
-    const client = new HarborServerClient({ baseUrl: hub.baseUrl, token: hub.token });
+    const client = new HarborTeamHubClient({ baseUrl: hub.baseUrl, token: hub.token });
     await client.deleteAdminUser(userId);
   });
 
@@ -169,7 +169,7 @@ export function registerSettingsHandlers(db: IDatabase): void {
       throw new Error(`Unknown team hub: ${hubId}`);
     }
 
-    const client = new HarborServerClient({ baseUrl: hub.baseUrl, token: hub.token });
+    const client = new HarborTeamHubClient({ baseUrl: hub.baseUrl, token: hub.token });
     return client.listAdminResourceOptions();
   });
 

@@ -8,9 +8,9 @@ import type {
 } from '#/shared/types';
 
 /**
- * Connection settings for {@link HarborServerClient}.
+ * Connection settings for {@link HarborTeamHubClient}.
  */
-export interface ServerClientConfig {
+export interface TeamHubClientConfig {
   /**
    * HarborClient Server base URL (for example `http://127.0.0.1:8788`).
    */
