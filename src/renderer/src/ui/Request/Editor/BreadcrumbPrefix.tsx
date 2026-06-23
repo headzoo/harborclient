@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import type { JSX, MouseEvent } from 'react';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faChevronRight } from '#/renderer/src/fontawesome';
 
@@ -17,6 +17,16 @@ interface Props {
    * When true, uses compact separators for inline edit mode.
    */
   compact?: boolean;
+
+  /**
+   * Called when the collection segment is clicked.
+   */
+  onCollectionClick?: () => void;
+
+  /**
+   * Called when the folder segment is clicked.
+   */
+  onFolderClick?: () => void;
 }
 
 /**
@@ -25,13 +35,15 @@ interface Props {
 export function BreadcrumbPrefix({
   collectionName,
   folderName,
-  compact = false
+  compact = false,
+  onCollectionClick,
+  onFolderClick
 }: Props): JSX.Element | null {
   if (!collectionName && !folderName) return null;
 
   const segmentClass = compact
-    ? 'truncate text-[15px] font-normal text-muted'
-    : 'truncate font-normal text-muted';
+    ? 'truncate text-[15px] font-normal text-muted hover:text-text'
+    : 'truncate font-normal text-muted hover:text-text';
   const separator = (
     <FaIcon
       icon={faChevronRight}
@@ -39,20 +51,55 @@ export function BreadcrumbPrefix({
     />
   );
 
+  /**
+   * Stops click propagation so breadcrumb navigation does not trigger name edit mode.
+   *
+   * @param event - Mouse event from a breadcrumb segment control.
+   * @param handler - Segment-specific click handler.
+   */
+  const handleSegmentClick = (event: MouseEvent, handler?: () => void): void => {
+    event.stopPropagation();
+    handler?.();
+  };
+
   return (
     <span className="inline-flex min-w-0 shrink items-center gap-1 overflow-hidden">
-      {collectionName && (
-        <>
-          <span className={segmentClass}>{collectionName}</span>
-          {separator}
-        </>
-      )}
-      {folderName && (
-        <>
-          <span className={segmentClass}>{folderName}</span>
-          {separator}
-        </>
-      )}
+      {collectionName &&
+        (onCollectionClick ? (
+          <>
+            <button
+              type="button"
+              className={`${segmentClass} max-w-full shrink cursor-pointer border-none bg-transparent p-0 app-no-drag`}
+              onClick={(event) => handleSegmentClick(event, onCollectionClick)}
+            >
+              {collectionName}
+            </button>
+            {separator}
+          </>
+        ) : (
+          <>
+            <span className={segmentClass}>{collectionName}</span>
+            {separator}
+          </>
+        ))}
+      {folderName &&
+        (onFolderClick ? (
+          <>
+            <button
+              type="button"
+              className={`${segmentClass} max-w-full shrink cursor-pointer border-none bg-transparent p-0 app-no-drag`}
+              onClick={(event) => handleSegmentClick(event, onFolderClick)}
+            >
+              {folderName}
+            </button>
+            {separator}
+          </>
+        ) : (
+          <>
+            <span className={segmentClass}>{folderName}</span>
+            {separator}
+          </>
+        ))}
     </span>
   );
 }

@@ -66,6 +66,16 @@ interface Props {
    * Opens collection settings to edit variables.
    */
   onEditVariables?: () => void;
+
+  /**
+   * Called when the collection breadcrumb segment is clicked.
+   */
+  onCollectionClick?: () => void;
+
+  /**
+   * Called when the folder breadcrumb segment is clicked.
+   */
+  onFolderClick?: () => void;
 }
 
 /**
@@ -80,7 +90,9 @@ export function Editor({
   variables,
   collectionName,
   folderName,
-  onEditVariables
+  onEditVariables,
+  onCollectionClick,
+  onFolderClick
 }: Props): JSX.Element {
   const showBody = draft.method !== 'GET' && draft.method !== 'HEAD';
   const { tab, setTab } = usePersistedEditorTab({ draft, tabId, showBody });
@@ -147,6 +159,8 @@ export function Editor({
         collectionName={collectionName}
         folderName={folderName}
         onNameChange={(name) => update({ name })}
+        onCollectionClick={onCollectionClick}
+        onFolderClick={onFolderClick}
       />
 
       <UrlBar

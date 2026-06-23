@@ -15,7 +15,8 @@ import {
   selectEnvironments,
   selectFoldersByCollection,
   selectRequestsByCollection,
-  selectSelectedCollectionId
+  selectSelectedCollectionId,
+  selectSelectedFolderId
 } from '#/renderer/src/store/selectors';
 import { setSelectedCollectionId } from '#/renderer/src/store/slices/collectionsSlice';
 import { setActiveEnvironmentId } from '#/renderer/src/store/slices/environmentsSlice';
@@ -40,7 +41,8 @@ import {
   renameFolder,
   reorderCollections,
   reorderFolders,
-  reorderRequests
+  reorderRequests,
+  focusSidebarItem
 } from '#/renderer/src/store/thunks';
 import { Button } from '#/renderer/src/components/Button';
 import {
@@ -98,6 +100,7 @@ export function Sidebar({
   const foldersByCollection = useAppSelector(selectFoldersByCollection);
   const requestsByCollection = useAppSelector(selectRequestsByCollection);
   const selectedCollectionId = useAppSelector(selectSelectedCollectionId);
+  const selectedFolderId = useAppSelector(selectSelectedFolderId);
   const draft = useAppSelector(selectDraft);
   const environments = useAppSelector(selectEnvironments);
   const activeEnvironmentId = useAppSelector(selectActiveEnvironmentId);
@@ -117,6 +120,7 @@ export function Sidebar({
     environmentsSectionExpanded,
     toggleCollectionsSection,
     toggleEnvironmentsSection,
+    setCollectionsSectionExpanded,
     expandedCollectionIds,
     expandedFolderIds,
     setExpandedCollectionIds,
@@ -124,6 +128,15 @@ export function Sidebar({
   } = usePersistedSidebarExpansion({
     onExpandCollection: handleExpandCollection
   });
+
+  /**
+   * Expands the Collections section when sidebar focus moves to a collection or folder.
+   */
+  useEffect(() => {
+    if (selectedCollectionId != null || selectedFolderId != null) {
+      setCollectionsSectionExpanded(true);
+    }
+  }, [selectedCollectionId, selectedFolderId, setCollectionsSectionExpanded]);
 
   const [showEnvironmentModal, setShowEnvironmentModal] = useState(false);
   const [environmentModalTab, setEnvironmentModalTab] = useState<'create' | 'import'>('create');
@@ -272,6 +285,7 @@ export function Sidebar({
                 foldersByCollection={foldersByCollection}
                 requestsByCollection={requestsByCollection}
                 selectedCollectionId={selectedCollectionId}
+                selectedFolderId={selectedFolderId}
                 primaryConnectionId={primaryConnectionId}
                 connectionNamesById={connectionNamesById}
                 connectionTypesById={connectionTypesById}
@@ -281,6 +295,9 @@ export function Sidebar({
                 setExpandedCollectionIds={setExpandedCollectionIds}
                 setExpandedFolderIds={setExpandedFolderIds}
                 onSelectCollection={(id) => dispatch(setSelectedCollectionId(id))}
+                onSelectFolder={(collectionId, folderId) => {
+                  dispatch(focusSidebarItem({ collectionId, folderId }));
+                }}
                 onExpandCollection={handleExpandCollection}
                 onConfigureCollection={onConfigureCollection}
                 onDeleteCollection={async (id) => {

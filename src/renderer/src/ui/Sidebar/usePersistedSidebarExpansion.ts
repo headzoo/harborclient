@@ -43,6 +43,11 @@ interface Result {
   toggleEnvironmentsSection: () => void;
 
   /**
+   * Sets the Collections section expanded state explicitly.
+   */
+  setCollectionsSectionExpanded: Dispatch<SetStateAction<boolean>>;
+
+  /**
    * Collection ids whose request trees are expanded.
    */
   expandedCollectionIds: Set<number>;
@@ -175,6 +180,7 @@ export function usePersistedSidebarExpansion({ onExpandCollection }: Options): R
     environmentsSectionExpanded,
     toggleCollectionsSection,
     toggleEnvironmentsSection,
+    setCollectionsSectionExpanded,
     expandedCollectionIds,
     expandedFolderIds,
     setExpandedCollectionIds,

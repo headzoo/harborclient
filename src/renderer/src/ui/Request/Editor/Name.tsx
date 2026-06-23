@@ -21,12 +21,29 @@ interface Props {
    * Called when the request name changes.
    */
   onNameChange: (name: string) => void;
+
+  /**
+   * Called when the collection breadcrumb segment is clicked.
+   */
+  onCollectionClick?: () => void;
+
+  /**
+   * Called when the folder breadcrumb segment is clicked.
+   */
+  onFolderClick?: () => void;
 }
 
 /**
  * Inline-editable request name with optional collection and folder breadcrumb.
  */
-export function Name({ name, collectionName, folderName, onNameChange }: Props): JSX.Element {
+export function Name({
+  name,
+  collectionName,
+  folderName,
+  onNameChange,
+  onCollectionClick,
+  onFolderClick
+}: Props): JSX.Element {
   const [editingName, setEditingName] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -44,7 +61,13 @@ export function Name({ name, collectionName, folderName, onNameChange }: Props):
     <div className="mb-2">
       {editingName ? (
         <div className="flex w-full min-w-0 items-center gap-1">
-          <BreadcrumbPrefix collectionName={collectionName} folderName={folderName} compact />
+          <BreadcrumbPrefix
+            collectionName={collectionName}
+            folderName={folderName}
+            compact
+            onCollectionClick={onCollectionClick}
+            onFolderClick={onFolderClick}
+          />
           <input
             ref={nameInputRef}
             className="min-w-0 flex-1 border-none bg-transparent p-0 text-[15px] font-semibold text-text outline-none app-no-drag"
@@ -66,7 +89,12 @@ export function Name({ name, collectionName, folderName, onNameChange }: Props):
           className="flex w-full min-w-0 cursor-text items-center gap-1 border-none bg-transparent p-0 text-left text-[15px] font-semibold text-text hover:opacity-80 app-no-drag"
           onClick={() => setEditingName(true)}
         >
-          <BreadcrumbPrefix collectionName={collectionName} folderName={folderName} />
+          <BreadcrumbPrefix
+            collectionName={collectionName}
+            folderName={folderName}
+            onCollectionClick={onCollectionClick}
+            onFolderClick={onFolderClick}
+          />
           <span className="shrink-0 whitespace-nowrap">
             {name ? name : <span className="text-muted">Request name</span>}
           </span>

@@ -70,6 +70,11 @@ interface Props {
   selectedCollectionId: number | null;
 
   /**
+   * Currently selected folder id, if any.
+   */
+  selectedFolderId: number | null;
+
+  /**
    * Default connection id used when a collection has no explicit connection.
    */
   primaryConnectionId: string;
@@ -113,6 +118,11 @@ interface Props {
    * Called when the user selects a collection row.
    */
   onSelectCollection: (id: number) => void;
+
+  /**
+   * Called when the user selects a folder row.
+   */
+  onSelectFolder: (collectionId: number, folderId: number) => void;
 
   /**
    * Called when a collection is expanded so its contents can be loaded.
@@ -232,6 +242,7 @@ export function Collections({
   foldersByCollection,
   requestsByCollection,
   selectedCollectionId,
+  selectedFolderId,
   primaryConnectionId,
   connectionNamesById,
   connectionTypesById,
@@ -241,6 +252,7 @@ export function Collections({
   setExpandedCollectionIds,
   setExpandedFolderIds,
   onSelectCollection,
+  onSelectFolder,
   onExpandCollection,
   onConfigureCollection,
   onDeleteCollection,
@@ -317,6 +329,32 @@ export function Collections({
     if (selectedCollectionId == null) return;
     onExpandCollection(selectedCollectionId);
   }, [selectedCollectionId, onExpandCollection]);
+
+  /**
+   * Expands the selected folder and its parent collection when folder focus changes.
+   */
+  useEffect(() => {
+    if (selectedFolderId == null) return;
+
+    if (selectedCollectionId != null) {
+      setExpandedCollectionIds((prev) => {
+        if (prev.has(selectedCollectionId)) return prev;
+        const next = new Set(prev);
+        next.add(selectedCollectionId);
+        return next;
+      });
+    }
+
+    setExpandedFolderIds((prev) => {
+      if (prev.has(selectedFolderId)) return prev;
+      const next = new Set(prev);
+      next.add(selectedFolderId);
+      return next;
+    });
+
+    const element = document.querySelector(`[data-sidebar-folder-id="${selectedFolderId}"]`);
+    element?.scrollIntoView({ block: 'nearest' });
+  }, [selectedFolderId, selectedCollectionId, setExpandedCollectionIds, setExpandedFolderIds]);
 
   /**
    * Toggles the expansion state of a collection.
@@ -700,25 +738,25 @@ export function Collections({
                     groups={[
                       ...(collectionIndex > 0 || collectionIndex < collections.length - 1
                         ? [
-                            [
-                              ...(collectionIndex > 0
-                                ? [
-                                    {
-                                      label: 'Move up',
-                                      onSelect: () => void moveCollection(collection.id, 'up')
-                                    }
-                                  ]
-                                : []),
-                              ...(collectionIndex < collections.length - 1
-                                ? [
-                                    {
-                                      label: 'Move down',
-                                      onSelect: () => void moveCollection(collection.id, 'down')
-                                    }
-                                  ]
-                                : [])
-                            ]
+                          [
+                            ...(collectionIndex > 0
+                              ? [
+                                {
+                                  label: 'Move up',
+                                  onSelect: () => void moveCollection(collection.id, 'up')
+                                }
+                              ]
+                              : []),
+                            ...(collectionIndex < collections.length - 1
+                              ? [
+                                {
+                                  label: 'Move down',
+                                  onSelect: () => void moveCollection(collection.id, 'down')
+                                }
+                              ]
+                              : [])
                           ]
+                        ]
                         : []),
                       [
                         {
@@ -748,11 +786,11 @@ export function Collections({
                         },
                         ...(canInvite
                           ? [
-                              {
-                                label: 'Invite',
-                                onSelect: () => onInviteCollection(collection.id, collection.name)
-                              }
-                            ]
+                            {
+                              label: 'Invite',
+                              onSelect: () => onInviteCollection(collection.id, collection.name)
+                            }
+                          ]
                           : [])
                       ],
                       [
@@ -865,16 +903,18 @@ export function Collections({
                           );
                           const folderHighlighted =
                             isRequestDragInCollection && dropTargetFolderId === folder.id;
+                          const folderSelected = selectedFolderId === folder.id;
 
                           return (
                             <div
                               key={folder.id}
+                              data-sidebar-folder-id={folder.id}
                               className={folderHighlighted ? dropTargetHighlightClass : undefined}
                             >
                               <DropZone id={dropFolderId(folder.id)}>
                                 <SortableRow
                                   id={folderDragId(folder.id)}
-                                  className={sourceRow(false)}
+                                  className={sourceRow(folderSelected)}
                                   dragHandleLabel={`Reorder folder "${folder.name}"`}
                                 >
                                   <button
@@ -891,14 +931,19 @@ export function Collections({
                                       className="h-3 w-3"
                                     />
                                   </button>
-                                  <span className="min-w-0 flex-1 truncate text-[14px] font-medium">
+                                  <button
+                                    type="button"
+                                    className="min-w-0 flex-1 cursor-pointer truncate border-none bg-transparent py-0.5 text-left text-[14px] font-medium text-inherit app-no-drag"
+                                    aria-current={folderSelected ? 'true' : undefined}
+                                    onClick={() => onSelectFolder(collection.id, folder.id)}
+                                  >
                                     {folder.name}
                                     {folderHighlighted && (
                                       <span className="ml-1.5 text-[14px] font-normal text-info">
                                         Drop here
                                       </span>
                                     )}
-                                  </span>
+                                  </button>
                                   <RowActionsMenu
                                     menuId={`folder-${folder.id}`}
                                     openMenuId={openMenuId}
@@ -906,35 +951,35 @@ export function Collections({
                                     groups={[
                                       ...(folderIndex > 0 || folderIndex < folders.length - 1
                                         ? [
-                                            [
-                                              ...(folderIndex > 0
-                                                ? [
-                                                    {
-                                                      label: 'Move up',
-                                                      onSelect: () =>
-                                                        void moveFolder(
-                                                          collection.id,
-                                                          folder.id,
-                                                          'up'
-                                                        )
-                                                    }
-                                                  ]
-                                                : []),
-                                              ...(folderIndex < folders.length - 1
-                                                ? [
-                                                    {
-                                                      label: 'Move down',
-                                                      onSelect: () =>
-                                                        void moveFolder(
-                                                          collection.id,
-                                                          folder.id,
-                                                          'down'
-                                                        )
-                                                    }
-                                                  ]
-                                                : [])
-                                            ]
+                                          [
+                                            ...(folderIndex > 0
+                                              ? [
+                                                {
+                                                  label: 'Move up',
+                                                  onSelect: () =>
+                                                    void moveFolder(
+                                                      collection.id,
+                                                      folder.id,
+                                                      'up'
+                                                    )
+                                                }
+                                              ]
+                                              : []),
+                                            ...(folderIndex < folders.length - 1
+                                              ? [
+                                                {
+                                                  label: 'Move down',
+                                                  onSelect: () =>
+                                                    void moveFolder(
+                                                      collection.id,
+                                                      folder.id,
+                                                      'down'
+                                                    )
+                                                }
+                                              ]
+                                              : [])
                                           ]
+                                        ]
                                         : []),
                                       [
                                         {
@@ -1038,8 +1083,8 @@ export function Collections({
 
                     <DragOverlay>
                       {dragCollectionId === collection.id &&
-                      activeDragKind === 'request' &&
-                      activeDragRequest ? (
+                        activeDragKind === 'request' &&
+                        activeDragRequest ? (
                         <div className="flex items-center gap-1.5 rounded border border-separator bg-surface px-2 py-1 shadow-md">
                           <span
                             className={`shrink-0 px-1 py-px text-[14px] ${METHOD_CLASSES[activeDragRequest.method.toLowerCase()] ?? 'text-info'}`}

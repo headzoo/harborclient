@@ -10,14 +10,16 @@ import type {
   Variable
 } from '#/shared/types';
 import {
+  focusSidebarItem as focusSidebarItemAction,
   setCollections,
   setFoldersForCollection,
   setRequestsForCollection,
   setSelectedCollectionId
 } from '#/renderer/src/store/slices/collectionsSlice';
 import { setActiveEnvironmentId } from '#/renderer/src/store/slices/environmentsSlice';
+import { setShowSidebar } from '#/renderer/src/store/slices/navigationSlice';
 import { closeTabsForCollection, closeTabsForRequest } from '#/renderer/src/store/slices/tabsSlice';
-import type { ThunkApiConfig } from '#/renderer/src/store/redux';
+import type { AppDispatch, ThunkApiConfig } from '#/renderer/src/store/redux';
 import {
   beginRefreshGeneration,
   collectionRefreshKey,
@@ -382,3 +384,20 @@ export const moveRequestToFolder = createAsyncThunk<
   await window.api.moveRequest(requestId, folderId, index);
   await dispatch(refreshRequests(collectionId));
 });
+
+/**
+ * Focuses a collection or folder in the sidebar (breadcrumb navigation).
+ *
+ * @param payload - Collection id and optional folder id to highlight.
+ * @returns Thunk that reveals the sidebar and loads collection contents.
+ */
+export function focusSidebarItem(payload: {
+  collectionId: number;
+  folderId?: number | null;
+}): (dispatch: AppDispatch) => void {
+  return (dispatch) => {
+    dispatch(setShowSidebar(true));
+    dispatch(focusSidebarItemAction(payload));
+    void dispatch(refreshCollectionContents(payload.collectionId));
+  };
+}

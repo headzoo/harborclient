@@ -6,13 +6,15 @@ export interface CollectionsState {
   foldersByCollection: Record<number, Folder[]>;
   requestsByCollection: Record<number, SavedRequest[]>;
   selectedCollectionId: number | null;
+  selectedFolderId: number | null;
 }
 
 const initialState: CollectionsState = {
   collections: [],
   foldersByCollection: {},
   requestsByCollection: {},
-  selectedCollectionId: null
+  selectedCollectionId: null,
+  selectedFolderId: null
 };
 
 const collectionsSlice = createSlice({
@@ -20,10 +22,21 @@ const collectionsSlice = createSlice({
   initialState,
   reducers: {
     /**
-     * Updates the sidebar selected collection id.
+     * Updates the sidebar selected collection id and clears folder selection.
      */
     setSelectedCollectionId(state, action: PayloadAction<number | null>) {
       state.selectedCollectionId = action.payload;
+      state.selectedFolderId = null;
+    },
+    /**
+     * Selects a collection and optional folder for sidebar focus (e.g. breadcrumb navigation).
+     */
+    focusSidebarItem(
+      state,
+      action: PayloadAction<{ collectionId: number; folderId?: number | null }>
+    ) {
+      state.selectedCollectionId = action.payload.collectionId;
+      state.selectedFolderId = action.payload.folderId ?? null;
     },
     /**
      * Replaces the full collections list from a refresh.
@@ -54,6 +67,7 @@ const collectionsSlice = createSlice({
 
 export const {
   setSelectedCollectionId,
+  focusSidebarItem,
   setCollections,
   setRequestsForCollection,
   setFoldersForCollection

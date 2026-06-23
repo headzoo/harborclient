@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(sidebar): enhance sidebar navigation with folder selection and focus functionality. (`b840ed9`)
 - feat(docs): add Blog link and Verbose logging section to documentation. (`ab36624`)
 - feat(teamHub): enhance synchronization logic for team hub collections. (`8669326`)
 

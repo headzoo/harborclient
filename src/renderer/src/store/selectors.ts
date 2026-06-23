@@ -25,6 +25,12 @@ export const selectFoldersByCollection = (
 export const selectSelectedCollectionId = (
   state: RootState
 ): RootState['collections']['selectedCollectionId'] => state.collections.selectedCollectionId;
+/**
+ * Returns the sidebar selected folder id.
+ */
+export const selectSelectedFolderId = (
+  state: RootState
+): RootState['collections']['selectedFolderId'] => state.collections.selectedFolderId;
 
 /**
  * Returns all environments.

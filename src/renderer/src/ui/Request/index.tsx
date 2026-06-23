@@ -18,7 +18,12 @@ import {
 } from '#/renderer/src/store/selectors';
 import { setActiveDraft, newTab, setActiveTab } from '#/renderer/src/store/slices/tabsSlice';
 import { setActiveEnvironmentId } from '#/renderer/src/store/slices/environmentsSlice';
-import { sendRequest, cancelRequest, closeRequestTab } from '#/renderer/src/store/thunks';
+import {
+  sendRequest,
+  cancelRequest,
+  closeRequestTab,
+  focusSidebarItem
+} from '#/renderer/src/store/thunks';
 import { Button } from '#/renderer/src/components/Button';
 import { ResizeHandle, useResizable } from '#/renderer/src/components/Resizable';
 import { Editor } from './Editor';
@@ -173,6 +178,16 @@ export function Request({ onEditVariables }: Props): JSX.Element {
             collectionName={activeCollectionName}
             folderName={activeFolderName}
             onEditVariables={onEditVariables}
+            onCollectionClick={() => {
+              if (activeCollectionId == null) return;
+              dispatch(focusSidebarItem({ collectionId: activeCollectionId }));
+            }}
+            onFolderClick={() => {
+              if (activeCollectionId == null || activeFolderId == null) return;
+              dispatch(
+                focusSidebarItem({ collectionId: activeCollectionId, folderId: activeFolderId })
+              );
+            }}
           />
         </section>
         <ResizeHandle
