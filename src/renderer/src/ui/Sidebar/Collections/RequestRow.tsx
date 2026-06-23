@@ -1,4 +1,4 @@
-import type { Folder, SavedRequest } from '#/shared/types';
+import type { SavedRequest } from '#/shared/types';
 import { RowActionsMenu } from '#/renderer/src/components/RowActionsMenu';
 import { useConfirm } from '#/renderer/src/hooks/useConfirm';
 import { METHOD_CLASSES, sourceRow } from '#/renderer/src/ui/shared/classes';
@@ -26,11 +26,6 @@ interface Props {
    * Called when a row actions menu opens or closes.
    */
   onOpenChange: (menuId: string | null) => void;
-
-  /**
-   * Folders in the same collection, used for move-to menu items.
-   */
-  folders: Folder[];
 
   /**
    * Whether the request can move one position up within its list.
@@ -71,11 +66,6 @@ interface Props {
    * Exports the saved request to a JSON file.
    */
   onExportRequest: (req: SavedRequest) => Promise<void> | void;
-
-  /**
-   * Moves the request to another folder or collection root.
-   */
-  onMoveRequest: (requestId: number, folderId: number | null) => void;
 }
 
 /**
@@ -86,7 +76,6 @@ export function RequestRow({
   activeRequestId,
   openMenuId,
   onOpenChange,
-  folders,
   canMoveUp,
   canMoveDown,
   onMoveUp,
@@ -94,8 +83,7 @@ export function RequestRow({
   onLoadRequest,
   onDeleteRequest,
   onDuplicateRequest,
-  onExportRequest,
-  onMoveRequest
+  onExportRequest
 }: Props): JSX.Element {
   const confirm = useConfirm();
 
@@ -103,20 +91,6 @@ export function RequestRow({
     ...(canMoveUp ? [{ label: 'Move up', onSelect: onMoveUp }] : []),
     ...(canMoveDown ? [{ label: 'Move down', onSelect: onMoveDown }] : [])
   ];
-
-  const moveToItems = [
-    ...(req.folder_id != null
-      ? [{ label: 'Move to root', onSelect: () => onMoveRequest(req.id, null) }]
-      : []),
-    ...folders
-      .filter((folder) => folder.id !== req.folder_id)
-      .map((folder) => ({
-        label: `Move to ${folder.name}`,
-        onSelect: () => onMoveRequest(req.id, folder.id)
-      }))
-  ];
-
-  const moveGroup = [...reorderItems, ...moveToItems];
 
   return (
     <SortableRow
@@ -142,7 +116,7 @@ export function RequestRow({
         openMenuId={openMenuId}
         onOpenChange={onOpenChange}
         groups={[
-          ...(moveGroup.length > 0 ? [moveGroup] : []),
+          ...(reorderItems.length > 0 ? [reorderItems] : []),
           [
             {
               label: 'Duplicate',

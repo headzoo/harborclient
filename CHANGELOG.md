@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- refactor(ui): streamline Collections and RequestRow components. (`e44d761`)
 - docs(README): enhance documentation with badges and detailed descriptions. (`b6029e9`)
 
 ## 1.5.20 - 2026-06-23
