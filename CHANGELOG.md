@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(docs): update asset synchronization and .gitignore for images. (`1b0af82`)
 - refactor(database): improve code formatting and consistency across database files. (`0caa80f`)
 - feat(environments): add environment duplication feature and enhance documentation. (`7b86429`)
 - feat(git): introduce Git-backed collections for version control. (`aa888be`)

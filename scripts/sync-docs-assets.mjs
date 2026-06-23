@@ -29,10 +29,19 @@ const assets = [
 
 await mkdir(staticImagesDir, { recursive: true });
 
+/** Markdown image paths (e.g. `images/screenshots/hc-7.png`) resolve from `docs/`. */
+const docsImagesDir = path.join(repoDir, 'docs/images');
+
 for (const [source, target] of assets) {
-  const destination = path.join(staticImagesDir, target);
-  await mkdir(path.dirname(destination), { recursive: true });
-  await copyFile(path.join(repoDir, source), destination);
+  const staticDestination = path.join(staticImagesDir, target);
+  await mkdir(path.dirname(staticDestination), { recursive: true });
+  await copyFile(path.join(repoDir, source), staticDestination);
+
+  if (source.startsWith('images/')) {
+    const docsDestination = path.join(docsImagesDir, source.slice('images/'.length));
+    await mkdir(path.dirname(docsDestination), { recursive: true });
+    await copyFile(path.join(repoDir, source), docsDestination);
+  }
 }
 
 console.log(`Synced ${assets.length} asset(s) into docs/.vitepress/static/images/`);
