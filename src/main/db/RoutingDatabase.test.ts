@@ -7,6 +7,9 @@ import { decodeGlobalId, ID_OFFSET } from '#/main/db/idNamespace';
 import { LocalRegistry } from '#/main/db/LocalRegistry';
 import { RoutingDatabase } from '#/main/db/RoutingDatabase';
 import { SqliteDatabase } from '#/main/db/SqliteDatabase';
+import { TeamHubDatabase } from '#/main/db/TeamHubDatabase';
+import { TeamHubIdMap } from '#/main/db/TeamHubIdMap';
+import type { HarborTeamHubClient } from '#/main/teamHub/HarborTeamHubClient';
 import { baseRequestInput } from '#/test/idatabaseContract';
 import { describeSqlite } from '#/test/nativeModules';
 
@@ -37,6 +40,27 @@ const CONN_B: DatabaseConnection = {
   name: 'SQLite B',
   type: 'sqlite',
   settings: { ...BASE_SQLITE_SETTINGS, dbFilename: 'b.db' }
+};
+
+const HUB_A = {
+  id: 'hub-a',
+  name: 'First',
+  type: 'team-hub' as const
+};
+
+const SERVER_COLLECTION_RECORD = {
+  id: '550e8400-e29b-41d4-a716-446655440000',
+  name: 'Team API',
+  variables: [],
+  headers: [],
+  auth: {
+    type: 'none' as const,
+    basic: { username: '', password: '' },
+    bearer: { token: '' }
+  },
+  preRequestScript: '',
+  postRequestScript: '',
+  createdAt: '2026-01-01T00:00:00.000Z'
 };
 
 const cleanups: Array<() => void | Promise<void>> = [];
@@ -80,6 +104,59 @@ async function createRoutingFixture(options?: { mountB?: boolean }): Promise<{
   });
 
   return { router, registry, backendA, backendB, rootDir };
+}
+
+/**
+ * Builds a TeamHubDatabase backed by a mock client and temp id map for routing tests.
+ *
+ * @param client - Partial HarborTeamHubClient mock.
+ * @returns Team hub database adapter.
+ */
+function createTeamHubDatabase(client: Partial<HarborTeamHubClient>): TeamHubDatabase {
+  const dir = mkdtempSync(join(tmpdir(), 'harborclient-routing-hub-'));
+  const idMap = new TeamHubIdMap(join(dir, 'team-hub-test.db'));
+  idMap.init();
+  cleanups.push(() => {
+    idMap.close();
+    rmSync(dir, { recursive: true, force: true });
+  });
+  return new TeamHubDatabase(client as HarborTeamHubClient, idMap);
+}
+
+/**
+ * Builds a routing database fixture with SQLite and a mounted team hub.
+ *
+ * @param client - Partial HarborTeamHubClient mock for the hub backend.
+ * @returns Test routing database, registry, hub database, and temp root directory.
+ */
+async function createRoutingFixtureWithHub(client: Partial<HarborTeamHubClient>): Promise<{
+  router: RoutingDatabase;
+  registry: LocalRegistry;
+  hubDb: TeamHubDatabase;
+  rootDir: string;
+}> {
+  const rootDir = mkdtempSync(join(tmpdir(), 'harborclient-routing-'));
+  const registry = new LocalRegistry(rootDir);
+  await registry.init();
+
+  const backendADir = join(rootDir, 'backend-a');
+  mkdirSync(backendADir, { recursive: true });
+
+  const backendA = new SqliteDatabase(backendADir, CONN_A.settings as SqliteSettings);
+  await backendA.init();
+
+  const hubDb = createTeamHubDatabase(client);
+
+  const router = new RoutingDatabase(registry, CONN_A.id, rootDir);
+  router.mount(0, CONN_A, backendA);
+  router.mount(1, HUB_A, hubDb);
+
+  cleanups.push(async () => {
+    await router.close();
+    rmSync(rootDir, { recursive: true, force: true });
+  });
+
+  return { router, registry, hubDb, rootDir };
 }
 
 afterEach(async () => {
@@ -449,6 +526,57 @@ describeSqlite('RoutingDatabase syncProvider', () => {
   });
 });
 
+describeSqlite('RoutingDatabase syncTeamHub', () => {
+  it('removes registry entries for collections deleted on the server', async () => {
+    const staleServerId = '660e8400-e29b-41d4-a716-446655440001';
+    const listCollections = vi.fn().mockResolvedValue([]);
+    const { router, registry, hubDb } = await createRoutingFixtureWithHub({ listCollections });
+
+    const idMap = (hubDb as unknown as { idMap: TeamHubIdMap }).idMap;
+    const localId = idMap.toLocalId('collection', staleServerId);
+
+    registry.addRegistryEntry({
+      name: 'Pintail',
+      connectionId: HUB_A.id,
+      providerCollectionId: localId
+    });
+
+    await router.syncTeamHub(HUB_A.id);
+
+    expect(registry.listRegistry()).toEqual([]);
+    expect(hubDb.getServerCollectionId(localId)).toBeUndefined();
+  });
+
+  it('preserves registry entries when the hub cannot be reached', async () => {
+    const listCollections = vi.fn().mockRejectedValue(new Error('Connection refused'));
+    const { router, registry, hubDb } = await createRoutingFixtureWithHub({ listCollections });
+
+    const idMap = (hubDb as unknown as { idMap: TeamHubIdMap }).idMap;
+    const localId = idMap.toLocalId('collection', SERVER_COLLECTION_RECORD.id);
+
+    registry.addRegistryEntry({
+      name: 'Pintail',
+      connectionId: HUB_A.id,
+      providerCollectionId: localId
+    });
+
+    await expect(router.syncTeamHub(HUB_A.id)).rejects.toThrow('Connection refused');
+    expect(registry.listRegistry()).toHaveLength(1);
+    expect(registry.listRegistry()[0]?.name).toBe('Pintail');
+  });
+
+  it('adds registry entries for new server collections', async () => {
+    const listCollections = vi.fn().mockResolvedValue([SERVER_COLLECTION_RECORD]);
+    const { router, registry } = await createRoutingFixtureWithHub({ listCollections });
+
+    await router.syncTeamHub(HUB_A.id);
+
+    expect(registry.listRegistry()).toHaveLength(1);
+    expect(registry.listRegistry()[0]?.name).toBe('Team API');
+    expect(registry.listRegistry()[0]?.connectionId).toBe(HUB_A.id);
+  });
+});
+
 describeSqlite('RoutingDatabase migrateRegistryIfNeeded', () => {
   it('seeds registry from default provider collections', async () => {
     const { router, registry, backendA, rootDir } = await createRoutingFixture();
@@ -518,7 +646,7 @@ describeSqlite('RoutingDatabase.create', () => {
     ];
     const slots = Object.fromEntries(connections.map((conn, index) => [conn.id, index]));
 
-    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
     const router = await RoutingDatabase.create(
       registry,

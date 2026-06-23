@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(teamHub): enhance synchronization logic for team hub collections. (`8669326`)
+
 ## 1.5.16 - 2026-06-23
 
 - feat(teamHub): implement user and token management for Team Hub. (`c786ae4`)

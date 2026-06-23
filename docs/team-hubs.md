@@ -166,7 +166,7 @@ HarborClient syncs collections from each reachable hub:
 - **On app launch** — after hubs are mounted, new team hub collections are added to the sidebar
 - **When you save a hub** — immediately after add or edit
 
-Sync is **additive**: collections on the team hub that are not yet in your sidebar are registered automatically. HarborClient does **not** remove sidebar entries when a collection is temporarily missing (for example, while the team hub is offline). You may see a warning instead.
+Sync is **additive**: collections on the team hub that are not yet in your sidebar are registered automatically. When the hub is **reachable**, collections deleted on the server are removed from your sidebar on the next sync (app launch, hub save, or manual provider sync). When the hub is **offline or unreachable**, existing sidebar entries are kept until the hub can be contacted again.
 
 There is **no background polling** or live sync. Changes made by teammates appear when HarborClient reloads data — for example, after restarting the app or when a hub is saved again.
 

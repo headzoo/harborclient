@@ -142,7 +142,7 @@ export class TeamHubDatabase implements IDatabase {
   constructor(
     private readonly client: HarborTeamHubClient,
     private readonly idMap: TeamHubIdMap
-  ) {}
+  ) { }
 
   /**
    * Verifies connectivity to HarborClient Server before the router mounts this backend.
@@ -158,6 +158,20 @@ export class TeamHubDatabase implements IDatabase {
    */
   getServerCollectionId(localCollectionId: number): string | undefined {
     return this.idMap.toServerId('collection', localCollectionId);
+  }
+
+  /**
+   * Drops the id map entry for a local collection without calling the server.
+   *
+   * Used when a collection was deleted remotely and the local registry is pruned.
+   *
+   * @param localCollectionId - Provider-local collection id from the id map.
+   */
+  forgetLocalCollection(localCollectionId: number): void {
+    const serverId = this.getServerCollectionId(localCollectionId);
+    if (serverId) {
+      this.idMap.forget('collection', serverId);
+    }
   }
 
   /**

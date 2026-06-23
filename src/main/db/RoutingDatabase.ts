@@ -16,6 +16,7 @@ import type {
   ProviderDescriptor,
   RoutingInternals
 } from '#/main/db/routingInternals';
+import { logVerbose } from '#/main/logger';
 import { isDatabaseConnectionConfigured } from '#/main/settings/databaseSettings';
 import { unlinkSync } from 'fs';
 import type {
@@ -758,11 +759,11 @@ export class RoutingDatabase implements IDatabase {
     for (const entry of entries) {
       const serverId = serverIdsByProviderId.get(entry.providerCollectionId);
       if (serverId) continue;
-      console.warn(
-        `Collection "${entry.name}" is registered for team hub "${backend.connectionName}" but was not found on the server.`
-      );
-      this.listCollectionWarnings.push(
-        `Collection "${entry.name}" was not found on team hub "${backend.connectionName}". It may be offline or was removed on the server.`
+
+      hubDb.forgetLocalCollection(entry.providerCollectionId);
+      this.registry.deleteRegistryEntry(entry.id);
+      logVerbose(
+        `Removed registry entry for collection "${entry.name}" on team hub "${backend.connectionName}" because it no longer exists on the server.`
       );
     }
   }
