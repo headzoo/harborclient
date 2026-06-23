@@ -264,6 +264,15 @@ export class LocalRegistry {
   }
 
   /**
+   * Flushes WAL pages into the main database file for consistent backup snapshots.
+   */
+  checkpointWal(): void {
+    if (this.#db) {
+      this.#db.pragma('wal_checkpoint(TRUNCATE)');
+    }
+  }
+
+  /**
    * Closes the registry database connection.
    */
   async close(): Promise<void> {

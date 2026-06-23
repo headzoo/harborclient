@@ -2,7 +2,7 @@
 
 HarborClient application settings control appearance, HTTP request defaults, and the database connections where collections, requests, and environments are stored. Open settings from **File → Settings** or **Cmd/Ctrl+,**.
 
-The settings panel has a sidebar with six sections: **General**, **Syntax highlighting**, **Shortcuts**, **Proxy**, **Databases**, and **AI**. General covers appearance and request defaults; Syntax highlighting controls the code editor; Shortcuts lets you customize keyboard shortcuts; Proxy configures a global HTTP proxy for outbound requests; Databases manages the named database connections that hold your data; AI stores API keys for the built-in assistant.
+The settings panel has a sidebar with seven sections: **General**, **Syntax highlighting**, **Shortcuts**, **Proxy**, **Databases**, **AI**, and **Backup & Restore**. General covers appearance and request defaults; Syntax highlighting controls the code editor; Shortcuts lets you customize keyboard shortcuts; Proxy configures a global HTTP proxy for outbound requests; Databases manages the named database connections that hold your data; AI stores API keys for the built-in assistant; Backup & Restore exports or replaces all local HarborClient data from a single backup file.
 
 Appearance, request defaults, and connection definitions are stored in electron-store on your machine. Collections, requests, and environments live in the database connections you configure.
 
@@ -167,6 +167,41 @@ On Linux, OS-backed encryption typically requires **GNOME Keyring** or **KWallet
 | **Google Gemini API key** | API key for Google Gemini models |
 
 Click **Save** to persist API keys.
+
+## Backup & Restore
+
+The **Backup & Restore** section exports everything HarborClient stores locally on your machine into a single **HarborClient Backup** file (`.hcb`), or restores your local data from such a file. Use it when moving to a new computer, before reinstalling, or to keep an offline snapshot of your workspace.
+
+| Action | Description |
+| --- | --- |
+| **Export backup** | Opens a save dialog and writes a `.hcb` file containing your local HarborClient data |
+| **Restore from backup** | Opens a file picker for `.hcb` files, replaces your current local data, and restarts the app |
+
+Restore asks for confirmation first. It overwrites local data and may discard unsaved work in open request tabs. HarborClient restarts automatically when restore completes.
+
+### What is included
+
+A backup captures local application data under HarborClient's user data directory, including:
+
+- Local SQLite databases (registry, default provider database, and Team Hub ID maps) and their WAL sidecars
+- Electron-store settings (panel layout, sidebar expansion, editor tabs, and similar UI state)
+- Window position and size
+- Database connection definitions, environments, AI chat history, cookies, and collection routing stored in the registry
+- Encrypted AI and git credentials, invite identity keys, and the local encryption key file
+- Git provider sidecar files (`git-index/`, `git-provider-settings/`)
+- Renderer UI state such as open tabs, the active environment, and panel sizes
+
+Backups are zip archives with a `.hcb` extension. They include secrets in readable form inside the archive—store backup files securely and do not share them.
+
+### What is not included
+
+Restore replaces **local** HarborClient state only. It does not copy data that lives elsewhere:
+
+- **Remote databases** (Firestore, MySQL, PostgreSQL) — only connection settings are backed up; server-side collections and environments are unchanged
+- **Team Hub servers** — only local hub configuration and ID maps are backed up
+- **Git repository working trees** — collection files in your repo are not inside the backup; only HarborClient sidecar files in user data are included
+
+Secrets encrypted with your operating system keychain may not decrypt when you restore a backup on a different machine or user account. You may need to re-enter API keys, git tokens, or database passwords after restore.
 
 ## What's next
 

@@ -294,7 +294,6 @@ export function Collections({
 }: Props): JSX.Element {
   const confirm = useConfirm();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [prevSelectedId, setPrevSelectedId] = useState<number | null>(null);
   const [activeDragKind, setActiveDragKind] = useState<DragKind | null>(null);
   const [activeDragRequest, setActiveDragRequest] = useState<SavedRequest | null>(null);
   const [activeDragFolder, setActiveDragFolder] = useState<Folder | null>(null);
@@ -331,15 +330,6 @@ export function Collections({
     setActiveDragCollection(null);
   };
 
-  if (selectedCollectionId !== prevSelectedId) {
-    setPrevSelectedId(selectedCollectionId);
-    if (selectedCollectionId != null && !expandedCollectionIds.has(selectedCollectionId)) {
-      const next = new Set(expandedCollectionIds);
-      next.add(selectedCollectionId);
-      setExpandedCollectionIds(next);
-    }
-  }
-
   /**
    * Loads collection contents when the selected collection changes.
    */
@@ -347,32 +337,6 @@ export function Collections({
     if (selectedCollectionId == null) return;
     onExpandCollection(selectedCollectionId);
   }, [selectedCollectionId, onExpandCollection]);
-
-  /**
-   * Expands the selected folder and its parent collection when folder focus changes.
-   */
-  useEffect(() => {
-    if (selectedFolderId == null) return;
-
-    if (selectedCollectionId != null) {
-      setExpandedCollectionIds((prev) => {
-        if (prev.has(selectedCollectionId)) return prev;
-        const next = new Set(prev);
-        next.add(selectedCollectionId);
-        return next;
-      });
-    }
-
-    setExpandedFolderIds((prev) => {
-      if (prev.has(selectedFolderId)) return prev;
-      const next = new Set(prev);
-      next.add(selectedFolderId);
-      return next;
-    });
-
-    const element = document.querySelector(`[data-sidebar-folder-id="${selectedFolderId}"]`);
-    element?.scrollIntoView({ block: 'nearest' });
-  }, [selectedFolderId, selectedCollectionId, setExpandedCollectionIds, setExpandedFolderIds]);
 
   /**
    * Toggles the expansion state of a collection.

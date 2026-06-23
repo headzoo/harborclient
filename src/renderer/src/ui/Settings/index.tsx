@@ -3,6 +3,7 @@ import { Button } from '#/renderer/src/components/Button';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faXmark } from '#/renderer/src/fontawesome';
 import { AiSection } from './AiSection';
+import { BackupRestoreSection } from './BackupRestoreSection';
 import { DatabasesSection } from './DatabasesSection';
 import { GeneralSection } from './GeneralSection';
 import { ProxySection } from './ProxySection';
@@ -54,6 +55,7 @@ export function Settings({ onClose, initialSection }: Props): JSX.Element {
           {section === 'proxy' && <ProxySection />}
           {section === 'databases' && <DatabasesSection />}
           {section === 'ai' && <AiSection />}
+          {section === 'backup-restore' && <BackupRestoreSection />}
         </div>
       </div>
     </div>

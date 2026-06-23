@@ -1156,6 +1156,15 @@ export class SqliteDatabase implements IDatabase {
   /**
    * Closes the database connection.
    */
+  /**
+   * Flushes WAL pages into the main database file for consistent backup snapshots.
+   */
+  checkpointWal(): void {
+    if (this.#db) {
+      this.#db.pragma('wal_checkpoint(TRUNCATE)');
+    }
+  }
+
   async close(): Promise<void> {
     if (this.#db) {
       this.#db.close();

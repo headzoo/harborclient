@@ -1,4 +1,4 @@
-import { useEffect, type JSX } from 'react';
+import { useCallback, useEffect, type JSX } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import type { Collection, Environment } from '#/shared/types';
 import { useBeforeClose } from '#/renderer/src/hooks/useBeforeClose';
@@ -54,6 +54,7 @@ import { formatErrorMessage, showAlert } from '#/renderer/src/ui/modals/dialogHe
 import { AiSidebar } from '#/renderer/src/ui/AiSidebar';
 import { Configuration } from '#/renderer/src/ui/Configuration';
 import { Sidebar } from '#/renderer/src/ui/Sidebar';
+import { SidebarExpansionProvider } from '#/renderer/src/ui/Sidebar/SidebarExpansionContext';
 import { Request } from '#/renderer/src/ui/Request';
 import { TitleBar } from '#/renderer/src/ui/TitleBar';
 import { BusyIndicator } from '#/renderer/src/ui/shared/BusyIndicator';
@@ -83,6 +84,16 @@ export default function App(): JSX.Element {
   useMenuActions();
   usePersistedPanelLayout();
   useBeforeClose();
+
+  /**
+   * Loads folders and requests when a collection tree is expanded in the sidebar.
+   */
+  const handleExpandCollection = useCallback(
+    (id: number) => {
+      void dispatch(refreshCollectionContents(id));
+    },
+    [dispatch]
+  );
 
   /**
    * Initializes the store.
@@ -145,140 +156,142 @@ export default function App(): JSX.Element {
     configuringEnvironment != null;
 
   return (
-    <div className={`flex h-screen flex-col overflow-hidden ${platformClassName()}`}>
-      <BusyIndicator />
-      <TitleBar />
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-[100] focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:text-[14px] focus:text-text focus:shadow-md focus:outline focus:outline-2 focus:outline-accent"
-      >
-        Skip to main content
-      </a>
-      <div className="relative flex min-h-0 flex-1 overflow-hidden">
-        {sidebarVisible && (
-          <Sidebar
-            onAddCollection={() => dispatch(openCollectionModal({ mode: 'create' }))}
-            onConfigureCollection={(id) => dispatch(openCollectionSettings(id))}
-            onConfigureEnvironment={(id) => dispatch(openEnvironmentSettings(id))}
-            onInviteCollection={(collectionId, collectionName) => {
-              dispatch(openInviteModal({ collectionId, collectionName }));
-              void dispatch(loadTrustedKeys());
-            }}
-            onLoadRequest={(req) => void dispatch(requestLoadRequest({ req }))}
-          />
-        )}
-
-        <main id="main-content" tabIndex={-1} className="flex min-w-0 flex-1 flex-col bg-surface">
-          {showConfiguration ? (
-            <Configuration
-              showSettings={mainView.type === 'settings'}
-              onCloseAppSettings={() => dispatch(closeOverlay())}
-              settingsSection={settingsSection}
-              showCertificates={mainView.type === 'certificates'}
-              onCloseCertificates={() => dispatch(closeOverlay())}
-              showTeamHubs={mainView.type === 'team-hubs'}
-              onCloseTeamHubs={() => dispatch(closeOverlay())}
-              collection={configuringCollection}
-              onCollectionDirtyChange={(dirty) => dispatch(setCollectionSettingsDirty(dirty))}
-              onCollectionSave={async (
-                id,
-                name,
-                variables,
-                headers,
-                preRequestScript,
-                postRequestScript,
-                auth,
-                connectionId
-              ) => {
-                try {
-                  const result = await dispatch(
-                    updateCollection({
-                      id,
-                      name,
-                      variables,
-                      headers,
-                      preRequestScript,
-                      postRequestScript,
-                      auth,
-                      connectionId
-                    })
-                  ).unwrap();
-                  if (result.id !== id) {
-                    dispatch(openCollectionSettings(result.id));
-                  }
-                  toast.success('Collection updated');
-                } catch (err) {
-                  showAlert(dispatch, formatErrorMessage(err, 'Failed to update collection'));
-                }
+    <SidebarExpansionProvider onExpandCollection={handleExpandCollection}>
+      <div className={`flex h-screen flex-col overflow-hidden ${platformClassName()}`}>
+        <BusyIndicator />
+        <TitleBar />
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-[100] focus:rounded-md focus:bg-surface focus:px-3 focus:py-2 focus:text-[14px] focus:text-text focus:shadow-md focus:outline focus:outline-2 focus:outline-accent"
+        >
+          Skip to main content
+        </a>
+        <div className="relative flex min-h-0 flex-1 overflow-hidden">
+          {sidebarVisible && (
+            <Sidebar
+              onAddCollection={() => dispatch(openCollectionModal({ mode: 'create' }))}
+              onConfigureCollection={(id) => dispatch(openCollectionSettings(id))}
+              onConfigureEnvironment={(id) => dispatch(openEnvironmentSettings(id))}
+              onInviteCollection={(collectionId, collectionName) => {
+                dispatch(openInviteModal({ collectionId, collectionName }));
+                void dispatch(loadTrustedKeys());
               }}
-              onCloseCollectionSettings={() => dispatch(closeOverlay())}
-              environment={configuringEnvironment}
-              onEnvironmentDirtyChange={(dirty) => dispatch(setEnvironmentSettingsDirty(dirty))}
-              onEnvironmentSave={async (id, name, variables) => {
-                try {
-                  await dispatch(updateEnvironment({ id, name, variables })).unwrap();
-                  toast.success('Environment updated');
-                } catch (err) {
-                  showAlert(dispatch, formatErrorMessage(err, 'Failed to update environment'));
-                }
-              }}
-              onCloseEnvironmentSettings={() => dispatch(closeOverlay())}
-            />
-          ) : (
-            <Request
-              onEditVariables={() => {
-                if (activeCollectionId == null) return;
-                dispatch(openCollectionSettings(activeCollectionId));
-              }}
+              onLoadRequest={(req) => void dispatch(requestLoadRequest({ req }))}
             />
           )}
-        </main>
 
-        {aiSidebarVisible && <AiSidebar />}
+          <main id="main-content" tabIndex={-1} className="flex min-w-0 flex-1 flex-col bg-surface">
+            {showConfiguration ? (
+              <Configuration
+                showSettings={mainView.type === 'settings'}
+                onCloseAppSettings={() => dispatch(closeOverlay())}
+                settingsSection={settingsSection}
+                showCertificates={mainView.type === 'certificates'}
+                onCloseCertificates={() => dispatch(closeOverlay())}
+                showTeamHubs={mainView.type === 'team-hubs'}
+                onCloseTeamHubs={() => dispatch(closeOverlay())}
+                collection={configuringCollection}
+                onCollectionDirtyChange={(dirty) => dispatch(setCollectionSettingsDirty(dirty))}
+                onCollectionSave={async (
+                  id,
+                  name,
+                  variables,
+                  headers,
+                  preRequestScript,
+                  postRequestScript,
+                  auth,
+                  connectionId
+                ) => {
+                  try {
+                    const result = await dispatch(
+                      updateCollection({
+                        id,
+                        name,
+                        variables,
+                        headers,
+                        preRequestScript,
+                        postRequestScript,
+                        auth,
+                        connectionId
+                      })
+                    ).unwrap();
+                    if (result.id !== id) {
+                      dispatch(openCollectionSettings(result.id));
+                    }
+                    toast.success('Collection updated');
+                  } catch (err) {
+                    showAlert(dispatch, formatErrorMessage(err, 'Failed to update collection'));
+                  }
+                }}
+                onCloseCollectionSettings={() => dispatch(closeOverlay())}
+                environment={configuringEnvironment}
+                onEnvironmentDirtyChange={(dirty) => dispatch(setEnvironmentSettingsDirty(dirty))}
+                onEnvironmentSave={async (id, name, variables) => {
+                  try {
+                    await dispatch(updateEnvironment({ id, name, variables })).unwrap();
+                    toast.success('Environment updated');
+                  } catch (err) {
+                    showAlert(dispatch, formatErrorMessage(err, 'Failed to update environment'));
+                  }
+                }}
+                onCloseEnvironmentSettings={() => dispatch(closeOverlay())}
+              />
+            ) : (
+              <Request
+                onEditVariables={() => {
+                  if (activeCollectionId == null) return;
+                  dispatch(openCollectionSettings(activeCollectionId));
+                }}
+              />
+            )}
+          </main>
+
+          {aiSidebarVisible && <AiSidebar />}
+        </div>
+
+        <Footer
+          consoleOpen={showConsole}
+          entryCount={consoleEntries.length}
+          onToggleConsole={() => dispatch(toggleConsole())}
+          entries={consoleEntries}
+          onClear={() => dispatch(clearConsole())}
+          variablesOpen={showVariables}
+          onToggleVariables={() => dispatch(toggleVariables())}
+          collectionVariables={activeCollection?.variables ?? []}
+          environmentVariables={activeEnvironment?.variables ?? []}
+          collectionName={activeCollection?.name}
+          environmentName={activeEnvironment?.name}
+          sidebarOpen={sidebarVisible}
+          onToggleSidebar={() => dispatch(toggleSidebar())}
+          aiSidebarOpen={aiSidebarVisible}
+          onToggleAiSidebar={() => dispatch(toggleAiSidebar())}
+        />
+
+        <CollectionModal />
+        <InviteModal />
+        <UnsavedLoadPrompt />
+        <QuitPrompt />
+        <AboutModal />
+        <UpdateModal />
+        <SyncModal />
+        <AlertModal />
+        <ConfirmModal />
+
+        <Toaster
+          position="bottom-center"
+          containerStyle={{ bottom: 16 }}
+          toastOptions={{
+            duration: 2000,
+            style: {
+              background: 'var(--mac-control)',
+              color: 'var(--mac-text)',
+              border: '1px solid var(--mac-separator)',
+              fontSize: '14px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+            }
+          }}
+        />
       </div>
-
-      <Footer
-        consoleOpen={showConsole}
-        entryCount={consoleEntries.length}
-        onToggleConsole={() => dispatch(toggleConsole())}
-        entries={consoleEntries}
-        onClear={() => dispatch(clearConsole())}
-        variablesOpen={showVariables}
-        onToggleVariables={() => dispatch(toggleVariables())}
-        collectionVariables={activeCollection?.variables ?? []}
-        environmentVariables={activeEnvironment?.variables ?? []}
-        collectionName={activeCollection?.name}
-        environmentName={activeEnvironment?.name}
-        sidebarOpen={sidebarVisible}
-        onToggleSidebar={() => dispatch(toggleSidebar())}
-        aiSidebarOpen={aiSidebarVisible}
-        onToggleAiSidebar={() => dispatch(toggleAiSidebar())}
-      />
-
-      <CollectionModal />
-      <InviteModal />
-      <UnsavedLoadPrompt />
-      <QuitPrompt />
-      <AboutModal />
-      <UpdateModal />
-      <SyncModal />
-      <AlertModal />
-      <ConfirmModal />
-
-      <Toaster
-        position="bottom-center"
-        containerStyle={{ bottom: 16 }}
-        toastOptions={{
-          duration: 2000,
-          style: {
-            background: 'var(--mac-control)',
-            color: 'var(--mac-text)',
-            border: '1px solid var(--mac-separator)',
-            fontSize: '14px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-          }
-        }}
-      />
-    </div>
+    </SidebarExpansionProvider>
   );
 }

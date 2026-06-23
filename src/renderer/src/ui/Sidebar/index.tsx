@@ -60,7 +60,7 @@ import { Collections } from './Collections';
 import { GitSourceControlPanel } from '#/renderer/src/ui/modals/GitSourceControlPanel';
 import { Environments } from './Environments';
 import { Section } from './Section';
-import { usePersistedSidebarExpansion } from './usePersistedSidebarExpansion';
+import { useSidebarExpansion } from './useSidebarExpansion';
 
 interface Props {
   /**
@@ -109,8 +109,21 @@ export function Sidebar({
   const environments = useAppSelector(selectEnvironments);
   const activeEnvironmentId = useAppSelector(selectActiveEnvironmentId);
 
+  const {
+    collectionsSectionExpanded,
+    environmentsSectionExpanded,
+    toggleCollectionsSection,
+    toggleEnvironmentsSection,
+    expandedCollectionIds,
+    expandedFolderIds,
+    setExpandedCollectionIds,
+    setExpandedFolderIds,
+    revealCollection,
+    revealFolder
+  } = useSidebarExpansion();
+
   /**
-   * Loads folders and requests when a collection tree is expanded.
+   * Loads folders and requests when a collection chevron is expanded.
    */
   const handleExpandCollection = useCallback(
     (id: number) => {
@@ -118,29 +131,6 @@ export function Sidebar({
     },
     [dispatch]
   );
-
-  const {
-    collectionsSectionExpanded,
-    environmentsSectionExpanded,
-    toggleCollectionsSection,
-    toggleEnvironmentsSection,
-    setCollectionsSectionExpanded,
-    expandedCollectionIds,
-    expandedFolderIds,
-    setExpandedCollectionIds,
-    setExpandedFolderIds
-  } = usePersistedSidebarExpansion({
-    onExpandCollection: handleExpandCollection
-  });
-
-  /**
-   * Expands the Collections section when sidebar focus moves to a collection or folder.
-   */
-  useEffect(() => {
-    if (selectedCollectionId != null || selectedFolderId != null) {
-      setCollectionsSectionExpanded(true);
-    }
-  }, [selectedCollectionId, selectedFolderId, setCollectionsSectionExpanded]);
 
   const [showEnvironmentModal, setShowEnvironmentModal] = useState(false);
   const [environmentModalTab, setEnvironmentModalTab] = useState<'create' | 'import'>('create');
@@ -331,9 +321,13 @@ export function Sidebar({
                 expandedFolderIds={expandedFolderIds}
                 setExpandedCollectionIds={setExpandedCollectionIds}
                 setExpandedFolderIds={setExpandedFolderIds}
-                onSelectCollection={(id) => dispatch(setSelectedCollectionId(id))}
+                onSelectCollection={(id) => {
+                  dispatch(setSelectedCollectionId(id));
+                  revealCollection(id);
+                }}
                 onSelectFolder={(collectionId, folderId) => {
                   dispatch(focusSidebarItem({ collectionId, folderId }));
+                  revealFolder(collectionId, folderId);
                 }}
                 onExpandCollection={handleExpandCollection}
                 onConfigureCollection={onConfigureCollection}

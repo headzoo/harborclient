@@ -66,6 +66,16 @@ interface Result {
    * Updates expanded folder ids.
    */
   setExpandedFolderIds: Dispatch<SetStateAction<Set<number>>>;
+
+  /**
+   * Expands the Collections section and a collection tree for user navigation.
+   */
+  revealCollection: (collectionId: number) => void;
+
+  /**
+   * Expands the Collections section, parent collection, and folder for user navigation.
+   */
+  revealFolder: (collectionId: number, folderId: number) => void;
 }
 
 /**
@@ -75,7 +85,7 @@ interface Result {
  * @param expandedCollectionIds - Expanded collection ids in memory.
  * @param expandedFolderIds - Expanded folder ids in memory.
  */
-function serializeSidebarExpansion(
+export function serializeSidebarExpansion(
   sections: SidebarExpansionState['sections'],
   expandedCollectionIds: Set<number>,
   expandedFolderIds: Set<number>
@@ -85,6 +95,36 @@ function serializeSidebarExpansion(
     collectionIds: [...expandedCollectionIds],
     folderIds: [...expandedFolderIds]
   };
+}
+
+/**
+ * Returns whether a persist write should run after hydration.
+ *
+ * @param loaded - Whether persisted state has been read from disk.
+ * @param skipPersist - Whether the next persist cycle should be skipped.
+ */
+export function shouldPersistSidebarExpansion(loaded: boolean, skipPersist: boolean): boolean {
+  return loaded && !skipPersist;
+}
+
+/**
+ * Advances the post-hydration persist gate and reports whether a write should run.
+ *
+ * @param loaded - Whether persisted state has been read from disk.
+ * @param skipPersistRef - Ref that skips the first persist cycle after hydration.
+ */
+export function advanceSidebarExpansionPersistGate(
+  loaded: boolean,
+  skipPersistRef: { current: boolean }
+): boolean {
+  if (!shouldPersistSidebarExpansion(loaded, skipPersistRef.current)) {
+    if (loaded) {
+      skipPersistRef.current = false;
+    }
+    return false;
+  }
+
+  return true;
 }
 
 /**
@@ -102,6 +142,7 @@ export function usePersistedSidebarExpansion({ onExpandCollection }: Options): R
   const [expandedCollectionIds, setExpandedCollectionIds] = useState<Set<number>>(new Set());
   const [expandedFolderIds, setExpandedFolderIds] = useState<Set<number>>(new Set());
   const hydratedRef = useRef(false);
+  const skipPersistRef = useRef(true);
 
   /**
    * Loads persisted expansion once on mount.
@@ -140,7 +181,9 @@ export function usePersistedSidebarExpansion({ onExpandCollection }: Options): R
    * Persists expansion changes after the initial load completes.
    */
   useEffect(() => {
-    if (!loaded) return;
+    if (!advanceSidebarExpansionPersistGate(loaded, skipPersistRef)) {
+      return;
+    }
 
     const snapshot = serializeSidebarExpansion(
       {
@@ -159,6 +202,50 @@ export function usePersistedSidebarExpansion({ onExpandCollection }: Options): R
     expandedCollectionIds,
     expandedFolderIds
   ]);
+
+  /**
+   * Expands the Collections section and a collection tree for user navigation.
+   */
+  const revealCollection = useCallback(
+    (collectionId: number) => {
+      setCollectionsSectionExpanded(true);
+      setExpandedCollectionIds((prev) => {
+        if (prev.has(collectionId)) return prev;
+        const next = new Set(prev);
+        next.add(collectionId);
+        return next;
+      });
+      onExpandCollection(collectionId);
+    },
+    [onExpandCollection]
+  );
+
+  /**
+   * Expands the Collections section, parent collection, and folder for user navigation.
+   */
+  const revealFolder = useCallback(
+    (collectionId: number, folderId: number) => {
+      setCollectionsSectionExpanded(true);
+      setExpandedCollectionIds((prev) => {
+        if (prev.has(collectionId)) return prev;
+        const next = new Set(prev);
+        next.add(collectionId);
+        return next;
+      });
+      setExpandedFolderIds((prev) => {
+        if (prev.has(folderId)) return prev;
+        const next = new Set(prev);
+        next.add(folderId);
+        return next;
+      });
+      onExpandCollection(collectionId);
+      requestAnimationFrame(() => {
+        const element = document.querySelector(`[data-sidebar-folder-id="${folderId}"]`);
+        element?.scrollIntoView({ block: 'nearest' });
+      });
+    },
+    [onExpandCollection]
+  );
 
   /**
    * Toggles the Collections section expanded state.
@@ -184,6 +271,8 @@ export function usePersistedSidebarExpansion({ onExpandCollection }: Options): R
     expandedCollectionIds,
     expandedFolderIds,
     setExpandedCollectionIds,
-    setExpandedFolderIds
+    setExpandedFolderIds,
+    revealCollection,
+    revealFolder
   };
 }

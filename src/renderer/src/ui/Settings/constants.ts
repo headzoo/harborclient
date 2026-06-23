@@ -104,7 +104,8 @@ export const SETTINGS_SECTIONS: Array<{ value: SettingsSection; label: string }>
   { value: 'shortcuts', label: 'Shortcuts' },
   { value: 'proxy', label: 'Proxy' },
   { value: 'databases', label: 'Databases' },
-  { value: 'ai', label: 'AI' }
+  { value: 'ai', label: 'AI' },
+  { value: 'backup-restore', label: 'Backup & Restore' }
 ];
 
 /**

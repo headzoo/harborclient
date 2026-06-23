@@ -24,6 +24,7 @@ import {
   closeRequestTab,
   focusSidebarItem
 } from '#/renderer/src/store/thunks';
+import { useSidebarExpansion } from '#/renderer/src/ui/Sidebar/useSidebarExpansion';
 import { Button } from '#/renderer/src/components/Button';
 import { ResizeHandle, useResizable } from '#/renderer/src/components/Resizable';
 import { Editor } from './Editor';
@@ -63,6 +64,7 @@ function mergeVariables(collectionVars: Variable[], envVars: Variable[]): Variab
  */
 export function Request({ onEditVariables }: Props): JSX.Element {
   const dispatch = useAppDispatch();
+  const { revealCollection, revealFolder } = useSidebarExpansion();
   const tabs = useAppSelector(selectTabs);
   const activeTabId = useAppSelector(selectActiveTabId);
   const draft = useAppSelector(selectDraft);
@@ -181,12 +183,14 @@ export function Request({ onEditVariables }: Props): JSX.Element {
             onCollectionClick={() => {
               if (activeCollectionId == null) return;
               dispatch(focusSidebarItem({ collectionId: activeCollectionId }));
+              revealCollection(activeCollectionId);
             }}
             onFolderClick={() => {
               if (activeCollectionId == null || activeFolderId == null) return;
               dispatch(
                 focusSidebarItem({ collectionId: activeCollectionId, folderId: activeFolderId })
               );
+              revealFolder(activeCollectionId, activeFolderId);
             }}
           />
         </section>

@@ -1122,7 +1122,14 @@ export interface GeneralSettings {
 /**
  * Settings sidebar section identifiers.
  */
-export type SettingsSection = 'general' | 'syntax' | 'databases' | 'shortcuts' | 'proxy' | 'ai';
+export type SettingsSection =
+  | 'general'
+  | 'syntax'
+  | 'databases'
+  | 'shortcuts'
+  | 'proxy'
+  | 'ai'
+  | 'backup-restore';
 
 /**
  * AI provider API keys stored locally for future assistant features.
@@ -2027,6 +2034,36 @@ export interface SaveTextFileResult {
 }
 
 /**
+ * Result of a HarborClient backup export save-dialog action.
+ */
+export interface BackupExportResult {
+  /**
+   * True when the user canceled the save dialog.
+   */
+  canceled: boolean;
+
+  /**
+   * Absolute path where the `.hcb` file was written; omitted when canceled.
+   */
+  path?: string;
+}
+
+/**
+ * Result of a HarborClient backup restore open-dialog action.
+ */
+export interface BackupImportResult {
+  /**
+   * True when the user canceled the open dialog.
+   */
+  canceled: boolean;
+
+  /**
+   * Renderer localStorage entries restored from the backup; omitted when canceled.
+   */
+  localStorage?: Record<string, string>;
+}
+
+/**
  * Menu action identifiers sent from the main process menu.
  */
 export type MenuActionId =
@@ -2886,6 +2923,25 @@ export interface Api {
    * @param defaultPath - Suggested filename for the save dialog.
    */
   saveTextFile: (content: string, defaultPath: string) => Promise<SaveTextFileResult>;
+
+  /**
+   * Exports all local HarborClient data to a `.hcb` backup file via a native save dialog.
+   *
+   * @param localStorage - Renderer localStorage snapshot to embed in the archive.
+   */
+  exportBackup: (localStorage: Record<string, string>) => Promise<BackupExportResult>;
+
+  /**
+   * Restores local HarborClient data from a `.hcb` backup file via a native open dialog.
+   *
+   * @returns Restored renderer localStorage when written; the app should restart afterward.
+   */
+  importBackup: () => Promise<BackupImportResult>;
+
+  /**
+   * Relaunches HarborClient so restored on-disk state is loaded cleanly.
+   */
+  restartApp: () => Promise<void>;
 }
 
 declare global {

@@ -13,6 +13,7 @@ import { registerMenuHandlers } from '#/main/ipc/handlers/menu';
 import { registerNetworkHandlers } from '#/main/ipc/handlers/network';
 import { registerRequestHandlers } from '#/main/ipc/handlers/requests';
 import { registerSettingsHandlers } from '#/main/ipc/handlers/settings';
+import { registerBackupHandlers } from '#/main/ipc/handlers/backup';
 import { registerWindowHandlers } from '#/main/ipc/handlers/window';
 
 /**
@@ -35,5 +36,6 @@ export function registerIpcHandlers(db: IDatabase): void {
   registerCookieHandlers(cookieJar);
   registerInviteHandlers(db);
   registerFileHandlers();
+  registerBackupHandlers(db);
   registerWindowHandlers();
 }

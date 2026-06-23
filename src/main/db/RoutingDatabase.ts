@@ -154,6 +154,18 @@ export class RoutingDatabase implements IDatabase {
   }
 
   /**
+   * Flushes WAL pages for the registry and mounted SQLite providers before backup.
+   */
+  checkpointWalForBackup(): void {
+    this.registry.checkpointWal();
+    for (const backend of this.byConnectionId.values()) {
+      if (backend.connectionType !== 'sqlite') continue;
+      const sqliteDb = backend.db as { checkpointWal?: () => void };
+      sqliteDb.checkpointWal?.();
+    }
+  }
+
+  /**
    * Closes every mounted provider and the registry.
    */
   async close(): Promise<void> {

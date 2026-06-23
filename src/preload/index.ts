@@ -2,6 +2,8 @@ import { contextBridge, ipcRenderer } from 'electron';
 import type {
   Api,
   AuthConfig,
+  BackupExportResult,
+  BackupImportResult,
   Collection,
   CollectionExportResult,
   DatabaseConnection,
@@ -1113,6 +1115,29 @@ function saveTextFile(content: string, defaultPath: string): Promise<SaveTextFil
   return ipcRenderer.invoke('files:saveText', content, defaultPath);
 }
 
+/**
+ * Exports all local HarborClient data to a `.hcb` backup file.
+ *
+ * @param localStorage - Renderer localStorage snapshot to embed in the archive.
+ */
+function exportBackup(localStorage: Record<string, string>): Promise<BackupExportResult> {
+  return ipcRenderer.invoke('backup:export', localStorage);
+}
+
+/**
+ * Restores local HarborClient data from a `.hcb` backup file.
+ */
+function importBackup(): Promise<BackupImportResult> {
+  return ipcRenderer.invoke('backup:import');
+}
+
+/**
+ * Relaunches HarborClient so restored on-disk state is loaded cleanly.
+ */
+function restartApp(): Promise<void> {
+  return ipcRenderer.invoke('app:restart');
+}
+
 const api: Api = {
   listCollections,
   createCollection,
@@ -1224,7 +1249,10 @@ const api: Api = {
   addTrustedKey,
   importTrustedPublicKey,
   removeTrustedKey,
-  saveTextFile
+  saveTextFile,
+  exportBackup,
+  importBackup,
+  restartApp
 };
 
 contextBridge.exposeInMainWorld('api', api);
