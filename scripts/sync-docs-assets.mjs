@@ -20,6 +20,8 @@ const assets = [
   ['images/screenshots/hc-9.png', 'screenshots/hc-9.png'],
   ['images/screenshots/hc-10.png', 'screenshots/hc-10.png'],
   ['images/screenshots/hc-11.png', 'screenshots/hc-11.png'],
+  ['images/screenshots/hc-12.png', 'screenshots/hc-12.png'],
+  ['images/screenshots/hc-13.png', 'screenshots/hc-13.png'],
   ['build/icons/16x16.png', 'favicon-16x16.png'],
   ['build/icons/32x32.png', 'favicon-32x32.png'],
   ['build/icons/128x128.png', 'apple-touch-icon.png'],

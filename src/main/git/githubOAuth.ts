@@ -3,7 +3,7 @@
  *
  * Replace with your registered OAuth App client id when forking.
  */
-export const GITHUB_OAUTH_CLIENT_ID = 'Ov23liHarborClientGit';
+export const GITHUB_OAUTH_CLIENT_ID = 'Ov23liApUgMEA0BGSWnt';
 
 const DEVICE_CODE_URL = 'https://github.com/login/device/code';
 const ACCESS_TOKEN_URL = 'https://github.com/login/oauth/access_token';

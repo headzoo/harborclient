@@ -471,9 +471,15 @@ describeSqlite('RoutingDatabase duplicateCollection', () => {
     );
     await router.saveRequest(baseRequestInput(collection.id, { name: 'Health' }));
 
+    const sourceRequests = await router.listRequests(collection.id);
+    const sourceLogin = sourceRequests.find((request) => request.name === 'Login');
+    const sourceHealth = sourceRequests.find((request) => request.name === 'Health');
+
     const duplicated = await router.duplicateCollection(collection.id);
 
     expect(duplicated.id).not.toBe(collection.id);
+    expect(duplicated.uuid).not.toBe(collection.uuid);
+    expect(duplicated.uuid.trim()).not.toBe('');
     expect(duplicated.name).toBe('Source API (copy)');
     expect(duplicated.connectionId).toBe(CONN_A.id);
     expect(duplicated.variables).toEqual([
@@ -503,8 +509,74 @@ describeSqlite('RoutingDatabase duplicateCollection', () => {
     const copyFolders = await router.listFolders(duplicated.id);
     expect(copyFolders.map((f) => f.name)).toEqual(['Auth']);
     expect(copyFolders[0]?.id).not.toBe(folder.id);
+    expect(copyFolders[0]?.uuid).not.toBe(folder.uuid);
+    expect(copyFolders[0]?.uuid.trim()).not.toBe('');
+
+    const copyLogin = copyRequests.find((request) => request.name === 'Login');
+    const copyHealth = copyRequests.find((request) => request.name === 'Health');
+    expect(copyLogin?.uuid).not.toBe(sourceLogin?.uuid);
+    expect(copyHealth?.uuid).not.toBe(sourceHealth?.uuid);
+    expect(copyLogin?.uuid.trim()).not.toBe('');
+    expect(copyHealth?.uuid.trim()).not.toBe('');
 
     expect(await backendA.listCollections()).toHaveLength(2);
+  });
+});
+
+describeSqlite('RoutingDatabase duplicateRequest uuid', () => {
+  it('saveRequest insert without uuid mints a fresh request uuid', async () => {
+    const { router } = await createRoutingFixture();
+    const collection = await router.createCollection('API');
+    const source = await router.saveRequest(baseRequestInput(collection.id, { name: 'Ping' }));
+
+    // Mirrors sidebar Duplicate request: copy fields, omit uuid, suffix name.
+    const copy = await router.saveRequest({
+      collection_id: source.collection_id,
+      folder_id: source.folder_id,
+      name: `${source.name} (copy)`,
+      method: source.method,
+      url: source.url,
+      headers: source.headers,
+      params: source.params,
+      body: source.body,
+      body_type: source.body_type,
+      pre_request_script: source.pre_request_script ?? '',
+      post_request_script: source.post_request_script ?? '',
+      comment: source.comment ?? '',
+      auth: source.auth
+    });
+
+    expect(copy.id).not.toBe(source.id);
+    expect(copy.uuid).not.toBe(source.uuid);
+    expect(copy.uuid.trim()).not.toBe('');
+  });
+});
+
+describeSqlite('RoutingDatabase duplicateEnvironment', () => {
+  it('copies environment name and variables with a fresh uuid', async () => {
+    const { router } = await createRoutingFixture();
+    const source = await router.createEnvironment('Staging');
+    await router.updateEnvironment(source.id, 'Staging', [
+      { key: 'baseUrl', value: 'https://staging.example.com', defaultValue: '', share: true },
+      { key: 'token', value: 'secret', defaultValue: '', share: false }
+    ]);
+
+    const duplicated = await router.duplicateEnvironment(source.id);
+
+    expect(duplicated.id).not.toBe(source.id);
+    expect(duplicated.uuid).not.toBe(source.uuid);
+    expect(duplicated.name).toBe('Staging (copy)');
+    expect(duplicated.variables).toEqual([
+      { key: 'baseUrl', value: 'https://staging.example.com', defaultValue: '', share: true },
+      { key: 'token', value: 'secret', defaultValue: '', share: false }
+    ]);
+
+    const environments = await router.listEnvironments();
+    expect(environments).toHaveLength(2);
+    expect(environments.map((environment) => environment.name).sort()).toEqual([
+      'Staging',
+      'Staging (copy)'
+    ]);
   });
 });
 

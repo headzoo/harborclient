@@ -749,18 +749,23 @@ export function Collections({
                           {connectionName}
                         </span>
                       )}
-                      {connectionType === 'git' &&
-                        gitStatus != null &&
-                        gitStatus.changedCount > 0 && (
-                          <span
-                            className="shrink-0 rounded bg-warning/20 px-1.5 py-0.5 text-[14px] font-medium text-warning"
-                            title={`${gitStatus.changedCount} uncommitted change(s)`}
-                          >
-                            {gitStatus.changedCount}
-                          </span>
-                        )}
                     </span>
                   </button>
+                  {connectionType === 'git' && gitStatus != null && gitStatus.changedCount > 0 && (
+                    <button
+                      type="button"
+                      className="shrink-0 cursor-pointer rounded bg-warning/20 px-1.5 py-0.5 text-[14px] font-medium text-warning hover:bg-warning/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent app-no-drag"
+                      aria-label={`Open source control (${gitStatus.changedCount} uncommitted change(s))`}
+                      onClick={() =>
+                        onOpenSourceControl(
+                          collectionConnectionId,
+                          connectionName ?? 'Git repository'
+                        )
+                      }
+                    >
+                      {gitStatus.changedCount}
+                    </button>
+                  )}
                   <RowActionsMenu
                     menuId={`collection-${collection.id}`}
                     openMenuId={openMenuId}
@@ -768,25 +773,25 @@ export function Collections({
                     groups={[
                       ...(collectionIndex > 0 || collectionIndex < collections.length - 1
                         ? [
-                          [
-                            ...(collectionIndex > 0
-                              ? [
-                                {
-                                  label: 'Move up',
-                                  onSelect: () => void moveCollection(collection.id, 'up')
-                                }
-                              ]
-                              : []),
-                            ...(collectionIndex < collections.length - 1
-                              ? [
-                                {
-                                  label: 'Move down',
-                                  onSelect: () => void moveCollection(collection.id, 'down')
-                                }
-                              ]
-                              : [])
+                            [
+                              ...(collectionIndex > 0
+                                ? [
+                                    {
+                                      label: 'Move up',
+                                      onSelect: () => void moveCollection(collection.id, 'up')
+                                    }
+                                  ]
+                                : []),
+                              ...(collectionIndex < collections.length - 1
+                                ? [
+                                    {
+                                      label: 'Move down',
+                                      onSelect: () => void moveCollection(collection.id, 'down')
+                                    }
+                                  ]
+                                : [])
+                            ]
                           ]
-                        ]
                         : []),
                       [
                         {
@@ -812,12 +817,12 @@ export function Collections({
                         },
                         ...(connectionType === 'git' && connectionName != null
                           ? [
-                            {
-                              label: 'Source control',
-                              onSelect: () =>
-                                onOpenSourceControl(collectionConnectionId, connectionName)
-                            }
-                          ]
+                              {
+                                label: 'Source control',
+                                onSelect: () =>
+                                  onOpenSourceControl(collectionConnectionId, connectionName)
+                              }
+                            ]
                           : []),
                         {
                           label: 'Duplicate',
@@ -825,11 +830,11 @@ export function Collections({
                         },
                         ...(canInvite
                           ? [
-                            {
-                              label: 'Invite',
-                              onSelect: () => onInviteCollection(collection.id, collection.name)
-                            }
-                          ]
+                              {
+                                label: 'Invite',
+                                onSelect: () => onInviteCollection(collection.id, collection.name)
+                              }
+                            ]
                           : [])
                       ],
                       [
@@ -866,7 +871,10 @@ export function Collections({
                   >
                     <div className="ml-4 flex flex-col gap-0.5 py-0.5">
                       {loaded && folders.length === 0 && rootRequests.length === 0 && (
-                        <div className="px-2 py-1 text-[14px] text-muted">No saved requests</div>
+                        <div className="flex items-center gap-1 px-1.5 py-0.5">
+                          <span className="inline-flex h-5 w-5 shrink-0" aria-hidden="true" />
+                          <span className="text-[14px] text-muted">No saved requests</span>
+                        </div>
                       )}
 
                       <DropZone
@@ -990,35 +998,35 @@ export function Collections({
                                     groups={[
                                       ...(folderIndex > 0 || folderIndex < folders.length - 1
                                         ? [
-                                          [
-                                            ...(folderIndex > 0
-                                              ? [
-                                                {
-                                                  label: 'Move up',
-                                                  onSelect: () =>
-                                                    void moveFolder(
-                                                      collection.id,
-                                                      folder.id,
-                                                      'up'
-                                                    )
-                                                }
-                                              ]
-                                              : []),
-                                            ...(folderIndex < folders.length - 1
-                                              ? [
-                                                {
-                                                  label: 'Move down',
-                                                  onSelect: () =>
-                                                    void moveFolder(
-                                                      collection.id,
-                                                      folder.id,
-                                                      'down'
-                                                    )
-                                                }
-                                              ]
-                                              : [])
+                                            [
+                                              ...(folderIndex > 0
+                                                ? [
+                                                    {
+                                                      label: 'Move up',
+                                                      onSelect: () =>
+                                                        void moveFolder(
+                                                          collection.id,
+                                                          folder.id,
+                                                          'up'
+                                                        )
+                                                    }
+                                                  ]
+                                                : []),
+                                              ...(folderIndex < folders.length - 1
+                                                ? [
+                                                    {
+                                                      label: 'Move down',
+                                                      onSelect: () =>
+                                                        void moveFolder(
+                                                          collection.id,
+                                                          folder.id,
+                                                          'down'
+                                                        )
+                                                    }
+                                                  ]
+                                                : [])
+                                            ]
                                           ]
-                                        ]
                                         : []),
                                       [
                                         {
@@ -1108,8 +1116,12 @@ export function Collections({
                                     ))}
                                   </SortableContext>
                                   {folderRequests.length === 0 && (
-                                    <div className="px-2 py-1 text-[14px] text-muted">
-                                      Empty folder
+                                    <div className="flex items-center gap-1 px-1.5 py-0.5">
+                                      <span
+                                        className="inline-flex h-5 w-5 shrink-0"
+                                        aria-hidden="true"
+                                      />
+                                      <span className="text-[14px] text-muted">Empty folder</span>
                                     </div>
                                   )}
                                 </div>
@@ -1122,8 +1134,8 @@ export function Collections({
 
                     <DragOverlay>
                       {dragCollectionId === collection.id &&
-                        activeDragKind === 'request' &&
-                        activeDragRequest ? (
+                      activeDragKind === 'request' &&
+                      activeDragRequest ? (
                         <div className="flex items-center gap-1.5 rounded border border-separator bg-surface px-2 py-1 shadow-md">
                           <span
                             className={`shrink-0 px-1 py-px text-[14px] ${METHOD_CLASSES[activeDragRequest.method.toLowerCase()] ?? 'text-info'}`}

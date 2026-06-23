@@ -229,6 +229,16 @@ function deleteEnvironment(id: number): Promise<void> {
 }
 
 /**
+ * Deep-copies an environment into a new record via IPC.
+ *
+ * @param id - Environment ID to duplicate.
+ * @returns The newly created environment.
+ */
+function duplicateEnvironment(id: number): Promise<Environment> {
+  return ipcRenderer.invoke('environments:duplicate', id);
+}
+
+/**
  * Exports an environment to a JSON file via IPC.
  *
  * @param id - Environment ID to export.
@@ -856,6 +866,15 @@ function gitCompleteOAuth(connectionId: string): Promise<void> {
 }
 
 /**
+ * Removes stored GitHub OAuth tokens and resets auth metadata for a git-backed connection.
+ *
+ * @param connectionId - Git connection id.
+ */
+function gitRevokeOAuth(connectionId: string): Promise<void> {
+  return ipcRenderer.invoke('git:revokeOAuth', connectionId);
+}
+
+/**
  * Returns the active database connection id via IPC.
  */
 function getActiveDatabaseId(): Promise<string> {
@@ -1110,6 +1129,7 @@ const api: Api = {
   createEnvironment,
   updateEnvironment,
   deleteEnvironment,
+  duplicateEnvironment,
   exportEnvironment,
   importEnvironment,
   importEntity,
@@ -1176,6 +1196,7 @@ const api: Api = {
   gitSetPat,
   gitStartOAuth,
   gitCompleteOAuth,
+  gitRevokeOAuth,
   getActiveDatabaseId,
   setActiveDatabaseId,
   getRequestEditorTab,

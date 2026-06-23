@@ -4,7 +4,13 @@ import type { IDatabase } from '#/main/db/IDatabase';
 import { RoutingDatabase } from '#/main/db/RoutingDatabase';
 import { handle } from '#/main/ipc/handle';
 import { ipcArgSchemas } from '#/main/ipc/ipcSchemas';
-import { beginGitHubOAuth, finishGitHubOAuth, saveGitPat } from '#/main/git/gitAuth';
+import {
+  beginGitHubOAuth,
+  finishGitHubOAuth,
+  revokeGitHubOAuth,
+  saveGitPat
+} from '#/main/git/gitAuth';
+import { GitSyncManager } from '#/main/git/GitSyncManager';
 import { listDatabaseConnections, saveDatabaseConnection } from '#/main/settings/databaseSettings';
 
 /**
@@ -53,6 +59,28 @@ function persistGitAuthMetadata(
 }
 
 /**
+ * Validates git remote credentials, using a mounted backend when available or a
+ * temporary sync manager when the connection was saved but not yet mounted.
+ *
+ * @param db - Top-level database handle.
+ * @param connectionId - Git connection id.
+ */
+async function testGitCredentials(db: IDatabase, connectionId: string): Promise<void> {
+  if (db instanceof RoutingDatabase && db.isConnectionMounted(connectionId)) {
+    await db.requireGitDatabase(connectionId).syncManager.testCredentials();
+    return;
+  }
+
+  const conn = listDatabaseConnections().find((item) => item.id === connectionId);
+  if (!conn || conn.type !== 'git') {
+    throw new Error(`Git connection not found: ${connectionId}`);
+  }
+
+  const sync = new GitSyncManager(connectionId, conn.settings);
+  await sync.testCredentials();
+}
+
+/**
  * Registers IPC handlers for git source-control operations.
  *
  * @param db - Top-level database handle shared by collection handlers.
@@ -97,8 +125,7 @@ export function registerGitHandlers(db: IDatabase): void {
       kind: 'pat',
       username: username.trim() || 'token'
     });
-    const gitDb = requireGitDatabase(db, connectionId);
-    await gitDb.syncManager.testCredentials();
+    await testGitCredentials(db, connectionId);
   });
 
   handle('git:startOAuth', ipcArgSchemas.connectionId, async (_event, connectionId) => {
@@ -110,7 +137,11 @@ export function registerGitHandlers(db: IDatabase): void {
   handle('git:completeOAuth', ipcArgSchemas.connectionId, async (_event, connectionId) => {
     await finishGitHubOAuth(connectionId);
     persistGitAuthMetadata(connectionId, { kind: 'oauth', provider: 'github' });
-    const gitDb = requireGitDatabase(db, connectionId);
-    await gitDb.syncManager.testCredentials();
+    await testGitCredentials(db, connectionId);
+  });
+
+  handle('git:revokeOAuth', ipcArgSchemas.connectionId, async (_event, connectionId) => {
+    revokeGitHubOAuth(connectionId);
+    persistGitAuthMetadata(connectionId, { kind: 'pat', username: 'token' });
   });
 }

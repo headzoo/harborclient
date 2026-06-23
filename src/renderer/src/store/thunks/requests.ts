@@ -127,12 +127,19 @@ export const saveRequest = createAsyncThunk<SavedRequest, number | undefined, Th
     const activeTab = selectActiveTab(state);
     if (!activeTab) throw new Error('No active tab');
 
-    const targetId = collectionId ?? state.collections.selectedCollectionId;
+    const currentDraft = activeTab.draft;
+    // An already-saved request must persist back to its own collection. Falling
+    // back to the currently-selected collection would create a copy there and
+    // leave the original (e.g. a git-backed request) stale, so the draft's own
+    // collection takes precedence unless an explicit target was passed in.
+    const targetId =
+      collectionId ??
+      (currentDraft.id != null ? currentDraft.collection_id : undefined) ??
+      state.collections.selectedCollectionId;
     if (targetId == null) {
       throw new Error('Select a collection first');
     }
 
-    const currentDraft = activeTab.draft;
     const sameCollection = currentDraft.collection_id === targetId;
     const shouldUpdate = currentDraft.id != null && sameCollection;
     // Folders are scoped to a single collection, so a folder_id is only valid when

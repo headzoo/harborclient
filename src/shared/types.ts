@@ -1499,27 +1499,27 @@ export interface PostgresSettings {
  */
 export type GitAuthMethod =
   | {
-    /**
-     * Personal access token entered by the user.
-     */
-    kind: 'pat';
+      /**
+       * Personal access token entered by the user.
+       */
+      kind: 'pat';
 
-    /**
-     * Username for Basic Auth (often the account name or `token` on GitHub).
-     */
-    username: string;
-  }
+      /**
+       * Username for Basic Auth (often the account name or `token` on GitHub).
+       */
+      username: string;
+    }
   | {
-    /**
-     * OAuth token obtained via device flow.
-     */
-    kind: 'oauth';
+      /**
+       * OAuth token obtained via device flow.
+       */
+      kind: 'oauth';
 
-    /**
-     * OAuth provider that issued the token.
-     */
-    provider: 'github';
-  };
+      /**
+       * OAuth provider that issued the token.
+       */
+      provider: 'github';
+    };
 
 /**
  * Settings for a git-backed collection provider.
@@ -2227,6 +2227,14 @@ export interface Api {
   deleteEnvironment: (id: number) => Promise<void>;
 
   /**
+   * Deep-copies an environment into a new record with a fresh uuid.
+   *
+   * @param id - Environment ID to duplicate.
+   * @returns The newly created environment.
+   */
+  duplicateEnvironment: (id: number) => Promise<Environment>;
+
+  /**
    * Lists saved requests in a collection.
    *
    * @param collectionId - Collection to query.
@@ -2686,6 +2694,13 @@ export interface Api {
    * @param connectionId - Git connection id.
    */
   gitCompleteOAuth: (connectionId: string) => Promise<void>;
+
+  /**
+   * Removes stored GitHub OAuth tokens and resets auth metadata for a git connection.
+   *
+   * @param connectionId - Git connection id.
+   */
+  gitRevokeOAuth: (connectionId: string) => Promise<void>;
 
   /**
    * Returns the id of the active database connection.

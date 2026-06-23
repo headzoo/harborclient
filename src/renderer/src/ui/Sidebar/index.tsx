@@ -29,6 +29,7 @@ import {
   deleteFolder,
   deleteRequest,
   duplicateCollection,
+  duplicateEnvironment,
   duplicateRequest,
   exportCollection,
   exportEnvironment,
@@ -486,6 +487,14 @@ export function Sidebar({
                   const result = await dispatch(exportEnvironment(id)).unwrap();
                   if (!result.canceled) {
                     toast.success('Environment exported');
+                  }
+                }}
+                onDuplicateEnvironment={async (id) => {
+                  try {
+                    await dispatch(duplicateEnvironment(id)).unwrap();
+                    toast.success('Environment duplicated');
+                  } catch (err) {
+                    showAlert(dispatch, formatErrorMessage(err, 'Failed to duplicate environment'));
                   }
                 }}
               />

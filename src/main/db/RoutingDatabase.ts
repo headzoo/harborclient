@@ -19,6 +19,7 @@ import type {
 } from '#/main/db/routingInternals';
 import { logVerbose } from '#/main/logger';
 import { isDatabaseConnectionConfigured } from '#/main/settings/databaseSettings';
+import { getSlotForConnection } from '#/main/settings/databaseSlots';
 import { unlinkSync } from 'fs';
 import type {
   AuthConfig,
@@ -313,6 +314,13 @@ export class RoutingDatabase implements IDatabase {
    */
   async deleteEnvironment(id: number): Promise<void> {
     this.registry.deleteEnvironment(id);
+  }
+
+  /**
+   * Deep-copies an environment into a new record in the hidden registry.
+   */
+  async duplicateEnvironment(id: number): Promise<Environment> {
+    return this.registry.duplicateEnvironment(id);
   }
 
   /**
@@ -816,6 +824,40 @@ export class RoutingDatabase implements IDatabase {
 
     const db = await createTeamHubDatabase(hub, this.userDataPath);
     this.mount(slot, { id: hub.id, name: hub.name, type: 'team-hub' }, db);
+  }
+
+  /**
+   * Mounts or remounts a database connection backend at runtime (for example after
+   * saving git settings before restart).
+   *
+   * @param connection - Saved database connection configuration.
+   */
+  async mountDatabaseConnection(connection: DatabaseConnection): Promise<void> {
+    if (!isDatabaseConnectionConfigured(connection)) {
+      return;
+    }
+
+    const slot = getSlotForConnection(connection.id);
+    if (slot === undefined) {
+      console.warn(
+        `No slot assigned for database "${connection.name}" (${connection.id}); skipping mount.`
+      );
+      return;
+    }
+
+    const existing = this.byConnectionId.get(connection.id);
+    if (existing) {
+      await existing.db.close();
+      this.byConnectionId.delete(connection.id);
+      this.bySlot.delete(existing.slot);
+    }
+
+    const db = await createDatabaseInstance(connection, this.userDataPath);
+    this.mount(slot, { id: connection.id, name: connection.name, type: connection.type }, db);
+
+    if (connection.type === 'git') {
+      await this.reconcileGitRegistry(connection.id);
+    }
   }
 
   /**

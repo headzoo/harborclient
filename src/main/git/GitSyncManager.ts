@@ -62,7 +62,7 @@ export class GitSyncManager {
       }
     }
 
-    return {
+    const status = {
       changedCount,
       branch,
       ahead,
@@ -71,6 +71,7 @@ export class GitSyncManager {
         resolveHarborclientRoot(this.#repoPath, this.#settings.subdir)
       )
     };
+    return status;
   }
 
   /**

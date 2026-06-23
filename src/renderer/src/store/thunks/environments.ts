@@ -73,6 +73,19 @@ export const deleteEnvironment = createAsyncThunk<void, number, ThunkApiConfig>(
 );
 
 /**
+ * Deep-copies an environment and makes the clone the active selection.
+ */
+export const duplicateEnvironment = createAsyncThunk<Environment, number, ThunkApiConfig>(
+  'environments/duplicate',
+  async (id, { dispatch }) => {
+    const environment = await window.api.duplicateEnvironment(id);
+    await dispatch(refreshEnvironments());
+    dispatch(setActiveEnvironmentId(environment.id));
+    return environment;
+  }
+);
+
+/**
  * Exports an environment to a user-chosen file path.
  */
 export const exportEnvironment = createAsyncThunk<CollectionExportResult, number, ThunkApiConfig>(

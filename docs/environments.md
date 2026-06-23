@@ -12,6 +12,7 @@ The **Environments** section in the sidebar sits below **Collections**. Each sec
 - **Activate** — Click an environment name to make it the active environment. The selected row is highlighted.
 - **Settings** — Double-click an environment, or choose **Settings** from the row menu, to open environment settings. Edit the name and variables, then save.
 - **Export** — Choose **Export** from the row menu. HarborClient opens a save dialog with a default filename of `{environment-name}.json`.
+- **Duplicate** — Choose **Duplicate** from the row menu. HarborClient creates a new environment named `{original-name} (copy)` with the same variables and activates it. The original environment is unchanged.
 - **Delete** — Choose **Delete** from the row menu. This removes the environment and clears the active selection if it was selected.
 
 ## Selecting an environment

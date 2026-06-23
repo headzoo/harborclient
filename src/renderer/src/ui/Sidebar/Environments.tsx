@@ -34,6 +34,11 @@ interface Props {
    * Exports an environment to a JSON file.
    */
   onExportEnvironment: (id: number) => void;
+
+  /**
+   * Duplicates an environment and its variables.
+   */
+  onDuplicateEnvironment: (id: number) => Promise<void>;
 }
 
 /**
@@ -45,7 +50,8 @@ export function Environments({
   onSelectEnvironment,
   onConfigureEnvironment,
   onDeleteEnvironment,
-  onExportEnvironment
+  onExportEnvironment,
+  onDuplicateEnvironment
 }: Props): JSX.Element {
   const confirm = useConfirm();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -82,6 +88,10 @@ export function Environments({
                   {
                     label: 'Export',
                     onSelect: () => onExportEnvironment(environment.id)
+                  },
+                  {
+                    label: 'Duplicate',
+                    onSelect: () => void onDuplicateEnvironment(environment.id)
                   }
                 ],
                 [

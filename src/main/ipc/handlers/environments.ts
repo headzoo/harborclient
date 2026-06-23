@@ -99,6 +99,14 @@ export function registerEnvironmentHandlers(db: IDatabase): void {
   // Deletes an environment by id.
   handle('environments:delete', ipcArgSchemas.dbId, (_event, id) => db.deleteEnvironment(id));
 
+  // Deep-copies an environment into a new record with a fresh uuid.
+  handle('environments:duplicate', ipcArgSchemas.dbId, (_event, id) => {
+    if (!(db instanceof RoutingDatabase)) {
+      throw new Error('Environment duplicate is unavailable.');
+    }
+    return db.duplicateEnvironment(id);
+  });
+
   // Exports an environment to a JSON file via a native save dialog.
   handle('environments:export', ipcArgSchemas.dbId, async (_event, id) => {
     const environments = await db.listEnvironments();

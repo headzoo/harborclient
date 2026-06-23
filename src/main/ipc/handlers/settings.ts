@@ -7,6 +7,7 @@ import { ipcArgSchemas } from '#/main/ipc/ipcSchemas';
 import {
   deleteDatabaseConnection,
   getActiveDatabaseId,
+  isDatabaseConnectionConfigured,
   listDatabaseConnections,
   saveDatabaseConnection,
   setActiveDatabaseId
@@ -110,9 +111,19 @@ export function registerSettingsHandlers(db: IDatabase): void {
   handle('databaseConnections:list', ipcArgSchemas.none, () => listDatabaseConnections());
 
   // Creates or updates a database connection.
-  handle('databaseConnections:save', ipcArgSchemas.databaseConnection, (_event, conn) =>
-    saveDatabaseConnection(conn)
-  );
+  handle('databaseConnections:save', ipcArgSchemas.databaseConnection, async (_event, conn) => {
+    const connections = saveDatabaseConnection(conn);
+    const saved = connections.find((item) => item.id === conn.id);
+
+    if (saved && db instanceof RoutingDatabase && isDatabaseConnectionConfigured(saved)) {
+      const slot = getSlotForConnection(saved.id);
+      if (slot != null) {
+        await db.mountDatabaseConnection(saved);
+      }
+    }
+
+    return connections;
+  });
 
   // Deletes a database connection by id.
   handle('databaseConnections:delete', ipcArgSchemas.connectionId, (_event, id) =>

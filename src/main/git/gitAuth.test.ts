@@ -12,7 +12,8 @@ vi.mock('#/main/git/gitSecrets', () => ({
   getGitRefreshToken: vi.fn(() => null),
   getGitTokenExpiresAt: vi.fn(() => null),
   storeGitOAuthTokens: vi.fn(),
-  storeGitPat: vi.fn()
+  storeGitPat: vi.fn(),
+  deleteGitSecrets: vi.fn()
 }));
 
 vi.mock('#/main/git/githubOAuth', () => ({
@@ -28,8 +29,13 @@ vi.mock('#/main/git/githubOAuth', () => ({
   refreshGitHubAccessToken: vi.fn()
 }));
 
-import { getGitAccessToken } from '#/main/git/gitSecrets';
-import { beginGitHubOAuth, finishGitHubOAuth, resolveGitAuth } from '#/main/git/gitAuth';
+import { deleteGitSecrets, getGitAccessToken } from '#/main/git/gitSecrets';
+import {
+  beginGitHubOAuth,
+  finishGitHubOAuth,
+  resolveGitAuth,
+  revokeGitHubOAuth
+} from '#/main/git/gitAuth';
 
 describe('git auth resolver', () => {
   beforeEach(() => {
@@ -77,6 +83,30 @@ describe('git auth resolver', () => {
     expect(conn.type === 'git' && conn.settings.auth).toEqual({
       kind: 'oauth',
       provider: 'github'
+    });
+  });
+
+  it('revokes GitHub OAuth and resets auth metadata', async () => {
+    mockConnections.push({
+      id: 'git-oauth',
+      name: 'Git OAuth',
+      type: 'git',
+      settings: {
+        repoPath: '/tmp/repo',
+        url: 'https://github.com/example/repo.git',
+        branch: 'main',
+        subdir: '.harborclient',
+        auth: { kind: 'oauth', provider: 'github' }
+      }
+    });
+
+    revokeGitHubOAuth('git-oauth');
+
+    expect(deleteGitSecrets).toHaveBeenCalledWith('git-oauth');
+    const conn = mockConnections[0];
+    expect(conn.type === 'git' && conn.settings.auth).toEqual({
+      kind: 'pat',
+      username: 'token'
     });
   });
 });

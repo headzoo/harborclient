@@ -511,6 +511,27 @@ export class LocalRegistry {
   }
 
   /**
+   * Deep-copies an environment into a new record with a fresh uuid.
+   *
+   * @param id - Environment ID to duplicate.
+   * @returns The newly created environment with copied variables.
+   */
+  duplicateEnvironment(id: number): Environment {
+    const source = this.listEnvironments().find((environment) => environment.id === id);
+    if (!source) {
+      throw new Error(`Environment not found: ${id}`);
+    }
+
+    const copyName = `${source.name} (copy)`;
+    const created = this.createEnvironment(copyName);
+    return this.updateEnvironment(
+      created.id,
+      copyName,
+      source.variables.map((variable) => ({ ...variable }))
+    );
+  }
+
+  /**
    * Deletes an environment.
    *
    * @param id - Environment ID to delete.

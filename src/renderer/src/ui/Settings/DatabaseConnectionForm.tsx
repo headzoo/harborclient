@@ -2,7 +2,7 @@ import type { JSX } from 'react';
 import type { DatabaseConnection, DatabaseProvider } from '#/shared/types';
 import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
 import { field } from '#/renderer/src/ui/shared/classes';
-import { createBlankConnection, PROVIDER_OPTIONS, providerLabel } from './constants';
+import { createBlankConnection, PROVIDER_OPTIONS } from './constants';
 import { FirestoreFields } from './FirestoreFields';
 import { MySqlFields } from './MySqlFields';
 import { PostgresFields } from './PostgresFields';
@@ -82,7 +82,7 @@ export function DatabaseConnectionForm({
         />
       </label>
 
-      {isNew ? (
+      {isNew && (
         <div>
           <span className="mb-2 block text-[14px] font-medium text-text">Type</span>
           <SegmentedTabs
@@ -92,11 +92,6 @@ export function DatabaseConnectionForm({
             onChange={handleTypeChange}
             tabs={PROVIDER_OPTIONS}
           />
-        </div>
-      ) : (
-        <div>
-          <span className="mb-1 block text-[14px] font-medium text-text">Type</span>
-          <p className="m-0 text-[14px] text-text">{providerLabel(connection.type)}</p>
         </div>
       )}
 

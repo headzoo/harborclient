@@ -4,6 +4,7 @@ import {
   startGitHubDeviceFlow
 } from '#/main/git/githubOAuth';
 import {
+  deleteGitSecrets,
   getGitAccessToken,
   getGitRefreshToken,
   getGitTokenExpiresAt,
@@ -138,6 +139,17 @@ export async function finishGitHubOAuth(connectionId: string): Promise<void> {
   const tokens = await completeGitHubDeviceFlow(connectionId);
   storeGitOAuthTokens(connectionId, tokens.accessToken, tokens.refreshToken, tokens.expiresAt);
   conn.settings.auth = { kind: 'oauth', provider: 'github' };
+}
+
+/**
+ * Removes stored GitHub OAuth tokens and resets auth metadata to the default PAT shape.
+ *
+ * @param connectionId - Git connection id.
+ */
+export function revokeGitHubOAuth(connectionId: string): void {
+  const conn = requireGitConnection(connectionId);
+  deleteGitSecrets(connectionId);
+  conn.settings.auth = { kind: 'pat', username: 'token' };
 }
 
 /**
