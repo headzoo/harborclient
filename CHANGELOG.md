@@ -3,6 +3,9 @@
 ## Unreleased
 
 - feat(git): add support for custom GitHub OAuth App in connection settings. (`85373b1`)
+
+## 1.5.17 - 2026-06-23
+
 - feat(docs): update asset synchronization and .gitignore for images. (`1b0af82`)
 - refactor(database): improve code formatting and consistency across database files. (`0caa80f`)
 - feat(environments): add environment duplication feature and enhance documentation. (`7b86429`)
