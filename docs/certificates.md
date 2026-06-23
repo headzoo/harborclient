@@ -6,6 +6,8 @@ This is separate from **Settings → SSL certificate verification**, which contr
 
 The Certificates panel has two sections: **My identity** (your key pair) and **Trusted keys** (public keys of people you trust).
 
+![Certificates](images/screenshots/hc-8.png)
+
 ## My identity
 
 HarborClient creates a 2048-bit RSA key pair the first time you need one — for example, when you open Certificates or create an invite. Your key pair is stored locally in the application data directory as `invite-key.pem` (private) and `invite-pub.pem` (public).

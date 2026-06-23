@@ -4,6 +4,8 @@ HarborClient is built around the request editor: you compose an HTTP request, se
 
 Each open tab holds one editable request draft and, after you send, the response for that tab. Only the **active** tab's response is shown in the response panel.
 
+![Collections](images/screenshots/hc-1.png)
+
 ## The request editor
 
 The request editor is where you build a request before sending it.

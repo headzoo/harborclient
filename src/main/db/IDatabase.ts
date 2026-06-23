@@ -7,6 +7,7 @@ import type {
   KeyValue,
   SaveRequestInput,
   SavedRequest,
+  SourceControlStatus,
   Variable
 } from '#/shared/types';
 
@@ -225,6 +226,8 @@ export interface IDatabase {
    * @returns The updated collection.
    */
   updateCollectionFromImport(id: number, data: CollectionExport): Promise<Collection>;
+
+  getSourceControlStatus(): Promise<SourceControlStatus | null>;
 
   /**
    * Reads a persisted setting by key.

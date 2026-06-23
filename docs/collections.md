@@ -4,6 +4,8 @@ Collections are named groups of saved HTTP requests. Each collection can define 
 
 The **Collections** section in the left sidebar sits above **Environments**. Both sections can be collapsed independently by clicking the section header.
 
+![Collections](images/screenshots/hc-1.png)
+
 ## Sidebar guide
 
 The sidebar is the main place to browse and manage collections.
@@ -311,7 +313,7 @@ Example (abbreviated):
 
 ## Sharing collections
 
-Use **Export/Import** when you want a portable snapshot of a collection — a `.json` file you can version, email, or archive. Use **invites** when you want another HarborClient user to connect to the same **live** collection on a remote database. Use **[team hubs](/team-hubs)** when your team shares collections through HarborClient Team Hub with API tokens instead of shared database credentials. Invited and hub-backed collections stay in sync with the shared backend; changes from other users appear when data is reloaded (for example, after restarting the app). See [Settings → Databases](/settings#databases) for how remote backends work.
+Use **Export/Import** when you want a portable snapshot of a collection — a `.json` file you can version, email, or archive. Use a **[git-backed database connection](/git-provider)** when collections should live as version-controlled files in a repository with in-app commit/push/pull. Use **invites** when you want another HarborClient user to connect to the same **live** collection on a remote database. Use **[team hubs](/team-hubs)** when your team shares collections through HarborClient Team Hub with API tokens instead of shared database credentials. Invited and hub-backed collections stay in sync with the shared backend; changes from other users appear when data is reloaded (for example, after restarting the app). Git-backed collections sync when you pull, when the working tree changes on disk, or when the window regains focus. See [Settings → Databases](/settings#databases) for how remote backends work.
 
 Before sending or accepting invites, exchange public keys with your colleague — see [Certificates](/certificates).
 

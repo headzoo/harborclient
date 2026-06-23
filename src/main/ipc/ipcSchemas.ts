@@ -233,6 +233,25 @@ const postgresSettings = z.object({
   database: z.string()
 });
 
+const gitAuthMethod = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('pat'),
+    username: z.string()
+  }),
+  z.object({
+    kind: z.literal('oauth'),
+    provider: z.literal('github')
+  })
+]);
+
+const gitSettings = z.object({
+  repoPath: z.string(),
+  url: z.string(),
+  branch: z.string(),
+  subdir: z.string(),
+  auth: gitAuthMethod
+});
+
 export const databaseConnection = z.discriminatedUnion('type', [
   z.object({
     id: connectionId,
@@ -257,6 +276,12 @@ export const databaseConnection = z.discriminatedUnion('type', [
     name: z.string(),
     type: z.literal('postgres'),
     settings: postgresSettings
+  }),
+  z.object({
+    id: connectionId,
+    name: z.string(),
+    type: z.literal('git'),
+    settings: gitSettings
   })
 ]) satisfies z.ZodType<DatabaseConnection>;
 
@@ -439,5 +464,8 @@ export const ipcArgSchemas = {
   requestImport: z.tuple([dbId, nullableFolderId.optional()]),
   importAuto: z.tuple([dbId.nullable()]),
   inviteCreate: z.tuple([dbId, recipientKid.optional()]),
-  saveTextFile: z.tuple([z.string().max(MAX_IPC_REQUEST_BODY_CHARS), z.string()])
+  saveTextFile: z.tuple([z.string().max(MAX_IPC_REQUEST_BODY_CHARS), z.string()]),
+  gitCommit: z.tuple([connectionId, z.string().trim().min(1)]),
+  gitLog: z.tuple([connectionId, z.number().int().positive().optional()]),
+  gitSetPat: z.tuple([connectionId, z.string(), z.string().min(1)])
 } as const;

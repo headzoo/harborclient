@@ -1,0 +1,236 @@
+/**
+ * Public GitHub OAuth App client id for HarborClient device flow.
+ *
+ * Replace with your registered OAuth App client id when forking.
+ */
+export const GITHUB_OAUTH_CLIENT_ID = 'Ov23liHarborClientGit';
+
+const DEVICE_CODE_URL = 'https://github.com/login/device/code';
+const ACCESS_TOKEN_URL = 'https://github.com/login/oauth/access_token';
+
+/**
+ * Pending device flow session for a git connection.
+ */
+interface PendingDeviceFlow {
+  /**
+   * Device code returned by GitHub.
+   */
+  deviceCode: string;
+
+  /**
+   * Polling interval in seconds suggested by GitHub.
+   */
+  interval: number;
+
+  /**
+   * Absolute timestamp (ms) when the device code expires.
+   */
+  expiresAt: number;
+}
+
+const pendingFlows = new Map<string, PendingDeviceFlow>();
+
+/**
+ * Starts GitHub OAuth device flow for a git connection.
+ *
+ * @param connectionId - Git connection id.
+ * @returns User code and verification URI for browser approval.
+ */
+export async function startGitHubDeviceFlow(connectionId: string): Promise<{
+  userCode: string;
+  verificationUri: string;
+}> {
+  const response = await fetch(DEVICE_CODE_URL, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      client_id: GITHUB_OAUTH_CLIENT_ID,
+      scope: 'repo'
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`GitHub device flow failed: ${response.status} ${response.statusText}`);
+  }
+
+  const data = (await response.json()) as {
+    device_code?: string;
+    user_code?: string;
+    verification_uri?: string;
+    expires_in?: number;
+    interval?: number;
+    error?: string;
+    error_description?: string;
+  };
+
+  if (data.error) {
+    throw new Error(data.error_description ?? data.error);
+  }
+
+  if (!data.device_code || !data.user_code || !data.verification_uri) {
+    throw new Error('GitHub device flow returned an incomplete response.');
+  }
+
+  const expiresIn = data.expires_in ?? 900;
+  pendingFlows.set(connectionId, {
+    deviceCode: data.device_code,
+    interval: data.interval ?? 5,
+    expiresAt: Date.now() + expiresIn * 1000
+  });
+
+  return {
+    userCode: data.user_code,
+    verificationUri: data.verification_uri
+  };
+}
+
+/**
+ * Polls GitHub until the user approves device flow or the code expires.
+ *
+ * @param connectionId - Git connection id.
+ * @returns OAuth access token and optional refresh metadata.
+ */
+export async function completeGitHubDeviceFlow(connectionId: string): Promise<{
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: string;
+}> {
+  const pending = pendingFlows.get(connectionId);
+  if (!pending) {
+    throw new Error('No pending GitHub authorization. Start OAuth first.');
+  }
+
+  while (Date.now() < pending.expiresAt) {
+    await sleep(pending.interval * 1000);
+
+    const response = await fetch(ACCESS_TOKEN_URL, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        client_id: GITHUB_OAUTH_CLIENT_ID,
+        device_code: pending.deviceCode,
+        grant_type: 'urn:ietf:params:oauth:grant-type:device_code'
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`GitHub token poll failed: ${response.status} ${response.statusText}`);
+    }
+
+    const data = (await response.json()) as {
+      access_token?: string;
+      refresh_token?: string;
+      expires_in?: number;
+      error?: string;
+      error_description?: string;
+    };
+
+    if (data.error === 'authorization_pending') {
+      continue;
+    }
+
+    if (data.error === 'slow_down') {
+      pending.interval += 1;
+      continue;
+    }
+
+    if (data.error) {
+      throw new Error(data.error_description ?? data.error);
+    }
+
+    if (!data.access_token) {
+      throw new Error('GitHub did not return an access token.');
+    }
+
+    pendingFlows.delete(connectionId);
+
+    const expiresAt =
+      data.expires_in != null
+        ? new Date(Date.now() + data.expires_in * 1000).toISOString()
+        : undefined;
+
+    return {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresAt
+    };
+  }
+
+  pendingFlows.delete(connectionId);
+  throw new Error('GitHub authorization timed out. Try again.');
+}
+
+/**
+ * Refreshes a GitHub OAuth access token using a refresh token.
+ *
+ * @param refreshToken - Stored refresh token.
+ */
+export async function refreshGitHubAccessToken(refreshToken: string): Promise<{
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: string;
+}> {
+  const response = await fetch(ACCESS_TOKEN_URL, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      client_id: GITHUB_OAUTH_CLIENT_ID,
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`GitHub token refresh failed: ${response.status} ${response.statusText}`);
+  }
+
+  const data = (await response.json()) as {
+    access_token?: string;
+    refresh_token?: string;
+    expires_in?: number;
+    error?: string;
+    error_description?: string;
+  };
+
+  if (data.error || !data.access_token) {
+    throw new Error(data.error_description ?? data.error ?? 'Token refresh failed.');
+  }
+
+  const expiresAt =
+    data.expires_in != null
+      ? new Date(Date.now() + data.expires_in * 1000).toISOString()
+      : undefined;
+
+  return {
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token ?? refreshToken,
+    expiresAt
+  };
+}
+
+/**
+ * Clears a pending device flow session for a connection.
+ *
+ * @param connectionId - Git connection id.
+ */
+export function clearPendingGitHubDeviceFlow(connectionId: string): void {
+  pendingFlows.delete(connectionId);
+}
+
+/**
+ * Sleeps for the given duration.
+ *
+ * @param ms - Duration in milliseconds.
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}

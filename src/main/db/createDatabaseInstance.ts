@@ -1,3 +1,4 @@
+import { GitDatabase } from '#/main/db/GitDatabase';
 import { FirestoreDatabase } from '#/main/db/FirestoreDatabase';
 import { MySqlDatabase } from '#/main/db/MySqlDatabase';
 import { PostgresDatabase } from '#/main/db/PostgresDatabase';
@@ -34,6 +35,11 @@ export async function createDatabaseInstance(
     }
     case 'sqlite': {
       const db = new SqliteDatabase(userDataPath, connection.settings);
+      await db.init();
+      return db;
+    }
+    case 'git': {
+      const db = new GitDatabase(connection.id, connection.settings, userDataPath);
       await db.init();
       return db;
     }

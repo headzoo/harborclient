@@ -2,6 +2,8 @@
 
 Team hubs connect HarborClient to a running **[HarborClient Team Hub](https://github.com/headzoo/harborclient-service-hub)** instance — a self-hosted central server that stores shared collections for your team. Each hub is a named connection with a base URL and bearer API token. Collections you store on a hub live on the team hub; HarborClient syncs them into the sidebar and routes create, read, update, and delete operations through its HTTP API.
 
+![Team hubs](images/screenshots/hc-8.png)
+
 **Environments are not shared via team hubs.** Environment variable groups stay in your local registry on each machine, even though HarborClient Team Hub supports environments on the server. Use [Environments](/environments) for per-machine variable groups; use team hubs when you want teammates to share the same collection data.
 
 ```mermaid
@@ -99,6 +101,8 @@ Admin tokens cannot read or write collection data through HarborClient. The team
 ## Managing team users
 
 When at least one configured hub has an admin token, **File → Team Hub** shows a **Manage team** button. Use it to list, edit, and delete user accounts on the selected Team Hub server.
+
+![Manage team](images/screenshots/hc-9.png)
 
 | Step | Action                                                                             |
 | ---- | ---------------------------------------------------------------------------------- |

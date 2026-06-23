@@ -167,6 +167,7 @@ const exportedRequestRow = z
     url: req.url,
     headers: req.headers,
     params: req.params,
+    auth: req.auth,
     body: req.body,
     body_type: req.body_type,
     pre_request_script: req.pre_request_script,

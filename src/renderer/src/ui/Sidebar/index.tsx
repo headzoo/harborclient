@@ -7,6 +7,7 @@ import {
   providerTypesById,
   useProviders
 } from '#/renderer/src/hooks/useProviders';
+import { useGitStatuses } from '#/renderer/src/hooks/useGitStatuses';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import {
   selectActiveEnvironmentId,
@@ -38,6 +39,7 @@ import {
   newRequestInCollection,
   newRequestInFolder,
   refreshCollectionContents,
+  refreshCollections,
   renameFolder,
   reorderCollections,
   reorderFolders,
@@ -54,6 +56,7 @@ import { field } from '#/renderer/src/ui/shared/classes';
 import { Modal } from '#/renderer/src/ui/shared/Modal';
 import { formatErrorMessage, showAlert, showConfirm } from '#/renderer/src/ui/modals/dialogHelpers';
 import { Collections } from './Collections';
+import { GitSourceControlPanel } from '#/renderer/src/ui/modals/GitSourceControlPanel';
 import { Environments } from './Environments';
 import { Section } from './Section';
 import { usePersistedSidebarExpansion } from './usePersistedSidebarExpansion';
@@ -154,6 +157,35 @@ export function Sidebar({
     primaryProviderId: primaryConnectionId,
     error: providersError
   } = useProviders();
+
+  /**
+   * Reloads collections when the git working tree changes on disk (pull or external edits).
+   */
+  const handleGitWorkingTreeChanged = useCallback(
+    (connectionId: string): void => {
+      void dispatch(refreshCollections()).then(() => {
+        void window.api.listGitStatuses().then((statuses) => {
+          const status = statuses[connectionId];
+          if (status?.conflictCount > 0) {
+            toast(
+              `${status.conflictCount} merge conflict(s) in repository files. Resolve markers before editing.`,
+              { icon: '⚠️', duration: 8000 }
+            );
+          }
+        });
+      });
+    },
+    [dispatch]
+  );
+
+  const { statuses: gitStatusesByConnectionId, refresh: refreshGitStatuses } = useGitStatuses(
+    10000,
+    handleGitWorkingTreeChanged
+  );
+  const [gitPanel, setGitPanel] = useState<{
+    connectionId: string;
+    connectionName: string;
+  } | null>(null);
   const {
     size: width,
     minSize: sidebarMinSize,
@@ -289,6 +321,10 @@ export function Sidebar({
                 primaryConnectionId={primaryConnectionId}
                 connectionNamesById={connectionNamesById}
                 connectionTypesById={connectionTypesById}
+                gitStatusesByConnectionId={gitStatusesByConnectionId}
+                onOpenSourceControl={(connectionId, connectionName) =>
+                  setGitPanel({ connectionId, connectionName })
+                }
                 activeRequestId={draft.id}
                 expandedCollectionIds={expandedCollectionIds}
                 expandedFolderIds={expandedFolderIds}
@@ -573,6 +609,19 @@ export function Sidebar({
             </SegmentedTabPanel>
           </SegmentedTabsGroup>
         </Modal>
+      )}
+      {gitPanel != null && (
+        <GitSourceControlPanel
+          open={gitPanel != null}
+          connectionId={gitPanel.connectionId}
+          connectionName={gitPanel.connectionName}
+          status={gitStatusesByConnectionId[gitPanel.connectionId] ?? null}
+          onClose={() => setGitPanel(null)}
+          onRefresh={() => {
+            refreshGitStatuses();
+            void dispatch(refreshCollections());
+          }}
+        />
       )}
     </>
   );

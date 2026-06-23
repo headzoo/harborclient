@@ -4,6 +4,7 @@ import { assignSlotForNewConnection } from '#/main/settings/databaseSlots';
 import type {
   DatabaseConnection,
   FirestoreSettings,
+  GitSettings,
   MySqlSettings,
   PostgresSettings,
   SqliteSettings
@@ -43,6 +44,14 @@ const DEFAULT_POSTGRES_SETTINGS: PostgresSettings = {
   user: '',
   password: '',
   database: ''
+};
+
+const DEFAULT_GIT_SETTINGS: GitSettings = {
+  repoPath: '',
+  url: '',
+  branch: 'main',
+  subdir: '.harborclient',
+  auth: { kind: 'pat', username: 'token' }
 };
 
 /**
@@ -165,6 +174,31 @@ function normalizePostgresSettings(input: Partial<PostgresSettings>): PostgresSe
 }
 
 /**
+ * Normalizes git connection settings with trimmed fields and defaults.
+ *
+ * @param input - Raw settings from storage or user input.
+ * @returns Normalized settings.
+ */
+function normalizeGitSettings(input: Partial<GitSettings>): GitSettings {
+  const auth = input.auth;
+  const normalizedAuth =
+    auth?.kind === 'oauth' && auth.provider === 'github'
+      ? { kind: 'oauth' as const, provider: 'github' as const }
+      : {
+        kind: 'pat' as const,
+        username: auth?.kind === 'pat' ? auth.username.trim() || 'token' : 'token'
+      };
+
+  return {
+    repoPath: input.repoPath?.trim() ?? '',
+    url: input.url?.trim() ?? '',
+    branch: input.branch?.trim() || DEFAULT_GIT_SETTINGS.branch,
+    subdir: input.subdir?.trim() || DEFAULT_GIT_SETTINGS.subdir,
+    auth: normalizedAuth
+  };
+}
+
+/**
  * Normalizes a database connection name.
  *
  * @param name - Raw connection name.
@@ -194,6 +228,8 @@ function normalizeConnection(conn: DatabaseConnection): DatabaseConnection {
       return { id, name, type: 'mysql', settings: normalizeMySqlSettings(conn.settings) };
     case 'postgres':
       return { id, name, type: 'postgres', settings: normalizePostgresSettings(conn.settings) };
+    case 'git':
+      return { id, name, type: 'git', settings: normalizeGitSettings(conn.settings) };
   }
 }
 
@@ -282,6 +318,10 @@ export function isDatabaseConnectionConfigured(connection: DatabaseConnection): 
     case 'postgres': {
       const { host, user, database } = connection.settings;
       return Boolean(host && user && database);
+    }
+    case 'git': {
+      const { repoPath, url } = connection.settings;
+      return Boolean(repoPath && url);
     }
   }
 }

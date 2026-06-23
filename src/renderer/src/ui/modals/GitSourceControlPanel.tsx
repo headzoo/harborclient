@@ -1,0 +1,182 @@
+import { useEffect, useState, type JSX } from 'react';
+import toast from 'react-hot-toast';
+import type { GitLogEntry, SourceControlStatus } from '#/shared/types';
+import { Modal } from '#/renderer/src/ui/shared/Modal';
+import { field } from '#/renderer/src/ui/shared/classes';
+
+interface Props {
+  /**
+   * Whether the panel is open.
+   */
+  open: boolean;
+
+  /**
+   * Git connection id for source-control operations.
+   */
+  connectionId: string;
+
+  /**
+   * Display name of the git connection.
+   */
+  connectionName: string;
+
+  /**
+   * Current source-control status for the connection.
+   */
+  status: SourceControlStatus | null;
+
+  /**
+   * Called when the panel should close.
+   */
+  onClose: () => void;
+
+  /**
+   * Called after a successful git operation to refresh sidebar status.
+   */
+  onRefresh: () => void;
+}
+
+/**
+ * In-app git commit, pull, and push panel for a linked repository.
+ */
+export function GitSourceControlPanel({
+  open,
+  connectionId,
+  connectionName,
+  status,
+  onClose,
+  onRefresh
+}: Props): JSX.Element | null {
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [log, setLog] = useState<GitLogEntry[]>([]);
+
+  /**
+   * Loads recent commits when the panel opens.
+   */
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    void window.api
+      .gitLog(connectionId, 10)
+      .then(setLog)
+      .catch(() => setLog([]));
+  }, [open, connectionId]);
+
+  /**
+   * Runs a git action and refreshes status on success.
+   *
+   * @param action - Async git operation.
+   */
+  const runGitAction = async (action: () => Promise<void>): Promise<void> => {
+    setBusy(true);
+    try {
+      await action();
+      onRefresh();
+      const entries = await window.api.gitLog(connectionId, 10);
+      setLog(entries);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <Modal onClose={onClose} className="w-[32rem]" labelledBy="git-source-control-title">
+      <h2 id="git-source-control-title" className="m-0 mb-4 text-[15px] font-semibold text-text">
+        Source control — {connectionName}
+      </h2>
+
+      <div className="flex flex-col gap-4">
+        {status != null && (
+          <div className="text-[14px] text-text" role="status">
+            <p className="m-0">
+              Branch: <strong>{status.branch ?? 'unknown'}</strong>
+            </p>
+            <p className="m-0">
+              {status.changedCount} uncommitted change(s)
+              {status.conflictCount > 0 ? ` · ${status.conflictCount} conflict(s)` : ''}
+              {status.ahead > 0 || status.behind > 0
+                ? ` · ${status.ahead} ahead, ${status.behind} behind`
+                : ''}
+            </p>
+            {status.conflictCount > 0 && (
+              <p className="mt-2 rounded border border-amber-500/40 bg-amber-500/10 p-2 text-[13px] text-text">
+                Merge conflict markers were found in collection or environment JSON files. Open the
+                affected files in your editor, resolve <code>conflict markers</code>, then reload or
+                pull again.
+              </p>
+            )}
+          </div>
+        )}
+
+        <label className="flex flex-col gap-1">
+          <span className="text-[14px] font-medium text-text">Commit message</span>
+          <textarea
+            className={`${field} min-h-[80px]`}
+            value={message}
+            disabled={busy}
+            onChange={(event) => setMessage(event.target.value)}
+          />
+        </label>
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="rounded bg-accent px-3 py-1.5 text-[14px] text-accent-fg disabled:opacity-50"
+            disabled={busy || !message.trim()}
+            onClick={() =>
+              void runGitAction(() => window.api.gitCommit(connectionId, message.trim()))
+            }
+          >
+            Commit
+          </button>
+          <button
+            type="button"
+            className="rounded border border-border px-3 py-1.5 text-[14px] disabled:opacity-50"
+            disabled={busy}
+            onClick={() => void runGitAction(() => window.api.gitPull(connectionId))}
+          >
+            Pull
+          </button>
+          <button
+            type="button"
+            className="rounded border border-border px-3 py-1.5 text-[14px] disabled:opacity-50"
+            disabled={busy}
+            onClick={() => void runGitAction(() => window.api.gitPush(connectionId))}
+          >
+            Push
+          </button>
+          <button
+            type="button"
+            className="rounded border border-border px-3 py-1.5 text-[14px] disabled:opacity-50"
+            disabled={busy}
+            onClick={onClose}
+          >
+            Close
+          </button>
+        </div>
+
+        {log.length > 0 && (
+          <div>
+            <h3 className="m-0 mb-2 text-[14px] font-medium text-text">Recent commits</h3>
+            <ul className="m-0 flex list-none flex-col gap-1 p-0">
+              {log.map((entry) => (
+                <li key={entry.oid} className="text-[13px] text-muted">
+                  <span className="text-text">{entry.message}</span>
+                  <span> — {entry.author}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}

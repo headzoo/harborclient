@@ -3,6 +3,7 @@ import { createTeamHubDatabase, teamHubIdMapPath } from '#/main/db/createTeamHub
 import { LocalRegistry, type CollectionRegistryEntry } from '#/main/db/LocalRegistry';
 import { MigrationManager } from '#/main/db/RegistryMigrator';
 import { createDatabaseInstance } from '#/main/db/createDatabaseInstance';
+import { GitDatabase } from '#/main/db/GitDatabase';
 import { decodeGlobalId, encodeGlobalId } from '#/main/db/idNamespace';
 import type { IDatabase } from '#/main/db/IDatabase';
 import { TeamHubDatabase } from '#/main/db/TeamHubDatabase';
@@ -29,6 +30,7 @@ import type {
   KeyValue,
   SaveRequestInput,
   SavedRequest,
+  SourceControlStatus,
   TeamHub,
   Variable
 } from '#/shared/types';
@@ -165,6 +167,30 @@ export class RoutingDatabase implements IDatabase {
     const warnings = this.listCollectionWarnings;
     this.listCollectionWarnings = [];
     return warnings;
+  }
+
+  /**
+   * Returns source-control status for each mounted git-backed connection.
+   */
+  async listGitStatuses(): Promise<Record<string, SourceControlStatus>> {
+    const statuses: Record<string, SourceControlStatus> = {};
+    for (const backend of this.byConnectionId.values()) {
+      if (backend.connectionType !== 'git') {
+        continue;
+      }
+      const status = await backend.db.getSourceControlStatus();
+      if (status) {
+        statuses[backend.connectionId] = status;
+      }
+    }
+    return statuses;
+  }
+
+  /**
+   * RoutingDatabase aggregates providers; it is not itself source-controlled.
+   */
+  async getSourceControlStatus(): Promise<null> {
+    return null;
   }
 
   /**
@@ -760,6 +786,17 @@ export class RoutingDatabase implements IDatabase {
       }
     }
 
+    for (const connection of connections) {
+      if (connection.type !== 'git' || !router.byConnectionId.has(connection.id)) {
+        continue;
+      }
+      try {
+        await router.reconcileGitRegistry(connection.id);
+      } catch (err) {
+        console.warn(`Failed to reconcile git collections for "${connection.name}":`, err);
+      }
+    }
+
     return router;
   }
 
@@ -798,7 +835,80 @@ export class RoutingDatabase implements IDatabase {
     if (backend.connectionType === 'team-hub') {
       await this.syncTeamHub(connectionId);
     }
+    if (backend.connectionType === 'git') {
+      const gitDb = this.requireGitDatabaseFromBackend(backend);
+      await gitDb.reloadFromDisk();
+      await this.reconcileGitRegistry(connectionId);
+      return;
+    }
     await backend.db.listCollections();
+  }
+
+  /**
+   * Syncs registry entries with collections discovered in a git working tree.
+   *
+   * @param connectionId - Git connection id.
+   */
+  async reconcileGitRegistry(connectionId: string): Promise<void> {
+    const backend = this.requireBackendByConnectionId(connectionId);
+    if (backend.connectionType !== 'git') {
+      throw new Error(`Connection "${connectionId}" is not a git provider.`);
+    }
+
+    const gitDb = this.requireGitDatabaseFromBackend(backend);
+    const collections = await gitDb.listCollections();
+    const entries = this.registry
+      .listRegistry()
+      .filter((entry) => entry.connectionId === connectionId);
+    const byProviderId = new Map(entries.map((entry) => [entry.providerCollectionId, entry]));
+    const onDiskIds = new Set(collections.map((collection) => collection.id));
+
+    for (const collection of collections) {
+      const existing = byProviderId.get(collection.id);
+      if (!existing) {
+        this.registry.addRegistryEntry({
+          name: collection.name,
+          connectionId,
+          providerCollectionId: collection.id,
+          collectionUuid: collection.uuid
+        });
+        continue;
+      }
+      if (existing.collectionUuid !== collection.uuid || existing.name !== collection.name) {
+        this.registry.updateRegistryEntry(existing.id, {
+          name: collection.name,
+          collectionUuid: collection.uuid
+        });
+      }
+    }
+
+    for (const entry of entries) {
+      if (!onDiskIds.has(entry.providerCollectionId)) {
+        this.registry.deleteRegistryEntry(entry.id);
+      }
+    }
+  }
+
+  /**
+   * Returns the git database backend or throws when the connection is not git-backed.
+   *
+   * @param connectionId - Git connection id.
+   */
+  requireGitDatabase(connectionId: string): GitDatabase {
+    const backend = this.requireBackendByConnectionId(connectionId);
+    return this.requireGitDatabaseFromBackend(backend);
+  }
+
+  /**
+   * Returns the git database backend or throws when the connection is not git-backed.
+   *
+   * @param backend - Mounted backend descriptor.
+   */
+  private requireGitDatabaseFromBackend(backend: MountedBackend): GitDatabase {
+    if (backend.connectionType !== 'git' || !(backend.db instanceof GitDatabase)) {
+      throw new Error(`Connection "${backend.connectionId}" is not a git provider.`);
+    }
+    return backend.db;
   }
 
   /**

@@ -4,6 +4,7 @@ import type {
   DatabaseProvider,
   FirestoreSettings,
   GeneralSettings,
+  GitSettings,
   MySqlSettings,
   PostgresSettings,
   ProxySettings,
@@ -46,6 +47,7 @@ export const PROXY_PROTOCOL_OPTIONS: Array<{ value: ProxySettings['protocol']; l
 
 export const PROVIDER_OPTIONS: Array<{ value: DatabaseProvider; label: string }> = [
   { value: 'sqlite', label: 'SQLite' },
+  { value: 'git', label: 'Git' },
   { value: 'firestore', label: 'Firestore' },
   { value: 'mysql', label: 'MySQL' },
   { value: 'postgres', label: 'PostgreSQL' }
@@ -80,6 +82,14 @@ export const DEFAULT_POSTGRES_SETTINGS: PostgresSettings = {
   user: '',
   password: '',
   database: ''
+};
+
+export const DEFAULT_GIT_SETTINGS: GitSettings = {
+  repoPath: '',
+  url: '',
+  branch: 'main',
+  subdir: '.harborclient',
+  auth: { kind: 'pat', username: 'token' }
 };
 
 export const DEFAULT_AI_SETTINGS: AiSettings = {
@@ -121,5 +131,7 @@ export function createBlankConnection(type: DatabaseProvider): DatabaseConnectio
       return { id: '', name: '', type: 'mysql', settings: { ...DEFAULT_MYSQL_SETTINGS } };
     case 'postgres':
       return { id: '', name: '', type: 'postgres', settings: { ...DEFAULT_POSTGRES_SETTINGS } };
+    case 'git':
+      return { id: '', name: '', type: 'git', settings: { ...DEFAULT_GIT_SETTINGS } };
   }
 }

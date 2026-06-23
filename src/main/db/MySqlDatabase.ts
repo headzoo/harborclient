@@ -1160,6 +1160,13 @@ export class MySqlDatabase implements IDatabase {
   }
 
   /**
+   * Git-backed providers return status; MySQL is not source-controlled.
+   */
+  async getSourceControlStatus(): Promise<null> {
+    return null;
+  }
+
+  /**
    * Closes the database connection.
    */
   async close(): Promise<void> {

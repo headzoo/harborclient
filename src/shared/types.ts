@@ -959,7 +959,7 @@ export interface CodeEditorSetup {
 /**
  * Active database backend for collections and requests.
  */
-export type DatabaseProvider = 'sqlite' | 'firestore' | 'mysql' | 'postgres';
+export type DatabaseProvider = 'sqlite' | 'firestore' | 'mysql' | 'postgres' | 'git';
 
 /**
  * Kind of collection data provider, including remote team hubs.
@@ -1495,6 +1495,118 @@ export interface PostgresSettings {
 }
 
 /**
+ * How a git-backed connection authenticates for HTTPS fetch/push.
+ */
+export type GitAuthMethod =
+  | {
+    /**
+     * Personal access token entered by the user.
+     */
+    kind: 'pat';
+
+    /**
+     * Username for Basic Auth (often the account name or `token` on GitHub).
+     */
+    username: string;
+  }
+  | {
+    /**
+     * OAuth token obtained via device flow.
+     */
+    kind: 'oauth';
+
+    /**
+     * OAuth provider that issued the token.
+     */
+    provider: 'github';
+  };
+
+/**
+ * Settings for a git-backed collection provider.
+ */
+export interface GitSettings {
+  /**
+   * Absolute path to the repository root on disk.
+   */
+  repoPath: string;
+
+  /**
+   * HTTPS clone URL used for fetch and push.
+   */
+  url: string;
+
+  /**
+   * Branch to track (for example `main`).
+   */
+  branch: string;
+
+  /**
+   * Subdirectory within the repo where HarborClient files live.
+   */
+  subdir: string;
+
+  /**
+   * Authentication method metadata; secrets are stored separately via secretStorage.
+   */
+  auth: GitAuthMethod;
+}
+
+/**
+ * Source-control status for a git-backed provider working tree.
+ */
+export interface SourceControlStatus {
+  /**
+   * Count of staged, unstaged, and untracked changes in the working tree.
+   */
+  changedCount: number;
+
+  /**
+   * Current branch name, or null when not on a branch.
+   */
+  branch: string | null;
+
+  /**
+   * Commits ahead of the tracked upstream branch.
+   */
+  ahead: number;
+
+  /**
+   * Commits behind the tracked upstream branch.
+   */
+  behind: number;
+
+  /**
+   * Number of files containing unresolved git merge conflict markers.
+   */
+  conflictCount: number;
+}
+
+/**
+ * A single entry in the git commit log.
+ */
+export interface GitLogEntry {
+  /**
+   * Commit object id (full or abbreviated hash).
+   */
+  oid: string;
+
+  /**
+   * First line of the commit message.
+   */
+  message: string;
+
+  /**
+   * Commit author name.
+   */
+  author: string;
+
+  /**
+   * ISO 8601 commit timestamp.
+   */
+  timestamp: string;
+}
+
+/**
  * Configurable SQLite database path and legacy migration settings.
  */
 export interface SqliteSettings {
@@ -1536,7 +1648,8 @@ export type DatabaseConnection =
   | (DatabaseConnectionBase & { type: 'sqlite'; settings: SqliteSettings })
   | (DatabaseConnectionBase & { type: 'firestore'; settings: FirestoreSettings })
   | (DatabaseConnectionBase & { type: 'mysql'; settings: MySqlSettings })
-  | (DatabaseConnectionBase & { type: 'postgres'; settings: PostgresSettings });
+  | (DatabaseConnectionBase & { type: 'postgres'; settings: PostgresSettings })
+  | (DatabaseConnectionBase & { type: 'git'; settings: GitSettings });
 
 /**
  * A configured HarborClient Team Hub connection.
@@ -2499,6 +2612,80 @@ export interface Api {
    * @param connectionId - Provider connection id to sync.
    */
   syncProvider: (connectionId: string) => Promise<void>;
+
+  /**
+   * Returns source-control status for each mounted git-backed connection.
+   */
+  listGitStatuses: () => Promise<Record<string, SourceControlStatus>>;
+
+  /**
+   * Subscribes to working-tree changes for git-backed connections (pull, external edits).
+   *
+   * @param callback - Handler invoked with the connection id whose tree changed.
+   * @returns Unsubscribe function.
+   */
+  onGitWorkingTreeChanged: (callback: (connectionId: string) => void) => () => void;
+
+  /**
+   * Stages all changes and commits in a git-backed connection working tree.
+   *
+   * @param connectionId - Git connection id.
+   * @param message - Commit message.
+   */
+  gitCommit: (connectionId: string, message: string) => Promise<void>;
+
+  /**
+   * Fetches from the remote for a git-backed connection.
+   *
+   * @param connectionId - Git connection id.
+   */
+  gitFetch: (connectionId: string) => Promise<void>;
+
+  /**
+   * Pulls (fetch + merge) for a git-backed connection.
+   *
+   * @param connectionId - Git connection id.
+   */
+  gitPull: (connectionId: string) => Promise<void>;
+
+  /**
+   * Pushes commits to the remote for a git-backed connection.
+   *
+   * @param connectionId - Git connection id.
+   */
+  gitPush: (connectionId: string) => Promise<void>;
+
+  /**
+   * Returns recent commits for a git-backed connection.
+   *
+   * @param connectionId - Git connection id.
+   * @param depth - Maximum number of commits to return.
+   */
+  gitLog: (connectionId: string, depth?: number) => Promise<GitLogEntry[]>;
+
+  /**
+   * Stores a PAT for a git-backed connection and validates credentials via fetch.
+   *
+   * @param connectionId - Git connection id.
+   * @param username - Basic Auth username.
+   * @param token - Personal access token.
+   */
+  gitSetPat: (connectionId: string, username: string, token: string) => Promise<void>;
+
+  /**
+   * Starts GitHub OAuth device flow for a git-backed connection.
+   *
+   * @param connectionId - Git connection id.
+   * @returns Device flow code and verification URL for the user to approve in a browser.
+   */
+  gitStartOAuth: (connectionId: string) => Promise<{ userCode: string; verificationUri: string }>;
+
+  /**
+   * Completes GitHub OAuth device flow after the user approves in a browser.
+   *
+   * @param connectionId - Git connection id.
+   */
+  gitCompleteOAuth: (connectionId: string) => Promise<void>;
 
   /**
    * Returns the id of the active database connection.

@@ -17,6 +17,7 @@ import { ensureDatabaseSlots } from '#/main/settings/databaseSlots';
 import { migrateTeamHubSettings } from '#/main/settings/teamHubMigration';
 import { listTeamHubs } from '#/main/settings/teamHubSettings';
 import { ensureInviteKeys } from '#/main/invite/inviteKeys';
+import { startGitWatchers } from '#/main/git/gitWatcher';
 import { buildMenu } from '#/main/menu';
 import { setMenuWindow } from '#/main/appMenu';
 import { isVerbose, logVerbose } from '#/main/logger';
@@ -539,6 +540,10 @@ app.whenReady().then(async () => {
     await applyPersistedTheme();
     logVerbose('startup: registering IPC handlers');
     registerIpcHandlers(db);
+
+    if (db instanceof RoutingDatabase) {
+      startGitWatchers(db, () => mainWindow);
+    }
 
     const elapsed = Date.now() - splashStartedAt;
     if (elapsed < MIN_SPLASH_MS) {

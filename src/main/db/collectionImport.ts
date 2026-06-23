@@ -131,18 +131,18 @@ export function resolveImportedFolderUuid(folder: ExportedFolder): string {
  */
 export type ImportedFolderUpsertPlan =
   | {
-    action: 'update';
-    existingId: number;
-    name: string;
-    sort_order: number;
-    uuid: string;
-  }
+      action: 'update';
+      existingId: number;
+      name: string;
+      sort_order: number;
+      uuid: string;
+    }
   | {
-    action: 'insert';
-    name: string;
-    sort_order: number;
-    uuid: string;
-  };
+      action: 'insert';
+      name: string;
+      sort_order: number;
+      uuid: string;
+    };
 
 /**
  * Determines whether an exported folder row updates an existing folder or inserts a new one.

@@ -4,6 +4,8 @@ HarborClient includes a built-in AI sidebar for working with your API requests. 
 
 API keys are encrypted and stored locally on your machine. HarborClient uses the OS keychain when available; on systems without Secret Service support it falls back to a local encryption key in your application data directory. On Linux, OS-backed encryption typically requires **GNOME Keyring** or **KWallet** to be running.
 
+![AI](images/screenshots/hc-7.png)
+
 ## API keys
 
 Before you can chat with personal models, add at least one provider API key:

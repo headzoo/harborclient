@@ -41,7 +41,7 @@ describe('entityMappers', () => {
     });
 
     it('warns and uses fallback when a required numeric field is not coercible', () => {
-      const warn = vi.spyOn(console, 'warn').mockImplementation(() => { });
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       expect(rowToCollection({ id: 'not-a-number', name: 'Broken' })).toMatchObject({ id: 0 });
 
@@ -52,7 +52,7 @@ describe('entityMappers', () => {
     });
 
     it('warns and returns null when a nullable numeric field is not coercible', () => {
-      const warn = vi.spyOn(console, 'warn').mockImplementation(() => { });
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       expect(
         rowToRequest({

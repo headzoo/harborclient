@@ -1,0 +1,60 @@
+import { useCallback, useEffect, useState } from 'react';
+import type { SourceControlStatus } from '#/shared/types';
+
+/**
+ * Polls git source-control status for mounted git connections.
+ *
+ * @param pollIntervalMs - Optional polling interval; defaults to 10 seconds.
+ * @param onWorkingTreeChanged - Optional callback when the working tree changes on disk.
+ */
+export function useGitStatuses(
+  pollIntervalMs = 10000,
+  onWorkingTreeChanged?: (connectionId: string) => void
+): {
+  statuses: Record<string, SourceControlStatus>;
+  refresh: () => void;
+} {
+  const [statuses, setStatuses] = useState<Record<string, SourceControlStatus>>({});
+
+  /**
+   * Fetches latest git statuses from the main process.
+   */
+  const refresh = useCallback((): void => {
+    void window.api
+      .listGitStatuses()
+      .then(setStatuses)
+      .catch(() => {
+        setStatuses({});
+      });
+  }, []);
+
+  /**
+   * Polls git status on an interval, when the window regains focus, and when the
+   * working tree changes on disk (pull or external git operations).
+   */
+  useEffect(() => {
+    refresh();
+
+    const intervalId = window.setInterval(refresh, pollIntervalMs);
+    const handleFocus = (): void => {
+      refresh();
+    };
+    window.addEventListener('focus', handleFocus);
+
+    const unsubscribe =
+      onWorkingTreeChanged != null
+        ? window.api.onGitWorkingTreeChanged((connectionId) => {
+          refresh();
+          onWorkingTreeChanged(connectionId);
+        })
+        : undefined;
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+      unsubscribe?.();
+    };
+  }, [pollIntervalMs, refresh, onWorkingTreeChanged]);
+
+  return { statuses, refresh };
+}

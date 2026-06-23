@@ -75,6 +75,41 @@ export const sidebar: DefaultTheme.SidebarItem[] =
     "collapsed": false
   },
   {
+    "text": "Git provider",
+    "link": "/git-provider",
+    "items": [
+      {
+        "text": "When to use git",
+        "link": "/git-provider#when-to-use-git"
+      },
+      {
+        "text": "Setup",
+        "link": "/git-provider#setup"
+      },
+      {
+        "text": "File layout",
+        "link": "/git-provider#file-layout"
+      },
+      {
+        "text": "Source control in the app",
+        "link": "/git-provider#source-control-in-the-app"
+      },
+      {
+        "text": "Authentication",
+        "link": "/git-provider#authentication"
+      },
+      {
+        "text": "Provider badge and invites",
+        "link": "/git-provider#provider-badge-and-invites"
+      },
+      {
+        "text": "What's next",
+        "link": "/git-provider#whats-next"
+      }
+    ],
+    "collapsed": false
+  },
+  {
     "text": "AI assistant",
     "link": "/ai",
     "items": [

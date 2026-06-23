@@ -687,6 +687,13 @@ export class TeamHubDatabase implements IDatabase {
   }
 
   /**
+   * Team hubs are not git-backed working trees.
+   */
+  async getSourceControlStatus(): Promise<null> {
+    return null;
+  }
+
+  /**
    * Closes the id map database; the HTTP client has no persistent connection.
    */
   async close(): Promise<void> {

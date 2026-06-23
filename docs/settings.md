@@ -8,6 +8,8 @@ Appearance, request defaults, and connection definitions are stored in electron-
 
 ## General
 
+![General](images/screenshots/hc-2.png)
+
 ### Theme
 
 Choose how HarborClient looks:
@@ -34,6 +36,8 @@ Click **Save** to apply request defaults.
 
 ## Shortcuts
 
+![Shortcuts](images/screenshots/hc-3.png)
+
 The **Shortcuts** section lists every configurable keyboard shortcut in HarborClient. Each row shows the action name and its current key combination.
 
 | Action | Description |
@@ -46,6 +50,8 @@ Shortcut changes apply immediately when valid. Duplicate or invalid combinations
 Configurable shortcuts include File menu actions (new request, save request, settings), Edit menu actions (undo, copy, paste), and View menu actions (full screen, zoom). Some actions such as **Send** still use **Enter** when the URL field is focused and are not listed here.
 
 ## Proxy
+
+![Proxy](images/screenshots/hc-4.png)
 
 The **Proxy** section configures a global HTTP proxy applied to every outbound request.
 
@@ -62,6 +68,8 @@ The **Proxy** section configures a global HTTP proxy applied to every outbound r
 Click **Save** to apply proxy settings. When the proxy is enabled but the host is empty, requests are sent directly without a proxy.
 
 ## Databases
+
+![Databases](images/screenshots/hc-5.png)
 
 The **Databases** section lists every named database connection. The **active** database is used for new collections and imports. Individual collections can be moved to other databases from collection settings.
 
@@ -129,9 +137,24 @@ Stores data on a remote PostgreSQL server. Use this type for self-hosted or team
 | **Password** | PostgreSQL password | (empty) |
 | **Database** | PostgreSQL database name | (empty) |
 
-When you use a remote type such as Firestore, MySQL, or PostgreSQL, multiple HarborClient instances can point at the same database to share collections, environments, and saved requests across your team. Changes from other users appear when you reload data (for example, after restarting the app or refreshing collections); HarborClient does not live-sync in the background.
+#### Git
+
+Stores collections as files in a local git repository working tree. Use this type to version API collections with your team through normal git workflows. See [Git provider](/git-provider) for file layout, authentication, and source-control behavior.
+
+| Field | Description | Default |
+| --- | --- | --- |
+| **Repository path** | Absolute path to the local repository clone | (empty) |
+| **Repository URL (HTTPS)** | Remote URL for fetch/push (SSH not supported) | (empty) |
+| **Branch** | Branch to track | `main` |
+| **HarborClient subdirectory** | Directory inside the repo for collection files | `.harborclient` |
+
+Authenticate private remotes with a personal access token or **Authorize with GitHub** (device flow). Tokens are stored encrypted, not in the connection JSON.
+
+When you use a remote type such as Firestore, MySQL, or PostgreSQL, multiple HarborClient instances can point at the same database to share collections, environments, and saved requests across your team. Changes from other users appear when you reload data (for example, after restarting the app or refreshing collections); HarborClient does not live-sync in the background. Git-backed connections reload from disk when you pull, when files change under the HarborClient subdirectory, or when the window regains focus.
 
 ## AI
+
+![AI](images/screenshots/hc-6.png)
 
 The **AI** section stores API keys for OpenAI, Claude, and Google Gemini. Keys are encrypted and saved locally on your machine. HarborClient uses the OS keychain when available; on systems without Secret Service support it falls back to a local encryption key in your application data directory. Saved keys power the AI sidebar chat. See [AI assistant](/ai) for setup and usage.
 

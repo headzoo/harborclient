@@ -6,6 +6,7 @@ import { createBlankConnection, PROVIDER_OPTIONS, providerLabel } from './consta
 import { FirestoreFields } from './FirestoreFields';
 import { MySqlFields } from './MySqlFields';
 import { PostgresFields } from './PostgresFields';
+import { GitFields } from './GitFields';
 import { SqliteFields } from './SqliteFields';
 
 interface Props {
@@ -129,6 +130,10 @@ export function DatabaseConnectionForm({
           disabled={disabled}
           onChange={(settings) => handleSettingsChange({ ...connection, settings })}
         />
+      )}
+
+      {connection.type === 'git' && (
+        <GitFields connection={connection} disabled={disabled} onChange={handleSettingsChange} />
       )}
     </div>
   );

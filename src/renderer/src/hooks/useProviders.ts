@@ -67,6 +67,7 @@ export function providerOptionLabel(provider: ProviderOption): string {
   }
   const labels: Record<DatabaseProvider, string> = {
     sqlite: 'SQLite',
+    git: 'Git',
     firestore: 'Firestore',
     mysql: 'MySQL',
     postgres: 'PostgreSQL'

@@ -1147,6 +1147,13 @@ export class SqliteDatabase implements IDatabase {
   }
 
   /**
+   * Git-backed providers return status; SQLite is not source-controlled.
+   */
+  async getSourceControlStatus(): Promise<null> {
+    return null;
+  }
+
+  /**
    * Closes the database connection.
    */
   async close(): Promise<void> {

@@ -753,6 +753,109 @@ function syncProvider(connectionId: string): Promise<void> {
 }
 
 /**
+ * Returns source-control status for each mounted git connection.
+ */
+function listGitStatuses(): Promise<Record<string, import('#/shared/types').SourceControlStatus>> {
+  return ipcRenderer.invoke('git:statuses');
+}
+
+/**
+ * Subscribes to working-tree changes for git-backed connections.
+ *
+ * @param callback - Handler invoked with the connection id whose tree changed.
+ * @returns Unsubscribe function.
+ */
+function onGitWorkingTreeChanged(callback: (connectionId: string) => void): () => void {
+  const listener = (_event: Electron.IpcRendererEvent, connectionId: string): void => {
+    callback(connectionId);
+  };
+  ipcRenderer.on('git:workingTreeChanged', listener);
+  return () => ipcRenderer.removeListener('git:workingTreeChanged', listener);
+}
+
+/**
+ * Commits staged changes in a git-backed connection.
+ *
+ * @param connectionId - Git connection id.
+ * @param message - Commit message.
+ */
+function gitCommit(connectionId: string, message: string): Promise<void> {
+  return ipcRenderer.invoke('git:commit', connectionId, message);
+}
+
+/**
+ * Fetches from the remote for a git-backed connection.
+ *
+ * @param connectionId - Git connection id.
+ */
+function gitFetch(connectionId: string): Promise<void> {
+  return ipcRenderer.invoke('git:fetch', connectionId);
+}
+
+/**
+ * Pulls remote changes for a git-backed connection.
+ *
+ * @param connectionId - Git connection id.
+ */
+function gitPull(connectionId: string): Promise<void> {
+  return ipcRenderer.invoke('git:pull', connectionId);
+}
+
+/**
+ * Pushes commits for a git-backed connection.
+ *
+ * @param connectionId - Git connection id.
+ */
+function gitPush(connectionId: string): Promise<void> {
+  return ipcRenderer.invoke('git:push', connectionId);
+}
+
+/**
+ * Returns recent commits for a git-backed connection.
+ *
+ * @param connectionId - Git connection id.
+ * @param depth - Maximum number of commits.
+ */
+function gitLog(
+  connectionId: string,
+  depth?: number
+): Promise<import('#/shared/types').GitLogEntry[]> {
+  return ipcRenderer.invoke('git:log', connectionId, depth);
+}
+
+/**
+ * Stores a PAT for a git-backed connection and validates credentials.
+ *
+ * @param connectionId - Git connection id.
+ * @param username - Basic Auth username.
+ * @param token - Personal access token.
+ */
+function gitSetPat(connectionId: string, username: string, token: string): Promise<void> {
+  return ipcRenderer.invoke('git:setPat', connectionId, username, token);
+}
+
+/**
+ * Starts GitHub OAuth device flow for a git-backed connection.
+ *
+ * @param connectionId - Git connection id.
+ */
+function gitStartOAuth(connectionId: string): Promise<{
+  userCode: string;
+  verificationUri: string;
+}> {
+  return ipcRenderer.invoke('git:startOAuth', connectionId);
+}
+
+/**
+ * Completes GitHub OAuth device flow after browser approval.
+ *
+ * @param connectionId - Git connection id.
+ */
+function gitCompleteOAuth(connectionId: string): Promise<void> {
+  return ipcRenderer.invoke('git:completeOAuth', connectionId);
+}
+
+/**
  * Returns the active database connection id via IPC.
  */
 function getActiveDatabaseId(): Promise<string> {
@@ -1063,6 +1166,16 @@ const api: Api = {
   deleteTeamHubToken,
   listTeamHubAdminResourceOptions,
   syncProvider,
+  listGitStatuses,
+  onGitWorkingTreeChanged,
+  gitCommit,
+  gitFetch,
+  gitPull,
+  gitPush,
+  gitLog,
+  gitSetPat,
+  gitStartOAuth,
+  gitCompleteOAuth,
   getActiveDatabaseId,
   setActiveDatabaseId,
   getRequestEditorTab,
