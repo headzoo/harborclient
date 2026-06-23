@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.5.21 - 2026-06-23
+
 - refactor(ui): simplify action menu structure in Collections component. (`e677a48`)
 - docs(README): add Electron badge to enhance visibility. (`6a6065d`)
 - refactor(ui): streamline Collections and RequestRow components. (`e44d761`)
