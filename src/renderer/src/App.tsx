@@ -54,7 +54,7 @@ import { formatErrorMessage, showAlert } from '#/renderer/src/ui/modals/dialogHe
 import { AiSidebar } from '#/renderer/src/ui/AiSidebar';
 import { Configuration } from '#/renderer/src/ui/Configuration';
 import { Sidebar } from '#/renderer/src/ui/Sidebar';
-import { SidebarExpansionProvider } from '#/renderer/src/ui/Sidebar/SidebarExpansionContext';
+import { SidebarExpansionProvider } from '#/renderer/src/ui/Sidebar/SidebarExpansionProvider';
 import { Request } from '#/renderer/src/ui/Request';
 import { TitleBar } from '#/renderer/src/ui/TitleBar';
 import { BusyIndicator } from '#/renderer/src/ui/shared/BusyIndicator';

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(git): add unit tests for GitSyncManager functionality. (`4199783`)
 - feat(backup): implement backup and restore functionality for local data. (`1174c10`)
 - refactor(database): improve code formatting in databaseSettings and types. (`b7fa089`)
 - feat(docs): add Git-backed collections feature to documentation. (`46238b3`)

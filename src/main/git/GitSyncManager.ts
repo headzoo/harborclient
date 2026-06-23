@@ -46,21 +46,8 @@ export class GitSyncManager {
     }
 
     const branch = await this.currentBranch();
-    const ahead = 0;
-    const behind = 0;
-
-    if (branch) {
-      try {
-        await git.resolveRef({ fs, dir: this.#repoPath, ref: 'HEAD' });
-        await git.resolveRef({
-          fs,
-          dir: this.#repoPath,
-          ref: `refs/remotes/origin/${branch}`
-        });
-      } catch {
-        // Upstream may not exist yet for new repos.
-      }
-    }
+    const { ahead, behind } =
+      branch != null ? await this.countAheadBehind(branch) : { ahead: 0, behind: 0 };
 
     const status = {
       changedCount,
@@ -162,6 +149,64 @@ export class GitSyncManager {
    */
   async testCredentials(): Promise<void> {
     await this.fetch();
+  }
+
+  /**
+   * Counts local commits ahead of and behind the cached origin tracking ref.
+   *
+   * Uses refs/remotes/origin/{branch} updated by fetch/pull; no network access.
+   *
+   * @param branch - Current branch name.
+   * @returns Ahead/behind counts relative to the origin tracking ref.
+   */
+  private async countAheadBehind(branch: string): Promise<{ ahead: number; behind: number }> {
+    try {
+      const localOid = await git.resolveRef({ fs, dir: this.#repoPath, ref: 'HEAD' });
+      const remoteOid = await git.resolveRef({
+        fs,
+        dir: this.#repoPath,
+        ref: `refs/remotes/origin/${branch}`
+      });
+
+      if (localOid === remoteOid) {
+        return { ahead: 0, behind: 0 };
+      }
+
+      const mergeBases = await git.findMergeBase({
+        fs,
+        dir: this.#repoPath,
+        oids: [localOid, remoteOid]
+      });
+      const baseOid = mergeBases[0];
+      if (baseOid == null) {
+        return { ahead: 0, behind: 0 };
+      }
+
+      const ahead = await this.countCommitsSince(localOid, baseOid);
+      const behind = await this.countCommitsSince(remoteOid, baseOid);
+      return { ahead, behind };
+    } catch {
+      return { ahead: 0, behind: 0 };
+    }
+  }
+
+  /**
+   * Counts commits reachable from ref, stopping when stopOid is reached.
+   *
+   * @param ref - Commit oid or ref name to walk from.
+   * @param stopOid - Merge-base oid to stop at (exclusive).
+   * @returns Number of commits between ref and stopOid.
+   */
+  private async countCommitsSince(ref: string, stopOid: string): Promise<number> {
+    let count = 0;
+    const commits = await git.log({ fs, dir: this.#repoPath, ref });
+    for (const commit of commits) {
+      if (commit.oid === stopOid) {
+        break;
+      }
+      count += 1;
+    }
+    return count;
   }
 
   /**

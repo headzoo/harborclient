@@ -1,8 +1,14 @@
 import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { GitLogEntry, SourceControlStatus } from '#/shared/types';
+import { Button } from '#/renderer/src/components/Button';
 import { Modal } from '#/renderer/src/ui/shared/Modal';
 import { field } from '#/renderer/src/ui/shared/classes';
+
+/**
+ * Pre-filled commit message when the working tree has uncommitted changes.
+ */
+const DEFAULT_COMMIT_MESSAGE = 'Update HarborClient collections';
 
 interface Props {
   /**
@@ -47,9 +53,13 @@ export function GitSourceControlPanel({
   onClose,
   onRefresh
 }: Props): JSX.Element | null {
-  const [message, setMessage] = useState('');
+  const [messageDraft, setMessageDraft] = useState<{ edited: true; value: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [log, setLog] = useState<GitLogEntry[]>([]);
+
+  const hasUnpushed = (status?.ahead ?? 0) > 0;
+  const defaultMessage = (status?.changedCount ?? 0) > 0 ? DEFAULT_COMMIT_MESSAGE : '';
+  const message = messageDraft?.edited === true ? messageDraft.value : defaultMessage;
 
   /**
    * Loads recent commits when the panel opens.
@@ -74,6 +84,7 @@ export function GitSourceControlPanel({
     try {
       await action();
       onRefresh();
+      setMessageDraft(null);
       const entries = await window.api.gitLog(connectionId, 10);
       setLog(entries);
     } catch (err) {
@@ -122,49 +133,47 @@ export function GitSourceControlPanel({
             className={`${field} min-h-[80px]`}
             value={message}
             disabled={busy}
-            onChange={(event) => setMessage(event.target.value)}
+            onChange={(event) => setMessageDraft({ edited: true, value: event.target.value })}
           />
         </label>
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="rounded bg-accent px-3 py-1.5 text-[14px] text-accent-fg disabled:opacity-50"
+        <div className="flex gap-2">
+          <Button
+            className="flex-1"
             disabled={busy || !message.trim()}
             onClick={() =>
               void runGitAction(() => window.api.gitCommit(connectionId, message.trim()))
             }
           >
             Commit
-          </button>
-          <button
-            type="button"
-            className="rounded border border-border px-3 py-1.5 text-[14px] disabled:opacity-50"
+          </Button>
+          <Button
+            className="flex-1"
+            variant="secondary"
             disabled={busy}
             onClick={() => void runGitAction(() => window.api.gitPull(connectionId))}
           >
             Pull
-          </button>
-          <button
-            type="button"
-            className="rounded border border-border px-3 py-1.5 text-[14px] disabled:opacity-50"
+          </Button>
+          <Button
+            className="flex-1"
+            variant="secondary"
             disabled={busy}
+            aria-label={hasUnpushed ? `Push (${status!.ahead} commit(s) ahead)` : 'Push'}
             onClick={() => void runGitAction(() => window.api.gitPush(connectionId))}
           >
-            Push
-          </button>
-          <button
-            type="button"
-            className="rounded border border-border px-3 py-1.5 text-[14px] disabled:opacity-50"
-            disabled={busy}
-            onClick={onClose}
-          >
+            <span className="inline-flex items-center justify-center gap-1.5">
+              Push
+              {hasUnpushed && <span className="h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />}
+            </span>
+          </Button>
+          <Button className="flex-1" variant="secondary" disabled={busy} onClick={onClose}>
             Close
-          </button>
+          </Button>
         </div>
 
         {log.length > 0 && (
-          <div>
+          <div className="rounded border border-separator p-3">
             <h3 className="m-0 mb-2 text-[14px] font-medium text-text">Recent commits</h3>
             <ul className="m-0 flex list-none flex-col gap-1 p-0">
               {log.map((entry) => (
