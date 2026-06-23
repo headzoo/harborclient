@@ -78,6 +78,31 @@ chmod +x harborclient-{version}.AppImage
 ./harborclient-{version}.AppImage
 ```
 
+## Verbose logging
+
+HarborClient supports optional main-process logging for troubleshooting.
+
+| Flag | Environment variable | What is logged |
+| ---- | -------------------- | -------------- |
+| `-v` / `--verbose` | `HARBOR_VERBOSE=1` | Startup steps and diagnostic output |
+| `-vv` / `--very-verbose` | `HARBOR_VERBOSE=2` | Everything in `-v`, plus each outbound HTTP request's method, URL, request headers, and body |
+
+Response headers and response bodies are never logged, even with `-vv`.
+
+**Packaged build:**
+
+```bash
+./HarborClient -v
+./HarborClient -vv
+```
+
+**Development:**
+
+```bash
+pnpm dev -- -v
+pnpm dev -- -vv
+```
+
 ## What's next
 
 - [Making requests](/requests) — build, send, and inspect HTTP requests.

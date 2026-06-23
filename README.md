@@ -12,6 +12,8 @@ pnpm install
 pnpm dev
 ```
 
+Use `pnpm dev -- -v` for verbose startup and diagnostic logging, or `pnpm dev -- -vv` to also log each outbound HTTP request (method, URL, request headers, and body). Response headers and response bodies are not logged.
+
 ## License
 
 MIT

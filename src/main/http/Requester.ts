@@ -7,6 +7,7 @@ import type {
   SentRequest
 } from '#/shared/types';
 import { DEFAULT_GENERAL_SETTINGS } from '#/main/settings/generalSettings';
+import { isVeryVerbose, logRequest } from '#/main/logger';
 import type { IBody } from '#/main/http/IBody';
 import type { IHeaders } from '#/main/http/IHeaders';
 import type { IQueryString } from '#/main/http/IQueryString';
@@ -176,6 +177,25 @@ export class Requester implements IRequester {
   }
 
   /**
+   * Logs the outbound request when very-verbose mode is enabled.
+   *
+   * Records the HTTP verb, resolved URL, request headers, body type, and request
+   * body. Response headers and response bodies are intentionally omitted.
+   *
+   * @param request - Final request metadata sent to fetch.
+   */
+  private logOutgoingRequest(request: SentRequest): void {
+    if (!isVeryVerbose) return;
+
+    logRequest(`${request.method} ${request.url}`);
+    logRequest('headers:', request.headers);
+    logRequest('bodyType:', request.bodyType);
+    if (request.body) {
+      logRequest('body:', request.body);
+    }
+  }
+
+  /**
    * Executes an HTTP request via fetch and returns timing and response metadata.
    *
    * @param input - Method, URL, headers, params, body, and body type.
@@ -297,6 +317,8 @@ export class Requester implements IRequester {
           init.body = input.body;
         }
       }
+
+      this.logOutgoingRequest(request);
 
       const response = await fetch(url, init);
       const setCookieHeaders =

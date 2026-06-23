@@ -142,7 +142,7 @@ export class TeamHubDatabase implements IDatabase {
   constructor(
     private readonly client: HarborTeamHubClient,
     private readonly idMap: TeamHubIdMap
-  ) { }
+  ) {}
 
   /**
    * Verifies connectivity to HarborClient Server before the router mounts this backend.
