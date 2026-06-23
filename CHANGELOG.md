@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.5.16 - 2026-06-23
+
 - feat(teamHub): implement user and token management for Team Hub. (`c786ae4`)
 
 ## 1.5.15 - 2026-06-23
