@@ -4,21 +4,7 @@ HarborClient is a desktop app for building, sending, and inspecting HTTP request
 
 ## Download
 
-Download the latest release from [GitHub Releases](https://github.com/headzoo/harborclient/releases/latest).
-
-1. Open the latest release page.
-2. Scroll to **Assets**.
-3. Download the file that matches your operating system (see the table below).
-
-| Platform | Download |
-| -------- | -------- |
-| Windows | `harborclient-{version}.exe` |
-| macOS (Apple Silicon) | `harborclient-{version}-arm64.dmg` |
-| macOS (Intel) | `harborclient-{version}-x64.dmg` |
-| Linux (Debian/Ubuntu) | `harborclient-{version}.deb` |
-| Linux (portable) | `harborclient-{version}.AppImage` |
-
-Replace `{version}` with the release version shown on the page (for example, `1.2.0`).
+<DownloadLinks />
 
 ## Install on Windows
 

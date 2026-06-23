@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(docs): integrate dynamic download links and enhance documentation structure. (`49a7dc4`)
 - feat(docs): update README and documentation with new screenshot and features. (`248d31d`)
 - feat(sidebar): enhance sidebar navigation with folder selection and focus functionality. (`b840ed9`)
 - feat(docs): add Blog link and Verbose logging section to documentation. (`ab36624`)

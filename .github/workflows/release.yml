@@ -197,3 +197,13 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           DEBUG: electron-notarize*
         run: pnpm build && npx electron-builder build ${{ matrix.args }} --publish always
+
+  deploy-docs:
+    needs: [release, build]
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/docs-pages.yml
+    with:
+      version: ${{ needs.release.outputs.version }}

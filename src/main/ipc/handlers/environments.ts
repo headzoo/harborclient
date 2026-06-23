@@ -1,25 +1,78 @@
 import { BrowserWindow, dialog } from 'electron';
 import { writeFile } from 'fs/promises';
 import { maskVariablesForExport, validateEnvironmentExport } from '#/main/db/collectionData';
+import { mintFreshEnvironmentExportUuid, resolveImportUuid } from '#/main/db/uuid';
 import type { IDatabase } from '#/main/db/IDatabase';
+import { RoutingDatabase } from '#/main/db/RoutingDatabase';
 import { handle } from '#/main/ipc/handle';
-import { openImportFile } from '#/main/ipc/handlers/importDialogs';
+import { confirmDuplicateImport, openImportFile } from '#/main/ipc/handlers/importDialogs';
 import { ipcArgSchemas } from '#/main/ipc/ipcSchemas';
-import type { Environment, EnvironmentExport } from '#/shared/types';
+import type { Environment, EnvironmentExport, ImportAction } from '#/shared/types';
 
 /**
- * Persists an imported environment export as a new environment record.
+ * Result of importing an environment from a portable export file.
+ */
+export interface EnvironmentImportResult {
+  /**
+   * Imported or updated environment.
+   */
+  environment: Environment;
+
+  /**
+   * Whether a new environment was created or an existing one was updated.
+   */
+  action: ImportAction;
+}
+
+/**
+ * Looks up an existing environment by portable uuid.
  *
  * @param db - Database instance backing environment persistence.
+ * @param uuid - Stable environment identifier from an export file.
+ * @returns Matching environment, or undefined when not found.
+ */
+function findExistingEnvironment(db: IDatabase, uuid: string): Environment | undefined {
+  if (db instanceof RoutingDatabase) {
+    return db.findEnvironmentByUuid(uuid);
+  }
+  return undefined;
+}
+
+/**
+ * Persists an imported environment export, deduplicating by uuid when present.
+ *
+ * @param db - Database instance backing environment persistence.
+ * @param win - Focused browser window for duplicate-import prompts, if any.
  * @param data - Validated environment export payload.
- * @returns The created environment with imported variables.
+ * @returns The created or updated environment with action, or null when canceled.
  */
 export async function importEnvironmentData(
   db: IDatabase,
+  win: BrowserWindow | null,
   data: EnvironmentExport
-): Promise<Environment> {
-  const created = await db.createEnvironment(data.name);
-  return db.updateEnvironment(created.id, data.name, data.variables);
+): Promise<EnvironmentImportResult | null> {
+  let payload = data;
+
+  const importUuid = data.uuid?.trim();
+  if (importUuid) {
+    const existing = findExistingEnvironment(db, importUuid);
+    if (existing) {
+      const choice = await confirmDuplicateImport(win, 'environment', existing.name);
+      if (choice === 'cancel') {
+        return null;
+      }
+      if (choice === 'update') {
+        const environment = await db.updateEnvironment(existing.id, data.name, data.variables);
+        return { environment, action: 'updated' };
+      }
+      payload = mintFreshEnvironmentExportUuid(data);
+    }
+  }
+
+  const targetUuid = resolveImportUuid(payload.uuid);
+  const created = await db.createEnvironment(payload.name, targetUuid);
+  const environment = await db.updateEnvironment(created.id, payload.name, payload.variables);
+  return { environment, action: 'created' };
 }
 
 /**
@@ -57,6 +110,7 @@ export function registerEnvironmentHandlers(db: IDatabase): void {
     const data: EnvironmentExport = {
       harborclientVersion: 1,
       harborclientExport: 'environment',
+      uuid: environment.uuid,
       name: environment.name,
       variables: maskVariablesForExport(environment.variables)
     };
@@ -87,6 +141,7 @@ export function registerEnvironmentHandlers(db: IDatabase): void {
     }
 
     const exportData = validateEnvironmentExport(file.parsed);
-    return importEnvironmentData(db, exportData);
+    const result = await importEnvironmentData(db, win, exportData);
+    return result?.environment ?? null;
   });
 }

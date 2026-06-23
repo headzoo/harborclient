@@ -170,6 +170,7 @@ function readAuth(value: unknown): ReturnType<typeof defaultAuth> {
 export function rowToCollection(row: Record<string, unknown>): Collection {
   return {
     id: readNumber(row.id),
+    uuid: readString(row.uuid),
     name: readString(row.name),
     variables: readVariables(row.variables),
     headers: readJsonArray<KeyValue>(row.headers, []),
@@ -188,6 +189,7 @@ export function rowToCollection(row: Record<string, unknown>): Collection {
 export function rowToEnvironment(row: Record<string, unknown>): Environment {
   return {
     id: readNumber(row.id),
+    uuid: readString(row.uuid),
     name: readString(row.name),
     variables: readVariables(row.variables),
     created_at: readTimestamp(row.created_at)
@@ -266,6 +268,7 @@ export function rowToFolder(row: Record<string, unknown>): Folder {
 export function rowToRequest(row: Record<string, unknown>): SavedRequest {
   return {
     id: readNumber(row.id),
+    uuid: readString(row.uuid),
     collection_id: readNumber(row.collection_id),
     name: readString(row.name),
     method: readString(row.method, 'GET') as HttpMethod,

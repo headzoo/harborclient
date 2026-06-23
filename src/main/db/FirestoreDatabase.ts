@@ -25,6 +25,13 @@ import {
 } from 'firebase/firestore';
 import { maskVariablesForExport, validateCollectionExport } from '#/main/db/collectionData';
 import {
+  buildFolderNameIndex,
+  buildRequestUuidIndex,
+  resolveImportFolderId,
+  resolveImportedCollectionUuid,
+  serializeImportedRequestFields
+} from '#/main/db/collectionImport';
+import {
   docToCollection,
   docToEnvironment,
   docToFolder,
@@ -45,6 +52,7 @@ import type {
   SavedRequest,
   Variable
 } from '#/shared/types';
+import { generateDocumentUuid } from '#/main/db/uuid';
 
 /**
  * Maximum writes per Firestore batch commit.
@@ -166,6 +174,29 @@ export class FirestoreDatabase implements IDatabase {
   }
 
   /**
+   * Ensures a Firestore document has a uuid, backfilling legacy rows on read.
+   *
+   * @param collectionName - Top-level collection name.
+   * @param docId - Document id within the collection.
+   * @param data - Existing document fields.
+   * @returns The persisted uuid string.
+   */
+  private async ensureDocumentUuid(
+    collectionName: 'collections' | 'requests' | 'environments',
+    docId: string,
+    data: Record<string, unknown>
+  ): Promise<string> {
+    const existing = typeof data.uuid === 'string' ? data.uuid.trim() : '';
+    if (existing) {
+      return existing;
+    }
+
+    const uuid = generateDocumentUuid();
+    await updateDoc(doc(this.getFirestore(), collectionName, docId), { uuid });
+    return uuid;
+  }
+
+  /**
    * Opens the Firestore connection and signs in with configured credentials.
    */
   async init(): Promise<void> {
@@ -220,12 +251,15 @@ export class FirestoreDatabase implements IDatabase {
    * @returns All collections in the database.
    */
   async listCollections(): Promise<Collection[]> {
-    const snap = await getDocs(
-      query(collection(this.getFirestore(), 'collections'), orderBy('name'))
-    );
-    return snap.docs.map((document) =>
-      docToCollection(Number(document.id), document.data() as Record<string, unknown>)
-    );
+    const firestore = this.getFirestore();
+    const snap = await getDocs(query(collection(firestore, 'collections'), orderBy('name')));
+    const results: Collection[] = [];
+    for (const document of snap.docs) {
+      const data = document.data() as Record<string, unknown>;
+      const uuid = await this.ensureDocumentUuid('collections', document.id, data);
+      results.push(docToCollection(Number(document.id), { ...data, uuid }));
+    }
+    return results;
   }
 
   /**
@@ -240,6 +274,7 @@ export class FirestoreDatabase implements IDatabase {
     const createdAt = new Date().toISOString();
     const data = {
       id,
+      uuid: generateDocumentUuid(),
       name: trimmedName,
       variables: [] as Variable[],
       headers: [] as KeyValue[],
@@ -340,12 +375,15 @@ export class FirestoreDatabase implements IDatabase {
    * @returns All environments in the database.
    */
   async listEnvironments(): Promise<Environment[]> {
-    const snap = await getDocs(
-      query(collection(this.getFirestore(), 'environments'), orderBy('name'))
-    );
-    return snap.docs.map((document) =>
-      docToEnvironment(Number(document.id), document.data() as Record<string, unknown>)
-    );
+    const firestore = this.getFirestore();
+    const snap = await getDocs(query(collection(firestore, 'environments'), orderBy('name')));
+    const results: Environment[] = [];
+    for (const document of snap.docs) {
+      const data = document.data() as Record<string, unknown>;
+      const uuid = await this.ensureDocumentUuid('environments', document.id, data);
+      results.push(docToEnvironment(Number(document.id), { ...data, uuid }));
+    }
+    return results;
   }
 
   /**
@@ -360,6 +398,7 @@ export class FirestoreDatabase implements IDatabase {
     const createdAt = new Date().toISOString();
     const data = {
       id,
+      uuid: generateDocumentUuid(),
       name: trimmedName,
       variables: [] as Variable[],
       created_at: createdAt
@@ -412,15 +451,19 @@ export class FirestoreDatabase implements IDatabase {
    * @returns Requests ordered by sort_order then name.
    */
   async listRequests(collectionId: number): Promise<SavedRequest[]> {
+    const firestore = this.getFirestore();
     const snap = await getDocs(
-      query(collection(this.getFirestore(), 'requests'), where('collection_id', '==', collectionId))
+      query(collection(firestore, 'requests'), where('collection_id', '==', collectionId))
     );
 
-    return snap.docs
-      .map((document) =>
-        docToRequest(Number(document.id), document.data() as Record<string, unknown>)
-      )
-      .sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
+    const results: SavedRequest[] = [];
+    for (const document of snap.docs) {
+      const data = document.data() as Record<string, unknown>;
+      const uuid = await this.ensureDocumentUuid('requests', document.id, data);
+      results.push(docToRequest(Number(document.id), { ...data, uuid }));
+    }
+
+    return results.sort((a, b) => a.sort_order - b.sort_order || a.name.localeCompare(b.name));
   }
 
   /**
@@ -484,6 +527,7 @@ export class FirestoreDatabase implements IDatabase {
     const createdAt = now;
     const data = {
       id,
+      uuid: input.uuid?.trim() || generateDocumentUuid(),
       collection_id: input.collection_id,
       folder_id: folderId,
       name: trimmedName,
@@ -725,13 +769,15 @@ export class FirestoreDatabase implements IDatabase {
     if (!snap.exists()) throw new Error('Collection not found');
 
     const data = snap.data() as Record<string, unknown>;
-    const collectionRecord = docToCollection(id, data);
+    const collectionUuid = await this.ensureDocumentUuid('collections', String(id), data);
+    const collectionRecord = docToCollection(id, { ...data, uuid: collectionUuid });
     const folderRecords = await this.listFolders(id);
     const folders = folderRecords.map(({ name, sort_order }) => ({ name, sort_order }));
     const folderNameById = new Map(folderRecords.map((folder) => [folder.id, folder.name]));
 
     const requests = (await this.listRequests(id)).map(
       ({
+        uuid,
         name,
         method,
         url,
@@ -746,6 +792,7 @@ export class FirestoreDatabase implements IDatabase {
         sort_order,
         folder_id
       }) => ({
+        uuid,
         name,
         method,
         url,
@@ -765,6 +812,7 @@ export class FirestoreDatabase implements IDatabase {
     return {
       harborclientVersion: 1,
       harborclientExport: 'collection',
+      uuid: collectionRecord.uuid,
       name: collectionRecord.name,
       variables: maskVariablesForExport(collectionRecord.variables),
       headers: collectionRecord.headers,
@@ -791,6 +839,7 @@ export class FirestoreDatabase implements IDatabase {
 
     const collectionData = {
       id,
+      uuid: resolveImportedCollectionUuid(exportData),
       name: exportData.name,
       variables: exportData.variables,
       headers: exportData.headers,
@@ -828,28 +877,28 @@ export class FirestoreDatabase implements IDatabase {
 
     exportData.requests.forEach((request, index) => {
       const requestId = requestIds[index];
-      const folderName = request.folder_name ?? null;
-      const folderId =
-        folderName != null && folderName.trim() ? (folderIdByName.get(folderName) ?? null) : null;
+      const folderId = resolveImportFolderId(request.folder_name, folderIdByName);
+      const fields = serializeImportedRequestFields(request);
 
       writes.push({
         ref: doc(firestore, 'requests', String(requestId)),
         data: {
           id: requestId,
+          uuid: fields.uuid,
           collection_id: id,
           folder_id: folderId,
-          name: request.name,
-          method: request.method,
-          url: request.url,
+          name: fields.name,
+          method: fields.method,
+          url: fields.url,
           headers: request.headers,
           params: request.params,
           auth: request.auth ?? defaultAuth(),
-          body: request.body,
-          body_type: request.body_type,
-          pre_request_script: request.pre_request_script,
-          post_request_script: request.post_request_script,
-          comment: request.comment,
-          sort_order: request.sort_order,
+          body: fields.body,
+          body_type: fields.body_type,
+          pre_request_script: fields.pre_request_script,
+          post_request_script: fields.post_request_script,
+          comment: fields.comment,
+          sort_order: fields.sort_order,
           created_at: now,
           updated_at: now
         }
@@ -859,6 +908,181 @@ export class FirestoreDatabase implements IDatabase {
     await this.commitBatchedSets(firestore, writes);
 
     return docToCollection(id, collectionData);
+  }
+
+  /**
+   * Looks up a collection by portable uuid within this Firestore store.
+   *
+   * @param uuid - Stable collection identifier.
+   * @returns The collection when found, otherwise null.
+   */
+  async findCollectionByUuid(uuid: string): Promise<Collection | null> {
+    const trimmed = uuid.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const firestore = this.getFirestore();
+    const snap = await getDocs(
+      query(collection(firestore, 'collections'), where('uuid', '==', trimmed))
+    );
+
+    const document = snap.docs[0];
+    if (!document) {
+      return null;
+    }
+
+    const data = document.data() as Record<string, unknown>;
+    return docToCollection(Number(document.id), { ...data, uuid: trimmed });
+  }
+
+  /**
+   * Looks up a request by uuid within a collection in this Firestore store.
+   *
+   * @param collectionId - Provider-local collection id.
+   * @param uuid - Stable request identifier.
+   * @returns The request when found, otherwise null.
+   */
+  async findRequestByUuid(collectionId: number, uuid: string): Promise<SavedRequest | null> {
+    const trimmed = uuid.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const firestore = this.getFirestore();
+    const snap = await getDocs(
+      query(
+        collection(firestore, 'requests'),
+        where('collection_id', '==', collectionId),
+        where('uuid', '==', trimmed)
+      )
+    );
+
+    const document = snap.docs[0];
+    if (!document) {
+      return null;
+    }
+
+    const data = document.data() as Record<string, unknown>;
+    return docToRequest(Number(document.id), { ...data, uuid: trimmed });
+  }
+
+  /**
+   * Updates an existing collection and upserts folders and requests from import data.
+   *
+   * @param id - Provider-local collection id to update.
+   * @param data - Validated collection export payload.
+   * @returns The updated collection.
+   */
+  async updateCollectionFromImport(id: number, data: CollectionExport): Promise<Collection> {
+    const exportData = validateCollectionExport(data);
+    const now = new Date().toISOString();
+    const firestore = this.getFirestore();
+    const collectionRef = doc(firestore, 'collections', String(id));
+    const collectionSnap = await getDoc(collectionRef);
+    if (!collectionSnap.exists()) {
+      throw new Error('Collection not found');
+    }
+
+    const existingCollection = collectionSnap.data() as Record<string, unknown>;
+    await updateDoc(collectionRef, {
+      name: exportData.name,
+      variables: exportData.variables,
+      headers: exportData.headers,
+      auth: exportData.auth ?? defaultAuth(),
+      pre_request_script: exportData.pre_request_script,
+      post_request_script: exportData.post_request_script
+    });
+
+    const existingFolders = await this.listFolders(id);
+    const folderIdByName = buildFolderNameIndex(existingFolders);
+
+    for (const folder of exportData.folders ?? []) {
+      const existingFolderId = folderIdByName.get(folder.name);
+      if (existingFolderId != null) {
+        await updateDoc(doc(firestore, 'folders', String(existingFolderId)), {
+          sort_order: folder.sort_order
+        });
+        continue;
+      }
+
+      const folderId = await this.nextId('folders');
+      await setDoc(doc(firestore, 'folders', String(folderId)), {
+        id: folderId,
+        collection_id: id,
+        name: folder.name,
+        sort_order: folder.sort_order,
+        created_at: now
+      });
+      folderIdByName.set(folder.name, folderId);
+    }
+
+    const existingRequests = await this.listRequests(id);
+    const requestUuidIndex = buildRequestUuidIndex(existingRequests);
+
+    for (const request of exportData.requests) {
+      const folderId = resolveImportFolderId(request.folder_name, folderIdByName);
+      const fields = serializeImportedRequestFields(request);
+      const existingRequestId = fields.uuid ? requestUuidIndex.get(fields.uuid) : undefined;
+
+      if (existingRequestId != null) {
+        await updateDoc(doc(firestore, 'requests', String(existingRequestId)), {
+          folder_id: folderId,
+          name: fields.name,
+          method: fields.method,
+          url: fields.url,
+          headers: request.headers,
+          params: request.params,
+          auth: request.auth ?? defaultAuth(),
+          body: fields.body,
+          body_type: fields.body_type,
+          pre_request_script: fields.pre_request_script,
+          post_request_script: fields.post_request_script,
+          comment: fields.comment,
+          sort_order: fields.sort_order,
+          updated_at: now
+        });
+        continue;
+      }
+
+      const requestId = await this.nextId('requests');
+      await setDoc(doc(firestore, 'requests', String(requestId)), {
+        id: requestId,
+        uuid: fields.uuid,
+        collection_id: id,
+        folder_id: folderId,
+        name: fields.name,
+        method: fields.method,
+        url: fields.url,
+        headers: request.headers,
+        params: request.params,
+        auth: request.auth ?? defaultAuth(),
+        body: fields.body,
+        body_type: fields.body_type,
+        pre_request_script: fields.pre_request_script,
+        post_request_script: fields.post_request_script,
+        comment: fields.comment,
+        sort_order: fields.sort_order,
+        created_at: now,
+        updated_at: now
+      });
+    }
+
+    const collectionUuid =
+      typeof existingCollection.uuid === 'string' && existingCollection.uuid.trim()
+        ? existingCollection.uuid
+        : await this.ensureDocumentUuid('collections', String(id), existingCollection);
+
+    return docToCollection(id, {
+      ...existingCollection,
+      uuid: collectionUuid,
+      name: exportData.name,
+      variables: exportData.variables,
+      headers: exportData.headers,
+      auth: exportData.auth ?? defaultAuth(),
+      pre_request_script: exportData.pre_request_script,
+      post_request_script: exportData.post_request_script
+    });
   }
 
   /**

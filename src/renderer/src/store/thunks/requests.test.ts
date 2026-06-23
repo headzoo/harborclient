@@ -39,6 +39,7 @@ const cancelRequestMock = vi.fn<(requestId: string) => Promise<void>>();
 function savedFrom(input: SaveRequestInput): SavedRequest {
   return {
     id: input.id ?? 999,
+    uuid: input.uuid ?? '',
     collection_id: input.collection_id,
     folder_id: input.folder_id ?? null,
     name: input.name,
@@ -156,6 +157,7 @@ describe('saveRequest folder handling', () => {
 function sampleSaved(overrides: Partial<SavedRequest> = {}): SavedRequest {
   return {
     id: 1,
+    uuid: '',
     collection_id: 10,
     folder_id: null,
     name: 'Get users',

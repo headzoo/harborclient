@@ -312,9 +312,10 @@ export function runIdatabaseContractSuite(label: string, createTestDb: CreateTes
 
       const exported = await db.exportCollectionData(collection.id);
 
-      expect(exported).toEqual({
-        harborclientVersion: 1,
-        harborclientExport: 'collection',
+      expect(exported.harborclientVersion).toBe(1);
+      expect(exported.harborclientExport).toBe('collection');
+      expect(exported.uuid).toEqual(expect.any(String));
+      expect(exported).toMatchObject({
         name: 'Export Me',
         variables: [
           { key: 'shared', value: 'visible', defaultValue: '', share: true },
@@ -347,6 +348,7 @@ export function runIdatabaseContractSuite(label: string, createTestDb: CreateTes
           }
         ]
       });
+      expect(exported.requests[0]?.uuid).toEqual(expect.any(String));
       expect(exported.requests[0]).not.toHaveProperty('id');
       expect(exported.requests[0]).not.toHaveProperty('collection_id');
     });

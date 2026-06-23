@@ -11,16 +11,54 @@ import { convertPostmanCollection, isPostmanCollection } from '#/main/import/pos
 import { defaultAuth } from '#/shared/auth';
 import type { IDatabase } from '#/main/db/IDatabase';
 import { RoutingDatabase } from '#/main/db/RoutingDatabase';
+import { mintFreshCollectionExportUuids, mintFreshRequestExportUuid } from '#/main/db/uuid';
 import { handle } from '#/main/ipc/handle';
 import {
   confirmCollectionScripts,
+  confirmDuplicateImport,
   confirmPostmanImport,
   confirmRequestScripts,
   openImportFile
 } from '#/main/ipc/handlers/importDialogs';
 import { importEnvironmentData } from '#/main/ipc/handlers/environments';
 import { ipcArgSchemas } from '#/main/ipc/ipcSchemas';
-import type { CollectionExport, ImportEntityResult, RequestExport } from '#/shared/types';
+import type {
+  Collection,
+  CollectionExport,
+  ImportAction,
+  ImportEntityResult,
+  RequestExport
+} from '#/shared/types';
+
+/**
+ * Result of importing a collection from a portable export file.
+ */
+export interface CollectionImportResult {
+  /**
+   * Imported or updated collection.
+   */
+  collection: Collection;
+
+  /**
+   * Whether a new collection was created or an existing one was updated.
+   */
+  action: ImportAction;
+}
+
+/**
+ * Result of importing a single request from a portable export file.
+ */
+export interface RequestImportResult {
+  /**
+   * Imported or updated request with global ids.
+   */
+  request: Awaited<ReturnType<IDatabase['saveRequest']>>;
+
+  /**
+   * Whether a new request was created or an existing one was updated.
+   */
+  action: ImportAction;
+}
 
 /**
  * Reads the HarborClient export discriminator from parsed JSON.
@@ -37,18 +75,36 @@ function readHarborclientExport(parsed: unknown): string | null {
 }
 
 /**
+ * Looks up an existing collection by portable uuid when supported by the database layer.
+ *
+ * @param db - Database instance backing collection persistence.
+ * @param uuid - Stable collection identifier from an export file.
+ * @returns Matching collection, or null when not found or uuid is absent.
+ */
+async function findExistingCollection(
+  db: IDatabase,
+  uuid: string | undefined
+): Promise<Collection | null> {
+  const trimmed = uuid?.trim();
+  if (!trimmed) {
+    return null;
+  }
+  return db.findCollectionByUuid(trimmed);
+}
+
+/**
  * Imports a validated collection export after optional Postman/script warnings.
  *
  * @param db - Database instance backing collection persistence.
  * @param win - Focused browser window for modal dialogs, if any.
  * @param parsed - Parsed JSON payload from an import file.
- * @returns Imported collection, or null when the user canceled a warning.
+ * @returns Imported collection with action, or null when the user canceled.
  */
 async function importCollectionFromParsed(
   db: IDatabase,
   win: BrowserWindow | null,
   parsed: unknown
-): Promise<Awaited<ReturnType<IDatabase['importCollectionData']>> | null> {
+): Promise<CollectionImportResult | null> {
   let exportData: CollectionExport;
 
   if (isPostmanCollection(parsed)) {
@@ -64,18 +120,35 @@ async function importCollectionFromParsed(
     }
   }
 
-  return db.importCollectionData(exportData);
+  const existing = await findExistingCollection(db, exportData.uuid);
+  if (existing) {
+    const choice = await confirmDuplicateImport(win, 'collection', existing.name);
+    if (choice === 'cancel') {
+      return null;
+    }
+    if (choice === 'update') {
+      if (!(db instanceof RoutingDatabase)) {
+        throw new Error('Collection update on import is unavailable.');
+      }
+      const collection = await db.updateCollectionFromImport(existing.id, exportData);
+      return { collection, action: 'updated' };
+    }
+    exportData = mintFreshCollectionExportUuids(exportData);
+  }
+
+  const collection = await db.importCollectionData(exportData);
+  return { collection, action: 'created' };
 }
 
 /**
- * Saves a validated request export after optional script warnings.
+ * Saves a validated request export after optional script warnings and uuid deduplication.
  *
  * @param db - Database instance backing request persistence.
  * @param win - Focused browser window for modal dialogs, if any.
  * @param exportData - Validated request export payload.
  * @param collectionId - Collection to add the imported request to.
  * @param folderId - Target folder id, or null for collection root.
- * @returns Imported request, or null when the user canceled a warning.
+ * @returns Imported request with action, or null when the user canceled a warning.
  */
 async function saveImportedRequest(
   db: IDatabase,
@@ -83,26 +156,63 @@ async function saveImportedRequest(
   exportData: RequestExport,
   collectionId: number,
   folderId: number | null
-): Promise<Awaited<ReturnType<IDatabase['saveRequest']>> | null> {
+): Promise<RequestImportResult | null> {
   if (requestExportContainsScripts(exportData) && !(await confirmRequestScripts(win))) {
     return null;
   }
 
-  return db.saveRequest({
+  let payload = exportData;
+
+  const requestUuid = exportData.uuid?.trim();
+  if (requestUuid) {
+    const existing = await db.findRequestByUuid(collectionId, requestUuid);
+    if (existing) {
+      const choice = await confirmDuplicateImport(win, 'request', existing.name);
+      if (choice === 'cancel') {
+        return null;
+      }
+      if (choice === 'update') {
+        const request = await db.saveRequest({
+          id: existing.id,
+          uuid: existing.uuid,
+          collection_id: collectionId,
+          folder_id: folderId,
+          name: exportData.name,
+          method: exportData.method,
+          url: exportData.url,
+          headers: exportData.headers,
+          params: exportData.params,
+          body: exportData.body,
+          body_type: exportData.body_type,
+          pre_request_script: exportData.pre_request_script,
+          post_request_script: exportData.post_request_script,
+          comment: exportData.comment,
+          auth: exportData.auth ?? defaultAuth()
+        });
+        return { request, action: 'updated' };
+      }
+      payload = mintFreshRequestExportUuid(exportData);
+    }
+  }
+
+  const request = await db.saveRequest({
+    uuid: payload.uuid,
     collection_id: collectionId,
     folder_id: folderId,
-    name: exportData.name,
-    method: exportData.method,
-    url: exportData.url,
-    headers: exportData.headers,
-    params: exportData.params,
-    body: exportData.body,
-    body_type: exportData.body_type,
-    pre_request_script: exportData.pre_request_script,
-    post_request_script: exportData.post_request_script,
-    comment: exportData.comment,
-    auth: exportData.auth ?? defaultAuth()
+    name: payload.name,
+    method: payload.method,
+    url: payload.url,
+    headers: payload.headers,
+    params: payload.params,
+    body: payload.body,
+    body_type: payload.body_type,
+    pre_request_script: payload.pre_request_script,
+    post_request_script: payload.post_request_script,
+    comment: payload.comment,
+    auth: payload.auth ?? defaultAuth()
   });
+
+  return { request, action: 'created' };
 }
 
 /**
@@ -185,7 +295,8 @@ export function registerCollectionHandlers(db: IDatabase): void {
       return null;
     }
 
-    return importCollectionFromParsed(db, win, file.parsed);
+    const result = await importCollectionFromParsed(db, win, file.parsed);
+    return result?.collection ?? null;
   });
 
   // Exports a request to a JSON file via a native save dialog.
@@ -216,7 +327,8 @@ export function registerCollectionHandlers(db: IDatabase): void {
     }
 
     const exportData = validateRequestExport(file.parsed);
-    return saveImportedRequest(db, win, exportData, collectionId, folderId ?? null);
+    const result = await saveImportedRequest(db, win, exportData, collectionId, folderId ?? null);
+    return result?.request ?? null;
   });
 
   // Auto-detects and imports a collection, request, or environment from File -> Import.
@@ -230,27 +342,42 @@ export function registerCollectionHandlers(db: IDatabase): void {
     const { parsed } = file;
 
     if (isPostmanCollection(parsed)) {
-      const collection = await importCollectionFromParsed(db, win, parsed);
-      if (!collection) {
+      const result = await importCollectionFromParsed(db, win, parsed);
+      if (!result) {
         return null;
       }
-      return { kind: 'collection', collection } satisfies ImportEntityResult;
+      return {
+        kind: 'collection',
+        collection: result.collection,
+        action: result.action
+      } satisfies ImportEntityResult;
     }
 
     const exportKind = readHarborclientExport(parsed);
 
     if (exportKind === 'collection') {
-      const collection = await importCollectionFromParsed(db, win, parsed);
-      if (!collection) {
+      const result = await importCollectionFromParsed(db, win, parsed);
+      if (!result) {
         return null;
       }
-      return { kind: 'collection', collection } satisfies ImportEntityResult;
+      return {
+        kind: 'collection',
+        collection: result.collection,
+        action: result.action
+      } satisfies ImportEntityResult;
     }
 
     if (exportKind === 'environment') {
       const exportData = validateEnvironmentExport(parsed);
-      const environment = await importEnvironmentData(db, exportData);
-      return { kind: 'environment', environment } satisfies ImportEntityResult;
+      const environmentResult = await importEnvironmentData(db, win, exportData);
+      if (!environmentResult) {
+        return null;
+      }
+      return {
+        kind: 'environment',
+        environment: environmentResult.environment,
+        action: environmentResult.action
+      } satisfies ImportEntityResult;
     }
 
     if (exportKind === 'request') {
@@ -259,11 +386,15 @@ export function registerCollectionHandlers(db: IDatabase): void {
       }
 
       const exportData = validateRequestExport(parsed);
-      const request = await saveImportedRequest(db, win, exportData, activeCollectionId, null);
-      if (!request) {
+      const result = await saveImportedRequest(db, win, exportData, activeCollectionId, null);
+      if (!result) {
         return null;
       }
-      return { kind: 'request', request } satisfies ImportEntityResult;
+      return {
+        kind: 'request',
+        request: result.request,
+        action: result.action
+      } satisfies ImportEntityResult;
     }
 
     throw new Error('Unrecognized HarborClient export file.');

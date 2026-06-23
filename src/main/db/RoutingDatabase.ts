@@ -271,8 +271,8 @@ export class RoutingDatabase implements IDatabase {
   /**
    * Creates an environment in the hidden registry.
    */
-  async createEnvironment(name: string): Promise<Environment> {
-    return this.registry.createEnvironment(name);
+  async createEnvironment(name: string, uuid?: string): Promise<Environment> {
+    return this.registry.createEnvironment(name, uuid);
   }
 
   /**
@@ -465,13 +465,94 @@ export class RoutingDatabase implements IDatabase {
       const entry = this.registry.addRegistryEntry({
         name: imported.name,
         connectionId: backend.connectionId,
-        providerCollectionId: imported.id
+        providerCollectionId: imported.id,
+        collectionUuid: imported.uuid
       });
       return this.buildCollection(entry, imported);
     } catch (err) {
       await this.compensateProviderCollectionCreate(backend, imported.id);
       throw err;
     }
+  }
+
+  /**
+   * Looks up a collection by portable uuid via the local registry.
+   *
+   * @param uuid - Stable collection identifier from an export file.
+   * @returns The global collection when registered, otherwise null.
+   */
+  async findCollectionByUuid(uuid: string): Promise<Collection | null> {
+    const entry = this.registry.findRegistryEntryByUuid(uuid);
+    if (!entry) {
+      return null;
+    }
+
+    const backend = this.byConnectionId.get(entry.connectionId);
+    if (!backend) {
+      return this.buildCollection(entry, undefined);
+    }
+
+    let record: Collection | undefined;
+    try {
+      record =
+        (await backend.db.findCollectionByUuid(uuid)) ??
+        (await backend.db.listCollections()).find((item) => item.id === entry.providerCollectionId);
+    } catch (err) {
+      console.warn(
+        `Failed to read collection uuid "${uuid}" from "${backend.connectionName}":`,
+        err
+      );
+    }
+
+    return this.buildCollection(entry, record);
+  }
+
+  /**
+   * Looks up a request by uuid within a global collection.
+   *
+   * @param collectionId - Global collection id.
+   * @param uuid - Stable request identifier from an export file.
+   * @returns The global request when found, otherwise null.
+   */
+  async findRequestByUuid(collectionId: number, uuid: string): Promise<SavedRequest | null> {
+    const entry = this.requireEntry(collectionId);
+    const backend = this.requireBackendByConnectionId(entry.connectionId);
+    const request = await backend.db.findRequestByUuid(entry.providerCollectionId, uuid);
+    if (!request) {
+      return null;
+    }
+    return this.toGlobalRequest(request, backend, collectionId);
+  }
+
+  /**
+   * Looks up an environment by portable uuid in the local registry.
+   *
+   * @param uuid - Stable environment identifier from an export file.
+   * @returns The environment when found, otherwise undefined.
+   */
+  findEnvironmentByUuid(uuid: string): Environment | undefined {
+    return this.registry.findEnvironmentByUuid(uuid);
+  }
+
+  /**
+   * Updates an existing collection from import data and syncs registry metadata.
+   *
+   * @param globalCollectionId - Global collection id to update.
+   * @param data - Validated collection export payload.
+   * @returns The updated global collection.
+   */
+  async updateCollectionFromImport(
+    globalCollectionId: number,
+    data: CollectionExport
+  ): Promise<Collection> {
+    const entry = this.requireEntry(globalCollectionId);
+    const backend = this.requireBackendByConnectionId(entry.connectionId);
+    const updated = await backend.db.updateCollectionFromImport(entry.providerCollectionId, data);
+    const updatedEntry = this.registry.updateRegistryEntry(globalCollectionId, {
+      name: updated.name,
+      collectionUuid: updated.uuid
+    });
+    return this.buildCollection(updatedEntry, updated);
   }
 
   /**
@@ -571,14 +652,6 @@ export class RoutingDatabase implements IDatabase {
           entry.providerCollectionId === meta.providerCollectionId
       );
 
-    const entry =
-      existing ??
-      this.registry.addRegistryEntry({
-        name: meta.name,
-        connectionId: connection.id,
-        providerCollectionId: meta.providerCollectionId
-      });
-
     const backend = this.requireBackendByConnectionId(connection.id);
     let record: Collection | undefined;
     try {
@@ -590,6 +663,15 @@ export class RoutingDatabase implements IDatabase {
         `Could not load collections from "${backend.connectionName}": ${formatListCollectionError(err)}`
       );
     }
+
+    const entry =
+      existing ??
+      this.registry.addRegistryEntry({
+        name: meta.name,
+        connectionId: connection.id,
+        providerCollectionId: meta.providerCollectionId,
+        collectionUuid: record?.uuid ?? ''
+      });
 
     return this.buildCollection(entry, record);
   }
@@ -752,7 +834,8 @@ export class RoutingDatabase implements IDatabase {
       this.registry.addRegistryEntry({
         name: record.name,
         connectionId: hubId,
-        providerCollectionId: record.id
+        providerCollectionId: record.id,
+        collectionUuid: record.uuid
       });
     }
 
@@ -828,7 +911,8 @@ export class RoutingDatabase implements IDatabase {
       const entry = this.registry.addRegistryEntry({
         name: created.name,
         connectionId: backend.connectionId,
-        providerCollectionId: created.id
+        providerCollectionId: created.id,
+        collectionUuid: created.uuid
       });
       return this.buildCollection(entry, created);
     } catch (err) {
@@ -868,8 +952,17 @@ export class RoutingDatabase implements IDatabase {
     entry: CollectionRegistryEntry,
     record: Collection | undefined
   ): Collection {
+    const recordUuid = record?.uuid?.trim() ?? '';
+    const entryUuid = entry.collectionUuid.trim();
+    const uuid = recordUuid || entryUuid;
+
+    if (recordUuid && recordUuid !== entryUuid) {
+      this.registry.updateRegistryEntry(entry.id, { collectionUuid: recordUuid });
+    }
+
     return {
       id: entry.id,
+      uuid,
       name: entry.name,
       variables: record?.variables ?? [],
       headers: record?.headers ?? [],

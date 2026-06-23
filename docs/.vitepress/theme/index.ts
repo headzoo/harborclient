@@ -1,5 +1,6 @@
 import type { Theme } from 'vitepress';
 import DefaultTheme from 'vitepress/theme';
+import DownloadLinks from './DownloadLinks.vue';
 import Layout from './Layout.vue';
 import './custom.css';
 
@@ -19,6 +20,7 @@ export default {
   Layout,
   enhanceApp(ctx) {
     DefaultTheme.enhanceApp?.(ctx);
+    ctx.app.component('DownloadLinks', DownloadLinks);
 
     if (typeof window === 'undefined') {
       return;

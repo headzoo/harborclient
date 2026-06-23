@@ -58,6 +58,7 @@ const listRequestsMock = vi.fn<(collectionId: number) => Promise<unknown[]>>();
 function sampleCollection(id: number, name: string, connectionId?: string): Collection {
   return {
     id,
+    uuid: '',
     name,
     connectionId,
     variables: [],

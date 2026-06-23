@@ -1,10 +1,17 @@
 import {
+  buildFolderNameIndex,
+  buildRequestUuidIndex,
+  resolveImportFolderId,
+  serializeImportedRequestFields
+} from '#/main/db/collectionImport';
+import {
   maskVariablesForExport,
   normalizeVariable,
   validateCollectionExport
 } from '#/main/db/collectionData';
 import type { TeamHubIdMap } from '#/main/db/TeamHubIdMap';
 import { trimRequiredName } from '#/main/db/trimRequiredName';
+import { resolveImportUuid } from '#/main/db/uuid';
 import type { IDatabase } from '#/main/db/IDatabase';
 import type { HarborTeamHubClient } from '#/main/teamHub/HarborTeamHubClient';
 import type { CollectionRecord, FolderRecord, SavedRequestRecord } from '#/main/teamHub/types';
@@ -30,6 +37,7 @@ import type {
 function serverToCollection(record: CollectionRecord, localId: number): Collection {
   return {
     id: localId,
+    uuid: record.id,
     name: record.name,
     variables: record.variables.map(normalizeVariable),
     headers: record.headers,
@@ -73,6 +81,7 @@ function serverToRequest(
 ): SavedRequest {
   return {
     id: localId,
+    uuid: record.id,
     collection_id: localCollectionId,
     name: record.name,
     method: record.method,
@@ -425,6 +434,7 @@ export class TeamHubDatabase implements IDatabase {
 
     const requests = (await this.listRequests(id)).map(
       ({
+        uuid,
         name,
         method,
         url,
@@ -439,6 +449,7 @@ export class TeamHubDatabase implements IDatabase {
         sort_order,
         folder_id
       }) => ({
+        uuid,
         name,
         method,
         url,
@@ -458,6 +469,7 @@ export class TeamHubDatabase implements IDatabase {
     return {
       harborclientVersion: 1,
       harborclientExport: 'collection',
+      uuid: collection.uuid,
       name: collection.name,
       variables: maskVariablesForExport(collection.variables),
       headers: collection.headers,
@@ -502,11 +514,11 @@ export class TeamHubDatabase implements IDatabase {
     }
 
     for (const request of exportData.requests) {
-      const folderId =
-        request.folder_name != null ? (folderIdByName.get(request.folder_name) ?? null) : null;
+      const folderId = resolveImportFolderId(request.folder_name, folderIdByName);
       await this.saveRequest({
         collection_id: updated.id,
         folder_id: folderId,
+        uuid: resolveImportUuid(request.uuid),
         name: request.name,
         method: request.method,
         url: request.url,
@@ -518,6 +530,106 @@ export class TeamHubDatabase implements IDatabase {
         pre_request_script: request.pre_request_script,
         post_request_script: request.post_request_script,
         comment: request.comment
+      });
+    }
+
+    return updated;
+  }
+
+  /**
+   * Looks up a collection by server UUID within this team hub store.
+   *
+   * @param uuid - Stable collection identifier (server id).
+   * @returns The collection when found, otherwise null.
+   */
+  async findCollectionByUuid(uuid: string): Promise<Collection | null> {
+    const trimmed = uuid.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const localId = this.idMap.findLocalId('collection', trimmed);
+    if (localId == null) {
+      return null;
+    }
+
+    const collections = await this.listCollections();
+    return collections.find((item) => item.id === localId) ?? null;
+  }
+
+  /**
+   * Looks up a request by server UUID within a collection in this team hub store.
+   *
+   * @param collectionId - Provider-local collection id.
+   * @param uuid - Stable request identifier (server id).
+   * @returns The request when found, otherwise null.
+   */
+  async findRequestByUuid(collectionId: number, uuid: string): Promise<SavedRequest | null> {
+    const trimmed = uuid.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const requests = await this.listRequests(collectionId);
+    return requests.find((request) => request.uuid === trimmed) ?? null;
+  }
+
+  /**
+   * Updates an existing collection and upserts folders and requests from import data.
+   *
+   * @param id - Provider-local collection id to update.
+   * @param data - Validated collection export payload.
+   * @returns The updated collection.
+   */
+  async updateCollectionFromImport(id: number, data: CollectionExport): Promise<Collection> {
+    const exportData = validateCollectionExport(data);
+    const updated = await this.updateCollection(
+      id,
+      exportData.name,
+      exportData.variables,
+      exportData.headers,
+      exportData.pre_request_script,
+      exportData.post_request_script,
+      exportData.auth ?? defaultAuth()
+    );
+
+    const existingFolders = await this.listFolders(id);
+    const folderIdByName = buildFolderNameIndex(existingFolders);
+
+    for (const folder of exportData.folders ?? []) {
+      const existingFolderId = folderIdByName.get(folder.name);
+      if (existingFolderId != null) {
+        continue;
+      }
+
+      const createdFolder = await this.createFolder(id, folder.name);
+      folderIdByName.set(folder.name, createdFolder.id);
+    }
+
+    const existingRequests = await this.listRequests(id);
+    const requestUuidIndex = buildRequestUuidIndex(existingRequests);
+
+    for (const request of exportData.requests) {
+      const folderId = resolveImportFolderId(request.folder_name, folderIdByName);
+      const fields = serializeImportedRequestFields(request);
+      const existingRequestId = fields.uuid ? requestUuidIndex.get(fields.uuid) : undefined;
+
+      await this.saveRequest({
+        ...(existingRequestId != null ? { id: existingRequestId } : {}),
+        collection_id: id,
+        folder_id: folderId,
+        uuid: fields.uuid,
+        name: fields.name,
+        method: fields.method,
+        url: fields.url,
+        headers: request.headers,
+        params: request.params,
+        auth: request.auth ?? defaultAuth(),
+        body: fields.body,
+        body_type: fields.body_type,
+        pre_request_script: fields.pre_request_script,
+        post_request_script: fields.post_request_script,
+        comment: fields.comment
       });
     }
 

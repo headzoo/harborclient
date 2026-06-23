@@ -74,6 +74,7 @@ describe('executeAiTool', () => {
     const { store } = await import('#/renderer/src/store/redux');
     const collection: Collection = {
       id: 1,
+      uuid: '',
       name: 'API',
       variables: [],
       headers: [],
@@ -104,6 +105,7 @@ describe('executeAiTool', () => {
     const environments: Environment[] = [
       {
         id: 2,
+        uuid: '',
         name: 'Staging',
         variables: [],
         created_at: '2026-01-01T00:00:00.000Z'
@@ -132,6 +134,7 @@ describe('executeAiTool', () => {
       setEnvironments([
         {
           id: 3,
+          uuid: '',
           name: 'Production',
           variables: [],
           created_at: '2026-01-01T00:00:00.000Z'
@@ -192,6 +195,7 @@ describe('executeAiTool', () => {
     listRequestsMock.mockResolvedValue([
       {
         id: 4,
+        uuid: '',
         collection_id: 1,
         folder_id: null,
         name: 'Ping',

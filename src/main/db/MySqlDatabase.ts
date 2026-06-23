@@ -1,5 +1,12 @@
 import mysql, { type Pool, type ResultSetHeader, type RowDataPacket } from 'mysql2/promise';
 import {
+  buildFolderNameIndex,
+  buildRequestUuidIndex,
+  resolveImportFolderId,
+  resolveImportedCollectionUuid,
+  serializeImportedRequestFields
+} from '#/main/db/collectionImport';
+import {
   maskVariablesForExport,
   normalizeVariable,
   validateCollectionExport
@@ -26,6 +33,11 @@ import type {
   Variable
 } from '#/shared/types';
 import { parseJson } from '#/shared/parseJson';
+import { generateDocumentUuid } from '#/main/db/uuid';
+
+const COLLECTION_COLUMNS =
+  'id, uuid, name, variables, headers, auth, pre_request_script, post_request_script, created_at';
+const ENVIRONMENT_COLUMNS = 'id, uuid, name, variables, created_at';
 
 export class MySqlDatabase implements IDatabase {
   #pool: Pool | null = null;
@@ -144,6 +156,35 @@ export class MySqlDatabase implements IDatabase {
       'auth',
       `LONGTEXT NOT NULL DEFAULT ('${DEFAULT_AUTH_JSON.replace(/'/g, "''")}')`
     );
+    await this.addColumnIfMissing('collections', 'uuid', "VARCHAR(36) NOT NULL DEFAULT ''");
+    await this.addColumnIfMissing('requests', 'uuid', "VARCHAR(36) NOT NULL DEFAULT ''");
+    await this.addColumnIfMissing('environments', 'uuid', "VARCHAR(36) NOT NULL DEFAULT ''");
+    await this.backfillDocumentUuids('collections');
+    await this.backfillDocumentUuids('requests');
+    await this.backfillDocumentUuids('environments');
+  }
+
+  /**
+   * Assigns uuids to rows that were created before uuid support existed.
+   *
+   * @param table - Table name (`collections`, `requests`, or `environments`).
+   */
+  private async backfillDocumentUuids(
+    table: 'collections' | 'requests' | 'environments'
+  ): Promise<void> {
+    const [rows] = await this.getPool().execute<RowDataPacket[]>(
+      `SELECT id FROM ${table} WHERE uuid IS NULL OR uuid = ''`
+    );
+    if (rows.length === 0) {
+      return;
+    }
+
+    for (const row of rows) {
+      await this.getPool().execute(`UPDATE ${table} SET uuid = ? WHERE id = ?`, [
+        generateDocumentUuid(),
+        row.id
+      ]);
+    }
   }
 
   /**
@@ -180,7 +221,7 @@ export class MySqlDatabase implements IDatabase {
    */
   async listCollections(): Promise<Collection[]> {
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
-      'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections ORDER BY name ASC'
+      'SELECT ' + COLLECTION_COLUMNS + ' FROM collections ORDER BY name ASC'
     );
     return rows.map(rowToCollection);
   }
@@ -194,14 +235,15 @@ export class MySqlDatabase implements IDatabase {
   async createCollection(name: string): Promise<Collection> {
     const trimmedName = trimRequiredName(name, 'Collection name');
     const createdAt = new Date().toISOString();
+    const collectionUuid = generateDocumentUuid();
     const [result] = await this.getPool().execute<ResultSetHeader>(
-      `INSERT INTO collections (name, variables, headers, pre_request_script, post_request_script, created_at)
-       VALUES (?, '[]', '[]', '', '', ?)`,
-      [trimmedName, createdAt]
+      `INSERT INTO collections (name, uuid, variables, headers, pre_request_script, post_request_script, created_at)
+       VALUES (?, ?, '[]', '[]', '', '', ?)`,
+      [trimmedName, collectionUuid, createdAt]
     );
 
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
-      'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?',
+      'SELECT ' + COLLECTION_COLUMNS + ' FROM collections WHERE id = ?',
       [result.insertId]
     );
 
@@ -260,7 +302,7 @@ export class MySqlDatabase implements IDatabase {
     if (result.affectedRows === 0) throw new Error('Collection not found');
 
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
-      'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?',
+      'SELECT ' + COLLECTION_COLUMNS + ' FROM collections WHERE id = ?',
       [id]
     );
 
@@ -285,7 +327,7 @@ export class MySqlDatabase implements IDatabase {
    */
   async listEnvironments(): Promise<Environment[]> {
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
-      'SELECT id, name, variables, created_at FROM environments ORDER BY name ASC'
+      'SELECT ' + ENVIRONMENT_COLUMNS + ' FROM environments ORDER BY name ASC'
     );
     return rows.map(rowToEnvironment);
   }
@@ -299,13 +341,14 @@ export class MySqlDatabase implements IDatabase {
   async createEnvironment(name: string): Promise<Environment> {
     const trimmedName = trimRequiredName(name, 'Environment name');
     const createdAt = new Date().toISOString();
+    const environmentUuid = generateDocumentUuid();
     const [result] = await this.getPool().execute<ResultSetHeader>(
-      `INSERT INTO environments (name, variables, created_at) VALUES (?, '[]', ?)`,
-      [trimmedName, createdAt]
+      `INSERT INTO environments (name, uuid, variables, created_at) VALUES (?, ?, '[]', ?)`,
+      [trimmedName, environmentUuid, createdAt]
     );
 
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
-      'SELECT id, name, variables, created_at FROM environments WHERE id = ?',
+      'SELECT ' + ENVIRONMENT_COLUMNS + ' FROM environments WHERE id = ?',
       [result.insertId]
     );
 
@@ -332,7 +375,7 @@ export class MySqlDatabase implements IDatabase {
     if (result.affectedRows === 0) throw new Error('Environment not found');
 
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
-      'SELECT id, name, variables, created_at FROM environments WHERE id = ?',
+      'SELECT ' + ENVIRONMENT_COLUMNS + ' FROM environments WHERE id = ?',
       [id]
     );
 
@@ -429,6 +472,7 @@ export class MySqlDatabase implements IDatabase {
       }
     }
 
+    const requestUuid = input.uuid?.trim() || generateDocumentUuid();
     const [maxRows] = await this.getPool().execute<RowDataPacket[]>(
       `SELECT COALESCE(MAX(sort_order), -1) AS max_order FROM requests
        WHERE collection_id = ? AND ((? IS NULL AND folder_id IS NULL) OR folder_id = ?)`,
@@ -439,8 +483,8 @@ export class MySqlDatabase implements IDatabase {
     const [result] = await this.getPool().execute<ResultSetHeader>(
       `INSERT INTO requests (
         collection_id, folder_id, name, method, url, headers, params, auth, body, body_type,
-        pre_request_script, post_request_script, comment, sort_order, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        pre_request_script, post_request_script, comment, sort_order, uuid, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         input.collection_id,
         folderId,
@@ -456,6 +500,7 @@ export class MySqlDatabase implements IDatabase {
         postRequestScript,
         comment,
         maxOrder + 1,
+        requestUuid,
         now,
         now
       ]
@@ -724,7 +769,7 @@ export class MySqlDatabase implements IDatabase {
    */
   async exportCollectionData(id: number): Promise<CollectionExport> {
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
-      'SELECT name, variables, headers, auth, pre_request_script, post_request_script FROM collections WHERE id = ?',
+      'SELECT name, uuid, variables, headers, auth, pre_request_script, post_request_script FROM collections WHERE id = ?',
       [id]
     );
 
@@ -737,6 +782,7 @@ export class MySqlDatabase implements IDatabase {
 
     const requests = (await this.listRequests(id)).map(
       ({
+        uuid,
         name,
         method,
         url,
@@ -751,6 +797,7 @@ export class MySqlDatabase implements IDatabase {
         sort_order,
         folder_id
       }) => ({
+        uuid,
         name,
         method,
         url,
@@ -776,6 +823,7 @@ export class MySqlDatabase implements IDatabase {
     return {
       harborclientVersion: 1,
       harborclientExport: 'collection',
+      uuid: row.uuid as string,
       name: row.name as string,
       variables: maskVariablesForExport(variables),
       headers,
@@ -801,11 +849,13 @@ export class MySqlDatabase implements IDatabase {
     try {
       await connection.beginTransaction();
 
+      const collectionUuid = resolveImportedCollectionUuid(exportData);
       const [collectionResult] = await connection.execute<ResultSetHeader>(
-        `INSERT INTO collections (name, variables, headers, auth, pre_request_script, post_request_script, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO collections (name, uuid, variables, headers, auth, pre_request_script, post_request_script, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           exportData.name,
+          collectionUuid,
           JSON.stringify(exportData.variables),
           JSON.stringify(exportData.headers),
           JSON.stringify(exportData.auth ?? defaultAuth()),
@@ -830,30 +880,30 @@ export class MySqlDatabase implements IDatabase {
       }
 
       for (const request of exportData.requests) {
-        const folderName = request.folder_name ?? null;
-        const folderId =
-          folderName != null && folderName.trim() ? (folderIdByName.get(folderName) ?? null) : null;
+        const folderId = resolveImportFolderId(request.folder_name, folderIdByName);
+        const fields = serializeImportedRequestFields(request);
 
         await connection.execute(
           `INSERT INTO requests (
             collection_id, folder_id, name, method, url, headers, params, auth, body, body_type,
-            pre_request_script, post_request_script, comment, sort_order, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            pre_request_script, post_request_script, comment, sort_order, uuid, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             collectionId,
             folderId,
-            request.name,
-            request.method,
-            request.url,
-            JSON.stringify(request.headers),
-            JSON.stringify(request.params),
-            JSON.stringify(request.auth ?? defaultAuth()),
-            request.body,
-            request.body_type,
-            request.pre_request_script,
-            request.post_request_script,
-            request.comment,
-            request.sort_order,
+            fields.name,
+            fields.method,
+            fields.url,
+            fields.headersJson,
+            fields.paramsJson,
+            fields.authJson,
+            fields.body,
+            fields.body_type,
+            fields.pre_request_script,
+            fields.post_request_script,
+            fields.comment,
+            fields.sort_order,
+            fields.uuid,
             now,
             now
           ]
@@ -861,7 +911,7 @@ export class MySqlDatabase implements IDatabase {
       }
 
       const [rows] = await connection.execute<RowDataPacket[]>(
-        'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?',
+        'SELECT ' + COLLECTION_COLUMNS + ' FROM collections WHERE id = ?',
         [collectionId]
       );
 
@@ -869,6 +919,185 @@ export class MySqlDatabase implements IDatabase {
 
       const row = rows[0];
       if (!row) throw new Error('Collection not found after import');
+      return rowToCollection(row);
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    } finally {
+      connection.release();
+    }
+  }
+
+  /**
+   * Looks up a collection by portable uuid within this MySQL store.
+   *
+   * @param uuid - Stable collection identifier.
+   * @returns The collection when found, otherwise null.
+   */
+  async findCollectionByUuid(uuid: string): Promise<Collection | null> {
+    const trimmed = uuid.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const [rows] = await this.getPool().execute<RowDataPacket[]>(
+      'SELECT ' + COLLECTION_COLUMNS + ' FROM collections WHERE uuid = ?',
+      [trimmed]
+    );
+
+    const row = rows[0];
+    return row ? rowToCollection(row) : null;
+  }
+
+  /**
+   * Looks up a request by uuid within a collection in this MySQL store.
+   *
+   * @param collectionId - Provider-local collection id.
+   * @param uuid - Stable request identifier.
+   * @returns The request when found, otherwise null.
+   */
+  async findRequestByUuid(collectionId: number, uuid: string): Promise<SavedRequest | null> {
+    const trimmed = uuid.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const [rows] = await this.getPool().execute<RowDataPacket[]>(
+      'SELECT * FROM requests WHERE collection_id = ? AND uuid = ?',
+      [collectionId, trimmed]
+    );
+
+    const row = rows[0];
+    return row ? rowToRequest(row) : null;
+  }
+
+  /**
+   * Updates an existing collection and upserts folders and requests from import data.
+   *
+   * @param id - Provider-local collection id to update.
+   * @param data - Validated collection export payload.
+   * @returns The updated collection.
+   */
+  async updateCollectionFromImport(id: number, data: CollectionExport): Promise<Collection> {
+    const exportData = validateCollectionExport(data);
+    const now = new Date().toISOString();
+    const connection = await this.getPool().getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      await connection.execute(
+        'UPDATE collections SET name = ?, variables = ?, headers = ?, auth = ?, pre_request_script = ?, post_request_script = ? WHERE id = ?',
+        [
+          exportData.name,
+          JSON.stringify(exportData.variables),
+          JSON.stringify(exportData.headers),
+          JSON.stringify(exportData.auth ?? defaultAuth()),
+          exportData.pre_request_script,
+          exportData.post_request_script,
+          id
+        ]
+      );
+
+      const [existingFolderRows] = await connection.execute<RowDataPacket[]>(
+        'SELECT * FROM folders WHERE collection_id = ?',
+        [id]
+      );
+      const folderIdByName = buildFolderNameIndex(existingFolderRows.map(rowToFolder));
+
+      for (const folder of exportData.folders ?? []) {
+        const existingFolderId = folderIdByName.get(folder.name);
+        if (existingFolderId != null) {
+          await connection.execute(
+            'UPDATE folders SET sort_order = ? WHERE id = ? AND collection_id = ?',
+            [folder.sort_order, existingFolderId, id]
+          );
+          continue;
+        }
+
+        const [folderResult] = await connection.execute<ResultSetHeader>(
+          'INSERT INTO folders (collection_id, name, sort_order, created_at) VALUES (?, ?, ?, ?)',
+          [id, folder.name, folder.sort_order, now]
+        );
+        folderIdByName.set(folder.name, folderResult.insertId);
+      }
+
+      const [existingRequestRows] = await connection.execute<RowDataPacket[]>(
+        'SELECT * FROM requests WHERE collection_id = ?',
+        [id]
+      );
+      const requestUuidIndex = buildRequestUuidIndex(existingRequestRows.map(rowToRequest));
+
+      for (const request of exportData.requests) {
+        const folderId = resolveImportFolderId(request.folder_name, folderIdByName);
+        const fields = serializeImportedRequestFields(request);
+        const existingRequestId = fields.uuid ? requestUuidIndex.get(fields.uuid) : undefined;
+
+        if (existingRequestId != null) {
+          await connection.execute(
+            `UPDATE requests SET
+              folder_id = ?, name = ?, method = ?, url = ?, headers = ?, params = ?, auth = ?,
+              body = ?, body_type = ?, pre_request_script = ?, post_request_script = ?, comment = ?,
+              sort_order = ?, updated_at = ?
+            WHERE id = ? AND collection_id = ?`,
+            [
+              folderId,
+              fields.name,
+              fields.method,
+              fields.url,
+              fields.headersJson,
+              fields.paramsJson,
+              fields.authJson,
+              fields.body,
+              fields.body_type,
+              fields.pre_request_script,
+              fields.post_request_script,
+              fields.comment,
+              fields.sort_order,
+              now,
+              existingRequestId,
+              id
+            ]
+          );
+          continue;
+        }
+
+        await connection.execute(
+          `INSERT INTO requests (
+            collection_id, folder_id, name, method, url, headers, params, auth, body, body_type,
+            pre_request_script, post_request_script, comment, sort_order, uuid, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            id,
+            folderId,
+            fields.name,
+            fields.method,
+            fields.url,
+            fields.headersJson,
+            fields.paramsJson,
+            fields.authJson,
+            fields.body,
+            fields.body_type,
+            fields.pre_request_script,
+            fields.post_request_script,
+            fields.comment,
+            fields.sort_order,
+            fields.uuid,
+            now,
+            now
+          ]
+        );
+      }
+
+      const [rows] = await connection.execute<RowDataPacket[]>(
+        'SELECT ' + COLLECTION_COLUMNS + ' FROM collections WHERE id = ?',
+        [id]
+      );
+
+      await connection.commit();
+
+      const row = rows[0];
+      if (!row) throw new Error('Collection not found');
       return rowToCollection(row);
     } catch (err) {
       await connection.rollback();

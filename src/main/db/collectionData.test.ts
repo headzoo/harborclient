@@ -50,6 +50,31 @@ const validRequestExport = {
 };
 
 describe('validateCollectionExport', () => {
+  it('accepts optional document uuids on collection, request, and environment exports', () => {
+    const collection = validateCollectionExport({
+      ...validV1Export,
+      uuid: '11111111-1111-4111-8111-111111111111',
+      requests: [{ ...validRequest, uuid: '22222222-2222-4222-8222-222222222222' }]
+    });
+    expect(collection.uuid).toBe('11111111-1111-4111-8111-111111111111');
+    expect(collection.requests[0]?.uuid).toBe('22222222-2222-4222-8222-222222222222');
+
+    const request = validateRequestExport({
+      ...validRequestExport,
+      uuid: '33333333-3333-4333-8333-333333333333'
+    });
+    expect(request.uuid).toBe('33333333-3333-4333-8333-333333333333');
+
+    const environment = validateEnvironmentExport({
+      harborclientVersion: 1,
+      harborclientExport: 'environment',
+      uuid: '44444444-4444-4444-8444-444444444444',
+      name: 'Dev',
+      variables: []
+    });
+    expect(environment.uuid).toBe('44444444-4444-4444-8444-444444444444');
+  });
+
   it('accepts a minimal valid format version 1 export', () => {
     const result = validateCollectionExport(validV1Export);
 

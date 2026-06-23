@@ -8,3 +8,4 @@ dist
 .eslintcache
 docs/.vitepress/cache
 docs/.vitepress/dist
+docs/.vitepress/static/download_links.json

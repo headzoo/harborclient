@@ -75,6 +75,20 @@ export class TeamHubIdMap {
   }
 
   /**
+   * Looks up a local numeric id for a server UUID without inserting a new mapping.
+   *
+   * @param entityType - Entity kind (`collection`, `folder`, or `request`).
+   * @param serverId - Server-side UUID string.
+   * @returns Local numeric id when mapped, otherwise undefined.
+   */
+  findLocalId(entityType: TeamHubEntityType, serverId: string): number | undefined {
+    const row = this.getDb()
+      .prepare('SELECT local_id FROM id_map WHERE entity_type = ? AND server_id = ?')
+      .get(entityType, serverId) as { local_id: number } | undefined;
+    return row?.local_id;
+  }
+
+  /**
    * Resolves a local numeric id back to the server UUID.
    *
    * @param entityType - Entity kind (`collection`, `folder`, or `request`).

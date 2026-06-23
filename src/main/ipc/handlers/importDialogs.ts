@@ -6,6 +6,11 @@ import {
 } from '#/main/settings/importWarningSettings';
 
 /**
+ * User choice when importing a document whose uuid already exists locally.
+ */
+export type DuplicateImportChoice = 'cancel' | 'copy' | 'update';
+
+/**
  * Opens a native JSON file picker and parses the selected file.
  *
  * @param win - Focused browser window for modal dialogs, if any.
@@ -114,4 +119,44 @@ export async function confirmRequestScripts(win: BrowserWindow | null): Promise<
     : await dialog.showMessageBox(messageBoxOptions);
 
   return response === 1;
+}
+
+/**
+ * Prompts the user when an import uuid matches an existing local document.
+ *
+ * @param win - Focused browser window for modal dialogs, if any.
+ * @param kind - Imported entity kind for the dialog title.
+ * @param existingName - Display name of the document already in the app.
+ * @returns The user's import choice.
+ */
+export async function confirmDuplicateImport(
+  win: BrowserWindow | null,
+  kind: 'collection' | 'request' | 'environment',
+  existingName: string
+): Promise<DuplicateImportChoice> {
+  const kindLabel =
+    kind === 'collection' ? 'Collection' : kind === 'request' ? 'Request' : 'Environment';
+
+  const messageBoxOptions = {
+    type: 'question' as const,
+    buttons: ['Cancel', 'Import as new copy', 'Update existing'],
+    defaultId: 2,
+    cancelId: 0,
+    title: `${kindLabel} already exists`,
+    message: `A ${kind} named "${existingName}" is already in HarborClient.`,
+    detail:
+      'Update existing replaces its saved content with the imported file. Import as new copy creates a separate document with a new identifier.'
+  };
+
+  const { response } = win
+    ? await dialog.showMessageBox(win, messageBoxOptions)
+    : await dialog.showMessageBox(messageBoxOptions);
+
+  if (response === 2) {
+    return 'update';
+  }
+  if (response === 1) {
+    return 'copy';
+  }
+  return 'cancel';
 }

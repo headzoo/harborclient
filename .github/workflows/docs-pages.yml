@@ -32,6 +32,7 @@ on:
       - README.md
       - docs/**
       - scripts/sync-docs-assets.mjs
+      - scripts/generate-download-links.mjs
       - scripts/build-docs-nav.mjs
       - scripts/docs-nav.config.mjs
       - scripts/docs-slugger.mjs
@@ -47,6 +48,12 @@ on:
         description: 'Branch, tag, or SHA to build docs from'
         required: true
         default: main
+        type: string
+  workflow_call:
+    inputs:
+      version:
+        description: 'Release version for download_links.json (defaults to package.json)'
+        required: false
         type: string
 
 permissions:
@@ -83,6 +90,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build docs site
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_VERSION: ${{ inputs.version }}
         run: pnpm docs:build
 
       - name: Configure GitHub Pages

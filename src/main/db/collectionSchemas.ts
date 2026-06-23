@@ -11,6 +11,11 @@ import type {
 } from '#/shared/types';
 
 /**
+ * Validates an optional portable document uuid from an export file.
+ */
+export const optionalDocumentUuid = z.string().uuid().optional();
+
+/**
  * Normalizes imported collection variables and drops rows with no meaningful content.
  */
 export const importVariables = z
@@ -95,6 +100,7 @@ export const exportedFolders = z
 
 const exportedRequestRow = z
   .object({
+    uuid: optionalDocumentUuid,
     name: z.string(),
     method: httpMethod,
     url: z.string().default(''),
@@ -119,6 +125,7 @@ const exportedRequestRow = z
     }
   })
   .transform((req) => ({
+    uuid: req.uuid,
     name: req.name.trim(),
     method: req.method,
     url: req.url,
@@ -152,6 +159,7 @@ export const exportedRequests = z.array(exportedRequestRow).transform((requests)
 
 const collectionExportFields = {
   harborclientExport: z.literal('collection'),
+  uuid: optionalDocumentUuid,
   name: z.string().trim().min(1, 'collection name is required'),
   variables: importVariables,
   headers: z.array(keyValue).default([]),
@@ -254,6 +262,7 @@ const requestExportRow = z
   .object({
     harborclientVersion: z.literal(1),
     harborclientExport: z.literal('request'),
+    uuid: optionalDocumentUuid,
     name: z.string(),
     method: httpMethod,
     url: z.string().default(''),
@@ -278,6 +287,7 @@ const requestExportRow = z
   .transform((req) => ({
     harborclientVersion: req.harborclientVersion,
     harborclientExport: req.harborclientExport,
+    uuid: req.uuid,
     name: req.name.trim(),
     method: req.method,
     url: req.url,
@@ -348,6 +358,7 @@ export function formatRequestImportError(error: z.ZodError): string {
 export const environmentExportSchema = z.object({
   harborclientVersion: z.literal(1),
   harborclientExport: z.literal('environment'),
+  uuid: optionalDocumentUuid,
   name: z.string().trim().min(1, 'environment name is required'),
   variables: importVariables
 }) satisfies z.ZodType<EnvironmentExport>;

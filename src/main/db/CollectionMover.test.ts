@@ -58,6 +58,7 @@ describe('MoveCoordinator team hub source', () => {
   it('leaves the server copy intact and records a detached id when moving off a hub', async () => {
     const record: Collection = {
       id: 1,
+      uuid: '550e8400-e29b-41d4-a716-446655440000',
       name: 'Team API',
       variables: [],
       headers: [],
@@ -106,6 +107,7 @@ describe('MoveCoordinator team hub source', () => {
     const entry: CollectionRegistryEntry = {
       id: 100,
       name: 'Team API',
+      collectionUuid: '550e8400-e29b-41d4-a716-446655440000',
       connectionId: 'hub-a',
       providerCollectionId: 10,
       created_at: '2026-01-01T00:00:00.000Z'

@@ -270,20 +270,20 @@ export const importFromMenu = createAsyncThunk<ImportEntityResult | null, void, 
         await dispatch(refreshCollections());
         dispatch(setSelectedCollectionId(result.collection.id));
         await dispatch(refreshCollectionContents(result.collection.id));
-        toast.success('Collection imported');
+        toast.success(result.action === 'updated' ? 'Collection updated' : 'Collection imported');
         break;
       }
       case 'request': {
         if (selectedId != null) {
           await dispatch(refreshRequests(selectedId));
         }
-        toast.success('Request imported');
+        toast.success(result.action === 'updated' ? 'Request updated' : 'Request imported');
         break;
       }
       case 'environment': {
         await dispatch(refreshEnvironments());
         dispatch(setActiveEnvironmentId(result.environment.id));
-        toast.success('Environment imported');
+        toast.success(result.action === 'updated' ? 'Environment updated' : 'Environment imported');
         break;
       }
     }

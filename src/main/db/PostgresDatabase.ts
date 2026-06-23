@@ -1,5 +1,12 @@
 import { Pool } from 'pg';
 import {
+  buildFolderNameIndex,
+  buildRequestUuidIndex,
+  resolveImportFolderId,
+  resolveImportedCollectionUuid,
+  serializeImportedRequestFields
+} from '#/main/db/collectionImport';
+import {
   maskVariablesForExport,
   normalizeVariable,
   validateCollectionExport
@@ -26,6 +33,11 @@ import type {
   Variable
 } from '#/shared/types';
 import { parseJson } from '#/shared/parseJson';
+import { generateDocumentUuid } from '#/main/db/uuid';
+
+const COLLECTION_COLUMNS =
+  'id, uuid, name, variables, headers, auth, pre_request_script, post_request_script, created_at';
+const ENVIRONMENT_COLUMNS = 'id, uuid, name, variables, created_at';
 
 export class PostgresDatabase implements IDatabase {
   #pool: Pool | null = null;
@@ -144,6 +156,45 @@ export class PostgresDatabase implements IDatabase {
         FOREIGN KEY (collection_id) REFERENCES collections(id) ON DELETE CASCADE
       )
     `);
+
+    await this.#pool.query(`
+      ALTER TABLE collections ADD COLUMN IF NOT EXISTS uuid TEXT NOT NULL DEFAULT ''
+    `);
+
+    await this.#pool.query(`
+      ALTER TABLE requests ADD COLUMN IF NOT EXISTS uuid TEXT NOT NULL DEFAULT ''
+    `);
+
+    await this.#pool.query(`
+      ALTER TABLE environments ADD COLUMN IF NOT EXISTS uuid TEXT NOT NULL DEFAULT ''
+    `);
+
+    await this.backfillDocumentUuids('collections');
+    await this.backfillDocumentUuids('requests');
+    await this.backfillDocumentUuids('environments');
+  }
+
+  /**
+   * Assigns uuids to rows that were created before uuid support existed.
+   *
+   * @param table - Table name (`collections`, `requests`, or `environments`).
+   */
+  private async backfillDocumentUuids(
+    table: 'collections' | 'requests' | 'environments'
+  ): Promise<void> {
+    const result = await this.getPool().query(
+      `SELECT id FROM ${table} WHERE uuid IS NULL OR uuid = ''`
+    );
+    if (result.rows.length === 0) {
+      return;
+    }
+
+    for (const row of result.rows) {
+      await this.getPool().query(`UPDATE ${table} SET uuid = $1 WHERE id = $2`, [
+        generateDocumentUuid(),
+        row.id
+      ]);
+    }
   }
 
   /**
@@ -153,7 +204,7 @@ export class PostgresDatabase implements IDatabase {
    */
   async listCollections(): Promise<Collection[]> {
     const result = await this.getPool().query(
-      'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections ORDER BY name ASC'
+      'SELECT ' + COLLECTION_COLUMNS + ' FROM collections ORDER BY name ASC'
     );
     return result.rows.map(rowToCollection);
   }
@@ -167,11 +218,12 @@ export class PostgresDatabase implements IDatabase {
   async createCollection(name: string): Promise<Collection> {
     const trimmedName = trimRequiredName(name, 'Collection name');
     const createdAt = new Date().toISOString();
+    const collectionUuid = generateDocumentUuid();
     const result = await this.getPool().query(
-      `INSERT INTO collections (name, variables, headers, pre_request_script, post_request_script, created_at)
-       VALUES ($1, '[]', '[]', '', '', $2)
-       RETURNING id, name, variables, headers, auth, pre_request_script, post_request_script, created_at`,
-      [trimmedName, createdAt]
+      `INSERT INTO collections (name, uuid, variables, headers, pre_request_script, post_request_script, created_at)
+       VALUES ($1, $2, '[]', '[]', '', '', $3)
+       RETURNING ${COLLECTION_COLUMNS}`,
+      [trimmedName, collectionUuid, createdAt]
     );
 
     const row = result.rows[0];
@@ -229,7 +281,7 @@ export class PostgresDatabase implements IDatabase {
     if (result.rowCount === 0) throw new Error('Collection not found');
 
     const selectResult = await this.getPool().query(
-      'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections WHERE id = $1',
+      'SELECT ' + COLLECTION_COLUMNS + ' FROM collections WHERE id = $1',
       [id]
     );
 
@@ -254,7 +306,7 @@ export class PostgresDatabase implements IDatabase {
    */
   async listEnvironments(): Promise<Environment[]> {
     const result = await this.getPool().query(
-      'SELECT id, name, variables, created_at FROM environments ORDER BY name ASC'
+      'SELECT ' + ENVIRONMENT_COLUMNS + ' FROM environments ORDER BY name ASC'
     );
     return result.rows.map(rowToEnvironment);
   }
@@ -268,10 +320,11 @@ export class PostgresDatabase implements IDatabase {
   async createEnvironment(name: string): Promise<Environment> {
     const trimmedName = trimRequiredName(name, 'Environment name');
     const createdAt = new Date().toISOString();
+    const environmentUuid = generateDocumentUuid();
     const result = await this.getPool().query(
-      `INSERT INTO environments (name, variables, created_at) VALUES ($1, '[]', $2)
-       RETURNING id, name, variables, created_at`,
-      [trimmedName, createdAt]
+      `INSERT INTO environments (name, uuid, variables, created_at) VALUES ($1, $2, '[]', $3)
+       RETURNING ${ENVIRONMENT_COLUMNS}`,
+      [trimmedName, environmentUuid, createdAt]
     );
 
     const row = result.rows[0];
@@ -297,7 +350,7 @@ export class PostgresDatabase implements IDatabase {
     if (result.rowCount === 0) throw new Error('Environment not found');
 
     const selectResult = await this.getPool().query(
-      'SELECT id, name, variables, created_at FROM environments WHERE id = $1',
+      'SELECT ' + ENVIRONMENT_COLUMNS + ' FROM environments WHERE id = $1',
       [id]
     );
 
@@ -393,6 +446,7 @@ export class PostgresDatabase implements IDatabase {
       }
     }
 
+    const requestUuid = input.uuid?.trim() || generateDocumentUuid();
     const maxResult = await this.getPool().query(
       `SELECT COALESCE(MAX(sort_order), -1) AS max_order FROM requests
        WHERE collection_id = $1 AND (($2::int IS NULL AND folder_id IS NULL) OR folder_id = $2)`,
@@ -403,8 +457,8 @@ export class PostgresDatabase implements IDatabase {
     const result = await this.getPool().query(
       `INSERT INTO requests (
         collection_id, folder_id, name, method, url, headers, params, auth, body, body_type,
-        pre_request_script, post_request_script, comment, sort_order, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        pre_request_script, post_request_script, comment, sort_order, uuid, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
       RETURNING *`,
       [
         input.collection_id,
@@ -421,6 +475,7 @@ export class PostgresDatabase implements IDatabase {
         postRequestScript,
         comment,
         maxOrder + 1,
+        requestUuid,
         now,
         now
       ]
@@ -672,7 +727,7 @@ export class PostgresDatabase implements IDatabase {
    */
   async exportCollectionData(id: number): Promise<CollectionExport> {
     const result = await this.getPool().query(
-      'SELECT name, variables, headers, auth, pre_request_script, post_request_script FROM collections WHERE id = $1',
+      'SELECT name, uuid, variables, headers, auth, pre_request_script, post_request_script FROM collections WHERE id = $1',
       [id]
     );
 
@@ -685,6 +740,7 @@ export class PostgresDatabase implements IDatabase {
 
     const requests = (await this.listRequests(id)).map(
       ({
+        uuid,
         name,
         method,
         url,
@@ -699,6 +755,7 @@ export class PostgresDatabase implements IDatabase {
         sort_order,
         folder_id
       }) => ({
+        uuid,
         name,
         method,
         url,
@@ -724,6 +781,7 @@ export class PostgresDatabase implements IDatabase {
     return {
       harborclientVersion: 1,
       harborclientExport: 'collection',
+      uuid: row.uuid as string,
       name: row.name as string,
       variables: maskVariablesForExport(variables),
       headers,
@@ -749,12 +807,14 @@ export class PostgresDatabase implements IDatabase {
     try {
       await client.query('BEGIN');
 
+      const collectionUuid = resolveImportedCollectionUuid(exportData);
       const collectionResult = await client.query(
-        `INSERT INTO collections (name, variables, headers, auth, pre_request_script, post_request_script, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
-         RETURNING id, name, variables, headers, auth, pre_request_script, post_request_script, created_at`,
+        `INSERT INTO collections (name, uuid, variables, headers, auth, pre_request_script, post_request_script, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         RETURNING ${COLLECTION_COLUMNS}`,
         [
           exportData.name,
+          collectionUuid,
           JSON.stringify(exportData.variables),
           JSON.stringify(exportData.headers),
           JSON.stringify(exportData.auth ?? defaultAuth()),
@@ -781,30 +841,30 @@ export class PostgresDatabase implements IDatabase {
       }
 
       for (const request of exportData.requests) {
-        const folderName = request.folder_name ?? null;
-        const folderId =
-          folderName != null && folderName.trim() ? (folderIdByName.get(folderName) ?? null) : null;
+        const folderId = resolveImportFolderId(request.folder_name, folderIdByName);
+        const fields = serializeImportedRequestFields(request);
 
         await client.query(
           `INSERT INTO requests (
             collection_id, folder_id, name, method, url, headers, params, auth, body, body_type,
-            pre_request_script, post_request_script, comment, sort_order, created_at, updated_at
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+            pre_request_script, post_request_script, comment, sort_order, uuid, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
           [
             collectionId,
             folderId,
-            request.name,
-            request.method,
-            request.url,
-            JSON.stringify(request.headers),
-            JSON.stringify(request.params),
-            JSON.stringify(request.auth ?? defaultAuth()),
-            request.body,
-            request.body_type,
-            request.pre_request_script,
-            request.post_request_script,
-            request.comment,
-            request.sort_order,
+            fields.name,
+            fields.method,
+            fields.url,
+            fields.headersJson,
+            fields.paramsJson,
+            fields.authJson,
+            fields.body,
+            fields.body_type,
+            fields.pre_request_script,
+            fields.post_request_script,
+            fields.comment,
+            fields.sort_order,
+            fields.uuid,
             now,
             now
           ]
@@ -815,6 +875,187 @@ export class PostgresDatabase implements IDatabase {
 
       const row = collectionResult.rows[0];
       if (!row) throw new Error('Collection not found after import');
+      return rowToCollection(row);
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Looks up a collection by portable uuid within this PostgreSQL store.
+   *
+   * @param uuid - Stable collection identifier.
+   * @returns The collection when found, otherwise null.
+   */
+  async findCollectionByUuid(uuid: string): Promise<Collection | null> {
+    const trimmed = uuid.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const result = await this.getPool().query(
+      'SELECT ' + COLLECTION_COLUMNS + ' FROM collections WHERE uuid = $1',
+      [trimmed]
+    );
+
+    const row = result.rows[0];
+    return row ? rowToCollection(row) : null;
+  }
+
+  /**
+   * Looks up a request by uuid within a collection in this PostgreSQL store.
+   *
+   * @param collectionId - Provider-local collection id.
+   * @param uuid - Stable request identifier.
+   * @returns The request when found, otherwise null.
+   */
+  async findRequestByUuid(collectionId: number, uuid: string): Promise<SavedRequest | null> {
+    const trimmed = uuid.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const result = await this.getPool().query(
+      'SELECT * FROM requests WHERE collection_id = $1 AND uuid = $2',
+      [collectionId, trimmed]
+    );
+
+    const row = result.rows[0];
+    return row ? rowToRequest(row) : null;
+  }
+
+  /**
+   * Updates an existing collection and upserts folders and requests from import data.
+   *
+   * @param id - Provider-local collection id to update.
+   * @param data - Validated collection export payload.
+   * @returns The updated collection.
+   */
+  async updateCollectionFromImport(id: number, data: CollectionExport): Promise<Collection> {
+    const exportData = validateCollectionExport(data);
+    const now = new Date().toISOString();
+    const client = await this.getPool().connect();
+
+    try {
+      await client.query('BEGIN');
+
+      await client.query(
+        'UPDATE collections SET name = $1, variables = $2, headers = $3, auth = $4, pre_request_script = $5, post_request_script = $6 WHERE id = $7',
+        [
+          exportData.name,
+          JSON.stringify(exportData.variables),
+          JSON.stringify(exportData.headers),
+          JSON.stringify(exportData.auth ?? defaultAuth()),
+          exportData.pre_request_script,
+          exportData.post_request_script,
+          id
+        ]
+      );
+
+      const existingFolderResult = await client.query(
+        'SELECT * FROM folders WHERE collection_id = $1',
+        [id]
+      );
+      const folderIdByName = buildFolderNameIndex(existingFolderResult.rows.map(rowToFolder));
+
+      for (const folder of exportData.folders ?? []) {
+        const existingFolderId = folderIdByName.get(folder.name);
+        if (existingFolderId != null) {
+          await client.query(
+            'UPDATE folders SET sort_order = $1 WHERE id = $2 AND collection_id = $3',
+            [folder.sort_order, existingFolderId, id]
+          );
+          continue;
+        }
+
+        const folderResult = await client.query(
+          `INSERT INTO folders (collection_id, name, sort_order, created_at)
+           VALUES ($1, $2, $3, $4)
+           RETURNING id`,
+          [id, folder.name, folder.sort_order, now]
+        );
+        folderIdByName.set(folder.name, folderResult.rows[0]?.id as number);
+      }
+
+      const existingRequestResult = await client.query(
+        'SELECT * FROM requests WHERE collection_id = $1',
+        [id]
+      );
+      const requestUuidIndex = buildRequestUuidIndex(existingRequestResult.rows.map(rowToRequest));
+
+      for (const request of exportData.requests) {
+        const folderId = resolveImportFolderId(request.folder_name, folderIdByName);
+        const fields = serializeImportedRequestFields(request);
+        const existingRequestId = fields.uuid ? requestUuidIndex.get(fields.uuid) : undefined;
+
+        if (existingRequestId != null) {
+          await client.query(
+            `UPDATE requests SET
+              folder_id = $1, name = $2, method = $3, url = $4, headers = $5, params = $6, auth = $7,
+              body = $8, body_type = $9, pre_request_script = $10, post_request_script = $11, comment = $12,
+              sort_order = $13, updated_at = $14
+            WHERE id = $15 AND collection_id = $16`,
+            [
+              folderId,
+              fields.name,
+              fields.method,
+              fields.url,
+              fields.headersJson,
+              fields.paramsJson,
+              fields.authJson,
+              fields.body,
+              fields.body_type,
+              fields.pre_request_script,
+              fields.post_request_script,
+              fields.comment,
+              fields.sort_order,
+              now,
+              existingRequestId,
+              id
+            ]
+          );
+          continue;
+        }
+
+        await client.query(
+          `INSERT INTO requests (
+            collection_id, folder_id, name, method, url, headers, params, auth, body, body_type,
+            pre_request_script, post_request_script, comment, sort_order, uuid, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+          [
+            id,
+            folderId,
+            fields.name,
+            fields.method,
+            fields.url,
+            fields.headersJson,
+            fields.paramsJson,
+            fields.authJson,
+            fields.body,
+            fields.body_type,
+            fields.pre_request_script,
+            fields.post_request_script,
+            fields.comment,
+            fields.sort_order,
+            fields.uuid,
+            now,
+            now
+          ]
+        );
+      }
+
+      const selectResult = await client.query(
+        'SELECT ' + COLLECTION_COLUMNS + ' FROM collections WHERE id = $1',
+        [id]
+      );
+
+      await client.query('COMMIT');
+
+      const row = selectResult.rows[0];
+      if (!row) throw new Error('Collection not found');
       return rowToCollection(row);
     } catch (err) {
       await client.query('ROLLBACK');

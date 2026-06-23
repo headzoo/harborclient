@@ -99,6 +99,60 @@ describeSqlite('SqliteDatabase lifecycle with sqlite', () => {
   });
 });
 
+describeSqlite('SqliteDatabase uuid import', () => {
+  it('round-trips collection and request uuids through export and import', async () => {
+    const { db } = await createTestDb();
+    const collection = await db.createCollection('Round Trip');
+    await db.saveRequest(baseRequestInput(collection.id, { name: 'Ping' }));
+
+    const exported = await db.exportCollectionData(collection.id);
+    const imported = await db.importCollectionData(exported);
+
+    expect(imported.uuid).toBe(exported.uuid);
+    const importedRequests = await db.listRequests(imported.id);
+    expect(importedRequests[0]?.uuid).toBe(exported.requests[0]?.uuid);
+  });
+
+  it('finds collections and requests by portable uuid', async () => {
+    const { db } = await createTestDb();
+    const collection = await db.createCollection('Lookup');
+    const request = await db.saveRequest(baseRequestInput(collection.id, { name: 'Item' }));
+
+    expect(await db.findCollectionByUuid(collection.uuid)).toMatchObject({
+      id: collection.id,
+      uuid: collection.uuid
+    });
+    expect(await db.findRequestByUuid(collection.id, request.uuid)).toMatchObject({
+      id: request.id,
+      uuid: request.uuid
+    });
+  });
+
+  it('updateCollectionFromImport upserts requests by uuid without deleting extras', async () => {
+    const { db } = await createTestDb();
+    const collection = await db.createCollection('Upsert');
+    const kept = await db.saveRequest(baseRequestInput(collection.id, { name: 'Kept' }));
+    const updated = await db.saveRequest(baseRequestInput(collection.id, { name: 'Old Name' }));
+
+    const exportData = await db.exportCollectionData(collection.id);
+    const payload: typeof exportData = {
+      ...exportData,
+      name: 'Upsert Renamed',
+      requests: exportData.requests.map((row) =>
+        row.uuid === updated.uuid ? { ...row, name: 'New Name' } : row
+      )
+    };
+
+    const result = await db.updateCollectionFromImport(collection.id, payload);
+    const requests = await db.listRequests(collection.id);
+
+    expect(result.name).toBe('Upsert Renamed');
+    expect(requests).toHaveLength(2);
+    expect(requests.find((item) => item.uuid === kept.uuid)?.name).toBe('Kept');
+    expect(requests.find((item) => item.uuid === updated.uuid)?.name).toBe('New Name');
+  });
+});
+
 describeSqlite('SqliteDatabase contract', () => {
   runIdatabaseContractSuite('SqliteDatabase', createTestDb);
 });

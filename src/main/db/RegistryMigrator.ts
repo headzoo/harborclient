@@ -37,7 +37,8 @@ export class MigrationManager {
             id: collection.id,
             name: collection.name,
             connectionId: defaultBackend.connectionId,
-            providerCollectionId: collection.id
+            providerCollectionId: collection.id,
+            collectionUuid: collection.uuid
           });
         }
 
@@ -49,7 +50,8 @@ export class MigrationManager {
               this.internals.registry.addRegistryEntry({
                 name: collection.name,
                 connectionId: backend.connectionId,
-                providerCollectionId: collection.id
+                providerCollectionId: collection.id,
+                collectionUuid: collection.uuid
               });
             }
           } catch (err) {

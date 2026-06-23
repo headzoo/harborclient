@@ -8,6 +8,7 @@ import {
   rowToEnvironment
 } from '#/main/db/entityMappers';
 import { trimRequiredName } from '#/main/db/trimRequiredName';
+import { generateDocumentUuid } from '#/main/db/uuid';
 import type {
   Chat,
   ChatMessage,
@@ -40,6 +41,11 @@ export interface CollectionRegistryEntry {
   name: string;
 
   /**
+   * Portable collection uuid mirrored from the provider for import deduplication.
+   */
+  collectionUuid: string;
+
+  /**
    * Id of the database connection that stores this collection's data.
    */
   connectionId: string;
@@ -64,13 +70,14 @@ export interface AddRegistryEntryInput {
   name: string;
   connectionId: string;
   providerCollectionId: number;
+  collectionUuid?: string;
 }
 
 /**
  * Mutable fields of a registry entry.
  */
 export type UpdateRegistryEntryInput = Partial<
-  Pick<CollectionRegistryEntry, 'name' | 'connectionId' | 'providerCollectionId'>
+  Pick<CollectionRegistryEntry, 'name' | 'connectionId' | 'providerCollectionId' | 'collectionUuid'>
 >;
 
 /**
@@ -80,6 +87,7 @@ function rowToRegistryEntry(row: Record<string, unknown>): CollectionRegistryEnt
   return {
     id: row.id as number,
     name: row.name as string,
+    collectionUuid: (row.collection_uuid as string) ?? '',
     connectionId: row.connection_id as string,
     providerCollectionId: row.provider_collection_id as number,
     created_at: row.created_at as string
@@ -162,6 +170,59 @@ export class LocalRegistry {
     `);
 
     this.migrateRegistrySortOrder();
+    this.migrateRegistryCollectionUuid();
+    this.migrateEnvironmentUuid();
+  }
+
+  /**
+   * Adds collection_uuid to legacy registry databases when missing.
+   */
+  private migrateRegistryCollectionUuid(): void {
+    const columns = this.getDb().prepare('PRAGMA table_info(collection_registry)').all() as Array<{
+      name: string;
+    }>;
+    if (columns.some((col) => col.name === 'collection_uuid')) {
+      return;
+    }
+    this.getDb().exec(
+      "ALTER TABLE collection_registry ADD COLUMN collection_uuid TEXT NOT NULL DEFAULT ''"
+    );
+  }
+
+  /**
+   * Adds uuid to legacy environment rows when missing.
+   */
+  private migrateEnvironmentUuid(): void {
+    const columns = this.getDb().prepare('PRAGMA table_info(environments)').all() as Array<{
+      name: string;
+    }>;
+    if (columns.some((col) => col.name === 'uuid')) {
+      this.backfillEnvironmentUuids();
+      return;
+    }
+    this.getDb().exec("ALTER TABLE environments ADD COLUMN uuid TEXT NOT NULL DEFAULT ''");
+    this.backfillEnvironmentUuids();
+  }
+
+  /**
+   * Assigns uuids to environments created before uuid support existed.
+   */
+  private backfillEnvironmentUuids(): void {
+    const database = this.getDb();
+    const rows = database
+      .prepare("SELECT id FROM environments WHERE uuid IS NULL OR uuid = ''")
+      .all() as Array<{ id: number }>;
+    if (rows.length === 0) {
+      return;
+    }
+
+    const update = database.prepare('UPDATE environments SET uuid = ? WHERE id = ?');
+    const backfill = database.transaction((items: Array<{ id: number }>) => {
+      for (const row of items) {
+        update.run(generateDocumentUuid(), row.id);
+      }
+    });
+    backfill(rows);
   }
 
   /**
@@ -220,7 +281,7 @@ export class LocalRegistry {
   listRegistry(): CollectionRegistryEntry[] {
     const rows = this.getDb()
       .prepare(
-        'SELECT id, name, connection_id, provider_collection_id, created_at FROM collection_registry ORDER BY sort_order ASC, name ASC'
+        'SELECT id, name, collection_uuid, connection_id, provider_collection_id, created_at FROM collection_registry ORDER BY sort_order ASC, name ASC'
       )
       .all() as Record<string, unknown>[];
 
@@ -253,9 +314,24 @@ export class LocalRegistry {
   getRegistryEntry(id: number): CollectionRegistryEntry | undefined {
     const row = this.getDb()
       .prepare(
-        'SELECT id, name, connection_id, provider_collection_id, created_at FROM collection_registry WHERE id = ?'
+        'SELECT id, name, collection_uuid, connection_id, provider_collection_id, created_at FROM collection_registry WHERE id = ?'
       )
       .get(id) as Record<string, unknown> | undefined;
+
+    return row ? rowToRegistryEntry(row) : undefined;
+  }
+
+  findRegistryEntryByUuid(uuid: string): CollectionRegistryEntry | undefined {
+    const trimmed = uuid.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+
+    const row = this.getDb()
+      .prepare(
+        'SELECT id, name, collection_uuid, connection_id, provider_collection_id, created_at FROM collection_registry WHERE collection_uuid = ?'
+      )
+      .get(trimmed) as Record<string, unknown> | undefined;
 
     return row ? rowToRegistryEntry(row) : undefined;
   }
@@ -268,15 +344,17 @@ export class LocalRegistry {
    */
   addRegistryEntry(input: AddRegistryEntryInput): CollectionRegistryEntry {
     const sortOrder = this.nextRegistrySortOrder();
+    const collectionUuid = input.collectionUuid?.trim() ?? '';
 
     if (input.id != null) {
       this.getDb()
         .prepare(
-          'INSERT INTO collection_registry (id, name, connection_id, provider_collection_id, sort_order) VALUES (?, ?, ?, ?, ?)'
+          'INSERT INTO collection_registry (id, name, collection_uuid, connection_id, provider_collection_id, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
         )
         .run(
           input.id,
           input.name.trim(),
+          collectionUuid,
           input.connectionId,
           input.providerCollectionId,
           sortOrder
@@ -288,9 +366,15 @@ export class LocalRegistry {
 
     const result = this.getDb()
       .prepare(
-        'INSERT INTO collection_registry (name, connection_id, provider_collection_id, sort_order) VALUES (?, ?, ?, ?)'
+        'INSERT INTO collection_registry (name, collection_uuid, connection_id, provider_collection_id, sort_order) VALUES (?, ?, ?, ?, ?)'
       )
-      .run(input.name.trim(), input.connectionId, input.providerCollectionId, sortOrder);
+      .run(
+        input.name.trim(),
+        collectionUuid,
+        input.connectionId,
+        input.providerCollectionId,
+        sortOrder
+      );
 
     const entry = this.getRegistryEntry(Number(result.lastInsertRowid));
     if (!entry) throw new Error('Registry entry not found after insert');
@@ -315,9 +399,9 @@ export class LocalRegistry {
 
     this.getDb()
       .prepare(
-        'UPDATE collection_registry SET name = ?, connection_id = ?, provider_collection_id = ? WHERE id = ?'
+        'UPDATE collection_registry SET name = ?, collection_uuid = ?, connection_id = ?, provider_collection_id = ? WHERE id = ?'
       )
-      .run(next.name.trim(), next.connectionId, next.providerCollectionId, id);
+      .run(next.name.trim(), next.collectionUuid, next.connectionId, next.providerCollectionId, id);
 
     const updated = this.getRegistryEntry(id);
     if (!updated) throw new Error('Registry entry not found after update');
@@ -340,26 +424,41 @@ export class LocalRegistry {
    */
   listEnvironments(): Environment[] {
     const rows = this.getDb()
-      .prepare('SELECT id, name, variables, created_at FROM environments ORDER BY name ASC')
+      .prepare('SELECT id, uuid, name, variables, created_at FROM environments ORDER BY name ASC')
       .all() as Record<string, unknown>[];
 
     return rows.map(rowToEnvironment);
+  }
+
+  findEnvironmentByUuid(uuid: string): Environment | undefined {
+    const trimmed = uuid.trim();
+    if (!trimmed) {
+      return undefined;
+    }
+
+    const row = this.getDb()
+      .prepare('SELECT id, uuid, name, variables, created_at FROM environments WHERE uuid = ?')
+      .get(trimmed) as Record<string, unknown> | undefined;
+
+    return row ? rowToEnvironment(row) : undefined;
   }
 
   /**
    * Creates a new environment with the given name.
    *
    * @param name - Display name for the environment.
+   * @param uuid - Optional stable identifier; generated when omitted.
    * @returns The newly created environment.
    */
-  createEnvironment(name: string): Environment {
+  createEnvironment(name: string, uuid?: string): Environment {
     const trimmedName = trimRequiredName(name, 'Environment name');
+    const environmentUuid = uuid?.trim() || generateDocumentUuid();
     const result = this.getDb()
-      .prepare('INSERT INTO environments (name) VALUES (?)')
-      .run(trimmedName);
+      .prepare('INSERT INTO environments (name, uuid) VALUES (?, ?)')
+      .run(trimmedName, environmentUuid);
 
     const row = this.getDb()
-      .prepare('SELECT id, name, variables, created_at FROM environments WHERE id = ?')
+      .prepare('SELECT id, uuid, name, variables, created_at FROM environments WHERE id = ?')
       .get(result.lastInsertRowid) as Record<string, unknown>;
 
     return rowToEnvironment(row);
@@ -369,17 +468,21 @@ export class LocalRegistry {
    * Inserts an environment with an explicit id (used during migration).
    */
   seedEnvironment(environment: Environment): Environment {
+    const environmentUuid = environment.uuid.trim() || generateDocumentUuid();
     this.getDb()
-      .prepare('INSERT INTO environments (id, name, variables, created_at) VALUES (?, ?, ?, ?)')
+      .prepare(
+        'INSERT INTO environments (id, uuid, name, variables, created_at) VALUES (?, ?, ?, ?, ?)'
+      )
       .run(
         environment.id,
+        environmentUuid,
         environment.name.trim(),
         JSON.stringify(environment.variables),
         environment.created_at
       );
 
     const row = this.getDb()
-      .prepare('SELECT id, name, variables, created_at FROM environments WHERE id = ?')
+      .prepare('SELECT id, uuid, name, variables, created_at FROM environments WHERE id = ?')
       .get(environment.id) as Record<string, unknown>;
 
     return rowToEnvironment(row);
@@ -400,7 +503,7 @@ export class LocalRegistry {
       .run(trimmedName, JSON.stringify(variables), id);
 
     const row = this.getDb()
-      .prepare('SELECT id, name, variables, created_at FROM environments WHERE id = ?')
+      .prepare('SELECT id, uuid, name, variables, created_at FROM environments WHERE id = ?')
       .get(id) as Record<string, unknown> | undefined;
 
     if (!row) throw new Error('Environment not found');
@@ -625,7 +728,8 @@ export class LocalRegistry {
           id: row.id as number,
           name: row.name as string,
           connectionId: row.connection_id as string,
-          providerCollectionId: row.provider_collection_id as number
+          providerCollectionId: row.provider_collection_id as number,
+          collectionUuid: ''
         });
       }
 

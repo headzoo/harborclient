@@ -41,8 +41,8 @@ export class MoveCoordinator {
       const sourceBackend = this.internals.getBackend(entry.connectionId);
       const record = sourceBackend
         ? (await sourceBackend.db.listCollections()).find(
-            (item) => item.id === entry.providerCollectionId
-          )
+          (item) => item.id === entry.providerCollectionId
+        )
         : undefined;
       return this.internals.buildCollection(entry, record);
     }
@@ -167,7 +167,8 @@ export class MoveCoordinator {
     const newEntry = this.internals.registry.addRegistryEntry({
       name: updated.name,
       connectionId: entry.connectionId,
-      providerCollectionId: updated.id
+      providerCollectionId: updated.id,
+      collectionUuid: updated.uuid
     });
 
     return this.internals.buildCollection(newEntry, updated);

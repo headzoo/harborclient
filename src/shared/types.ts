@@ -104,6 +104,11 @@ export interface Environment {
   id: number;
 
   /**
+   * Stable portable identifier for export/import deduplication.
+   */
+  uuid: string;
+
+  /**
    * Display name shown in the sidebar and TabBar dropdown.
    */
   name: string;
@@ -127,6 +132,11 @@ export interface Collection {
    * Unique database ID.
    */
   id: number;
+
+  /**
+   * Stable portable identifier for export/import deduplication.
+   */
+  uuid: string;
 
   /**
    * Display name shown in the sidebar.
@@ -226,6 +236,11 @@ export interface SavedRequest {
   id: number;
 
   /**
+   * Stable portable identifier for export/import deduplication.
+   */
+  uuid: string;
+
+  /**
    * ID of the collection this request belongs to.
    */
   collection_id: number;
@@ -310,6 +325,11 @@ export interface SavedRequest {
  * Portable request shape for collection export/import (no database IDs).
  */
 export interface ExportedRequest {
+  /**
+   * Stable portable identifier; omitted in legacy export files.
+   */
+  uuid?: string;
+
   /**
    * Display name for the saved request.
    */
@@ -406,6 +426,11 @@ export interface CollectionExport {
   harborclientExport: 'collection';
 
   /**
+   * Stable portable identifier; omitted in legacy export files.
+   */
+  uuid?: string;
+
+  /**
    * Display name for the collection.
    */
   name: string;
@@ -476,6 +501,11 @@ export interface EnvironmentExport {
   harborclientExport: 'environment';
 
   /**
+   * Stable portable identifier; omitted in legacy export files.
+   */
+  uuid?: string;
+
+  /**
    * Display name for the environment.
    */
   name: string;
@@ -487,12 +517,17 @@ export interface EnvironmentExport {
 }
 
 /**
+ * Whether an import created a new document or updated an existing one.
+ */
+export type ImportAction = 'created' | 'updated';
+
+/**
  * Result of a unified File -> Import action that auto-detects export type.
  */
 export type ImportEntityResult =
-  | { kind: 'collection'; collection: Collection }
-  | { kind: 'request'; request: SavedRequest }
-  | { kind: 'environment'; environment: Environment };
+  | { kind: 'collection'; collection: Collection; action: ImportAction }
+  | { kind: 'request'; request: SavedRequest; action: ImportAction }
+  | { kind: 'environment'; environment: Environment; action: ImportAction };
 
 /**
  * Portable single-request export file format.
@@ -507,6 +542,11 @@ export interface RequestExport {
    * Discriminator identifying this file as a request export.
    */
   harborclientExport: 'request';
+
+  /**
+   * Stable portable identifier; omitted in legacy export files.
+   */
+  uuid?: string;
 
   /**
    * Display name for the saved request.
@@ -572,6 +612,11 @@ export interface SaveRequestInput {
    * Existing request ID; omit to insert a new request.
    */
   id?: number;
+
+  /**
+   * Stable portable identifier; preserved on update, generated on insert when omitted.
+   */
+  uuid?: string;
 
   /**
    * ID of the collection to save the request in.

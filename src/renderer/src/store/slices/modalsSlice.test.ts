@@ -94,6 +94,7 @@ describe('modalsSlice', () => {
   it('tracks pending load and quit prompts', () => {
     const request = {
       id: 1,
+      uuid: '',
       collection_id: 2,
       folder_id: null,
       name: 'Get users',

@@ -182,6 +182,7 @@ describe('draftFromSaved', () => {
   it('requestToDraft copies method, url, headers, params, body, and scripts from saved request', () => {
     const saved: SavedRequest = {
       id: 1,
+      uuid: '',
       collection_id: 10,
       name: 'Saved',
       method: 'PUT',
@@ -221,6 +222,7 @@ describe('draftFromSaved', () => {
   it('backfills empty headers and params with a blank row', () => {
     const saved: SavedRequest = {
       id: 2,
+      uuid: '',
       collection_id: 10,
       name: 'Empty rows',
       method: 'GET',

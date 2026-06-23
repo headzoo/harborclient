@@ -13,6 +13,7 @@ import tabsReducer, { loadRequest, openTabWithDraft } from '#/renderer/src/store
 function sampleSaved(overrides: Partial<SavedRequest> = {}): SavedRequest {
   return {
     id: 1,
+    uuid: '',
     collection_id: 10,
     folder_id: null,
     name: 'Get users',

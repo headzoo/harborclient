@@ -74,9 +74,10 @@ export interface IDatabase {
    * Creates a new environment with the given name.
    *
    * @param name - Display name for the environment.
+   * @param uuid - Optional stable identifier; generated when omitted.
    * @returns The newly created environment.
    */
-  createEnvironment(name: string): Promise<Environment>;
+  createEnvironment(name: string, uuid?: string): Promise<Environment>;
 
   /**
    * Updates an environment's name and variables.
@@ -196,6 +197,34 @@ export interface IDatabase {
    * @returns The newly created collection.
    */
   importCollectionData(data: unknown): Promise<Collection>;
+
+  /**
+   * Looks up a collection by its portable uuid within this provider store.
+   *
+   * @param uuid - Stable collection identifier.
+   * @returns The collection when found, otherwise null.
+   */
+  findCollectionByUuid(uuid: string): Promise<Collection | null>;
+
+  /**
+   * Looks up a request by uuid within a collection in this provider store.
+   *
+   * @param collectionId - Provider-local collection id.
+   * @param uuid - Stable request identifier.
+   * @returns The request when found, otherwise null.
+   */
+  findRequestByUuid(collectionId: number, uuid: string): Promise<SavedRequest | null>;
+
+  /**
+   * Updates an existing collection and upserts folders/requests from import data.
+   *
+   * Existing requests not present in the file are left unchanged.
+   *
+   * @param id - Provider-local collection id to update.
+   * @param data - Validated collection export payload.
+   * @returns The updated collection.
+   */
+  updateCollectionFromImport(id: number, data: CollectionExport): Promise<Collection>;
 
   /**
    * Reads a persisted setting by key.

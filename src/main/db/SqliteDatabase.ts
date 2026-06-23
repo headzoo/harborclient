@@ -3,6 +3,13 @@ import { app } from 'electron';
 import { copyFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import {
+  buildFolderNameIndex,
+  buildRequestUuidIndex,
+  resolveImportFolderId,
+  resolveImportedCollectionUuid,
+  serializeImportedRequestFields
+} from '#/main/db/collectionImport';
+import {
   maskVariablesForExport,
   normalizeVariable,
   validateCollectionExport
@@ -29,6 +36,11 @@ import type {
   Variable
 } from '#/shared/types';
 import { parseJson } from '#/shared/parseJson';
+import { generateDocumentUuid } from '#/main/db/uuid';
+
+const COLLECTION_COLUMNS =
+  'id, uuid, name, variables, headers, auth, pre_request_script, post_request_script, created_at';
+const ENVIRONMENT_COLUMNS = 'id, uuid, name, variables, created_at';
 
 /**
  * Resolves the SQLite database path, copying from legacy locations when needed.
@@ -202,6 +214,51 @@ export class SqliteDatabase implements IDatabase {
         `ALTER TABLE requests ADD COLUMN auth TEXT NOT NULL DEFAULT '${DEFAULT_AUTH_JSON.replace(/'/g, "''")}'`
       );
     }
+
+    this.migrateDocumentUuidColumn('collections');
+    this.migrateDocumentUuidColumn('requests');
+    this.migrateDocumentUuidColumn('environments');
+    this.backfillDocumentUuids('collections');
+    this.backfillDocumentUuids('requests');
+    this.backfillDocumentUuids('environments');
+  }
+
+  /**
+   * Adds a uuid column to a document table when missing from legacy databases.
+   *
+   * @param table - Table name (`collections`, `requests`, or `environments`).
+   */
+  private migrateDocumentUuidColumn(table: 'collections' | 'requests' | 'environments'): void {
+    const columns = this.getDb().prepare(`PRAGMA table_info(${table})`).all() as Array<{
+      name: string;
+    }>;
+    if (columns.some((col) => col.name === 'uuid')) {
+      return;
+    }
+    this.getDb().exec(`ALTER TABLE ${table} ADD COLUMN uuid TEXT NOT NULL DEFAULT ''`);
+  }
+
+  /**
+   * Assigns uuids to rows that were created before uuid support existed.
+   *
+   * @param table - Table name (`collections`, `requests`, or `environments`).
+   */
+  private backfillDocumentUuids(table: 'collections' | 'requests' | 'environments'): void {
+    const database = this.getDb();
+    const rows = database
+      .prepare(`SELECT id FROM ${table} WHERE uuid IS NULL OR uuid = ''`)
+      .all() as Array<{ id: number }>;
+    if (rows.length === 0) {
+      return;
+    }
+
+    const update = database.prepare(`UPDATE ${table} SET uuid = ? WHERE id = ?`);
+    const backfill = database.transaction((items: Array<{ id: number }>) => {
+      for (const row of items) {
+        update.run(generateDocumentUuid(), row.id);
+      }
+    });
+    backfill(rows);
   }
 
   /**
@@ -211,9 +268,7 @@ export class SqliteDatabase implements IDatabase {
    */
   async listCollections(): Promise<Collection[]> {
     const rows = this.getDb()
-      .prepare(
-        'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections ORDER BY name ASC'
-      )
+      .prepare(`SELECT ${COLLECTION_COLUMNS} FROM collections ORDER BY name ASC`)
       .all() as Record<string, unknown>[];
 
     return rows.map(rowToCollection);
@@ -227,14 +282,13 @@ export class SqliteDatabase implements IDatabase {
    */
   async createCollection(name: string): Promise<Collection> {
     const trimmedName = trimRequiredName(name, 'Collection name');
+    const collectionUuid = generateDocumentUuid();
     const result = this.getDb()
-      .prepare('INSERT INTO collections (name) VALUES (?)')
-      .run(trimmedName);
+      .prepare('INSERT INTO collections (name, uuid) VALUES (?, ?)')
+      .run(trimmedName, collectionUuid);
 
     const row = this.getDb()
-      .prepare(
-        'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?'
-      )
+      .prepare(`SELECT ${COLLECTION_COLUMNS} FROM collections WHERE id = ?`)
       .get(result.lastInsertRowid) as Record<string, unknown>;
 
     return rowToCollection(row);
@@ -289,9 +343,7 @@ export class SqliteDatabase implements IDatabase {
       );
 
     const row = this.getDb()
-      .prepare(
-        'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?'
-      )
+      .prepare(`SELECT ${COLLECTION_COLUMNS} FROM collections WHERE id = ?`)
       .get(id) as Record<string, unknown> | undefined;
 
     if (!row) throw new Error('Collection not found');
@@ -314,7 +366,7 @@ export class SqliteDatabase implements IDatabase {
    */
   async listEnvironments(): Promise<Environment[]> {
     const rows = this.getDb()
-      .prepare('SELECT id, name, variables, created_at FROM environments ORDER BY name ASC')
+      .prepare(`SELECT ${ENVIRONMENT_COLUMNS} FROM environments ORDER BY name ASC`)
       .all() as Record<string, unknown>[];
 
     return rows.map(rowToEnvironment);
@@ -326,14 +378,15 @@ export class SqliteDatabase implements IDatabase {
    * @param name - Display name for the environment.
    * @returns The newly created environment.
    */
-  async createEnvironment(name: string): Promise<Environment> {
+  async createEnvironment(name: string, uuid?: string): Promise<Environment> {
     const trimmedName = trimRequiredName(name, 'Environment name');
+    const environmentUuid = uuid?.trim() || generateDocumentUuid();
     const result = this.getDb()
-      .prepare('INSERT INTO environments (name) VALUES (?)')
-      .run(trimmedName);
+      .prepare('INSERT INTO environments (name, uuid) VALUES (?, ?)')
+      .run(trimmedName, environmentUuid);
 
     const row = this.getDb()
-      .prepare('SELECT id, name, variables, created_at FROM environments WHERE id = ?')
+      .prepare(`SELECT ${ENVIRONMENT_COLUMNS} FROM environments WHERE id = ?`)
       .get(result.lastInsertRowid) as Record<string, unknown>;
 
     return rowToEnvironment(row);
@@ -354,7 +407,7 @@ export class SqliteDatabase implements IDatabase {
       .run(trimmedName, JSON.stringify(variables), id);
 
     const row = this.getDb()
-      .prepare('SELECT id, name, variables, created_at FROM environments WHERE id = ?')
+      .prepare(`SELECT ${ENVIRONMENT_COLUMNS} FROM environments WHERE id = ?`)
       .get(id) as Record<string, unknown> | undefined;
 
     if (!row) throw new Error('Environment not found');
@@ -444,6 +497,7 @@ export class SqliteDatabase implements IDatabase {
       }
     }
 
+    const requestUuid = input.uuid?.trim() || generateDocumentUuid();
     const maxOrder = this.getDb()
       .prepare(
         `SELECT COALESCE(MAX(sort_order), -1) as max_order FROM requests
@@ -455,8 +509,8 @@ export class SqliteDatabase implements IDatabase {
       .prepare(
         `INSERT INTO requests (
         collection_id, folder_id, name, method, url, headers, params, auth, body, body_type,
-        pre_request_script, post_request_script, comment, sort_order, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        pre_request_script, post_request_script, comment, sort_order, uuid, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         input.collection_id,
@@ -473,6 +527,7 @@ export class SqliteDatabase implements IDatabase {
         postRequestScript,
         comment,
         maxOrder.max_order + 1,
+        requestUuid,
         now
       );
 
@@ -708,17 +763,18 @@ export class SqliteDatabase implements IDatabase {
   async exportCollectionData(id: number): Promise<CollectionExport> {
     const row = this.getDb()
       .prepare(
-        'SELECT name, variables, headers, auth, pre_request_script, post_request_script FROM collections WHERE id = ?'
+        'SELECT name, uuid, variables, headers, auth, pre_request_script, post_request_script FROM collections WHERE id = ?'
       )
       .get(id) as
       | {
-          name: string;
-          variables: string;
-          headers: string;
-          auth: string;
-          pre_request_script: string;
-          post_request_script: string;
-        }
+        name: string;
+        uuid: string;
+        variables: string;
+        headers: string;
+        auth: string;
+        pre_request_script: string;
+        post_request_script: string;
+      }
       | undefined;
 
     if (!row) throw new Error('Collection not found');
@@ -732,6 +788,7 @@ export class SqliteDatabase implements IDatabase {
 
     const requests = (await this.listRequests(id)).map(
       ({
+        uuid,
         name,
         method,
         url,
@@ -746,6 +803,7 @@ export class SqliteDatabase implements IDatabase {
         sort_order,
         folder_id
       }) => ({
+        uuid,
         name,
         method,
         url,
@@ -769,6 +827,7 @@ export class SqliteDatabase implements IDatabase {
     return {
       harborclientVersion: 1,
       harborclientExport: 'collection',
+      uuid: row.uuid,
       name: row.name,
       variables: maskVariablesForExport(variables),
       headers,
@@ -792,12 +851,14 @@ export class SqliteDatabase implements IDatabase {
     const now = new Date().toISOString();
 
     const importCollection = database.transaction((payload: CollectionExport) => {
+      const collectionUuid = resolveImportedCollectionUuid(payload);
       const collectionResult = database
         .prepare(
-          'INSERT INTO collections (name, variables, headers, auth, pre_request_script, post_request_script) VALUES (?, ?, ?, ?, ?, ?)'
+          'INSERT INTO collections (name, uuid, variables, headers, auth, pre_request_script, post_request_script) VALUES (?, ?, ?, ?, ?, ?, ?)'
         )
         .run(
           payload.name,
+          collectionUuid,
           JSON.stringify(payload.variables),
           JSON.stringify(payload.headers),
           JSON.stringify(payload.auth ?? defaultAuth()),
@@ -821,44 +882,204 @@ export class SqliteDatabase implements IDatabase {
       const insertRequest = database.prepare(
         `INSERT INTO requests (
         collection_id, folder_id, name, method, url, headers, params, auth, body, body_type,
-        pre_request_script, post_request_script, comment, sort_order, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        pre_request_script, post_request_script, comment, sort_order, uuid, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       );
 
       for (const request of payload.requests) {
-        const folderName = request.folder_name ?? null;
-        const folderId =
-          folderName != null && folderName.trim() ? (folderIdByName.get(folderName) ?? null) : null;
+        const folderId = resolveImportFolderId(request.folder_name, folderIdByName);
+        const fields = serializeImportedRequestFields(request);
 
         insertRequest.run(
           collectionId,
           folderId,
-          request.name,
-          request.method,
-          request.url,
-          JSON.stringify(request.headers),
-          JSON.stringify(request.params),
-          JSON.stringify(request.auth ?? defaultAuth()),
-          request.body,
-          request.body_type,
-          request.pre_request_script,
-          request.post_request_script,
-          request.comment,
-          request.sort_order,
+          fields.name,
+          fields.method,
+          fields.url,
+          fields.headersJson,
+          fields.paramsJson,
+          fields.authJson,
+          fields.body,
+          fields.body_type,
+          fields.pre_request_script,
+          fields.post_request_script,
+          fields.comment,
+          fields.sort_order,
+          fields.uuid,
           now
         );
       }
 
       const row = database
-        .prepare(
-          'SELECT id, name, variables, headers, auth, pre_request_script, post_request_script, created_at FROM collections WHERE id = ?'
-        )
+        .prepare(`SELECT ${COLLECTION_COLUMNS} FROM collections WHERE id = ?`)
         .get(collectionId) as Record<string, unknown>;
 
       return rowToCollection(row);
     });
 
     return importCollection(exportData);
+  }
+
+  /**
+   * Looks up a collection by portable uuid within this SQLite store.
+   *
+   * @param uuid - Stable collection identifier.
+   * @returns The collection when found, otherwise null.
+   */
+  async findCollectionByUuid(uuid: string): Promise<Collection | null> {
+    const trimmed = uuid.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const row = this.getDb()
+      .prepare(`SELECT ${COLLECTION_COLUMNS} FROM collections WHERE uuid = ?`)
+      .get(trimmed) as Record<string, unknown> | undefined;
+
+    return row ? rowToCollection(row) : null;
+  }
+
+  /**
+   * Looks up a request by uuid within a collection in this SQLite store.
+   *
+   * @param collectionId - Provider-local collection id.
+   * @param uuid - Stable request identifier.
+   * @returns The request when found, otherwise null.
+   */
+  async findRequestByUuid(collectionId: number, uuid: string): Promise<SavedRequest | null> {
+    const trimmed = uuid.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const row = this.getDb()
+      .prepare('SELECT * FROM requests WHERE collection_id = ? AND uuid = ?')
+      .get(collectionId, trimmed) as Record<string, unknown> | undefined;
+
+    return row ? rowToRequest(row) : null;
+  }
+
+  /**
+   * Updates an existing collection and upserts folders and requests from import data.
+   *
+   * @param id - Provider-local collection id to update.
+   * @param data - Validated collection export payload.
+   * @returns The updated collection.
+   */
+  async updateCollectionFromImport(id: number, data: CollectionExport): Promise<Collection> {
+    const exportData = validateCollectionExport(data);
+    const database = this.getDb();
+    const now = new Date().toISOString();
+
+    const runUpdate = database.transaction((payload: CollectionExport) => {
+      database
+        .prepare(
+          'UPDATE collections SET name = ?, variables = ?, headers = ?, auth = ?, pre_request_script = ?, post_request_script = ? WHERE id = ?'
+        )
+        .run(
+          payload.name,
+          JSON.stringify(payload.variables),
+          JSON.stringify(payload.headers),
+          JSON.stringify(payload.auth ?? defaultAuth()),
+          payload.pre_request_script,
+          payload.post_request_script,
+          id
+        );
+
+      const existingFolderRows = database
+        .prepare('SELECT * FROM folders WHERE collection_id = ?')
+        .all(id) as Record<string, unknown>[];
+      const folderIdByName = buildFolderNameIndex(existingFolderRows.map(rowToFolder));
+
+      for (const folder of payload.folders ?? []) {
+        const existingFolderId = folderIdByName.get(folder.name);
+        if (existingFolderId != null) {
+          database
+            .prepare('UPDATE folders SET sort_order = ? WHERE id = ? AND collection_id = ?')
+            .run(folder.sort_order, existingFolderId, id);
+          continue;
+        }
+
+        const folderResult = database
+          .prepare('INSERT INTO folders (collection_id, name, sort_order) VALUES (?, ?, ?)')
+          .run(id, folder.name, folder.sort_order);
+        folderIdByName.set(folder.name, Number(folderResult.lastInsertRowid));
+      }
+
+      const existingRequestRows = database
+        .prepare('SELECT * FROM requests WHERE collection_id = ?')
+        .all(id) as Record<string, unknown>[];
+      const requestUuidIndex = buildRequestUuidIndex(existingRequestRows.map(rowToRequest));
+
+      const insertRequest = database.prepare(
+        `INSERT INTO requests (
+        collection_id, folder_id, name, method, url, headers, params, auth, body, body_type,
+        pre_request_script, post_request_script, comment, sort_order, uuid, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      );
+      const updateRequest = database.prepare(
+        `UPDATE requests SET
+          folder_id = ?, name = ?, method = ?, url = ?, headers = ?, params = ?, auth = ?,
+          body = ?, body_type = ?, pre_request_script = ?, post_request_script = ?, comment = ?,
+          sort_order = ?, updated_at = ?
+        WHERE id = ? AND collection_id = ?`
+      );
+
+      for (const request of payload.requests) {
+        const folderId = resolveImportFolderId(request.folder_name, folderIdByName);
+        const fields = serializeImportedRequestFields(request);
+        const existingRequestId = fields.uuid ? requestUuidIndex.get(fields.uuid) : undefined;
+
+        if (existingRequestId != null) {
+          updateRequest.run(
+            folderId,
+            fields.name,
+            fields.method,
+            fields.url,
+            fields.headersJson,
+            fields.paramsJson,
+            fields.authJson,
+            fields.body,
+            fields.body_type,
+            fields.pre_request_script,
+            fields.post_request_script,
+            fields.comment,
+            fields.sort_order,
+            now,
+            existingRequestId,
+            id
+          );
+          continue;
+        }
+
+        insertRequest.run(
+          id,
+          folderId,
+          fields.name,
+          fields.method,
+          fields.url,
+          fields.headersJson,
+          fields.paramsJson,
+          fields.authJson,
+          fields.body,
+          fields.body_type,
+          fields.pre_request_script,
+          fields.post_request_script,
+          fields.comment,
+          fields.sort_order,
+          fields.uuid,
+          now
+        );
+      }
+
+      const row = database
+        .prepare(`SELECT ${COLLECTION_COLUMNS} FROM collections WHERE id = ?`)
+        .get(id) as Record<string, unknown>;
+
+      return rowToCollection(row);
+    });
+
+    return runUpdate(exportData);
   }
 
   /**
