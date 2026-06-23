@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- refactor(window): improve main window reveal logic during startup. (`fc68691`)
 - refactor(teamHub): replace HarborServerClient with HarborTeamHubClient across the application. (`965efaa`)
 
 ## 1.5.14 - 2026-06-22

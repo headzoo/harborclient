@@ -429,12 +429,35 @@ function createWindow(): BrowserWindow {
     }
   });
 
-  window.on('ready-to-show', () => {
-    logVerbose('createWindow: main window ready-to-show, closing splash');
+  let revealed = false;
+
+  /**
+   * Closes the splash and shows the main window exactly once.
+   *
+   * Triggered by whichever of `ready-to-show` or `did-finish-load` fires first.
+   * `ready-to-show` is the preferred signal (it fires after the first frame is
+   * painted, avoiding a white flash), but some Linux window managers never emit
+   * it. `did-finish-load` is a reliable fallback so startup cannot hang on the
+   * splash screen. The guard keeps the reveal idempotent across both events and
+   * any later reloads (for example Vite HMR in dev).
+   *
+   * @param trigger - Name of the event that initiated the reveal, for logging.
+   */
+  const revealMainWindow = (trigger: string): void => {
+    if (revealed) return;
+    revealed = true;
+    logVerbose(`createWindow: revealing main window (${trigger}), closing splash`);
     closeSplash();
     window.show();
     restoreWindowPresentation(window, savedState);
     trackWindowState(window);
+  };
+
+  window.on('ready-to-show', () => revealMainWindow('ready-to-show'));
+
+  window.webContents.on('did-finish-load', () => {
+    logVerbose('createWindow: renderer finished loading');
+    revealMainWindow('did-finish-load');
   });
 
   window.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
@@ -442,9 +465,6 @@ function createWindow(): BrowserWindow {
   });
 
   if (isVerbose) {
-    window.webContents.on('did-finish-load', () => {
-      logVerbose('createWindow: renderer finished loading');
-    });
     window.webContents.on('render-process-gone', (_event, details) => {
       console.error('Renderer process gone:', details.reason, details.exitCode);
     });
