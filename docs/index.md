@@ -12,6 +12,9 @@ hero:
     - theme: alt
       text: Get Started
       link: /getting-started
+  screenshot:
+    src: /images/screenshots/hc-1.png
+    alt: HarborClient workspace with collections, request editor, and response panel
 
 features:
   - title: Free and decentralized
@@ -41,6 +44,6 @@ features:
   - title: Tabbed workspace
     details: Open multiple requests side by side. Each tab keeps its own draft, response, and unsaved-changes indicator.
   - title: AI assistant
-    details: Chat with OpenAI, Claude, or Google Gemini using your own API keys stored locally. The assistant can inspect collections, send requests, read responses, and query JSON bodies with JMESPath.
+    details: Chat with AI using your own API keys stored locally. The assistant can inspect collections, send requests, and read responses.
 
 ---

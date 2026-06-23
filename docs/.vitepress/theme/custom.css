@@ -56,6 +56,26 @@
   }
 }
 
+.VPHero .home-hero-screenshot {
+  margin: 32px 0 0;
+  max-width: min(960px, 100%);
+}
+
+.VPHero .home-hero-screenshot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--vp-c-divider);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+}
+
+@media (min-width: 640px) {
+  .VPHero .home-hero-screenshot {
+    margin-top: 40px;
+  }
+}
+
 @media (min-width: 960px) {
   .VPHero .home-hero-logo,
   .VPHero .text,

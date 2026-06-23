@@ -1,9 +1,11 @@
 ![HarborClient](images/logo.png)
 
+The free API client that keeps your work private: no accounts, no subscriptions, no lock-in.
+
 **Full documentation:** [https://harborclient.com/](https://harborclient.com/)  
 **Downloads:** [https://github.com/headzoo/harborclient/releases/latest](https://github.com/headzoo/harborclient/releases/latest)
 
-The free API client that keeps your work private: no accounts, no subscriptions, no lock-in.
+![HarborClient workspace with collections, request editor, and response panel](images/screenshots/hc-1.png)
 
 ## Development
 
