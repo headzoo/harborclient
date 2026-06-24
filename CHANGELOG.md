@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(tests): implement mock for electron-store in vitest setup. (`1dfbcf3`)
+
 ## 1.6.3 - 2026-06-24
 
 - feat(plugins): enhance plugin management with Git support. (`3149470`)
