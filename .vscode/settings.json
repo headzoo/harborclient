@@ -2,5 +2,17 @@
   "workbench.editor.customLabels.enabled": true,
   "workbench.editor.customLabels.patterns": {
     "src/renderer/src/components/**/index.tsx": "${dirname}"
-  }
+  },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "eslint.format.enable": false,
+  "prettier.prettierPath": "./node_modules/prettier",
+  "prettier.configPath": ".prettierrc.yaml",
+  "prettier.requireConfig": true
 }

@@ -34,6 +34,7 @@ import type {
 } from '#/shared/types';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { RowActionsMenu } from '#/renderer/src/components/RowActionsMenu';
+import { buildReorderMenuGroup } from '#/renderer/src/components/rowActionsMenuHelpers';
 import { useConfirm } from '#/renderer/src/hooks/useConfirm';
 import { faChevronDown, faChevronRight } from '#/renderer/src/fontawesome';
 import { METHOD_CLASSES, sourceRow } from '#/renderer/src/ui/shared/classes';
@@ -735,32 +736,17 @@ export function Collections({
                     openMenuId={openMenuId}
                     onOpenChange={setOpenMenuId}
                     groups={[
-                      ...(collectionIndex > 0 || collectionIndex < collections.length - 1
-                        ? [
-                            [
-                              ...(collectionIndex > 0
-                                ? [
-                                    {
-                                      label: 'Move up',
-                                      onSelect: () => void moveCollection(collection.id, 'up')
-                                    }
-                                  ]
-                                : []),
-                              ...(collectionIndex < collections.length - 1
-                                ? [
-                                    {
-                                      label: 'Move down',
-                                      onSelect: () => void moveCollection(collection.id, 'down')
-                                    }
-                                  ]
-                                : [])
-                            ]
-                          ]
-                        : []),
+                      ...buildReorderMenuGroup(collectionIndex, collections.length, (direction) =>
+                        moveCollection(collection.id, direction)
+                      ),
                       [
                         {
                           label: 'Settings',
                           onSelect: () => onConfigureCollection(collection.id)
+                        },
+                        {
+                          label: 'Duplicate',
+                          onSelect: () => void onDuplicateCollection(collection.id)
                         }
                       ],
                       [
@@ -770,15 +756,15 @@ export function Collections({
                           onSelect: () => void onNewRequestInCollection(collection.id)
                         },
                         {
-                          label: 'Import Request',
+                          label: 'Import',
                           onSelect: () => void onImportRequest(collection.id)
-                        }
-                      ],
-                      [
+                        },
                         {
                           label: 'Export',
                           onSelect: () => void onExportCollection(collection.id)
-                        },
+                        }
+                      ],
+                      [
                         ...(connectionType === 'git' && connectionName != null
                           ? [
                               {
@@ -788,10 +774,7 @@ export function Collections({
                               }
                             ]
                           : []),
-                        {
-                          label: 'Duplicate',
-                          onSelect: () => void onDuplicateCollection(collection.id)
-                        },
+
                         ...(canShare
                           ? [
                               {
@@ -947,38 +930,12 @@ export function Collections({
                                     openMenuId={openMenuId}
                                     onOpenChange={setOpenMenuId}
                                     groups={[
-                                      ...(folderIndex > 0 || folderIndex < folders.length - 1
-                                        ? [
-                                            [
-                                              ...(folderIndex > 0
-                                                ? [
-                                                    {
-                                                      label: 'Move up',
-                                                      onSelect: () =>
-                                                        void moveFolder(
-                                                          collection.id,
-                                                          folder.id,
-                                                          'up'
-                                                        )
-                                                    }
-                                                  ]
-                                                : []),
-                                              ...(folderIndex < folders.length - 1
-                                                ? [
-                                                    {
-                                                      label: 'Move down',
-                                                      onSelect: () =>
-                                                        void moveFolder(
-                                                          collection.id,
-                                                          folder.id,
-                                                          'down'
-                                                        )
-                                                    }
-                                                  ]
-                                                : [])
-                                            ]
-                                          ]
-                                        : []),
+                                      ...buildReorderMenuGroup(
+                                        folderIndex,
+                                        folders.length,
+                                        (direction) =>
+                                          moveFolder(collection.id, folder.id, direction)
+                                      ),
                                       [
                                         {
                                           label: 'New Request',

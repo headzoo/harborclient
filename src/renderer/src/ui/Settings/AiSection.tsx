@@ -1,4 +1,5 @@
 import { useEffect, useState, type JSX } from 'react';
+import toast from 'react-hot-toast';
 import type { AiSettings } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
 import { Input } from '#/renderer/src/components/forms';
@@ -11,7 +12,6 @@ export function AiSection(): JSX.Element {
   const [aiSettings, setAiSettingsState] = useState<AiSettings>(DEFAULT_AI_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   /**
@@ -52,7 +52,6 @@ export function AiSection(): JSX.Element {
    * @param value - New field value.
    */
   const handleFieldChange = <K extends keyof AiSettings>(key: K, value: AiSettings[K]): void => {
-    setSaved(false);
     setError(null);
     setAiSettingsState((current) => ({ ...current, [key]: value }));
   };
@@ -62,11 +61,10 @@ export function AiSection(): JSX.Element {
    */
   const handleSave = async (): Promise<void> => {
     setSaving(true);
-    setSaved(false);
     setError(null);
     try {
       await window.api.setAiSettings(aiSettings);
-      setSaved(true);
+      toast.success('Settings saved.');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -133,7 +131,6 @@ export function AiSection(): JSX.Element {
         <Button type="button" disabled={fieldsDisabled} onClick={() => void handleSave()}>
           {saving ? 'Saving…' : 'Save'}
         </Button>
-        {saved && <span className="text-[14px] text-success">Settings saved.</span>}
       </div>
     </div>
   );

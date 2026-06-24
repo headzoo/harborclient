@@ -1,4 +1,5 @@
 import { useEffect, useState, type JSX } from 'react';
+import toast from 'react-hot-toast';
 import type { GeneralSettings, ThemeSource } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
 import { applyThemeAttribute } from '#/renderer/src/theme';
@@ -14,7 +15,6 @@ export function GeneralSection(): JSX.Element {
   const [generalSettings, setGeneralSettings] = useState<GeneralSettings>(DEFAULT_GENERAL_SETTINGS);
   const [generalLoading, setGeneralLoading] = useState(true);
   const [generalSaving, setGeneralSaving] = useState(false);
-  const [generalSaved, setGeneralSaved] = useState(false);
 
   /**
    * Loads the persisted theme preference on mount.
@@ -49,14 +49,12 @@ export function GeneralSection(): JSX.Element {
   }, []);
 
   /**
-   * Persists and applies the selected theme.
+   * Updates the theme preference in local form state.
    *
-   * @param next - Theme source to apply.
+   * @param next - Theme source selected in the dropdown.
    */
-  const handleThemeChange = async (next: ThemeSource): Promise<void> => {
+  const handleThemeChange = (next: ThemeSource): void => {
     setTheme(next);
-    applyThemeAttribute(next);
-    await window.api.setTheme(next);
   };
 
   /**
@@ -69,19 +67,19 @@ export function GeneralSection(): JSX.Element {
     key: K,
     value: GeneralSettings[K]
   ): void => {
-    setGeneralSaved(false);
     setGeneralSettings((current) => ({ ...current, [key]: value }));
   };
 
   /**
-   * Persists general request settings.
+   * Persists general request settings and the selected theme preference.
    */
   const handleGeneralSave = async (): Promise<void> => {
     setGeneralSaving(true);
-    setGeneralSaved(false);
     try {
+      applyThemeAttribute(theme);
+      await window.api.setTheme(theme);
       await window.api.setGeneralSettings(generalSettings);
-      setGeneralSaved(true);
+      toast.success('Settings saved.');
     } finally {
       setGeneralSaving(false);
     }
@@ -94,8 +92,8 @@ export function GeneralSection(): JSX.Element {
           <span className="text-[14px] font-medium text-text">Theme</span>
           <Select
             value={theme}
-            disabled={loading}
-            onChange={(event) => void handleThemeChange(event.target.value as ThemeSource)}
+            disabled={loading || generalLoading || generalSaving}
+            onChange={(event) => handleThemeChange(event.target.value as ThemeSource)}
           >
             {THEME_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -154,7 +152,6 @@ export function GeneralSection(): JSX.Element {
         >
           {generalSaving ? 'Saving…' : 'Save'}
         </Button>
-        {generalSaved && <span className="text-[14px] text-success">Settings saved.</span>}
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import { useEffect, useState, type JSX } from 'react';
+import toast from 'react-hot-toast';
 import type { StorageConnection } from '#/shared/types';
 import { useStorageConnections } from '#/renderer/src/hooks/useStorageConnections';
 import { Button } from '#/renderer/src/components/Button';
@@ -17,7 +18,6 @@ export function StorageLocationsSection(): JSX.Element {
     reload: reloadConnections
   } = useStorageConnections();
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [editingConnection, setEditingConnection] = useState<StorageConnection | null>(null);
   const [deletingConnection, setDeletingConnection] = useState<StorageConnection | null>(null);
   const [isNew, setIsNew] = useState(false);
@@ -54,7 +54,6 @@ export function StorageLocationsSection(): JSX.Element {
    */
   const handleAdd = (): void => {
     setError(null);
-    setSaved(false);
     setIsNew(true);
     setEditingConnection(createBlankConnection('sqlite'));
   };
@@ -66,7 +65,6 @@ export function StorageLocationsSection(): JSX.Element {
    */
   const handleEdit = (connection: StorageConnection): void => {
     setError(null);
-    setSaved(false);
     setIsNew(false);
     setEditingConnection({ ...connection });
   };
@@ -87,7 +85,6 @@ export function StorageLocationsSection(): JSX.Element {
     if (!editingConnection) return;
 
     setSaving(true);
-    setSaved(false);
     setError(null);
 
     try {
@@ -98,7 +95,7 @@ export function StorageLocationsSection(): JSX.Element {
       reloadConnections();
       setEditingConnection(null);
       setIsNew(false);
-      setSaved(true);
+      toast.success('Settings saved.');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -113,7 +110,6 @@ export function StorageLocationsSection(): JSX.Element {
    */
   const handleDelete = async (id: string): Promise<void> => {
     setError(null);
-    setSaved(false);
     setDeletingConnection(null);
 
     try {
@@ -134,12 +130,11 @@ export function StorageLocationsSection(): JSX.Element {
    */
   const handleSetActive = async (id: string): Promise<void> => {
     setError(null);
-    setSaved(false);
 
     try {
       await window.api.setActiveStorageId(id);
       reloadConnections();
-      setSaved(true);
+      toast.success('Settings saved.');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -243,7 +238,6 @@ export function StorageLocationsSection(): JSX.Element {
         {error && !editingConnection && !deletingConnection && (
           <p className="mt-3 text-[14px] text-danger">{error}</p>
         )}
-        {saved && <p className="mt-3 text-[14px] text-success">Settings saved.</p>}
 
         <p className="mb-0 mt-4 text-[14px] text-muted">
           Connection changes take effect after restarting HarborClient. All configured storage

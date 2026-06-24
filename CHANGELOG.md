@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- refactor(ui): streamline settings sections and enhance reorder functionality. (`2db4cb8`)
 - refactor(ui): enhance form components and modal structure. (`75b3b22`)
 
 ## 1.6.1 - 2026-06-24

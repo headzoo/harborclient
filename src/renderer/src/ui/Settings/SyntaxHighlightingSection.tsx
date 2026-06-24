@@ -1,4 +1,5 @@
 import { useEffect, useState, type JSX } from 'react';
+import toast from 'react-hot-toast';
 import { CodeEditor } from '#/renderer/src/components/CodeEditor';
 import { CODE_EDITOR_THEME_OPTIONS } from '#/renderer/src/components/CodeEditor/themes';
 import { useAppDispatch } from '#/renderer/src/store/hooks';
@@ -29,7 +30,6 @@ export function SyntaxHighlightingSection(): JSX.Element {
   const [generalSettings, setGeneralSettings] = useState<GeneralSettings>(DEFAULT_GENERAL_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   /**
    * Loads general settings on mount so code editor fields are populated from storage.
@@ -53,7 +53,6 @@ export function SyntaxHighlightingSection(): JSX.Element {
    * @param codeEditorTheme - Theme identifier from the dropdown.
    */
   const handleThemeChange = (codeEditorTheme: GeneralSettings['codeEditorTheme']): void => {
-    setSaved(false);
     setGeneralSettings((current) => ({ ...current, codeEditorTheme }));
   };
 
@@ -64,7 +63,6 @@ export function SyntaxHighlightingSection(): JSX.Element {
    * @param value - New checkbox value.
    */
   const handleSetupChange = (key: keyof CodeEditorSetup, value: boolean): void => {
-    setSaved(false);
     setGeneralSettings((current) => ({
       ...current,
       codeEditorSetup: { ...current.codeEditorSetup, [key]: value }
@@ -76,11 +74,10 @@ export function SyntaxHighlightingSection(): JSX.Element {
    */
   const handleSave = async (): Promise<void> => {
     setSaving(true);
-    setSaved(false);
     try {
       await window.api.setGeneralSettings(generalSettings);
       dispatch(setGeneralSettingsState(generalSettings));
-      setSaved(true);
+      toast.success('Settings saved.');
     } finally {
       setSaving(false);
     }
@@ -122,7 +119,6 @@ export function SyntaxHighlightingSection(): JSX.Element {
           <Button type="button" disabled={loading || saving} onClick={() => void handleSave()}>
             {saving ? 'Saving…' : 'Save'}
           </Button>
-          {saved && <span className="text-[14px] text-success">Settings saved.</span>}
         </div>
       </div>
 

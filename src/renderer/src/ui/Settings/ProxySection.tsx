@@ -1,4 +1,5 @@
 import { useEffect, useState, type JSX } from 'react';
+import toast from 'react-hot-toast';
 import type { GeneralSettings, ProxySettings } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
 import { Input, Select } from '#/renderer/src/components/forms';
@@ -11,7 +12,6 @@ export function ProxySection(): JSX.Element {
   const [generalSettings, setGeneralSettings] = useState<GeneralSettings>(DEFAULT_GENERAL_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
 
   /**
    * Loads general settings on mount so proxy fields are populated from storage.
@@ -39,7 +39,6 @@ export function ProxySection(): JSX.Element {
     key: K,
     value: ProxySettings[K]
   ): void => {
-    setSaved(false);
     setGeneralSettings((current) => ({
       ...current,
       proxy: { ...current.proxy, [key]: value }
@@ -51,10 +50,9 @@ export function ProxySection(): JSX.Element {
    */
   const handleSave = async (): Promise<void> => {
     setSaving(true);
-    setSaved(false);
     try {
       await window.api.setGeneralSettings(generalSettings);
-      setSaved(true);
+      toast.success('Settings saved.');
     } finally {
       setSaving(false);
     }
@@ -163,7 +161,6 @@ export function ProxySection(): JSX.Element {
         <Button type="button" disabled={fieldsDisabled} onClick={() => void handleSave()}>
           {saving ? 'Saving…' : 'Save'}
         </Button>
-        {saved && <span className="text-[14px] text-success">Settings saved.</span>}
       </div>
     </div>
   );

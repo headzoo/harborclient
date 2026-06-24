@@ -189,7 +189,6 @@ async function createStorage(): Promise<RoutingStorage> {
     activeConnection.type === 'sqlite' ? activeConnection.settings : getSqliteFallbackSettings();
   const legacyProviderDbPath = join(userDataPath, sqliteSettings.dbFilename);
 
-  setSplashStatus('Loading metadata...');
   logVerbose(
     'createStorage: running collection registry migration if needed',
     legacyProviderDbPath
@@ -308,19 +307,6 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
-}
-
-/**
- * Updates the status line on the splash window when it is visible.
- *
- * @param message - Human-readable startup step description.
- */
-function setSplashStatus(message: string): void {
-  if (!splashWindow || splashWindow.isDestroyed()) return;
-  const escaped = JSON.stringify(message);
-  void splashWindow.webContents.executeJavaScript(
-    `document.getElementById('status').textContent = ${escaped}`
-  );
 }
 
 /**
@@ -532,11 +518,9 @@ app.whenReady().then(async () => {
   const splashStartedAt = Date.now();
 
   try {
-    setSplashStatus('Starting up...');
     logVerbose('startup: ensuring sharing keys');
     await ensureSharingKeys(app.getPath('userData'));
 
-    setSplashStatus('Connecting to storage...');
     logVerbose('startup: initializing storage');
     db = await createStorage();
 

@@ -21,18 +21,5 @@ export default tseslint.config(
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }]
     }
   },
-  eslintConfigPrettier,
-  {
-    rules: {
-      'prettier/prettier': [
-        'warn',
-        {
-          singleQuote: true,
-          semi: true,
-          printWidth: 100,
-          trailingComma: 'none'
-        }
-      ]
-    }
-  }
+  eslintConfigPrettier
 );
