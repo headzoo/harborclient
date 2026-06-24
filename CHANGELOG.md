@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(ui): introduce new components for enhanced user interaction. (`8ff0789`)
 - feat(screenshots): add screenshot capturing functionality and update documentation images. (`9937de6`)
 
 ## 1.6.2 - 2026-06-24

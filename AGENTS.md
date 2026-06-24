@@ -48,7 +48,7 @@ style, and path aliases.
 Never use native browser dialogs (`alert`, `confirm`, `prompt`) in the renderer.
 They block the Electron renderer thread and break visual consistency.
 
-- Use custom modals built on [`Modal`](src/renderer/src/components/Modal.tsx) for
+- Use custom modals built on [`Modal`](src/renderer/src/components/Modal/index.tsx) for
   blocking messages and confirmations (`AlertModal`, `ConfirmModal`, or
   feature-specific dialogs like `QuitPrompt`).
 - Show errors inline (`text-danger`) when the user is already inside a modal or
@@ -92,7 +92,7 @@ detailed audit of known gaps and proposed fixes.
 
 **Dialogs and dynamic content**
 
-- Build blocking dialogs on [`Modal`](src/renderer/src/components/Modal.tsx) with
+- Build blocking dialogs on [`Modal`](src/renderer/src/components/Modal/index.tsx) with
   `role="dialog"`, `aria-modal`, an accessible name (`aria-labelledby` or
   `aria-label`), focus trap, initial focus, and focus restoration on close. Do
   not hand-roll one-off overlays.
@@ -106,7 +106,7 @@ detailed audit of known gaps and proposed fixes.
 
 - Tab bars and segmented controls must follow a WAI-ARIA pattern (`tablist` /
   `tab` / `tabpanel`, or `radiogroup` / `radio` for single-choice pickers). See
-  [`SegmentedTabs`](src/renderer/src/components/SegmentedTabs.tsx).
+  [`SegmentedTabs`](src/renderer/src/components/SegmentedTabs/index.tsx).
 - Drag-and-drop must have a keyboard-operable alternative (e.g. dnd-kit
   `KeyboardSensor` or explicit move actions in a menu).
 - Resize handles and other custom controls need keyboard support and a visible
@@ -129,7 +129,7 @@ many call sites.
 
 Always add clear, useful documentation when you write or change code. Match the
 JSDoc style already used in the codebase (see `src/renderer/src/ui/Request/Editor/`
-and `src/renderer/src/components/VariableInput.tsx` for examples).
+and `src/renderer/src/components/VariableInput/index.tsx` for examples).
 
 **Every function** — exported or local, component or helper — must have a JSDoc
 docblock. Explain what the function does and why, not just restate its name.
