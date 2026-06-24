@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.6.3 - 2026-06-24
+
 - feat(scripting): add support for modern JavaScript syntax with esbuild transpilation. (`1745953`)
 - feat(ui): introduce new components for enhanced user interaction. (`8ff0789`)
 - feat(screenshots): add screenshot capturing functionality and update documentation images. (`9937de6`)
