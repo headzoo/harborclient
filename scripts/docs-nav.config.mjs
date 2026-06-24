@@ -33,6 +33,7 @@ export const docsNav = [
   { kind: 'page', slug: 'request-scripts', title: 'Request scripts', maxDepth: 2 },
   { kind: 'page', slug: 'testing', title: 'Testing', maxDepth: 2 },
   { kind: 'page', slug: 'environments', title: 'Environments', maxDepth: 2 },
+  { kind: 'page', slug: 'plugin_development', title: 'Plugin development', maxDepth: 2 },
   
 ];
 

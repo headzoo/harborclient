@@ -28,6 +28,13 @@ import type {
   RootMenuLabel,
   PanelLayoutState,
   PemExportResult,
+  PluginAssetResult,
+  PluginEntryKind,
+  PluginFsPickFileOptions,
+  PluginFsSaveFileOptions,
+  PluginInfo,
+  PluginPermission,
+  SerializableMenuContribution,
   RequestExport,
   SaveRequestInput,
   SavedRequest,
@@ -1166,6 +1173,256 @@ function restartApp(): Promise<void> {
   return ipcRenderer.invoke('app:restart');
 }
 
+/**
+ * Lists installed and unpacked plugins.
+ */
+function listPlugins(): Promise<PluginInfo[]> {
+  return ipcRenderer.invoke('plugins:list');
+}
+
+/**
+ * Installs a plugin via native file picker.
+ */
+function installPlugin(): Promise<PluginInfo | null> {
+  return ipcRenderer.invoke('plugins:install');
+}
+
+/**
+ * Installs a plugin from an absolute archive path.
+ *
+ * @param path - Absolute path to a `.hcp` or `.zip` plugin package.
+ */
+function installPluginFromPath(path: string): Promise<PluginInfo> {
+  return ipcRenderer.invoke('plugins:installFromPath', path);
+}
+
+/**
+ * Installs a plugin by cloning a public git repository.
+ *
+ * @param url - Public https (or http) repository URL.
+ * @param ref - Optional branch or tag to clone.
+ */
+function installPluginFromGit(url: string, ref?: string): Promise<PluginInfo> {
+  return ipcRenderer.invoke('plugins:installFromGit', url, ref);
+}
+
+/**
+ * Re-clones a git-installed plugin from its stored origin.
+ *
+ * @param pluginId - Plugin manifest id.
+ */
+function updatePluginFromGit(pluginId: string): Promise<PluginInfo> {
+  return ipcRenderer.invoke('plugins:updateFromGit', pluginId);
+}
+
+/**
+ * Uninstalls an installed plugin.
+ *
+ * @param pluginId - Plugin manifest id.
+ */
+function uninstallPlugin(pluginId: string): Promise<void> {
+  return ipcRenderer.invoke('plugins:uninstall', pluginId);
+}
+
+/**
+ * Enables or disables a plugin.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param enabled - Whether the plugin should activate.
+ */
+function setPluginEnabled(pluginId: string, enabled: boolean): Promise<PluginInfo> {
+  return ipcRenderer.invoke('plugins:setEnabled', pluginId, enabled);
+}
+
+/**
+ * Loads an unpacked plugin via native directory picker.
+ */
+function loadUnpackedPlugin(): Promise<PluginInfo | null> {
+  return ipcRenderer.invoke('plugins:loadUnpacked');
+}
+
+/**
+ * Loads an unpacked plugin from an absolute directory path.
+ *
+ * @param path - Absolute path to the plugin project folder.
+ */
+function loadUnpackedPluginFromPath(path: string): Promise<PluginInfo> {
+  return ipcRenderer.invoke('plugins:loadUnpackedFromPath', path);
+}
+
+/**
+ * Reloads one plugin from disk.
+ *
+ * @param pluginId - Plugin manifest id.
+ */
+function reloadPlugin(pluginId: string): Promise<PluginInfo> {
+  return ipcRenderer.invoke('plugins:reload', pluginId);
+}
+
+/**
+ * Removes an unpacked dev plugin registration.
+ *
+ * @param pluginId - Plugin manifest id.
+ */
+function removeUnpackedPlugin(pluginId: string): Promise<void> {
+  return ipcRenderer.invoke('plugins:removeUnpacked', pluginId);
+}
+
+/**
+ * Reads a plugin entry bundle as UTF-8 source text.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param kind - Renderer or main entry.
+ */
+function readPluginEntry(pluginId: string, kind: PluginEntryKind): Promise<string> {
+  return ipcRenderer.invoke('plugins:readEntry', pluginId, kind);
+}
+
+/**
+ * Reads a plugin asset relative to the plugin root.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param assetPath - Plugin-relative asset path.
+ */
+function readPluginAsset(pluginId: string, assetPath: string): Promise<PluginAssetResult> {
+  return ipcRenderer.invoke('plugins:readAsset', pluginId, assetPath);
+}
+
+/**
+ * Returns a plugin-scoped persisted value.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param key - Storage key within the plugin namespace.
+ */
+function getPluginStorage(pluginId: string, key: string): Promise<unknown> {
+  return ipcRenderer.invoke('plugins:storageGet', pluginId, key);
+}
+
+/**
+ * Persists a plugin-scoped JSON-serializable value.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param key - Storage key within the plugin namespace.
+ * @param value - Value to store.
+ */
+function setPluginStorage(pluginId: string, key: string, value: unknown): Promise<void> {
+  return ipcRenderer.invoke('plugins:storageSet', pluginId, key, value);
+}
+
+/**
+ * Activates a plugin main entry in the SES utilityProcess runner.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param source - Bundled main entry source.
+ * @param permissions - Granted plugin permissions.
+ */
+function activatePluginMain(
+  pluginId: string,
+  source: string,
+  permissions: PluginPermission[]
+): Promise<void> {
+  return ipcRenderer.invoke('plugins:activateMain', pluginId, source, permissions);
+}
+
+/**
+ * Deactivates a plugin main entry in the SES utilityProcess runner.
+ *
+ * @param pluginId - Plugin manifest id.
+ */
+function deactivatePluginMain(pluginId: string): Promise<void> {
+  return ipcRenderer.invoke('plugins:deactivateMain', pluginId);
+}
+
+/**
+ * Invokes a plugin IPC handler registered in the main runtime.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param channel - Registered channel name.
+ * @param args - Arguments from the renderer half.
+ */
+function invokePluginMain(pluginId: string, channel: string, args: unknown[]): Promise<unknown> {
+  return ipcRenderer.invoke('plugins:invokeMain', pluginId, channel, args);
+}
+
+/**
+ * Subscribes to plugin change notifications from the main process.
+ *
+ * @param callback - Called with the changed plugin id.
+ */
+function onPluginsChanged(callback: (pluginId: string) => void): () => void {
+  const listener = (_event: Electron.IpcRendererEvent, pluginId: string): void => {
+    callback(pluginId);
+  };
+  ipcRenderer.on('plugins:changed', listener);
+  return () => ipcRenderer.removeListener('plugins:changed', listener);
+}
+
+/**
+ * Pushes plugin menu contributions to the main process for menu merge.
+ *
+ * @param contributions - Serializable menu entries from the renderer registry.
+ */
+function setPluginMenuContributions(contributions: SerializableMenuContribution[]): Promise<void> {
+  return ipcRenderer.invoke('plugins:setMenuContributions', contributions);
+}
+
+/**
+ * Subscribes to plugin menu command clicks from the application menu.
+ *
+ * @param callback - Called with the plugin id and command id.
+ */
+function onPluginMenuCommand(
+  callback: (payload: { pluginId: string; command: string }) => void
+): () => void {
+  const listener = (
+    _event: Electron.IpcRendererEvent,
+    payload: { pluginId: string; command: string }
+  ): void => {
+    callback(payload);
+  };
+  ipcRenderer.on('menu:pluginCommand', listener);
+  return () => ipcRenderer.removeListener('menu:pluginCommand', listener);
+}
+
+/**
+ * Opens a native file picker for a plugin with filesystem:pick permission.
+ */
+function pluginFsPickFile(pluginId: string, options?: PluginFsPickFileOptions): Promise<string[]> {
+  return ipcRenderer.invoke('plugins:fsPickFile', pluginId, options);
+}
+
+/**
+ * Opens a native directory picker for a plugin with filesystem:pick permission.
+ */
+function pluginFsPickDirectory(pluginId: string, defaultPath = ''): Promise<string | null> {
+  return ipcRenderer.invoke('plugins:fsPickDirectory', pluginId, defaultPath);
+}
+
+/**
+ * Saves text to a user-selected path for a plugin with filesystem:pick permission.
+ */
+function pluginFsSaveFile(
+  pluginId: string,
+  content: string,
+  options?: PluginFsSaveFileOptions
+): Promise<string | null> {
+  return ipcRenderer.invoke('plugins:fsSaveFile', pluginId, content, options);
+}
+
+/**
+ * Reads a UTF-8 file from an allowlisted path for a plugin.
+ */
+function pluginFsReadFile(pluginId: string, path: string): Promise<string> {
+  return ipcRenderer.invoke('plugins:fsReadFile', pluginId, path);
+}
+
+/**
+ * Writes a UTF-8 file to an allowlisted path for a plugin.
+ */
+function pluginFsWriteFile(pluginId: string, path: string, content: string): Promise<void> {
+  return ipcRenderer.invoke('plugins:fsWriteFile', pluginId, path, content);
+}
+
 const api: Api = {
   listCollections,
   createCollection,
@@ -1281,7 +1538,33 @@ const api: Api = {
   saveTextFile,
   exportBackup,
   importBackup,
-  restartApp
+  restartApp,
+  listPlugins,
+  installPlugin,
+  installPluginFromPath,
+  installPluginFromGit,
+  updatePluginFromGit,
+  uninstallPlugin,
+  setPluginEnabled,
+  loadUnpackedPlugin,
+  loadUnpackedPluginFromPath,
+  reloadPlugin,
+  removeUnpackedPlugin,
+  readPluginEntry,
+  readPluginAsset,
+  getPluginStorage,
+  setPluginStorage,
+  activatePluginMain,
+  deactivatePluginMain,
+  invokePluginMain,
+  onPluginsChanged,
+  setPluginMenuContributions,
+  onPluginMenuCommand,
+  pluginFsPickFile,
+  pluginFsPickDirectory,
+  pluginFsSaveFile,
+  pluginFsReadFile,
+  pluginFsWriteFile
 };
 
 contextBridge.exposeInMainWorld('api', api);

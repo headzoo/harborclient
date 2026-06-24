@@ -4,6 +4,10 @@
 
 ## 1.6.3 - 2026-06-24
 
+- feat(plugins): enhance plugin management with Git support. (`3149470`)
+- feat(plugins): add filesystem access and menu contributions for plugins. (`25ec4c1`)
+- feat(plugins): implement plugin management system and enhance plugin support. (`f74301b`)
+- feat(docs): add Plugins section to documentation and sidebar. (`596996a`)
 - feat(scripting): enhance script execution with SES integration and update dependencies. (`c2586ab`)
 - feat(scripting): add support for modern JavaScript syntax with esbuild transpilation. (`1745953`)
 - feat(ui): introduce new components for enhanced user interaction. (`8ff0789`)

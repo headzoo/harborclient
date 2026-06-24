@@ -15,13 +15,16 @@ import { registerRequestHandlers } from '#/main/ipc/handlers/requests';
 import { registerSettingsHandlers } from '#/main/ipc/handlers/settings';
 import { registerBackupHandlers } from '#/main/ipc/handlers/backup';
 import { registerWindowHandlers } from '#/main/ipc/handlers/window';
+import { registerPluginHandlers } from '#/main/ipc/handlers/plugins';
+import type { PluginManager } from '#/main/plugins/PluginManager';
 
 /**
  * Registers IPC handlers that bridge renderer calls to db and HTTP modules.
  *
  * @param db - Database instance shared by collection, environment, and request handlers.
+ * @param pluginManager - Plugin manager for install, discovery, and storage.
  */
-export function registerIpcHandlers(db: IStorage): void {
+export function registerIpcHandlers(db: IStorage, pluginManager: PluginManager): void {
   const cookieJar = new CookieJar(getLocalDatabase());
 
   registerCollectionHandlers(db);
@@ -38,4 +41,5 @@ export function registerIpcHandlers(db: IStorage): void {
   registerFileHandlers();
   registerBackupHandlers(db);
   registerWindowHandlers();
+  registerPluginHandlers(pluginManager);
 }

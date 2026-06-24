@@ -5,6 +5,8 @@ import { handle } from '#/main/ipc/handle';
 import { ipcArgSchemas } from '#/main/ipc/ipcSchemas';
 import { runScript } from '#/main/scripting/scripts';
 import { getGeneralSettings } from '#/main/settings/generalSettings';
+import { applyPluginAfterSendHooks, applyPluginBeforeSendHooks } from '#/main/ipc/handlers/plugins';
+import type { PluginHttpResponse } from '#/shared/plugin/types';
 
 /**
  * In-flight HTTP requests keyed by client request id for cancellation.
@@ -68,16 +70,26 @@ export function registerNetworkHandlers(cookieJar: ICookieJar): void {
 
     try {
       const settings = getGeneralSettings();
-      const url = new QueryString().buildUrl(req.url, req.params);
+      const hookedRequest = await applyPluginBeforeSendHooks(req);
+      const url = new QueryString().buildUrl(hookedRequest.url, hookedRequest.params);
       const cookieHeader = cookieJar.buildCookieHeader(url) ?? undefined;
       const result = await new Requester().executeRequest(
-        req,
+        hookedRequest,
         settings,
         controller.signal,
         cookieHeader
       );
       if (result.request?.url) {
         cookieJar.captureSetCookies(result.request.url, result.setCookieHeaders);
+      }
+      if (!result.error) {
+        const pluginResponse: PluginHttpResponse = {
+          status: result.status,
+          statusText: result.statusText,
+          headers: result.headers,
+          body: result.body
+        };
+        await applyPluginAfterSendHooks(hookedRequest, pluginResponse);
       }
       return result;
     } finally {

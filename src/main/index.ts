@@ -28,6 +28,8 @@ import {
   trackWindowState
 } from '#/main/window/windowState';
 import { disposeScriptRunner } from '#/main/scripting/scriptRunnerHost';
+import { PluginManager, parseDevPluginPaths } from '#/main/plugins/PluginManager';
+import { disposePluginRunner } from '#/main/plugins/pluginRunnerHost';
 import type { StorageConnection, ThemeSource } from '#/shared/types';
 
 const isDev = !app.isPackaged;
@@ -38,6 +40,7 @@ const SPLASH_WIDTH = 420;
 const SPLASH_HEIGHT = 260;
 
 let db: RoutingStorage;
+let pluginManager: PluginManager | undefined;
 
 type CloseReason = 'window' | 'app';
 
@@ -214,7 +217,10 @@ async function createStorage(): Promise<RoutingStorage> {
  * @returns Value suitable for nativeTheme.themeSource.
  */
 function resolveNativeThemeSource(theme: ThemeSource): 'light' | 'dark' | 'system' {
-  return theme === 'high-contrast' ? 'dark' : theme;
+  if (theme === 'light' || theme === 'dark' || theme === 'system') {
+    return theme;
+  }
+  return 'dark';
 }
 
 /**
@@ -223,8 +229,12 @@ function resolveNativeThemeSource(theme: ThemeSource): 'light' | 'dark' | 'syste
 async function applyPersistedTheme(): Promise<void> {
   const stored = await db.getSetting(THEME_SETTING_KEY);
   const theme: ThemeSource =
-    stored === 'light' || stored === 'dark' || stored === 'system' || stored === 'high-contrast'
-      ? stored
+    stored === 'light' ||
+    stored === 'dark' ||
+    stored === 'system' ||
+    stored === 'high-contrast' ||
+    stored?.startsWith('plugin:')
+      ? (stored as ThemeSource)
       : 'system';
   nativeTheme.themeSource = resolveNativeThemeSource(theme);
 }
@@ -527,8 +537,14 @@ app.whenReady().then(async () => {
 
     logVerbose('startup: applying persisted theme');
     await applyPersistedTheme();
+
+    logVerbose('startup: initializing plugin manager');
+    pluginManager = new PluginManager(app.getPath('userData'), app.getVersion());
+    pluginManager.discover();
+    pluginManager.registerStartupDevPaths(parseDevPluginPaths());
+
     logVerbose('startup: registering IPC handlers');
-    registerIpcHandlers(db);
+    registerIpcHandlers(db, pluginManager);
 
     if (db instanceof RoutingStorage) {
       startGitWatchers(db, () => mainWindow);
@@ -541,6 +557,7 @@ app.whenReady().then(async () => {
 
     logVerbose('startup: creating main window');
     mainWindow = createWindow();
+    pluginManager.setNotifyWindow(() => mainWindow);
     setMenuWindow(mainWindow);
     Menu.setApplicationMenu(buildMenu(mainWindow));
     logVerbose('startup: main window created, waiting for ready-to-show');
@@ -559,6 +576,7 @@ app.whenReady().then(async () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       isQuitting = false;
       mainWindow = createWindow();
+      pluginManager?.setNotifyWindow(() => mainWindow);
       setMenuWindow(mainWindow);
       Menu.setApplicationMenu(buildMenu(mainWindow));
     }
@@ -577,6 +595,8 @@ app.on('before-quit', (event) => {
       saveWindowState(mainWindow);
     }
     disposeScriptRunner();
+    disposePluginRunner();
+    pluginManager?.dispose();
     void db.close();
     return;
   }

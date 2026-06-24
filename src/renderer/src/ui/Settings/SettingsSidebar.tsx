@@ -1,6 +1,5 @@
 import type { JSX } from 'react';
 import { sourceRow } from '#/renderer/src/ui/shared/classes';
-import { SETTINGS_SECTIONS } from './constants';
 import type { SettingsSection } from './types';
 
 interface Props {
@@ -8,6 +7,11 @@ interface Props {
    * Currently selected settings section.
    */
   section: SettingsSection;
+
+  /**
+   * Sidebar entries including built-in and plugin sections.
+   */
+  sections: Array<{ value: SettingsSection; label: string }>;
 
   /**
    * Called when the user selects a different section.
@@ -20,13 +24,13 @@ interface Props {
 /**
  * Narrow sidebar navigation for application settings sections.
  */
-export function SettingsSidebar({ section, onSectionChange }: Props): JSX.Element {
+export function SettingsSidebar({ section, sections, onSectionChange }: Props): JSX.Element {
   return (
     <nav
       className="flex w-[180px] shrink-0 flex-col gap-0.5 border-r border-separator bg-sidebar px-2 py-3"
       aria-label="Settings sections"
     >
-      {SETTINGS_SECTIONS.map((item) => {
+      {sections.map((item) => {
         const active = section === item.value;
         return (
           <button

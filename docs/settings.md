@@ -2,7 +2,7 @@
 
 HarborClient application settings control appearance, HTTP request defaults, and the storage connections where collections, requests, and environments are stored. Open settings from **File → Settings** or **Cmd/Ctrl+,**.
 
-The settings panel has a sidebar with seven sections: **General**, **Syntax highlighting**, **Shortcuts**, **Proxy**, **Storage Locations**, **AI**, and **Backup & Restore**. General covers appearance and request defaults; Syntax highlighting controls the code editor; Shortcuts lets you customize keyboard shortcuts; Proxy configures a global HTTP proxy for outbound requests; Storage Locations manages the named storage connections that hold your data; AI stores API keys for the built-in assistant; Backup & Restore exports or replaces all local HarborClient data from a single backup file.
+The settings panel has a sidebar with eight sections: **General**, **Storage Locations**, **Plugins**, **Shortcuts**, **Syntax highlighting**, **Proxy**, **AI**, and **Backup & Restore**. General covers appearance and request defaults; Storage Locations manages the named storage connections that hold your data; Plugins installs and manages extension packages; Shortcuts lets you customize keyboard shortcuts; Syntax highlighting controls the code editor; Proxy configures a global HTTP proxy for outbound requests; AI stores API keys for the built-in assistant; Backup & Restore exports or replaces all local HarborClient data from a single backup file.
 
 Appearance, request defaults, and connection definitions are stored in electron-store on your machine. Collections, requests, and environments live in the storage connections you configure.
 
@@ -152,6 +152,44 @@ Authenticate private remotes with a personal access token or **Authorize with Gi
 
 When you use a remote type such as Firestore, MySQL, or PostgreSQL, multiple HarborClient instances can point at the same database to share collections, environments, and saved requests across your team. Changes from other users appear when you reload data (for example, after restarting the app or refreshing collections); HarborClient does not live-sync in the background. Git-backed connections reload from disk when you pull, when files change under the HarborClient subdirectory, or when the window regains focus.
 
+## Plugins
+
+The **Plugins** section installs and manages HarborClient extension packages. Each plugin is a **HarborClient plugin** file (`.hcp`) — a ZIP archive containing a `manifest.json` and bundled JavaScript — or a git repository with the same layout. Plugins can add custom settings panels, sidebar views, request tabs, themes, HTTP hooks, and persistent storage. See [Plugin development](/plugin_development) for how to build and package plugins.
+
+HarborClient validates each manifest, shows the permissions the plugin requests, and unpacks file or git installs to your local plugins directory.
+
+### Installing plugins
+
+| Action | Description |
+| --- | --- |
+| **Install from file** | Select a `.hcp` plugin package. Review name, version, icon, permissions, and publisher metadata, then confirm in the permissions dialog. |
+| **Install from Git…** | Paste a public `https://` (or `http://`) repository URL and optionally a branch or tag. HarborClient shallow-clones the repo into your plugins directory, validates `manifest.json`, and shows the same permissions dialog as a file install. The repository must ship prebuilt entry files at the repo root (no build step runs in the app). |
+
+### Managing plugins
+
+Select a plugin in the list to open its detail panel.
+
+| Action | Description |
+| --- | --- |
+| **Plugin detail** | Read the Markdown description, browse screenshots, and follow homepage or issue links. |
+| **Enable / disable** | Toggle a plugin without uninstalling. Disabled plugins do not activate. |
+| **Update** | Git-installed plugins show an **Update** button that re-clones the stored repository URL (and optional ref) and replaces the installed copy. Use this to pull the latest version from the default branch or a pinned tag. |
+| **Uninstall / Remove** | Delete installed or git-installed plugins from `userData/plugins/`, or remove unpacked dev registrations without deleting your source folder. |
+
+Contributed settings sections from enabled plugins appear in the Settings sidebar alongside built-in sections.
+
+### Development loading
+
+While building a plugin, use these actions instead of packaging a `.hcp` file for every change:
+
+| Action | Description |
+| --- | --- |
+| **Load unpacked…** | Select a plugin **source directory** (the folder that contains `manifest.json`). HarborClient loads the plugin in place for development — no `.hcp` packaging step. Confirm permissions when prompted. |
+| **Reload** | Re-read the manifest and entry bundles for an unpacked plugin after you rebuild (also triggered automatically when file watching is enabled). |
+| **Development badge** | Unpacked plugins appear in the list with a **Development** badge. They keep running from your source path, so the next bundle write can be picked up without reinstalling. |
+
+If reload fails (syntax error, invalid manifest), the previous activation is torn down and an inline error is shown on the plugin row. For project setup, bundling, hot reload, and startup options, see [Developing unpacked plugins](/plugin_development#developing-unpacked-plugins) in the plugin development guide.
+
 ## AI
 
 ![AI](images/screenshots/settings-ai.png)
@@ -205,6 +243,7 @@ Secrets encrypted with your operating system keychain may not decrypt when you r
 
 ## What's next
 
+- [Plugin development](/plugin_development) — build, package, and extend HarborClient with plugins
 - [AI assistant](/ai) — configure API keys and use the chat sidebar
 - [Collections](/collections) — organize saved requests and manage storage and backup
 - [Environments](/environments) — define global variable groups stored in your chosen backend

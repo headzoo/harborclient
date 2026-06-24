@@ -59,6 +59,7 @@ import { Request } from '#/renderer/src/ui/Request';
 import { TitleBar } from '#/renderer/src/ui/TitleBar';
 import { BusyIndicator } from '#/renderer/src/ui/shared/BusyIndicator';
 import { Footer } from '#/renderer/src/ui/Footer';
+import { PluginHost } from '#/renderer/src/plugins/PluginHost';
 import { applyThemeAttribute } from '#/renderer/src/theme';
 import { platformClassName } from '#/renderer/src/platform';
 
@@ -152,11 +153,13 @@ export default function App(): JSX.Element {
     mainView.type === 'settings' ||
     mainView.type === 'team-hubs' ||
     mainView.type === 'sharing-keys' ||
+    mainView.type === 'plugin-view' ||
     configuringCollection != null ||
     configuringEnvironment != null;
 
   return (
     <SidebarExpansionProvider onExpandCollection={handleExpandCollection}>
+      <PluginHost />
       <div className={`flex h-screen flex-col overflow-hidden ${platformClassName()}`}>
         <BusyIndicator />
         <TitleBar />
@@ -190,6 +193,10 @@ export default function App(): JSX.Element {
                 onCloseSharingKeys={() => dispatch(closeOverlay())}
                 showTeamHubs={mainView.type === 'team-hubs'}
                 onCloseTeamHubs={() => dispatch(closeOverlay())}
+                showPluginView={mainView.type === 'plugin-view'}
+                pluginViewPluginId={mainView.type === 'plugin-view' ? mainView.pluginId : undefined}
+                pluginViewId={mainView.type === 'plugin-view' ? mainView.viewId : undefined}
+                onClosePluginView={() => dispatch(closeOverlay())}
                 collection={configuringCollection}
                 onCollectionDirtyChange={(dirty) => dispatch(setCollectionSettingsDirty(dirty))}
                 onCollectionSave={async (

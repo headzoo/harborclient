@@ -65,7 +65,10 @@ export const publicKeyPem = z.string();
  */
 export const name = z.string().trim().min(1, 'name is required');
 
-export const themeSource = z.enum(['light', 'dark', 'system', 'high-contrast']);
+export const themeSource = z.union([
+  z.enum(['light', 'dark', 'system', 'high-contrast']),
+  z.string().regex(/^plugin:[^:]+:[^:]+$/)
+]);
 
 export const rootMenuLabel = z.enum(['File', 'Edit', 'View', 'Help']);
 
@@ -398,6 +401,18 @@ export const shortcutOverrides = z.record(
   z.string()
 ) satisfies z.ZodType<ShortcutOverrides>;
 
+const pluginId = z.string().min(1);
+const pluginEntryKind = z.enum(['renderer', 'main']);
+const pluginPermission = z.enum([
+  'ui',
+  'storage',
+  'filesystem:pick',
+  'filesystem:read',
+  'filesystem:write',
+  'http',
+  'ipc'
+]);
+
 /**
  * Tuple schemas for IPC handler argument validation.
  */
@@ -470,5 +485,55 @@ export const ipcArgSchemas = {
   backupExport: z.tuple([z.record(z.string(), z.string())]),
   gitCommit: z.tuple([connectionId, z.string().trim().min(1), z.boolean().optional()]),
   gitLog: z.tuple([connectionId, z.number().int().positive().optional()]),
-  gitSetPat: z.tuple([connectionId, z.string(), z.string().min(1)])
+  gitSetPat: z.tuple([connectionId, z.string(), z.string().min(1)]),
+  pluginId: z.tuple([pluginId]),
+  pluginSetEnabled: z.tuple([pluginId, z.boolean()]),
+  pluginInstallFromPath: z.tuple([z.string().min(1)]),
+  pluginInstallFromGit: z.tuple([z.string().min(1), z.string().min(1).optional()]),
+  pluginLoadUnpackedFromPath: z.tuple([z.string().min(1)]),
+  pluginReadEntry: z.tuple([pluginId, pluginEntryKind]),
+  pluginReadAsset: z.tuple([pluginId, z.string().min(1)]),
+  pluginStorageKey: z.tuple([pluginId, z.string().min(1)]),
+  pluginStorageSet: z.tuple([pluginId, z.string().min(1), z.unknown()]),
+  pluginActivateMain: z.tuple([pluginId, z.string(), z.array(pluginPermission)]),
+  pluginInvokeMain: z.tuple([pluginId, z.string().min(1), z.array(z.unknown())]),
+  pluginMenuContributions: z.tuple([
+    z.array(
+      z.object({
+        pluginId: pluginId,
+        menu: z.enum(['file', 'edit', 'view', 'help']),
+        command: z.string().min(1),
+        label: z.string().optional(),
+        group: z.string().optional(),
+        order: z.number().optional()
+      })
+    )
+  ]),
+  pluginFsPickFile: z.tuple([
+    pluginId,
+    z
+      .object({
+        title: z.string().optional(),
+        multiple: z.boolean().optional(),
+        filters: z.array(z.object({ name: z.string(), extensions: z.array(z.string()) })).optional()
+      })
+      .optional()
+  ]),
+  pluginFsPickDirectory: z.tuple([pluginId, z.string()]),
+  pluginFsSaveFile: z.tuple([
+    pluginId,
+    z.string().max(MAX_IPC_REQUEST_BODY_CHARS),
+    z
+      .object({
+        defaultPath: z.string().optional(),
+        filters: z.array(z.object({ name: z.string(), extensions: z.array(z.string()) })).optional()
+      })
+      .optional()
+  ]),
+  pluginFsReadFile: z.tuple([pluginId, z.string().min(1)]),
+  pluginFsWriteFile: z.tuple([
+    pluginId,
+    z.string().min(1),
+    z.string().max(MAX_IPC_REQUEST_BODY_CHARS)
+  ])
 } as const;
