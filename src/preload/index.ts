@@ -28,6 +28,10 @@ import type {
   RootMenuLabel,
   PanelLayoutState,
   PemExportResult,
+  PluginAssetResult,
+  PluginEntryKind,
+  PluginInfo,
+  PluginPermission,
   RequestExport,
   SaveRequestInput,
   SavedRequest,
@@ -1166,6 +1170,171 @@ function restartApp(): Promise<void> {
   return ipcRenderer.invoke('app:restart');
 }
 
+/**
+ * Lists installed and unpacked plugins.
+ */
+function listPlugins(): Promise<PluginInfo[]> {
+  return ipcRenderer.invoke('plugins:list');
+}
+
+/**
+ * Installs a plugin via native file picker.
+ */
+function installPlugin(): Promise<PluginInfo | null> {
+  return ipcRenderer.invoke('plugins:install');
+}
+
+/**
+ * Installs a plugin from an absolute archive path.
+ *
+ * @param path - Absolute path to a `.hcp` or `.zip` plugin package.
+ */
+function installPluginFromPath(path: string): Promise<PluginInfo> {
+  return ipcRenderer.invoke('plugins:installFromPath', path);
+}
+
+/**
+ * Uninstalls an installed plugin.
+ *
+ * @param pluginId - Plugin manifest id.
+ */
+function uninstallPlugin(pluginId: string): Promise<void> {
+  return ipcRenderer.invoke('plugins:uninstall', pluginId);
+}
+
+/**
+ * Enables or disables a plugin.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param enabled - Whether the plugin should activate.
+ */
+function setPluginEnabled(pluginId: string, enabled: boolean): Promise<PluginInfo> {
+  return ipcRenderer.invoke('plugins:setEnabled', pluginId, enabled);
+}
+
+/**
+ * Loads an unpacked plugin via native directory picker.
+ */
+function loadUnpackedPlugin(): Promise<PluginInfo | null> {
+  return ipcRenderer.invoke('plugins:loadUnpacked');
+}
+
+/**
+ * Loads an unpacked plugin from an absolute directory path.
+ *
+ * @param path - Absolute path to the plugin project folder.
+ */
+function loadUnpackedPluginFromPath(path: string): Promise<PluginInfo> {
+  return ipcRenderer.invoke('plugins:loadUnpackedFromPath', path);
+}
+
+/**
+ * Reloads one plugin from disk.
+ *
+ * @param pluginId - Plugin manifest id.
+ */
+function reloadPlugin(pluginId: string): Promise<PluginInfo> {
+  return ipcRenderer.invoke('plugins:reload', pluginId);
+}
+
+/**
+ * Removes an unpacked dev plugin registration.
+ *
+ * @param pluginId - Plugin manifest id.
+ */
+function removeUnpackedPlugin(pluginId: string): Promise<void> {
+  return ipcRenderer.invoke('plugins:removeUnpacked', pluginId);
+}
+
+/**
+ * Reads a plugin entry bundle as UTF-8 source text.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param kind - Renderer or main entry.
+ */
+function readPluginEntry(pluginId: string, kind: PluginEntryKind): Promise<string> {
+  return ipcRenderer.invoke('plugins:readEntry', pluginId, kind);
+}
+
+/**
+ * Reads a plugin asset relative to the plugin root.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param assetPath - Plugin-relative asset path.
+ */
+function readPluginAsset(pluginId: string, assetPath: string): Promise<PluginAssetResult> {
+  return ipcRenderer.invoke('plugins:readAsset', pluginId, assetPath);
+}
+
+/**
+ * Returns a plugin-scoped persisted value.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param key - Storage key within the plugin namespace.
+ */
+function getPluginStorage(pluginId: string, key: string): Promise<unknown> {
+  return ipcRenderer.invoke('plugins:storageGet', pluginId, key);
+}
+
+/**
+ * Persists a plugin-scoped JSON-serializable value.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param key - Storage key within the plugin namespace.
+ * @param value - Value to store.
+ */
+function setPluginStorage(pluginId: string, key: string, value: unknown): Promise<void> {
+  return ipcRenderer.invoke('plugins:storageSet', pluginId, key, value);
+}
+
+/**
+ * Activates a plugin main entry in the SES utilityProcess runner.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param source - Bundled main entry source.
+ * @param permissions - Granted plugin permissions.
+ */
+function activatePluginMain(
+  pluginId: string,
+  source: string,
+  permissions: PluginPermission[]
+): Promise<void> {
+  return ipcRenderer.invoke('plugins:activateMain', pluginId, source, permissions);
+}
+
+/**
+ * Deactivates a plugin main entry in the SES utilityProcess runner.
+ *
+ * @param pluginId - Plugin manifest id.
+ */
+function deactivatePluginMain(pluginId: string): Promise<void> {
+  return ipcRenderer.invoke('plugins:deactivateMain', pluginId);
+}
+
+/**
+ * Invokes a plugin IPC handler registered in the main runtime.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param channel - Registered channel name.
+ * @param args - Arguments from the renderer half.
+ */
+function invokePluginMain(pluginId: string, channel: string, args: unknown[]): Promise<unknown> {
+  return ipcRenderer.invoke('plugins:invokeMain', pluginId, channel, args);
+}
+
+/**
+ * Subscribes to plugin change notifications from the main process.
+ *
+ * @param callback - Called with the changed plugin id.
+ */
+function onPluginsChanged(callback: (pluginId: string) => void): () => void {
+  const listener = (_event: Electron.IpcRendererEvent, pluginId: string): void => {
+    callback(pluginId);
+  };
+  ipcRenderer.on('plugins:changed', listener);
+  return () => ipcRenderer.removeListener('plugins:changed', listener);
+}
+
 const api: Api = {
   listCollections,
   createCollection,
@@ -1281,7 +1450,24 @@ const api: Api = {
   saveTextFile,
   exportBackup,
   importBackup,
-  restartApp
+  restartApp,
+  listPlugins,
+  installPlugin,
+  installPluginFromPath,
+  uninstallPlugin,
+  setPluginEnabled,
+  loadUnpackedPlugin,
+  loadUnpackedPluginFromPath,
+  reloadPlugin,
+  removeUnpackedPlugin,
+  readPluginEntry,
+  readPluginAsset,
+  getPluginStorage,
+  setPluginStorage,
+  activatePluginMain,
+  deactivatePluginMain,
+  invokePluginMain,
+  onPluginsChanged
 };
 
 contextBridge.exposeInMainWorld('api', api);

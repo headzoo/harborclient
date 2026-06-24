@@ -1308,6 +1308,28 @@ If your plugin includes HTTP hooks, add a separate build target for `src/main.ts
 
 Use **unpacked** loading while you iterate on a plugin. HarborClient reads your project directory directly — the same layout as inside a `.hcp` file, with `manifest.json` at the folder root — instead of copying files into `userData/plugins/`.
 
+Create a plugin project folder with `manifest.json` at the root (see [manifest.json](#manifestjson)), then add a `package.json` like this to install the type definitions and bundle your renderer entry:
+
+```json
+{
+  "name": "my-harborclient-plugin",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@harborclient/plugin-api": "^1.7.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "build": "esbuild src/renderer.tsx --bundle --outfile=dist/renderer.js --format=esm --external:react --external:react-dom",
+    "dev": "esbuild src/renderer.tsx --bundle --outfile=dist/renderer.js --format=esm --external:react --external:react-dom --watch",
+    "pack": "pnpm build && zip -r ../my-plugin.hcp manifest.json README.md assets dist"
+  }
+}
+```
+
+Run `pnpm install`, add `src/renderer.tsx` (exporting `activate(hc)`), then `pnpm build` or `pnpm dev` before loading the folder in HarborClient. Mark `react` and `react-dom` as **external** — the host injects React through `hc.react` at runtime. See [Building a plugin](#building-a-plugin) for TypeScript options and main-entry builds.
+
 ```mermaid
 flowchart LR
   subgraph devLoop [Dev loop]
@@ -1363,18 +1385,6 @@ pnpm dev
 
 ```bash
 pnpm dev
-```
-
-Example `package.json` scripts for the plugin project:
-
-```json
-{
-  "scripts": {
-    "build": "esbuild src/renderer.tsx --bundle --outfile=dist/renderer.js --format=esm --external:react --external:react-dom",
-    "dev": "esbuild src/renderer.tsx --bundle --outfile=dist/renderer.js --format=esm --external:react --external:react-dom --watch",
-    "pack": "pnpm build && zip -r ../compact-mode.hcp manifest.json README.md assets dist"
-  }
-}
 ```
 
 If your plugin also has a `main` entry, add a second esbuild target (or use `--watch` on both outputs) so HTTP hooks reload during development.

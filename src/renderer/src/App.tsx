@@ -59,6 +59,7 @@ import { Request } from '#/renderer/src/ui/Request';
 import { TitleBar } from '#/renderer/src/ui/TitleBar';
 import { BusyIndicator } from '#/renderer/src/ui/shared/BusyIndicator';
 import { Footer } from '#/renderer/src/ui/Footer';
+import { PluginHost } from '#/renderer/src/plugins/PluginHost';
 import { applyThemeAttribute } from '#/renderer/src/theme';
 import { platformClassName } from '#/renderer/src/platform';
 
@@ -157,6 +158,7 @@ export default function App(): JSX.Element {
 
   return (
     <SidebarExpansionProvider onExpandCollection={handleExpandCollection}>
+      <PluginHost />
       <div className={`flex h-screen flex-col overflow-hidden ${platformClassName()}`}>
         <BusyIndicator />
         <TitleBar />

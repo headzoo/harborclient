@@ -14,7 +14,8 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, 'src/main/index.ts'),
-          scriptRunner: resolve(__dirname, 'src/main/scripting/scriptRunner.ts')
+          scriptRunner: resolve(__dirname, 'src/main/scripting/scriptRunner.ts'),
+          pluginRunner: resolve(__dirname, 'src/main/plugins/pluginRunner.ts')
         },
         external: ['better-sqlite3'],
         output: {

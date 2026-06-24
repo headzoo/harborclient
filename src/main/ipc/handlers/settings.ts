@@ -51,6 +51,9 @@ function parseThemeSource(value: string | undefined): ThemeSource {
   if (value === 'light' || value === 'dark' || value === 'system' || value === 'high-contrast') {
     return value;
   }
+  if (value?.startsWith('plugin:')) {
+    return value as ThemeSource;
+  }
   return 'system';
 }
 
@@ -64,7 +67,10 @@ function parseThemeSource(value: string | undefined): ThemeSource {
  * @returns Value suitable for nativeTheme.themeSource.
  */
 function resolveNativeThemeSource(theme: ThemeSource): 'light' | 'dark' | 'system' {
-  return theme === 'high-contrast' ? 'dark' : theme;
+  if (theme === 'light' || theme === 'dark' || theme === 'system') {
+    return theme;
+  }
+  return 'dark';
 }
 
 /**
@@ -87,7 +93,7 @@ export function registerSettingsHandlers(db: IStorage): void {
 
   // Persists and applies the light/dark/system/high-contrast theme preference.
   handle('theme:set', ipcArgSchemas.themeSet, async (_event, theme) => {
-    nativeTheme.themeSource = resolveNativeThemeSource(theme);
+    nativeTheme.themeSource = resolveNativeThemeSource(theme as ThemeSource);
     await db.setSetting(THEME_SETTING_KEY, theme);
   });
 

@@ -141,7 +141,8 @@ export const SETTINGS_SECTIONS: Array<{ value: SettingsSection; label: string }>
   { value: 'syntax', label: 'Syntax highlighting' },
   { value: 'ai', label: 'AI' },
   { value: 'proxy', label: 'Proxy' },
-  { value: 'backup-restore', label: 'Backup & Restore' }
+  { value: 'backup-restore', label: 'Backup & Restore' },
+  { value: 'plugins', label: 'Plugins' }
 ];
 
 /**

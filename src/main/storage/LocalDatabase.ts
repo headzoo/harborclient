@@ -167,6 +167,13 @@ export class LocalDatabase {
         model TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
+
+      CREATE TABLE IF NOT EXISTS plugin_storage (
+        plugin_id TEXT NOT NULL,
+        key TEXT NOT NULL,
+        value TEXT NOT NULL,
+        PRIMARY KEY (plugin_id, key)
+      );
     `);
 
     this.migrateRegistrySortOrder();
@@ -767,6 +774,37 @@ export class LocalDatabase {
     } finally {
       legacy.close();
     }
+  }
+
+  /**
+   * Reads a plugin-scoped persisted value.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @param key - Storage key within the plugin namespace.
+   * @returns Stored JSON string, or undefined when unset.
+   */
+  getPluginValue(pluginId: string, key: string): string | undefined {
+    const row = this.getDb()
+      .prepare('SELECT value FROM plugin_storage WHERE plugin_id = ? AND key = ?')
+      .get(pluginId, key) as { value: string } | undefined;
+    return row?.value;
+  }
+
+  /**
+   * Persists a plugin-scoped JSON value.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @param key - Storage key within the plugin namespace.
+   * @param value - Serialized JSON value.
+   */
+  setPluginValue(pluginId: string, key: string, value: string): void {
+    this.getDb()
+      .prepare(
+        `INSERT INTO plugin_storage (plugin_id, key, value)
+         VALUES (?, ?, ?)
+         ON CONFLICT(plugin_id, key) DO UPDATE SET value = excluded.value`
+      )
+      .run(pluginId, key, value);
   }
 }
 

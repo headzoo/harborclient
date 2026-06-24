@@ -1,8 +1,10 @@
-import { useEffect, useState, type JSX } from 'react';
+import { useEffect, useMemo, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { GeneralSettings, ThemeSource } from '#/shared/types';
+import { formatPluginThemeValue } from '#/shared/plugin/types';
 import { Button } from '#/renderer/src/components/Button';
-import { applyThemeAttribute } from '#/renderer/src/theme';
+import { applyThemePreference } from '#/renderer/src/plugins/themeRuntime';
+import { usePluginThemes } from '#/renderer/src/plugins/pluginHooks';
 import { Input, Select } from '#/renderer/src/components/forms';
 import { DEFAULT_GENERAL_SETTINGS, THEME_OPTIONS } from './constants';
 
@@ -15,6 +17,18 @@ export function GeneralSection(): JSX.Element {
   const [generalSettings, setGeneralSettings] = useState<GeneralSettings>(DEFAULT_GENERAL_SETTINGS);
   const [generalLoading, setGeneralLoading] = useState(true);
   const [generalSaving, setGeneralSaving] = useState(false);
+  const pluginThemes = usePluginThemes();
+
+  const themeOptions = useMemo(
+    () => [
+      ...THEME_OPTIONS,
+      ...pluginThemes.map((entry) => ({
+        value: formatPluginThemeValue(entry.pluginId, entry.id) as ThemeSource,
+        label: entry.title
+      }))
+    ],
+    [pluginThemes]
+  );
 
   /**
    * Loads the persisted theme preference on mount.
@@ -76,7 +90,7 @@ export function GeneralSection(): JSX.Element {
   const handleGeneralSave = async (): Promise<void> => {
     setGeneralSaving(true);
     try {
-      applyThemeAttribute(theme);
+      await applyThemePreference(theme);
       await window.api.setTheme(theme);
       await window.api.setGeneralSettings(generalSettings);
       toast.success('Settings saved.');
@@ -95,7 +109,7 @@ export function GeneralSection(): JSX.Element {
             disabled={loading || generalLoading || generalSaving}
             onChange={(event) => handleThemeChange(event.target.value as ThemeSource)}
           >
-            {THEME_OPTIONS.map((option) => (
+            {themeOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>

@@ -1,8 +1,20 @@
 import type { AuthConfig } from '#/shared/auth';
 import type { ShortcutBinding, ShortcutOverrides } from '#/shared/shortcuts';
+import type {
+  PluginAssetResult,
+  PluginEntryKind,
+  PluginInfo,
+  PluginPermission
+} from '#/shared/plugin/types';
 
 export type { AuthConfig, AuthType } from '#/shared/auth';
 export type { ShortcutBinding, ShortcutId, ShortcutOverrides } from '#/shared/shortcuts';
+export type {
+  PluginAssetResult,
+  PluginEntryKind,
+  PluginInfo,
+  PluginPermission
+} from '#/shared/plugin/types';
 
 /**
  * Supported HTTP request methods.
@@ -916,7 +928,12 @@ export interface ScriptRunResult {
 /**
  * Theme preference for light, dark, system, or high-contrast appearance.
  */
-export type ThemeSource = 'light' | 'dark' | 'system' | 'high-contrast';
+export type ThemeSource =
+  | 'light'
+  | 'dark'
+  | 'system'
+  | 'high-contrast'
+  | `plugin:${string}:${string}`;
 
 /**
  * Named CodeMirror syntax themes available in settings.
@@ -1129,7 +1146,9 @@ export type SettingsSection =
   | 'shortcuts'
   | 'proxy'
   | 'ai'
-  | 'backup-restore';
+  | 'backup-restore'
+  | 'plugins'
+  | `plugin:${string}:${string}`;
 
 /**
  * AI provider API keys stored locally for future assistant features.
@@ -2991,6 +3010,133 @@ export interface Api {
    * Relaunches HarborClient so restored on-disk state is loaded cleanly.
    */
   restartApp: () => Promise<void>;
+
+  /**
+   * Lists installed and unpacked plugins.
+   */
+  listPlugins: () => Promise<PluginInfo[]>;
+
+  /**
+   * Installs a plugin from a native file picker (.hcp / .zip).
+   */
+  installPlugin: () => Promise<PluginInfo | null>;
+
+  /**
+   * Installs a plugin from an absolute archive path.
+   *
+   * @param path - Absolute path to a `.hcp` or `.zip` plugin package.
+   */
+  installPluginFromPath: (path: string) => Promise<PluginInfo>;
+
+  /**
+   * Uninstalls an installed plugin by id.
+   *
+   * @param pluginId - Plugin manifest id.
+   */
+  uninstallPlugin: (pluginId: string) => Promise<void>;
+
+  /**
+   * Enables or disables a plugin.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @param enabled - Whether the plugin should activate.
+   */
+  setPluginEnabled: (pluginId: string, enabled: boolean) => Promise<PluginInfo>;
+
+  /**
+   * Loads an unpacked plugin from a native directory picker.
+   */
+  loadUnpackedPlugin: () => Promise<PluginInfo | null>;
+
+  /**
+   * Loads an unpacked plugin from an absolute directory path.
+   *
+   * @param path - Absolute path to the plugin project folder.
+   */
+  loadUnpackedPluginFromPath: (path: string) => Promise<PluginInfo>;
+
+  /**
+   * Reloads one plugin from disk.
+   *
+   * @param pluginId - Plugin manifest id.
+   */
+  reloadPlugin: (pluginId: string) => Promise<PluginInfo>;
+
+  /**
+   * Removes an unpacked dev plugin registration.
+   *
+   * @param pluginId - Plugin manifest id.
+   */
+  removeUnpackedPlugin: (pluginId: string) => Promise<void>;
+
+  /**
+   * Reads a plugin entry bundle as UTF-8 source text.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @param kind - Renderer or main entry.
+   */
+  readPluginEntry: (pluginId: string, kind: PluginEntryKind) => Promise<string>;
+
+  /**
+   * Reads a plugin asset relative to the plugin root.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @param assetPath - Plugin-relative asset path.
+   */
+  readPluginAsset: (pluginId: string, assetPath: string) => Promise<PluginAssetResult>;
+
+  /**
+   * Returns a plugin-scoped persisted value.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @param key - Storage key within the plugin namespace.
+   */
+  getPluginStorage: (pluginId: string, key: string) => Promise<unknown>;
+
+  /**
+   * Persists a plugin-scoped JSON-serializable value.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @param key - Storage key within the plugin namespace.
+   * @param value - Value to store.
+   */
+  setPluginStorage: (pluginId: string, key: string, value: unknown) => Promise<void>;
+
+  /**
+   * Activates a plugin main entry in the SES utilityProcess runner.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @param source - Bundled main entry source.
+   * @param permissions - Granted plugin permissions.
+   */
+  activatePluginMain: (
+    pluginId: string,
+    source: string,
+    permissions: PluginPermission[]
+  ) => Promise<void>;
+
+  /**
+   * Deactivates a plugin main entry in the SES utilityProcess runner.
+   *
+   * @param pluginId - Plugin manifest id.
+   */
+  deactivatePluginMain: (pluginId: string) => Promise<void>;
+
+  /**
+   * Invokes a plugin IPC handler registered in the main runtime.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @param channel - Registered channel name.
+   * @param args - Arguments from the renderer half.
+   */
+  invokePluginMain: (pluginId: string, channel: string, args: unknown[]) => Promise<unknown>;
+
+  /**
+   * Subscribes to plugin change notifications from the main process.
+   *
+   * @param callback - Called with the changed plugin id.
+   */
+  onPluginsChanged: (callback: (pluginId: string) => void) => () => void;
 }
 
 declare global {
