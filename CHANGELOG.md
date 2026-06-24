@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.8.1 - 2026-06-24
+
 - feat(plugins): enhance plugin catalog and UI improvements. (`13b6e26`)
 - feat(plugins): introduce plugin marketplace and enhance management features. (`ef48766`)
 - fix(docs): update HarborClient Team Hub references in documentation. (`8b58d90`)
