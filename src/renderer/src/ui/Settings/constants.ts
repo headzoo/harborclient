@@ -137,12 +137,12 @@ export const DEFAULT_AI_SETTINGS: AiSettings = {
 export const SETTINGS_SECTIONS: Array<{ value: SettingsSection; label: string }> = [
   { value: 'general', label: 'General' },
   { value: 'storage', label: 'Storage Locations' },
+  { value: 'plugins', label: 'Plugins' },
   { value: 'shortcuts', label: 'Shortcuts' },
   { value: 'syntax', label: 'Syntax highlighting' },
   { value: 'ai', label: 'AI' },
   { value: 'proxy', label: 'Proxy' },
-  { value: 'backup-restore', label: 'Backup & Restore' },
-  { value: 'plugins', label: 'Plugins' }
+  { value: 'backup-restore', label: 'Backup & Restore' }
 ];
 
 /**

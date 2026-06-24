@@ -489,6 +489,7 @@ export const ipcArgSchemas = {
   pluginId: z.tuple([pluginId]),
   pluginSetEnabled: z.tuple([pluginId, z.boolean()]),
   pluginInstallFromPath: z.tuple([z.string().min(1)]),
+  pluginInstallFromGit: z.tuple([z.string().min(1), z.string().min(1).optional()]),
   pluginLoadUnpackedFromPath: z.tuple([z.string().min(1)]),
   pluginReadEntry: z.tuple([pluginId, pluginEntryKind]),
   pluginReadAsset: z.tuple([pluginId, z.string().min(1)]),

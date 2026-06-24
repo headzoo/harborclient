@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(plugins): enhance plugin management with Git support. (`3149470`)
 - feat(plugins): add filesystem access and menu contributions for plugins. (`25ec4c1`)
 - feat(plugins): implement plugin management system and enhance plugin support. (`f74301b`)
 - feat(docs): add Plugins section to documentation and sidebar. (`596996a`)

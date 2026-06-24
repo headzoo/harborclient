@@ -37,7 +37,7 @@ flowchart TD
 
 All script APIs are exposed on the global `hc` object. The editor provides autocomplete for `hc` members; keep custom snippets aligned with the reference below.
 
-[Plugins](/plugins) use the same `hc` name with a broader API for UI contributions, storage, and HTTP hooks. Plugin APIs are not available inside collection or request scripts.
+[Plugins](/plugin_development) use the same `hc` name with a broader API for UI contributions, storage, and HTTP hooks. Plugin APIs are not available inside collection or request scripts.
 
 ### hc.request
 

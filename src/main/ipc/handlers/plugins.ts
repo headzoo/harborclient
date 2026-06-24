@@ -81,6 +81,14 @@ export function registerPluginHandlers(pluginManager: PluginManager): void {
     pluginManager.installFromFile(path)
   );
 
+  handle('plugins:installFromGit', ipcArgSchemas.pluginInstallFromGit, (_event, url, ref) =>
+    pluginManager.installFromGit(url, ref)
+  );
+
+  handle('plugins:updateFromGit', ipcArgSchemas.pluginId, (_event, pluginId) =>
+    pluginManager.updateFromGit(pluginId)
+  );
+
   handle('plugins:uninstall', ipcArgSchemas.pluginId, (_event, pluginId) => {
     pluginManager.uninstall(pluginId);
   });

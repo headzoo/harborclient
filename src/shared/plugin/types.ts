@@ -96,7 +96,15 @@ export interface PluginManifest {
 /**
  * How a plugin package is loaded on disk.
  */
-export type PluginSource = 'installed' | 'unpacked';
+export type PluginSource = 'installed' | 'unpacked' | 'git';
+
+/**
+ * Git origin metadata for plugins installed from a public repository.
+ */
+export interface GitPluginOrigin {
+  url: string;
+  ref?: string;
+}
 
 /**
  * Summary of a discovered or installed plugin for Settings and IPC.
@@ -110,6 +118,10 @@ export interface PluginInfo {
   enabled: boolean;
   permissions: PluginPermission[];
   manifest: PluginManifest;
+  /** Public git URL when source is `git`. */
+  repoUrl?: string;
+  /** Branch or tag ref used for the last clone when source is `git`. */
+  repoRef?: string;
   error?: string;
 }
 

@@ -1197,6 +1197,25 @@ function installPluginFromPath(path: string): Promise<PluginInfo> {
 }
 
 /**
+ * Installs a plugin by cloning a public git repository.
+ *
+ * @param url - Public https (or http) repository URL.
+ * @param ref - Optional branch or tag to clone.
+ */
+function installPluginFromGit(url: string, ref?: string): Promise<PluginInfo> {
+  return ipcRenderer.invoke('plugins:installFromGit', url, ref);
+}
+
+/**
+ * Re-clones a git-installed plugin from its stored origin.
+ *
+ * @param pluginId - Plugin manifest id.
+ */
+function updatePluginFromGit(pluginId: string): Promise<PluginInfo> {
+  return ipcRenderer.invoke('plugins:updateFromGit', pluginId);
+}
+
+/**
  * Uninstalls an installed plugin.
  *
  * @param pluginId - Plugin manifest id.
@@ -1523,6 +1542,8 @@ const api: Api = {
   listPlugins,
   installPlugin,
   installPluginFromPath,
+  installPluginFromGit,
+  updatePluginFromGit,
   uninstallPlugin,
   setPluginEnabled,
   loadUnpackedPlugin,

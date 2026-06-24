@@ -3035,6 +3035,21 @@ export interface Api {
   installPluginFromPath: (path: string) => Promise<PluginInfo>;
 
   /**
+   * Installs a plugin by cloning a public git repository.
+   *
+   * @param url - Public https (or http) repository URL.
+   * @param ref - Optional branch or tag to clone.
+   */
+  installPluginFromGit: (url: string, ref?: string) => Promise<PluginInfo>;
+
+  /**
+   * Re-clones a git-installed plugin from its stored origin.
+   *
+   * @param pluginId - Plugin manifest id.
+   */
+  updatePluginFromGit: (pluginId: string) => Promise<PluginInfo>;
+
+  /**
    * Uninstalls an installed plugin by id.
    *
    * @param pluginId - Plugin manifest id.

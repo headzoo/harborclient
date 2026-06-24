@@ -1,10 +1,8 @@
-# Plugins
+# Plugin development
 
 HarborClient plugins extend the app with installable packages: custom settings panels, sidebar views, request tabs, appearance themes, HTTP hooks, and persistent storage. Each plugin ships as a **HarborClient plugin** file (`.hcp`) containing a `manifest.json` and bundled JavaScript. A `.hcp` file is a normal ZIP archive — the extension is a naming convention only, not a separate container format. Plugins use the same `hc` namespace as [request scripts](/request-scripts), but with a broader API suited to long-lived extensions.
 
-Install plugins from **Settings → Plugins → Install from file**. HarborClient validates the manifest, shows the permissions the plugin requests, and unpacks the package to your local plugins directory.
-
-While developing, use **Load unpacked…** to point HarborClient at your plugin project folder and reload bundles as you build — see [Developing unpacked plugins](#developing-unpacked-plugins).
+To install or manage plugins in the app, see [Settings → Plugins](/settings#plugins). This guide covers package layout, the manifest, APIs, examples, and the development workflow.
 
 ## Plugin package layout
 
@@ -146,12 +144,12 @@ Use this for install-time documentation: features, setup notes, permission ratio
 ```markdown
 # My Plugin
 
-Adds a **Compact Mode** settings panel and a Solarized Dark theme.
+Logs every outbound HTTP request to the terminal and adds a **Solarized Dark** theme.
 
 ## Permissions
 
-- `ui` — settings section and theme registration
-- `storage` — remembers compact mode preference
+- `http` — before/after send hooks for request logging
+- `ui` — theme registration
 ```
 
 #### icon
@@ -275,19 +273,6 @@ flowchart TD
 5. **Uninstall** — Removes an installed plugin directory and clears stored enablement state. Unpacked plugins are removed from the dev registry only; your source folder on disk is not deleted.
 
 Registrations from `hc.ui.*` and similar APIs return **disposables**. Push them onto `hc.subscriptions` so the host can clean up automatically on deactivation.
-
-## Installing and managing plugins
-
-From **Settings → Plugins**:
-
-- **Install from file** — Select a `.hcp` plugin package. Review name, version, icon, permissions, and publisher metadata, then confirm.
-- **Load unpacked…** — Select a plugin **source directory** (the folder that contains `manifest.json`). HarborClient loads the plugin in place for development — no `.hcp` packaging step. See [Developing unpacked plugins](#developing-unpacked-plugins).
-- **Reload** — Re-read the manifest and entry bundles for an unpacked plugin after you rebuild (also triggered automatically when file watching is enabled).
-- **Plugin detail** — Open an installed or available plugin to read the Markdown description, browse screenshots, and follow homepage or issue links.
-- **Enable / disable** — Toggle a plugin without uninstalling. Disabled plugins do not activate.
-- **Uninstall** — Remove an installed plugin and its files from `userData/plugins/`. For unpacked plugins, **Remove** clears the dev registration only.
-
-Contributed settings sections from enabled plugins appear in the Settings sidebar alongside built-in sections.
 
 ## Renderer API
 
@@ -1074,112 +1059,68 @@ Expose an RPC channel callable from the renderer half of the same plugin. Requir
 
 Main-process hooks are invoked by posting work to the utilityProcess runner; the main process applies mutations and enforces permissions before and after each callback.
 
-## Example: Compact Mode
+## Example: Logging Requests
 
-This example adds a **Compact Mode** checkbox to Settings. When enabled, it toggles a CSS class on `document.body` for a denser layout and persists the choice with `hc.storage`.
+This example is a **main-only** plugin that logs every outbound HTTP request to the terminal where HarborClient was launched. It uses `hc.http.onBeforeSend` and `hc.http.onAfterSend` in the SES utilityProcess — no renderer entry, React, or `contributes` block. Useful when you want always-on request tracing without passing `-vv` to the app.
 
 ### manifest.json
 
 ```json
 {
-  "id": "com.example.compact-mode",
-  "name": "Compact Mode",
+  "id": "com.example.request-logger",
+  "name": "Request Logger",
   "version": "1.0.0",
-  "company": "Example Inc.",
-  "description": "README.md",
-  "icon": "assets/icon.png",
-  "homepage": "https://example.com/compact-mode",
-  "bugs": { "url": "https://github.com/example/compact-mode/issues" },
   "engines": { "harborclient": ">=1.7.0" },
-  "renderer": "dist/renderer.js",
-  "permissions": ["ui", "storage"],
-  "contributes": {
-    "settingsSections": [{ "id": "compactMode", "title": "Compact Mode" }]
-  }
+  "main": "dist/main.js",
+  "permissions": ["http"]
 }
 ```
 
-### src/renderer.tsx
+### src/main.ts
 
-```tsx
-import type { PluginContext } from '@harborclient/plugin-api';
+```javascript
+export function activate(hc) {
+  hc.subscriptions.push(
+    hc.http.onBeforeSend((request) => {
+      console.log(`→ ${request.method} ${request.url}`);
+      console.log('  headers:', request.headers);
+      if (request.body) {
+        console.log('  body:', request.body);
+      }
+    }),
+  );
 
-export function activate(hc: PluginContext): void {
-  const React = hc.react;
-
-  const disposable = hc.ui.registerSettingsSection({
-    id: 'compactMode',
-    title: 'Compact Mode',
-    Component(): React.JSX.Element {
-      const [enabled, setEnabled] = React.useState(false);
-      const [loaded, setLoaded] = React.useState(false);
-
-      React.useEffect(() => {
-        let active = true;
-        hc.storage.get<boolean>('enabled').then((value) => {
-          if (active) {
-            setEnabled(value ?? false);
-            setLoaded(true);
-          }
-        });
-        return () => {
-          active = false;
-        };
-      }, []);
-
-      React.useEffect(() => {
-        if (loaded) {
-          document.body.classList.toggle('compact-mode', enabled);
-        }
-      }, [enabled, loaded]);
-
-      const onToggle = (next: boolean): void => {
-        setEnabled(next);
-        void hc.storage.set('enabled', next);
-      };
-
-      return (
-        <section>
-          <h2 className="m-0 mb-4 text-[15px] font-semibold text-text">Compact Mode</h2>
-          <label className="flex items-center gap-2 text-[14px] text-text">
-            <input
-              type="checkbox"
-              checked={enabled}
-              disabled={!loaded}
-              onChange={(e) => onToggle(e.target.checked)}
-            />
-            Use a denser layout
-          </label>
-        </section>
+  hc.subscriptions.push(
+    hc.http.onAfterSend((request, response) => {
+      console.log(
+        `← ${response.status} ${response.statusText} (${request.method} ${request.url})`,
       );
-    },
-  });
-
-  hc.subscriptions.push(disposable);
-}
-
-export function deactivate(): void {
-  document.body.classList.remove('compact-mode');
+    }),
+  );
 }
 ```
 
-Pair the component with a stylesheet in your plugin (or global CSS loaded on activation) that targets `.compact-mode` on `body`.
+The host exposes `console` inside the utilityProcess sandbox, so `console.log` lines appear in the terminal that started HarborClient (for example the window running `pnpm dev`).
 
 ### Packaging
 
-Bundle `src/renderer.tsx` to `dist/renderer.js`, include `manifest.json`, and pack a `.hcp` file:
+Bundle `src/main.ts` to `dist/main.js`, include `manifest.json`, and pack a `.hcp` file:
+
+```bash
+esbuild src/main.ts --bundle --outfile=dist/main.js --format=esm --platform=neutral
+```
 
 ```
-compact-mode.hcp          # ZIP archive; use .hcp extension
+request-logger.hcp        # ZIP archive; use .hcp extension
 ├── manifest.json
 ├── README.md
-├── assets/
-│   └── icon.png
 └── dist/
-    └── renderer.js
+    └── main.js
 ```
 
-Install the `.hcp` file from **Settings → Plugins → Install from file**.
+Install the `.hcp` file from [Settings → Plugins](/settings#plugins). Enable the plugin and send a request — log lines appear in your terminal.
+
+HarborClient also supports built-in request logging via `-vv` / `--very-verbose` (see the app README). A plugin logger runs whenever the plugin is enabled and can use any format you choose.
 
 ## Example: Request audit tab
 
@@ -1311,17 +1252,17 @@ HarborClient does not ship a plugin SDK runtime — you author and bundle plugin
 Create a ZIP archive and use the `.hcp` extension. Any zip tool works — for example:
 
 ```bash
-cd compact-mode
-zip -r ../compact-mode.hcp manifest.json README.md assets dist
+cd request-logger
+zip -r ../request-logger.hcp manifest.json README.md dist
 ```
 
-You can also build `compact-mode.zip` and rename it to `compact-mode.hcp`; HarborClient treats both the same way at install time as long as the contents are a valid plugin layout.
+You can also build `request-logger.zip` and rename it to `request-logger.hcp`; HarborClient treats both the same way at install time as long as the contents are a valid plugin layout.
 
 ### Recommended project setup
 
 ```json
 {
-  "name": "compact-mode",
+  "name": "request-logger",
   "private": true,
   "devDependencies": {
     "@harborclient/plugin-api": "^1.7.0",
@@ -1329,13 +1270,13 @@ You can also build `compact-mode.zip` and rename it to `compact-mode.hcp`; Harbo
     "typescript": "^5.0.0"
   },
   "scripts": {
-    "build": "esbuild src/renderer.tsx --bundle --outfile=dist/renderer.js --format=esm --external:react --external:react-dom",
-    "pack": "pnpm build && cd compact-mode && zip -r ../compact-mode.hcp manifest.json README.md assets dist"
+    "build": "esbuild src/main.ts --bundle --outfile=dist/main.js --format=esm --platform=neutral",
+    "pack": "pnpm build && zip -r ../request-logger.hcp manifest.json README.md dist"
   }
 }
 ```
 
-Mark `react` and `react-dom` as **external** so your bundle does not include a second React copy. At runtime, use `hc.react` instead.
+For renderer plugins, mark `react` and `react-dom` as **external** so your bundle does not include a second React copy. At runtime, use `hc.react` instead.
 
 ### TypeScript
 
@@ -1386,12 +1327,7 @@ flowchart LR
 
 ### Load unpacked
 
-1. Build your plugin at least once so `dist/` exists (`pnpm build` or `pnpm dev`).
-2. In HarborClient, open **Settings → Plugins → Load unpacked…** and choose your plugin project folder (for example `~/projects/compact-mode`).
-3. Confirm permissions when prompted — same dialog as installing a `.hcp` file.
-4. Open a contributed UI surface (for example your settings section) to trigger activation.
-
-Unpacked plugins appear in the plugin list with a **Development** badge. They keep running from your source path, so the next bundle write can be picked up without reinstalling.
+Build your plugin at least once so `dist/` exists (`pnpm build` or `pnpm dev`), then register the project folder through [Settings → Plugins](/settings#plugins) (**Load unpacked…**) or via the startup options below. For UI plugins, open a contributed surface (for example your settings section) to trigger activation. Main-only plugins activate as soon as they are enabled.
 
 HarborClient stores unpacked paths in a dev registry under `userData` and restores them on the next launch.
 
@@ -1409,16 +1345,14 @@ When a watched file changes, HarborClient debounces briefly (so multi-file write
 3. Re-validates the manifest
 4. Calls `activate(hc)` again
 
-Leave the relevant Settings or UI panel open to see UI updates after each rebuild. If reload fails (syntax error, invalid manifest), the previous activation is torn down and an inline error is shown in **Settings → Plugins**.
-
-Use **Reload** on the plugin row to force the same sequence manually.
+Leave the relevant Settings or UI panel open to see UI updates after each rebuild. If reload fails (syntax error, invalid manifest), the previous activation is torn down and an inline error is shown in [Settings → Plugins](/settings#plugins). Use **Reload** on the plugin row to force the same sequence manually.
 
 ### Recommended dev workflow
 
-**Terminal 1** — watch-build the renderer entry:
+**Terminal 1** — watch-build the main entry:
 
 ```bash
-cd compact-mode
+cd request-logger
 pnpm dev
 ```
 
@@ -1436,10 +1370,10 @@ For day-to-day work on the same plugin, you can register an unpacked path before
 
 | Mechanism | Example |
 | --------- | ------- |
-| Environment variable | `HARBOR_PLUGINS_DEV=~/projects/compact-mode pnpm dev` |
-| CLI flag | `harborclient --plugin-dev ~/projects/compact-mode` |
+| Environment variable | `HARBOR_PLUGINS_DEV=~/projects/request-logger pnpm dev` |
+| CLI flag | `harborclient --plugin-dev ~/projects/request-logger` |
 
-Multiple paths are separated by `:` on Linux and macOS, or `;` on Windows. Paths registered this way appear in **Settings → Plugins** the same as plugins loaded through **Load unpacked…**.
+Multiple paths are separated by `:` on Linux and macOS, or `;` on Windows. Paths registered this way appear in [Settings → Plugins](/settings#plugins) the same as plugins loaded through **Load unpacked…**.
 
 ### Unpacked vs installed
 

@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { PluginInfo, PluginPermission } from '#/shared/plugin/types';
 import { Button } from '#/renderer/src/components/Button';
+import { Input } from '#/renderer/src/components/forms';
 import { Modal } from '#/renderer/src/components/Modal';
 import { useAppDispatch } from '#/renderer/src/store/hooks';
 import { showConfirm } from '#/renderer/src/ui/modals/dialogHelpers';
@@ -18,6 +19,15 @@ const PERMISSION_LABELS: Record<PluginPermission, string> = {
 };
 
 /**
+ * Returns whether a plugin is installed under userData (file or git), not dev-unpacked.
+ *
+ * @param plugin - Plugin metadata row.
+ */
+function isManagedInstall(plugin: PluginInfo): boolean {
+  return plugin.source === 'installed' || plugin.source === 'git';
+}
+
+/**
  * Settings section for installing, enabling, and inspecting plugins.
  */
 export function PluginsSection(): JSX.Element {
@@ -28,6 +38,12 @@ export function PluginsSection(): JSX.Element {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pendingInstall, setPendingInstall] = useState<PluginInfo | null>(null);
   const [descriptionMarkdown, setDescriptionMarkdown] = useState<string>('');
+  const [showGitInstallModal, setShowGitInstallModal] = useState(false);
+  const [gitInstallUrl, setGitInstallUrl] = useState('');
+  const [gitInstallRef, setGitInstallRef] = useState('');
+  const [gitInstallError, setGitInstallError] = useState<string | null>(null);
+  const [gitInstallBusy, setGitInstallBusy] = useState(false);
+  const [gitUpdateBusy, setGitUpdateBusy] = useState(false);
 
   const selected = useMemo(
     () => plugins.find((plugin) => plugin.id === selectedId) ?? null,
@@ -122,7 +138,7 @@ export function PluginsSection(): JSX.Element {
     const plugin = pendingInstall;
     setPendingInstall(null);
     if (!keep) {
-      if (plugin.source === 'installed') {
+      if (isManagedInstall(plugin)) {
         await window.api.uninstallPlugin(plugin.id);
       } else {
         await window.api.removeUnpackedPlugin(plugin.id);
@@ -146,6 +162,69 @@ export function PluginsSection(): JSX.Element {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  /**
+   * Opens the install-from-git modal with a cleared form.
+   */
+  const openGitInstallModal = (): void => {
+    setGitInstallUrl('');
+    setGitInstallRef('');
+    setGitInstallError(null);
+    setShowGitInstallModal(true);
+  };
+
+  /**
+   * Closes the install-from-git modal.
+   */
+  const closeGitInstallModal = (): void => {
+    if (gitInstallBusy) {
+      return;
+    }
+    setShowGitInstallModal(false);
+    setGitInstallError(null);
+  };
+
+  /**
+   * Clones a plugin from a public git repository URL.
+   */
+  const handleInstallFromGit = async (): Promise<void> => {
+    const url = gitInstallUrl.trim();
+    if (!url) {
+      setGitInstallError('Repository URL is required.');
+      return;
+    }
+    setGitInstallBusy(true);
+    setGitInstallError(null);
+    setError(null);
+    try {
+      const ref = gitInstallRef.trim() || undefined;
+      const installed = await window.api.installPluginFromGit(url, ref);
+      setShowGitInstallModal(false);
+      setPendingInstall(installed);
+    } catch (err) {
+      setGitInstallError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setGitInstallBusy(false);
+    }
+  };
+
+  /**
+   * Re-clones a git-installed plugin from its stored origin.
+   *
+   * @param pluginId - Plugin manifest id.
+   */
+  const handleUpdateFromGit = async (pluginId: string): Promise<void> => {
+    setGitUpdateBusy(true);
+    setError(null);
+    try {
+      await window.api.updatePluginFromGit(pluginId);
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setGitUpdateBusy(false);
     }
   };
 
@@ -191,18 +270,17 @@ export function PluginsSection(): JSX.Element {
    */
   const handleRemove = async (plugin: PluginInfo): Promise<void> => {
     const confirmed = await showConfirm(dispatch, {
-      title: plugin.source === 'installed' ? 'Uninstall plugin?' : 'Remove dev plugin?',
-      message:
-        plugin.source === 'installed'
-          ? `Remove ${plugin.name} and delete its files from HarborClient?`
-          : `Stop loading ${plugin.name} from ${plugin.path}? Your source folder will not be deleted.`,
-      confirmLabel: plugin.source === 'installed' ? 'Uninstall' : 'Remove',
+      title: isManagedInstall(plugin) ? 'Uninstall plugin?' : 'Remove dev plugin?',
+      message: isManagedInstall(plugin)
+        ? `Remove ${plugin.name} and delete its files from HarborClient?`
+        : `Stop loading ${plugin.name} from ${plugin.path}? Your source folder will not be deleted.`,
+      confirmLabel: isManagedInstall(plugin) ? 'Uninstall' : 'Remove',
       variant: 'danger'
     });
     if (!confirmed) {
       return;
     }
-    if (plugin.source === 'installed') {
+    if (isManagedInstall(plugin)) {
       await window.api.uninstallPlugin(plugin.id);
     } else {
       await window.api.removeUnpackedPlugin(plugin.id);
@@ -219,6 +297,9 @@ export function PluginsSection(): JSX.Element {
         <h2 className="m-0 flex-1 text-[15px] font-semibold text-text">Plugins</h2>
         <Button type="button" variant="secondary" onClick={() => void handleInstall()}>
           Install from file
+        </Button>
+        <Button type="button" variant="secondary" onClick={openGitInstallModal}>
+          Install from Git…
         </Button>
         <Button type="button" variant="secondary" onClick={() => void handleLoadUnpacked()}>
           Load unpacked…
@@ -250,6 +331,11 @@ export function PluginsSection(): JSX.Element {
                   {plugin.source === 'unpacked' ? (
                     <span className="rounded bg-info/20 px-1.5 py-0.5 text-[11px] text-text">
                       Development
+                    </span>
+                  ) : null}
+                  {plugin.source === 'git' ? (
+                    <span className="rounded bg-accent/15 px-1.5 py-0.5 text-[11px] text-text">
+                      Git
                     </span>
                   ) : null}
                 </div>
@@ -284,12 +370,22 @@ export function PluginsSection(): JSX.Element {
                   Reload
                 </Button>
               ) : null}
+              {selected.source === 'git' ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={gitUpdateBusy}
+                  onClick={() => void handleUpdateFromGit(selected.id)}
+                >
+                  {gitUpdateBusy ? 'Updating…' : 'Update'}
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 variant="primaryDanger"
                 onClick={() => void handleRemove(selected)}
               >
-                {selected.source === 'installed' ? 'Uninstall' : 'Remove'}
+                {isManagedInstall(selected) ? 'Uninstall' : 'Remove'}
               </Button>
             </div>
 
@@ -300,6 +396,24 @@ export function PluginsSection(): JSX.Element {
               <dd className="m-0 text-text">{selected.manifest.company ?? '—'}</dd>
               <dt className="text-muted">Source</dt>
               <dd className="m-0 break-all text-text">{selected.path}</dd>
+              {selected.repoUrl ? (
+                <>
+                  <dt className="text-muted">Repository</dt>
+                  <dd className="m-0 break-all text-text">
+                    <a
+                      href={selected.repoUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-accent"
+                    >
+                      {selected.repoUrl}
+                    </a>
+                    {selected.repoRef ? (
+                      <span className="text-muted">{` (${selected.repoRef})`}</span>
+                    ) : null}
+                  </dd>
+                </>
+              ) : null}
             </dl>
 
             <div className="mt-3 flex flex-wrap gap-3 text-[13px]">
@@ -346,6 +460,84 @@ export function PluginsSection(): JSX.Element {
           </div>
         ) : null}
       </div>
+
+      {showGitInstallModal ? (
+        <Modal onClose={closeGitInstallModal} labelledBy="plugin-git-install-title">
+          <h2
+            id="plugin-git-install-title"
+            className="m-0 mb-2 text-[14px] font-semibold text-text"
+          >
+            Install from Git
+          </h2>
+          <p className="mb-3 text-[14px] text-muted">
+            Enter a public repository URL. The repo must include a built{' '}
+            <code className="text-text">manifest.json</code> and entry files at the repository root.
+          </p>
+          <label htmlFor="plugin-git-install-url" className="mb-1 block text-[13px] text-muted">
+            Repository URL
+          </label>
+          <Input
+            id="plugin-git-install-url"
+            className="mb-3 w-full"
+            type="url"
+            autoFocus
+            placeholder="https://github.com/example/my-plugin.git"
+            value={gitInstallUrl}
+            disabled={gitInstallBusy}
+            onChange={(event) => {
+              setGitInstallUrl(event.target.value);
+              setGitInstallError(null);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                void handleInstallFromGit();
+              }
+            }}
+          />
+          <label htmlFor="plugin-git-install-ref" className="mb-1 block text-[13px] text-muted">
+            Branch or tag (optional)
+          </label>
+          <Input
+            id="plugin-git-install-ref"
+            className="w-full"
+            type="text"
+            placeholder="main"
+            value={gitInstallRef}
+            disabled={gitInstallBusy}
+            onChange={(event) => {
+              setGitInstallRef(event.target.value);
+              setGitInstallError(null);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                void handleInstallFromGit();
+              }
+            }}
+          />
+          {gitInstallError ? (
+            <p className="mt-3 text-[14px] text-danger" role="alert">
+              {gitInstallError}
+            </p>
+          ) : null}
+          <div className="mt-4 flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={gitInstallBusy}
+              onClick={closeGitInstallModal}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={gitInstallBusy || !gitInstallUrl.trim()}
+              onClick={() => void handleInstallFromGit()}
+            >
+              {gitInstallBusy ? 'Cloning…' : 'Install'}
+            </Button>
+          </div>
+        </Modal>
+      ) : null}
 
       {pendingInstall ? (
         <Modal

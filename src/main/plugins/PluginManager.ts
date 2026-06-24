@@ -1,17 +1,34 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, watch, writeFileSync } from 'fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  watch,
+  writeFileSync
+} from 'fs';
+import { randomUUID } from 'crypto';
 import { dirname, join, normalize, relative, resolve } from 'path';
+import * as git from 'isomorphic-git';
+import http from 'isomorphic-git/http/node';
+import fs from 'fs';
 import JSZip from 'jszip';
 import type { BrowserWindow } from 'electron';
 import { validatePluginManifest } from '#/main/plugins/manifestSchema';
 import { PluginFsAllowlist } from '#/main/plugins/pluginFsAllowlist';
 import {
   clearPluginEnabled,
+  getGitPluginOrigins,
   getPluginEnablement,
   getUnpackedPluginPaths,
+  removeGitPluginOrigin,
   removeUnpackedPluginPath,
+  setGitPluginOrigin,
   setPluginEnabled,
   setUnpackedPluginPath
 } from '#/main/plugins/devRegistry';
+import { assertSafeGitPluginUrl } from '#/main/plugins/gitPluginUrl';
 import { getLocalDatabase } from '#/main/storage/localDatabaseInstance';
 import type {
   PluginAssetResult,
@@ -150,10 +167,20 @@ export class PluginManager {
     this.disposeWatchers();
     this.#records.clear();
     const enablement = getPluginEnablement();
+    const gitOrigins = getGitPluginOrigins();
 
     for (const entry of this.#scanInstalled()) {
-      this.#records.set(entry.id, {
-        info: { ...entry, enabled: enablement[entry.id] ?? true },
+      const origin = gitOrigins[entry.id];
+      const info: PluginInfo = origin
+        ? {
+            ...entry,
+            source: 'git',
+            repoUrl: origin.url,
+            repoRef: origin.ref
+          }
+        : entry;
+      this.#records.set(info.id, {
+        info: { ...info, enabled: enablement[info.id] ?? true },
         watchers: []
       });
     }
@@ -244,6 +271,7 @@ export class PluginManager {
 
     const manifest = validatePluginManifest(manifestRaw, this.#appVersion);
     removeUnpackedPluginPath(manifest.id);
+    removeGitPluginOrigin(manifest.id);
     const targetDir = join(this.pluginsDirectory, manifest.id);
     rmSync(targetDir, { recursive: true, force: true });
     mkdirSync(targetDir, { recursive: true });
@@ -269,6 +297,114 @@ export class PluginManager {
     this.#records.set(info.id, { info: { ...info, enabled: true }, watchers: [] });
     this.#emitChanged(info.id);
     return this.get(info.id)!;
+  }
+
+  /**
+   * Installs a plugin by cloning a public git repository.
+   *
+   * @param url - Public https (or http) repository URL.
+   * @param ref - Optional branch or tag to clone.
+   * @returns Installed plugin metadata.
+   */
+  async installFromGit(url: string, ref?: string): Promise<PluginInfo> {
+    const normalizedUrl = assertSafeGitPluginUrl(url);
+    const trimmedRef = ref?.trim() || undefined;
+    mkdirSync(this.pluginsDirectory, { recursive: true });
+    const tempDir = join(this.pluginsDirectory, `.tmp-clone-${randomUUID()}`);
+
+    try {
+      await git.clone({
+        fs,
+        http,
+        dir: tempDir,
+        url: normalizedUrl,
+        ref: trimmedRef,
+        singleBranch: true,
+        depth: 1
+      });
+
+      const preview = this.#loadFromDirectory(tempDir, 'installed');
+      const pluginId = preview.id;
+      removeUnpackedPluginPath(pluginId);
+      const targetDir = join(this.pluginsDirectory, pluginId);
+      rmSync(targetDir, { recursive: true, force: true });
+      renameSync(tempDir, targetDir);
+
+      setGitPluginOrigin(pluginId, { url: normalizedUrl, ref: trimmedRef });
+      setPluginEnabled(pluginId, true);
+
+      const info: PluginInfo = {
+        ...this.#loadFromDirectory(targetDir, 'git'),
+        enabled: true,
+        repoUrl: normalizedUrl,
+        repoRef: trimmedRef
+      };
+      this.#records.set(pluginId, { info, watchers: [] });
+      this.#emitChanged(pluginId);
+      return info;
+    } catch (error) {
+      rmSync(tempDir, { recursive: true, force: true });
+      throw error;
+    }
+  }
+
+  /**
+   * Re-clones a git-installed plugin from its stored origin.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @returns Updated plugin metadata.
+   */
+  async updateFromGit(pluginId: string): Promise<PluginInfo> {
+    const origin = getGitPluginOrigins()[pluginId];
+    if (!origin) {
+      throw new Error(`Plugin ${pluginId} was not installed from git.`);
+    }
+
+    const record = this.#records.get(pluginId);
+    if (!record) {
+      throw new Error(`Unknown plugin: ${pluginId}`);
+    }
+
+    const normalizedUrl = assertSafeGitPluginUrl(origin.url);
+    const trimmedRef = origin.ref;
+    const tempDir = join(this.pluginsDirectory, `.tmp-clone-${randomUUID()}`);
+    const targetDir = join(this.pluginsDirectory, pluginId);
+
+    try {
+      await git.clone({
+        fs,
+        http,
+        dir: tempDir,
+        url: normalizedUrl,
+        ref: trimmedRef,
+        singleBranch: true,
+        depth: 1
+      });
+
+      const preview = this.#loadFromDirectory(tempDir, 'git');
+      if (preview.id !== pluginId) {
+        throw new Error(
+          `Updated repository manifest id "${preview.id}" does not match installed plugin "${pluginId}".`
+        );
+      }
+
+      this.#stopWatcher(pluginId);
+      rmSync(targetDir, { recursive: true, force: true });
+      renameSync(tempDir, targetDir);
+
+      const info: PluginInfo = {
+        ...this.#loadFromDirectory(targetDir, 'git'),
+        enabled: record.info.enabled,
+        repoUrl: normalizedUrl,
+        repoRef: trimmedRef
+      };
+      this.#records.set(pluginId, { info, watchers: [] });
+      this.#emitChanged(pluginId);
+      return info;
+    } catch (error) {
+      rmSync(tempDir, { recursive: true, force: true });
+      throw error;
+    }
   }
 
   /**
@@ -351,12 +487,15 @@ export class PluginManager {
     if (!record) {
       throw new Error(`Unknown plugin: ${pluginId}`);
     }
-    if (record.info.source !== 'installed') {
+    if (record.info.source !== 'installed' && record.info.source !== 'git') {
       throw new Error('Only installed plugins can be uninstalled.');
     }
     this.#stopWatcher(pluginId);
     this.#fsAllowlist.clearPlugin(pluginId);
     rmSync(record.info.path, { recursive: true, force: true });
+    if (record.info.source === 'git') {
+      removeGitPluginOrigin(pluginId);
+    }
     clearPluginEnabled(pluginId);
     this.#records.delete(pluginId);
     this.#emitChanged(pluginId);

@@ -2,7 +2,7 @@ import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { clearDevRegistryForTesting } from '#/main/plugins/devRegistry';
+import { clearDevRegistryForTesting, setGitPluginOrigin } from '#/main/plugins/devRegistry';
 import { PluginManager } from '#/main/plugins/PluginManager';
 import {
   clearLocalDatabaseForTesting,
@@ -85,6 +85,20 @@ describe('PluginManager', () => {
     manager.setStorageValue('com.example.two', 'enabled', false);
     expect(manager.getStorageValue('com.example.one', 'enabled')).toBe(true);
     expect(manager.getStorageValue('com.example.two', 'enabled')).toBe(false);
+  });
+
+  it('marks git-installed plugins with repository metadata on discover', async () => {
+    const { manager, rootDir } = await createManager();
+    writePlugin(rootDir, 'com.example.git');
+    setGitPluginOrigin('com.example.git', {
+      url: 'https://github.com/example/my-plugin.git',
+      ref: 'main'
+    });
+    const plugins = manager.discover();
+    expect(plugins).toHaveLength(1);
+    expect(plugins[0]?.source).toBe('git');
+    expect(plugins[0]?.repoUrl).toBe('https://github.com/example/my-plugin.git');
+    expect(plugins[0]?.repoRef).toBe('main');
   });
 
   it('loads unpacked plugins from a source directory', async () => {

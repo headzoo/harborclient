@@ -1,11 +1,14 @@
 import Store from 'electron-store';
+import type { GitPluginOrigin } from '#/shared/plugin/types';
 
 const ENABLEMENT_KEY = 'plugins.enablement';
 const UNPACKED_KEY = 'plugins.unpacked';
+const GIT_KEY = 'plugins.git';
 
 interface PluginStoreShape {
   [ENABLEMENT_KEY]: Record<string, boolean>;
   [UNPACKED_KEY]: Record<string, string>;
+  [GIT_KEY]: Record<string, GitPluginOrigin>;
 }
 
 let store: Store<PluginStoreShape> | null = null;
@@ -19,7 +22,8 @@ function getStore(): Store<PluginStoreShape> {
       name: 'settings',
       defaults: {
         [ENABLEMENT_KEY]: {},
-        [UNPACKED_KEY]: {}
+        [UNPACKED_KEY]: {},
+        [GIT_KEY]: {}
       }
     });
   }
@@ -94,9 +98,40 @@ export function clearAllUnpackedPluginPaths(): void {
 }
 
 /**
- * Resets plugin enablement and unpacked dev paths (for unit tests).
+ * Returns persisted git plugin origins keyed by plugin id.
+ */
+export function getGitPluginOrigins(): Record<string, GitPluginOrigin> {
+  return { ...getStore().get(GIT_KEY, {}) };
+}
+
+/**
+ * Persists the git origin for one installed plugin.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param origin - Public repository URL and optional ref.
+ */
+export function setGitPluginOrigin(pluginId: string, origin: GitPluginOrigin): void {
+  const current = getGitPluginOrigins();
+  current[pluginId] = origin;
+  getStore().set(GIT_KEY, current);
+}
+
+/**
+ * Removes git origin metadata for one plugin.
+ *
+ * @param pluginId - Plugin manifest id.
+ */
+export function removeGitPluginOrigin(pluginId: string): void {
+  const current = getGitPluginOrigins();
+  delete current[pluginId];
+  getStore().set(GIT_KEY, current);
+}
+
+/**
+ * Resets plugin enablement, unpacked dev paths, and git origins (for unit tests).
  */
 export function clearDevRegistryForTesting(): void {
   getStore().set(ENABLEMENT_KEY, {});
   getStore().set(UNPACKED_KEY, {});
+  getStore().set(GIT_KEY, {});
 }
