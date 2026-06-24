@@ -2,9 +2,9 @@ import { app } from 'electron';
 import { isNewerVersion, normalizeVersion } from '#/main/settings/versionCompare';
 import type { UpdateCheckResult } from '#/shared/types';
 
-const RELEASES_URL = 'https://github.com/headzoo/harborclient/releases';
+const RELEASES_URL = 'https://github.com/harborclient/harborclient/releases';
 const GITHUB_LATEST_RELEASE_URL =
-  'https://api.github.com/repos/headzoo/harborclient/releases/latest';
+  'https://api.github.com/repos/harborclient/harborclient/releases/latest';
 
 /**
  * Fetches the latest release tag name from the GitHub Releases API.

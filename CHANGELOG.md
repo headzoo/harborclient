@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- chore: update repository references from headzoo to harborclient. (`d428396`)
 - feat(plugin-api): add sync command and enhance plugin context. (`6bb99d2`)
 
 ## 1.8.0 - 2026-06-24

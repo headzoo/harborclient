@@ -2,7 +2,7 @@ name: Docs Pages
 
 # Deploy the VitePress documentation site to GitHub Pages.
 #
-# Repository: https://github.com/headzoo/harborclient
+# Repository: https://github.com/harborclient/harborclient
 #
 # Runs on demand via workflow_dispatch, or when invoked by the release workflow.
 # Provide `source_ref` with the branch, tag, or SHA whose content should be

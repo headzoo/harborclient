@@ -11,7 +11,7 @@ supported unless maintainers announce a backport.
 | Older releases | No        |
 
 Install the current release from
-[GitHub Releases](https://github.com/headzoo/harborclient/releases/latest).
+[GitHub Releases](https://github.com/harborclient/harborclient/releases/latest).
 
 ## Reporting a Vulnerability
 
@@ -88,7 +88,7 @@ See [Sharing Keys](https://harborclient.com/sharing-keys).
 ### Updates
 
 Install HarborClient from official
-[GitHub Releases](https://github.com/headzoo/harborclient/releases/latest) and
+[GitHub Releases](https://github.com/harborclient/harborclient/releases/latest) and
 keep your installation up to date.
 
 ### Remote storage locations

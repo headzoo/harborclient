@@ -44,6 +44,6 @@ win:
     - nsis
 publish:
   provider: github
-  owner: headzoo
+  owner: harborclient
   repo: harborclient
   releaseType: release

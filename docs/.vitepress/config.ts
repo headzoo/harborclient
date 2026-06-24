@@ -110,13 +110,13 @@ export default withMermaid(
         { text: 'Blog', link: 'https://harborclient-blog.com/' },
         {
           text: `v${pkg.version}`,
-          link: 'https://github.com/headzoo/harborclient/releases',
+          link: 'https://github.com/harborclient/harborclient/releases',
         },
       ],
       socialLinks: [
         {
           icon: 'github',
-          link: 'https://github.com/headzoo/harborclient',
+          link: 'https://github.com/harborclient/harborclient',
           ariaLabel: 'HarborClient on GitHub',
         },
       ],

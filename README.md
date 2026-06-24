@@ -3,14 +3,14 @@
 The free API client that keeps your work private: no accounts, no subscriptions, no lock-in.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![GitHub release](https://img.shields.io/github/v/release/headzoo/harborclient)](https://github.com/headzoo/harborclient/releases/latest)
+[![GitHub release](https://img.shields.io/github/v/release/harborclient/harborclient)](https://github.com/harborclient/harborclient/releases/latest)
 [![Documentation](https://img.shields.io/badge/docs-harborclient.com-0366d6)](https://harborclient.com/)
 ![Electron](https://img.shields.io/badge/Electron-desktop-47848F?logo=electron&logoColor=white)
 
 ![HarborClient workspace with collections, request editor, and response panel](images/screenshots/request-response.png)
 
 **Full documentation:** [https://harborclient.com/](https://harborclient.com/)  
-**Downloads:** [https://github.com/headzoo/harborclient/releases/latest](https://github.com/headzoo/harborclient/releases/latest)
+**Downloads:** [https://github.com/harborclient/harborclient/releases/latest](https://github.com/harborclient/harborclient/releases/latest)
 
 ## Development
 
@@ -47,7 +47,7 @@ HarborClient does not claim full Postman feature parity; some Postman settings a
 
 ### Try it now
 
-1. **Download** the latest release for your OS from [GitHub Releases](https://github.com/headzoo/harborclient/releases/latest)
+1. **Download** the latest release for your OS from [GitHub Releases](https://github.com/harborclient/harborclient/releases/latest)
 2. **Install and launch** — no Node.js or build tools required
 3. **Send a first request** — paste a URL, pick a method, and click Send
 4. **Optional:** import an existing Postman collection via **Collections → Import**
