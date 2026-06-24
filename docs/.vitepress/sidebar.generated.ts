@@ -376,6 +376,77 @@ export const sidebar: DefaultTheme.SidebarItem[] =
     "collapsed": false
   },
   {
+    "text": "Plugins",
+    "link": "/plugins",
+    "items": [
+      {
+        "text": "Plugin package layout",
+        "link": "/plugins#plugin-package-layout"
+      },
+      {
+        "text": "manifest.json",
+        "link": "/plugins#manifestjson"
+      },
+      {
+        "text": "Permissions",
+        "link": "/plugins#permissions"
+      },
+      {
+        "text": "Permissions",
+        "link": "/plugins#permissions-1"
+      },
+      {
+        "text": "Two runtimes",
+        "link": "/plugins#two-runtimes"
+      },
+      {
+        "text": "Lifecycle",
+        "link": "/plugins#lifecycle"
+      },
+      {
+        "text": "Installing and managing plugins",
+        "link": "/plugins#installing-and-managing-plugins"
+      },
+      {
+        "text": "Renderer API",
+        "link": "/plugins#renderer-api"
+      },
+      {
+        "text": "Main-process API",
+        "link": "/plugins#main-process-api"
+      },
+      {
+        "text": "Example: Compact Mode",
+        "link": "/plugins#example-compact-mode"
+      },
+      {
+        "text": "Example: Request audit tab",
+        "link": "/plugins#example-request-audit-tab"
+      },
+      {
+        "text": "Example: Solarized theme",
+        "link": "/plugins#example-solarized-theme"
+      },
+      {
+        "text": "Building a plugin",
+        "link": "/plugins#building-a-plugin"
+      },
+      {
+        "text": "Developing unpacked plugins",
+        "link": "/plugins#developing-unpacked-plugins"
+      },
+      {
+        "text": "Performance and IPC",
+        "link": "/plugins#performance-and-ipc"
+      },
+      {
+        "text": "Plugins vs request scripts",
+        "link": "/plugins#plugins-vs-request-scripts"
+      }
+    ],
+    "collapsed": false
+  },
+  {
     "text": "Testing",
     "link": "/testing",
     "items": [

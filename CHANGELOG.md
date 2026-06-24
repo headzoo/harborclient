@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(docs): add Plugins section to documentation and sidebar. (`596996a`)
 - feat(scripting): enhance script execution with SES integration and update dependencies. (`c2586ab`)
 - feat(scripting): add support for modern JavaScript syntax with esbuild transpilation. (`1745953`)
 - feat(ui): introduce new components for enhanced user interaction. (`8ff0789`)
