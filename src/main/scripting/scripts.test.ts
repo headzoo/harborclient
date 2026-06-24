@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-describe('runScript', () => {
+describe('evaluateScript', () => {
   it('returns passthrough for empty script', async () => {
-    const { runScript } = await import('#/main/scripting/scripts');
+    const { evaluateScript } = await import('#/main/scripting/scriptEvaluator');
     const request = {
       method: 'GET' as const,
       url: 'https://example.com',
@@ -12,7 +12,7 @@ describe('runScript', () => {
       bodyType: 'none' as const
     };
 
-    const result = await runScript({
+    const result = await evaluateScript({
       phase: 'pre',
       script: '   ',
       request,
@@ -31,8 +31,8 @@ describe('runScript', () => {
   });
 
   it('mutates request url and sets variables in pre script', async () => {
-    const { runScript } = await import('#/main/scripting/scripts');
-    const result = await runScript({
+    const { evaluateScript } = await import('#/main/scripting/scriptEvaluator');
+    const result = await evaluateScript({
       phase: 'pre',
       script: `
         hc.request.url = 'https://api.example.com';
@@ -57,8 +57,8 @@ describe('runScript', () => {
   });
 
   it('sets collection variables in pre script', async () => {
-    const { runScript } = await import('#/main/scripting/scripts');
-    const result = await runScript({
+    const { evaluateScript } = await import('#/main/scripting/scriptEvaluator');
+    const result = await evaluateScript({
       phase: 'pre',
       script: `
         hc.collection.variables.set('token', 'persist-me');
@@ -86,8 +86,8 @@ describe('runScript', () => {
   });
 
   it('reads collection variable overrides before runtime values', async () => {
-    const { runScript } = await import('#/main/scripting/scripts');
-    const result = await runScript({
+    const { evaluateScript } = await import('#/main/scripting/scriptEvaluator');
+    const result = await evaluateScript({
       phase: 'pre',
       script: `
         hc.collection.variables.set('token', 'override');
@@ -109,8 +109,8 @@ describe('runScript', () => {
   });
 
   it('mutates collection headers and exposes collection metadata', async () => {
-    const { runScript } = await import('#/main/scripting/scripts');
-    const result = await runScript({
+    const { evaluateScript } = await import('#/main/scripting/scriptEvaluator');
+    const result = await evaluateScript({
       phase: 'pre',
       script: `
         console.log(hc.collection.name);
@@ -147,8 +147,8 @@ describe('runScript', () => {
   });
 
   it('returns null collection metadata when no collection is passed', async () => {
-    const { runScript } = await import('#/main/scripting/scripts');
-    const result = await runScript({
+    const { evaluateScript } = await import('#/main/scripting/scriptEvaluator');
+    const result = await evaluateScript({
       phase: 'pre',
       script: `
         console.log(hc.collection.name);
@@ -172,8 +172,8 @@ describe('runScript', () => {
   });
 
   it('sets environment variables and exposes environment name', async () => {
-    const { runScript } = await import('#/main/scripting/scripts');
-    const result = await runScript({
+    const { evaluateScript } = await import('#/main/scripting/scriptEvaluator');
+    const result = await evaluateScript({
       phase: 'pre',
       script: `
         console.log(hc.environment.name);
@@ -204,8 +204,8 @@ describe('runScript', () => {
   });
 
   it('returns empty environment name when no environment is passed', async () => {
-    const { runScript } = await import('#/main/scripting/scripts');
-    const result = await runScript({
+    const { evaluateScript } = await import('#/main/scripting/scriptEvaluator');
+    const result = await evaluateScript({
       phase: 'pre',
       script: `
         console.log(hc.environment.name);
@@ -228,8 +228,8 @@ describe('runScript', () => {
   });
 
   it('runs post script tests against response', async () => {
-    const { runScript } = await import('#/main/scripting/scripts');
-    const result = await runScript({
+    const { evaluateScript } = await import('#/main/scripting/scriptEvaluator');
+    const result = await evaluateScript({
       phase: 'post',
       script: `
         hc.test('status is 200', function() {
@@ -266,7 +266,7 @@ describe('runScript', () => {
   });
 
   it('returns scriptError when sandbox script throws', async () => {
-    const { runScript } = await import('#/main/scripting/scripts');
+    const { evaluateScript } = await import('#/main/scripting/scriptEvaluator');
     const request = {
       method: 'GET' as const,
       url: 'https://example.com',
@@ -276,7 +276,7 @@ describe('runScript', () => {
       bodyType: 'none' as const
     };
 
-    const result = await runScript({
+    const result = await evaluateScript({
       phase: 'pre',
       script: 'throw new Error("boom");',
       request,
@@ -288,7 +288,7 @@ describe('runScript', () => {
   });
 
   it('sanitizes filesystem paths from script errors', async () => {
-    const { runScript } = await import('#/main/scripting/scripts');
+    const { evaluateScript } = await import('#/main/scripting/scriptEvaluator');
     const request = {
       method: 'GET' as const,
       url: 'https://example.com',
@@ -298,7 +298,7 @@ describe('runScript', () => {
       bodyType: 'none' as const
     };
 
-    const result = await runScript({
+    const result = await evaluateScript({
       phase: 'pre',
       script: 'throw new Error("ENOENT: /home/user/secret/project/file.js");',
       request,
@@ -311,8 +311,8 @@ describe('runScript', () => {
   });
 
   it('runs modern JavaScript syntax after esbuild transpile', async () => {
-    const { runScript } = await import('#/main/scripting/scripts');
-    const result = await runScript({
+    const { evaluateScript } = await import('#/main/scripting/scriptEvaluator');
+    const result = await evaluateScript({
       phase: 'pre',
       script: `
         const host = hc.variables.get('host');
@@ -342,7 +342,7 @@ describe('runScript', () => {
   });
 
   it('returns compile error for invalid modern syntax', async () => {
-    const { runScript } = await import('#/main/scripting/scripts');
+    const { evaluateScript } = await import('#/main/scripting/scriptEvaluator');
     const request = {
       method: 'GET' as const,
       url: 'https://example.com',
@@ -352,7 +352,7 @@ describe('runScript', () => {
       bodyType: 'none' as const
     };
 
-    const result = await runScript({
+    const result = await evaluateScript({
       phase: 'pre',
       script: 'const x = ;',
       request,
@@ -362,5 +362,30 @@ describe('runScript', () => {
     expect(result.error).toBeDefined();
     expect(result.error?.length).toBeGreaterThan(0);
     expect(result.request).toEqual(request);
+  });
+
+  it('exposes Date.now and Math.random inside the compartment', async () => {
+    const { evaluateScript } = await import('#/main/scripting/scriptEvaluator');
+    const result = await evaluateScript({
+      phase: 'pre',
+      script: `
+        const ts = Date.now();
+        const rand = Math.random();
+        hc.variables.set('hasTime', String(ts > 0));
+        hc.variables.set('hasRandom', String(rand >= 0 && rand <= 1));
+      `,
+      request: {
+        method: 'GET',
+        url: 'https://example.com',
+        headers: [],
+        params: [],
+        body: '',
+        bodyType: 'none'
+      },
+      variables: {}
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.variableSets).toEqual({ hasTime: 'true', hasRandom: 'true' });
   });
 });

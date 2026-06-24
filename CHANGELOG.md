@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(scripting): enhance script execution with SES integration and update dependencies. (`c2586ab`)
 - feat(scripting): add support for modern JavaScript syntax with esbuild transpilation. (`1745953`)
 - feat(ui): introduce new components for enhanced user interaction. (`8ff0789`)
 - feat(screenshots): add screenshot capturing functionality and update documentation images. (`9937de6`)

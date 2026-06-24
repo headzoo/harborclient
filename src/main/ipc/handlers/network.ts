@@ -92,6 +92,6 @@ export function registerNetworkHandlers(cookieJar: ICookieJar): void {
     cancelActiveRequest(requestId);
   });
 
-  // Runs a pre- or post-request script in the main-process sandbox.
+  // Runs a pre- or post-request script in the SES utilityProcess runner.
   handle('scripts:run', ipcArgSchemas.scriptRun, (_event, input) => runScript(input));
 }

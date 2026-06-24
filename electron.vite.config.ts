@@ -9,10 +9,17 @@ import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin({ exclude: [] })],
+    plugins: [externalizeDepsPlugin({ exclude: ['ses'] })],
     build: {
       rollupOptions: {
-        external: ['better-sqlite3']
+        input: {
+          index: resolve(__dirname, 'src/main/index.ts'),
+          scriptRunner: resolve(__dirname, 'src/main/scripting/scriptRunner.ts')
+        },
+        external: ['better-sqlite3'],
+        output: {
+          entryFileNames: '[name].js'
+        }
       }
     }
   },
