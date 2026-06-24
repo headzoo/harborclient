@@ -27,6 +27,7 @@ import {
   saveWindowState,
   trackWindowState
 } from '#/main/window/windowState';
+import { disposeScriptRunner } from '#/main/scripting/scriptRunnerHost';
 import type { StorageConnection, ThemeSource } from '#/shared/types';
 
 const isDev = !app.isPackaged;
@@ -575,6 +576,7 @@ app.on('before-quit', (event) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       saveWindowState(mainWindow);
     }
+    disposeScriptRunner();
     void db.close();
     return;
   }
