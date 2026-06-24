@@ -6,6 +6,8 @@ icon: build/icons/512x512.png
 extraResources:
   - from: build/icons/512x512.png
     to: icon.png
+  - from: plugins/catalog.json
+    to: plugins/catalog.json
 directories:
   buildResources: build
   output: release

@@ -120,6 +120,11 @@ detailed audit of known gaps and proposed fixes.
 - Check contrast for `text-muted` and small labels against WCAG 4.5:1 where
   they carry meaning.
 - Respect `prefers-reduced-motion` for animations and spinners.
+- **Minimum font size:** Never use font sizes below **14px** in renderer UI.
+  Avoid `text-[11px]`, `text-[12px]`, `text-[13px]`, `text-xs`, and `prose-sm`
+  (Typography’s `sm` preset can render nested elements smaller than 14px). Use
+  `text-[14px]` as the minimum for labels, body text, badges, and metadata.
+  Headings may be larger.
 
 When fixing existing UI, prefer improving shared primitives (`Modal`,
 `SegmentedTabs`, `VariableInput`, shared button classes) so one change lifts

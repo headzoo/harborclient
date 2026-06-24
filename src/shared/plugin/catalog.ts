@@ -44,6 +44,7 @@ function parseGitHubRepoUrl(url: string): string {
 const pluginCatalogEntrySchema = z.object({
   id: pluginManifestId,
   name: z.string().min(1),
+  version: z.string().min(1),
   summary: z.string().min(1),
   author: z.string().min(1),
   categories: z.array(z.string().min(1)).min(1),
@@ -51,6 +52,7 @@ const pluginCatalogEntrySchema = z.object({
   ref: z.string().min(1).optional(),
   homepage: z.string().url().optional(),
   icon: z.string().url().optional(),
+  screenshot: z.string().url().optional(),
   minAppVersion: z.string().min(1).optional()
 });
 

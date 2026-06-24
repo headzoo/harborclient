@@ -160,7 +160,7 @@ HarborClient validates each manifest, shows the permissions the plugin requests,
 
 ### Browse plugins
 
-Open the **Browse plugins** tab to load the curated marketplace from [harborclient.com/plugins](/plugins). Each listing shows a summary, author, categories, and links to the plugin's GitHub repository. Click **Install** to clone the repository with the same git install flow as **Install from Git…**. Git-installed marketplace plugins show **Update** when already installed.
+Click the **Browse plugins** button to load the curated marketplace from [harborclient.com/plugins](/plugins). Each listing shows a summary, author, categories, and links to the plugin's GitHub repository. Click **Install** to clone the repository with the same git install flow as **Install from Git…**. Git-installed marketplace plugins show **Update** when already installed.
 
 ### Installing plugins
 
@@ -171,12 +171,15 @@ Open the **Browse plugins** tab to load the curated marketplace from [harborclie
 
 ### Managing plugins
 
-Select a plugin in the list to open its detail panel.
+Installed plugins appear in a full-width **table** with **Plugin**, **Version**, **Publisher**, and **Actions**. When a plugin declares `homepage` in its manifest, a **Homepage** link appears next to its name in the **Plugin** column. Use **Actions** to enable or disable, reload or update, or uninstall a plugin — there is no separate enabled/disabled status column. **Click a row** (outside links and action buttons) to open a details modal with the Markdown description, permissions, and additional links.
 
 | Action | Description |
 | --- | --- |
-| **Plugin detail** | Read the Markdown description, browse screenshots, and follow homepage or issue links. |
-| **Enable / disable** | Toggle a plugin without uninstalling. Disabled plugins do not activate. |
+| **Plugin details** | Click a table row to open a modal with the Markdown description, permissions, and links (including **Report issue** when declared). |
+| **Homepage** | When declared in the manifest, opens in your browser from a link beside the plugin name (does not open the detail modal). |
+| **Publisher** | Publisher or company name from the plugin manifest (`company`), when declared. |
+| **Enable / disable** | Use the **Enable** or **Disable** button in **Actions**. Disabled plugins do not activate. |
+| **Reload** | Unpacked dev plugins show a **Reload** button to re-read the manifest and entry bundles from disk. |
 | **Update** | Git-installed plugins show an **Update** button that re-clones the stored repository URL (and optional ref) and replaces the installed copy. Use this to pull the latest version from the default branch or a pinned tag. |
 | **Uninstall / Remove** | Delete installed or git-installed plugins from `userData/plugins/`, or remove unpacked dev registrations without deleting your source folder. |
 
@@ -190,7 +193,7 @@ While building a plugin, use these actions instead of packaging a `.hcp` file fo
 | --- | --- |
 | **Load unpacked…** | Select a plugin **source directory** (the folder that contains `manifest.json`). HarborClient loads the plugin in place for development — no `.hcp` packaging step. Confirm permissions when prompted. |
 | **Reload** | Re-read the manifest and entry bundles for an unpacked plugin after you rebuild (also triggered automatically when file watching is enabled). |
-| **Development badge** | Unpacked plugins appear in the list with a **Development** badge. They keep running from your source path, so the next bundle write can be picked up without reinstalling. |
+| **Development badge** | Unpacked plugins appear in the table with a **Development** badge. They keep running from your source path, so the next bundle write can be picked up without reinstalling. |
 
 If reload fails (syntax error, invalid manifest), the previous activation is torn down and an inline error is shown on the plugin row. For project setup, bundling, hot reload, and startup options, see [Developing unpacked plugins](/plugin_development#developing-unpacked-plugins) in the plugin development guide.
 

@@ -6,7 +6,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   clearDevRegistryForTesting,
   getPluginEnablement,
-  setGitPluginOrigin
+  getUnpackedPluginPaths,
+  setGitPluginOrigin,
+  setPluginEnabled,
+  setUnpackedPluginPath
 } from '#/main/plugins/devRegistry';
 import { PluginManager } from '#/main/plugins/PluginManager';
 import {
@@ -182,6 +185,39 @@ describe('PluginManager', () => {
     expect(plugins[0]?.source).toBe('git');
     expect(plugins[0]?.repoUrl).toBe('https://github.com/example/my-plugin.git');
     expect(plugins[0]?.repoRef).toBe('main');
+  });
+
+  it('keys unpacked plugins by manifest id when the dev registry uses a legacy id', async () => {
+    const { manager, rootDir } = await createManager();
+    const sourceDir = join(rootDir, 'dev-plugin');
+    mkdirSync(join(sourceDir, 'dist'), { recursive: true });
+    writeFileSync(join(sourceDir, 'README.md'), '# Solarized\n');
+    writeFileSync(
+      join(sourceDir, 'manifest.json'),
+      JSON.stringify({
+        id: 'com.harborclient.plugins.solarized',
+        name: 'Solarized Theme',
+        version: '1.0.0',
+        description: 'README.md',
+        engines: { harborclient: '>=1.0.0' },
+        renderer: 'dist/renderer.js',
+        permissions: ['ui']
+      })
+    );
+    writeFileSync(join(sourceDir, 'dist', 'renderer.js'), 'export function activate() {}');
+    setUnpackedPluginPath('com.example.solarized', sourceDir);
+    setPluginEnabled('com.example.solarized', true);
+
+    const plugins = manager.discover();
+    expect(plugins).toHaveLength(1);
+    expect(plugins[0]?.id).toBe('com.harborclient.plugins.solarized');
+    expect(plugins[0]?.enabled).toBe(true);
+    expect(manager.get('com.harborclient.plugins.solarized')).toBeDefined();
+    expect(
+      manager.readAsset('com.harborclient.plugins.solarized', 'README.md').content
+    ).toBeTruthy();
+    expect(getUnpackedPluginPaths()['com.harborclient.plugins.solarized']).toBe(sourceDir);
+    expect(getUnpackedPluginPaths()['com.example.solarized']).toBeUndefined();
   });
 
   it('loads unpacked plugins from a source directory as disabled until enabled', async () => {

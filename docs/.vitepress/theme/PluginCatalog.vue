@@ -7,8 +7,8 @@ type CatalogEntry = (typeof catalog.plugins)[number];
 
 <template>
   <p>
-    Browse HarborClient plugins hosted on GitHub. Install them from
-    <strong>Settings → Plugins → Browse plugins</strong> in the desktop app.
+    Browse HarborClient plugins hosted on GitHub. In the desktop app, open
+    <strong>Settings → Plugins</strong> and click <strong>Browse plugins</strong>.
   </p>
 
   <p v-if="catalog.updatedAt" class="text-muted">
@@ -26,6 +26,7 @@ type CatalogEntry = (typeof catalog.plugins)[number];
         <th scope="col">Plugin</th>
         <th scope="col">Summary</th>
         <th scope="col">Author</th>
+        <th scope="col">Screenshot</th>
         <th scope="col">Repository</th>
       </tr>
     </thead>
@@ -37,6 +38,15 @@ type CatalogEntry = (typeof catalog.plugins)[number];
         </td>
         <td>{{ entry.summary }}</td>
         <td>{{ entry.author }}</td>
+        <td>
+          <img
+            v-if="entry.screenshot"
+            :src="entry.screenshot"
+            alt=""
+            class="catalog-screenshot"
+          />
+          <span v-else class="text-muted">—</span>
+        </td>
         <td>
           <a :href="entry.repoUrl" target="_blank" rel="noopener noreferrer">{{ entry.repoUrl }}</a>
         </td>
@@ -62,5 +72,15 @@ type CatalogEntry = (typeof catalog.plugins)[number];
 .text-muted {
   color: var(--vp-c-text-2);
   font-size: 0.875rem;
+}
+
+.catalog-screenshot {
+  display: block;
+  max-width: 12rem;
+  max-height: 8rem;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 0.375rem;
+  object-fit: cover;
+  object-position: top;
 }
 </style>

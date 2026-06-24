@@ -7,6 +7,7 @@ const validCatalog = {
     {
       id: 'com.example.demo',
       name: 'Demo Plugin',
+      version: '1.0.0',
       summary: 'A sample plugin for tests.',
       author: 'Example Inc.',
       categories: ['utilities'],
@@ -18,6 +19,30 @@ const validCatalog = {
 describe('parsePluginCatalog', () => {
   it('accepts a valid catalog payload', () => {
     expect(parsePluginCatalog(validCatalog)).toEqual(validCatalog);
+  });
+
+  it('accepts optional icon and screenshot URLs', () => {
+    expect(
+      parsePluginCatalog({
+        ...validCatalog,
+        plugins: [
+          {
+            ...validCatalog.plugins[0],
+            icon: 'https://example.com/icon.png',
+            screenshot: 'https://example.com/screenshot.png'
+          }
+        ]
+      })
+    ).toEqual({
+      ...validCatalog,
+      plugins: [
+        {
+          ...validCatalog.plugins[0],
+          icon: 'https://example.com/icon.png',
+          screenshot: 'https://example.com/screenshot.png'
+        }
+      ]
+    });
   });
 
   it('rejects non-GitHub repository URLs', () => {

@@ -1,5 +1,19 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-24T19:18:29.719Z",
-  "plugins": []
+  "updatedAt": "2026-06-24T19:45:56.753Z",
+  "plugins": [
+    {
+      "id": "com.harborclient.plugins.solarized",
+      "name": "Solarized Theme",
+      "version": "1.0.0",
+      "summary": "A Solarized theme for HarborClient.",
+      "author": "HarborClient",
+      "categories": [
+        "themes"
+      ],
+      "repoUrl": "https://github.com/harborclient/plugin-solarized",
+      "ref": "v1.0.0",
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-solarized/main/assets/screenshots/appearance.png"
+    }
+  ]
 }

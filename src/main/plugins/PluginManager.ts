@@ -186,19 +186,33 @@ export class PluginManager {
       });
     }
 
-    for (const [pluginId, directory] of Object.entries(getUnpackedPluginPaths())) {
-      if (this.#records.has(pluginId)) {
-        continue;
-      }
+    for (const [registryKey, directory] of Object.entries(getUnpackedPluginPaths())) {
       try {
         const info = this.#loadFromDirectory(directory, 'unpacked');
-        this.#records.set(pluginId, {
-          info: { ...info, enabled: enablement[pluginId] ?? false },
+        if (this.#records.has(info.id)) {
+          continue;
+        }
+
+        const enabled = enablement[info.id] ?? enablement[registryKey] ?? false;
+        if (registryKey !== info.id) {
+          removeUnpackedPluginPath(registryKey);
+          setUnpackedPluginPath(info.id, directory);
+          if (enablement[registryKey] !== undefined && enablement[info.id] === undefined) {
+            setPluginEnabled(info.id, enablement[registryKey]!);
+            clearPluginEnabled(registryKey);
+          }
+        }
+
+        this.#records.set(info.id, {
+          info: { ...info, enabled },
           watchers: []
         });
       } catch (error) {
-        this.#records.set(pluginId, {
-          info: this.#brokenPluginInfo(pluginId, directory, 'unpacked', error),
+        if (this.#records.has(registryKey)) {
+          continue;
+        }
+        this.#records.set(registryKey, {
+          info: this.#brokenPluginInfo(registryKey, directory, 'unpacked', error),
           watchers: []
         });
       }

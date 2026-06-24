@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
+import { useCallback, useEffect, useState, type JSX, type KeyboardEvent } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { PluginCatalog, PluginCatalogEntry } from '#/shared/plugin/catalog';
@@ -6,11 +6,6 @@ import type { PluginInfo, PluginPermission } from '#/shared/plugin/types';
 import { Button } from '#/renderer/src/components/Button';
 import { Input } from '#/renderer/src/components/forms';
 import { Modal } from '#/renderer/src/components/Modal';
-import {
-  SegmentedTabPanel,
-  SegmentedTabs,
-  SegmentedTabsGroup
-} from '#/renderer/src/components/SegmentedTabs';
 import { useAppDispatch } from '#/renderer/src/store/hooks';
 import { showConfirm } from '#/renderer/src/ui/modals/dialogHelpers';
 
@@ -24,6 +19,124 @@ const PERMISSION_LABELS: Record<PluginPermission, string> = {
   ipc: 'Custom IPC between renderer and main plugin halves'
 };
 
+interface PluginDetailModalProps {
+  /**
+   * Plugin whose read-only metadata and description are shown.
+   */
+  plugin: PluginInfo;
+
+  /**
+   * Loaded Markdown description body.
+   */
+  descriptionMarkdown: string;
+
+  /**
+   * Whether the description asset is loading, ready, or failed.
+   */
+  descriptionLoadState: 'idle' | 'loading' | 'loaded' | 'error';
+
+  /**
+   * Closes the detail dialog.
+   */
+  onClose: () => void;
+}
+
+/**
+ * Read-only modal showing installed plugin metadata, permissions, and description.
+ */
+function PluginDetailModal({
+  plugin,
+  descriptionMarkdown,
+  descriptionLoadState,
+  onClose
+}: PluginDetailModalProps): JSX.Element {
+  return (
+    <Modal
+      onClose={onClose}
+      className="w-[min(42rem,calc(100vw-2rem))]"
+      labelledBy="plugin-detail-title"
+    >
+      <h2 id="plugin-detail-title" className="m-0 mb-3 text-[15px] font-semibold text-text">
+        {plugin.name}
+      </h2>
+
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[14px]">
+        <dt className="text-muted">Version</dt>
+        <dd className="m-0 text-text">{plugin.version}</dd>
+        <dt className="text-muted">Publisher</dt>
+        <dd className="m-0 text-text">{plugin.manifest.company ?? '—'}</dd>
+        <dt className="text-muted">Source</dt>
+        <dd className="m-0 break-all text-text">{plugin.path}</dd>
+        {plugin.repoUrl ? (
+          <>
+            <dt className="text-muted">Repository</dt>
+            <dd className="m-0 break-all text-text">
+              <a href={plugin.repoUrl} target="_blank" rel="noreferrer" className="text-accent">
+                {plugin.repoUrl}
+              </a>
+              {plugin.repoRef ? <span className="text-muted">{` (${plugin.repoRef})`}</span> : null}
+            </dd>
+          </>
+        ) : null}
+      </dl>
+
+      <div className="mt-3 flex flex-wrap gap-3 text-[14px]">
+        {plugin.manifest.homepage ? (
+          <a
+            href={plugin.manifest.homepage}
+            target="_blank"
+            rel="noreferrer"
+            className="text-accent"
+          >
+            Website
+          </a>
+        ) : null}
+        {plugin.manifest.bugs?.url ? (
+          <a
+            href={plugin.manifest.bugs.url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-accent"
+          >
+            Report issue
+          </a>
+        ) : null}
+      </div>
+
+      <div className="mt-4 border-t border-separator pt-4">
+        <h3 className="m-0 mb-2 text-[14px] font-medium text-text">Permissions</h3>
+        <ul className="m-0 list-disc pl-5 text-[14px] text-text">
+          {plugin.permissions.map((permission) => (
+            <li key={permission}>{PERMISSION_LABELS[permission] ?? permission}</li>
+          ))}
+        </ul>
+      </div>
+
+      {plugin.manifest.description ? (
+        <div className="prose prose-base mt-4 max-w-none border-t border-separator pt-4 text-text">
+          {descriptionLoadState === 'loading' ? (
+            <p className="text-muted" role="status">
+              Loading description…
+            </p>
+          ) : descriptionLoadState === 'error' ? (
+            <p className="text-danger" role="alert">
+              Could not load the plugin description.
+            </p>
+          ) : descriptionMarkdown ? (
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{descriptionMarkdown}</ReactMarkdown>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="mt-4 flex justify-end">
+        <Button type="button" variant="secondary" onClick={onClose}>
+          Close
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
 /**
  * Returns whether a plugin is installed under userData (file or git), not dev-unpacked.
  *
@@ -32,8 +145,6 @@ const PERMISSION_LABELS: Record<PluginPermission, string> = {
 function isManagedInstall(plugin: PluginInfo): boolean {
   return plugin.source === 'installed' || plugin.source === 'git';
 }
-
-type PluginsViewMode = 'installed' | 'browse';
 
 /**
  * Returns the installed plugin row matching a catalog entry id, if any.
@@ -49,51 +160,308 @@ function findInstalledCatalogPlugin(
 }
 
 /**
+ * Stops row-level click handlers from firing when interacting with row action buttons.
+ *
+ * @param event - DOM event from an action control inside a table row.
+ */
+function stopRowActivation(event: { stopPropagation(): void }): void {
+  event.stopPropagation();
+}
+
+interface PluginTableExternalLinkProps {
+  /**
+   * Destination URL opened in the system browser.
+   */
+  href: string;
+
+  /**
+   * Visible link text shown in the table cell.
+   */
+  label: string;
+
+  /**
+   * Plugin display name used in the accessible link label.
+   */
+  pluginName: string;
+}
+
+/**
+ * External link in a plugin table row that does not activate the row click handler.
+ */
+function PluginTableExternalLink({
+  href,
+  label,
+  pluginName
+}: PluginTableExternalLinkProps): JSX.Element {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="text-accent"
+      aria-label={`${label} for ${pluginName}`}
+      onClick={stopRowActivation}
+      onMouseDown={stopRowActivation}
+    >
+      {label}
+    </a>
+  );
+}
+
+interface PluginCatalogCardProps {
+  /**
+   * Marketplace listing rendered in the browse grid.
+   */
+  entry: PluginCatalogEntry;
+
+  /**
+   * Opens the catalog detail modal for this listing.
+   */
+  onOpen: () => void;
+}
+
+/**
+ * Compact marketplace preview card; opens the detail modal on activation.
+ */
+function PluginCatalogCard({ entry, onOpen }: PluginCatalogCardProps): JSX.Element {
+  /**
+   * Opens the detail modal when the card is activated from the keyboard.
+   *
+   * @param event - Keyboard event on the card.
+   */
+  const handleKeyDown = (event: KeyboardEvent<HTMLLIElement>): void => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onOpen();
+    }
+  };
+
+  return (
+    <li
+      tabIndex={0}
+      className="flex min-w-0 cursor-pointer flex-col overflow-hidden rounded-md border border-separator bg-control hover:bg-selection/40"
+      aria-label={`View details for ${entry.name}`}
+      onClick={onOpen}
+      onKeyDown={handleKeyDown}
+    >
+      {entry.screenshot ? (
+        <img
+          src={entry.screenshot}
+          alt=""
+          className="h-28 w-full border-b border-separator object-cover object-top"
+        />
+      ) : (
+        <div
+          className="flex h-28 w-full items-center justify-center border-b border-separator bg-panel text-[14px] text-muted"
+          aria-hidden
+        >
+          No preview
+        </div>
+      )}
+
+      <div className="flex flex-col gap-1.5 p-3">
+        <h3 className="m-0 truncate text-[14px] font-semibold text-text">{entry.name}</h3>
+        <p className="m-0 text-[14px] text-muted">{entry.version}</p>
+        <div className="flex flex-wrap gap-1.5">
+          {entry.categories.map((category) => (
+            <span key={category} className="rounded bg-accent/15 px-2 py-0.5 text-[14px] text-text">
+              {category}
+            </span>
+          ))}
+        </div>
+      </div>
+    </li>
+  );
+}
+
+interface PluginCatalogDetailModalProps {
+  /**
+   * Marketplace listing shown in the detail dialog.
+   */
+  entry: PluginCatalogEntry;
+
+  /**
+   * Installed plugin row when this catalog id is already present.
+   */
+  installed: PluginInfo | undefined;
+
+  /**
+   * Whether an install or update action is in progress for this listing.
+   */
+  actionBusy: boolean;
+
+  /**
+   * Closes the detail dialog.
+   */
+  onClose: () => void;
+
+  /**
+   * Installs the plugin from its git repository URL.
+   */
+  onInstall: () => void;
+
+  /**
+   * Re-clones an installed git plugin from its stored origin.
+   */
+  onUpdate: () => void;
+}
+
+/**
+ * Marketplace detail dialog with catalog metadata and install actions.
+ */
+function PluginCatalogDetailModal({
+  entry,
+  installed,
+  actionBusy,
+  onClose,
+  onInstall,
+  onUpdate
+}: PluginCatalogDetailModalProps): JSX.Element {
+  const displayVersion = installed?.version ?? entry.version;
+
+  return (
+    <Modal
+      onClose={onClose}
+      className="w-[min(42rem,calc(100vw-2rem))]"
+      labelledBy="plugin-catalog-detail-title"
+    >
+      <h2 id="plugin-catalog-detail-title" className="m-0 mb-3 text-[15px] font-semibold text-text">
+        {entry.name}
+      </h2>
+
+      {entry.screenshot ? (
+        <img
+          src={entry.screenshot}
+          alt=""
+          className="mb-4 max-h-64 w-full rounded-md border border-separator object-cover object-top"
+        />
+      ) : null}
+
+      <p className="m-0 mb-4 text-[14px] text-text">{entry.summary}</p>
+
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[14px]">
+        <dt className="text-muted">Author</dt>
+        <dd className="m-0 text-text">{entry.author}</dd>
+        <dt className="text-muted">Version</dt>
+        <dd className="m-0 text-text">{displayVersion}</dd>
+        <dt className="text-muted">Plugin id</dt>
+        <dd className="m-0 break-all text-text">{entry.id}</dd>
+        {entry.ref ? (
+          <>
+            <dt className="text-muted">Git ref</dt>
+            <dd className="m-0 text-text">{entry.ref}</dd>
+          </>
+        ) : null}
+        {entry.minAppVersion ? (
+          <>
+            <dt className="text-muted">Minimum app version</dt>
+            <dd className="m-0 text-text">{entry.minAppVersion}</dd>
+          </>
+        ) : null}
+      </dl>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {entry.categories.map((category) => (
+          <span key={category} className="rounded bg-accent/15 px-2 py-0.5 text-[14px] text-text">
+            {category}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-3 text-[14px]">
+        <a href={entry.repoUrl} target="_blank" rel="noreferrer" className="text-accent">
+          View on GitHub
+        </a>
+        {entry.homepage ? (
+          <a href={entry.homepage} target="_blank" rel="noreferrer" className="text-accent">
+            Website
+          </a>
+        ) : null}
+      </div>
+
+      <div className="mt-4 flex flex-wrap justify-end gap-2">
+        <Button type="button" variant="secondary" onClick={onClose}>
+          Close
+        </Button>
+        {installed ? (
+          installed.source === 'git' ? (
+            <Button
+              type="button"
+              disabled={actionBusy}
+              aria-label={`Update ${entry.name}`}
+              onClick={onUpdate}
+            >
+              {actionBusy ? 'Updating…' : 'Update'}
+            </Button>
+          ) : (
+            <Button type="button" disabled aria-label={`${entry.name} is installed`}>
+              Installed
+            </Button>
+          )
+        ) : (
+          <Button
+            type="button"
+            disabled={actionBusy}
+            aria-label={`Install ${entry.name}`}
+            onClick={onInstall}
+          >
+            {actionBusy ? 'Installing…' : 'Install'}
+          </Button>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+/**
  * Settings section for installing, enabling, and inspecting plugins.
  */
 export function PluginsSection(): JSX.Element {
   const dispatch = useAppDispatch();
-  const [viewMode, setViewMode] = useState<PluginsViewMode>('installed');
+  const [showBrowse, setShowBrowse] = useState(false);
   const [plugins, setPlugins] = useState<PluginInfo[]>([]);
   const [catalog, setCatalog] = useState<PluginCatalog | null>(null);
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [catalogActionBusyId, setCatalogActionBusyId] = useState<string | null>(null);
+  const [catalogDetailEntry, setCatalogDetailEntry] = useState<PluginCatalogEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detailPlugin, setDetailPlugin] = useState<PluginInfo | null>(null);
   const [pendingInstall, setPendingInstall] = useState<PluginInfo | null>(null);
   const [descriptionMarkdown, setDescriptionMarkdown] = useState<string>('');
+  const [descriptionLoadState, setDescriptionLoadState] = useState<
+    'idle' | 'loading' | 'loaded' | 'error'
+  >('idle');
   const [showGitInstallModal, setShowGitInstallModal] = useState(false);
   const [gitInstallUrl, setGitInstallUrl] = useState('');
   const [gitInstallRef, setGitInstallRef] = useState('');
   const [gitInstallError, setGitInstallError] = useState<string | null>(null);
   const [gitInstallBusy, setGitInstallBusy] = useState(false);
-  const [gitUpdateBusy, setGitUpdateBusy] = useState(false);
-
-  const selected = useMemo(
-    () => plugins.find((plugin) => plugin.id === selectedId) ?? null,
-    [plugins, selectedId]
-  );
+  const [gitUpdateBusyId, setGitUpdateBusyId] = useState<string | null>(null);
 
   /**
-   * Loads the plugin list from the main process.
+   * Loads the plugin list from the main process and keeps the open detail row in sync.
+   *
+   * @returns Fresh plugin rows from the main process.
    */
-  const refresh = useCallback(async (): Promise<void> => {
+  const refresh = useCallback(async (): Promise<PluginInfo[]> => {
     setLoading(true);
     setError(null);
     try {
       const next = await window.api.listPlugins();
       setPlugins(next);
-      if (selectedId && !next.some((plugin) => plugin.id === selectedId)) {
-        setSelectedId(null);
-      }
+      setDetailPlugin((current) =>
+        current ? (next.find((plugin) => plugin.id === current.id) ?? null) : null
+      );
+      return next;
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+      return [];
     } finally {
       setLoading(false);
     }
-  }, [selectedId]);
+  }, []);
 
   /**
    * Loads plugins on mount and when the main process reports changes.
@@ -125,32 +493,34 @@ export function PluginsSection(): JSX.Element {
   }, [refresh]);
 
   /**
-   * Loads the selected plugin description markdown when detail view opens.
+   * Loads the detail plugin description markdown when the detail modal opens.
    */
   useEffect(() => {
     let active = true;
-    const descriptionPath = selected?.manifest.description;
-    if (!selected || !descriptionPath) {
+    const descriptionPath = detailPlugin?.manifest.description;
+    if (!detailPlugin || !descriptionPath) {
       return () => {
         active = false;
       };
     }
     void window.api
-      .readPluginAsset(selected.id, descriptionPath)
+      .readPluginAsset(detailPlugin.id, descriptionPath)
       .then((asset) => {
         if (active) {
           setDescriptionMarkdown(atob(asset.content));
+          setDescriptionLoadState('loaded');
         }
       })
       .catch(() => {
         if (active) {
           setDescriptionMarkdown('');
+          setDescriptionLoadState('error');
         }
       });
     return () => {
       active = false;
     };
-  }, [selected]);
+  }, [detailPlugin]);
 
   /**
    * Loads the marketplace catalog from harborclient.com.
@@ -169,14 +539,70 @@ export function PluginsSection(): JSX.Element {
   }, []);
 
   /**
-   * Switches plugin settings views and lazily loads the marketplace catalog.
-   *
-   * @param mode - Selected plugins view.
+   * Toggles between the installed-plugins list and the marketplace catalog.
    */
-  const handleViewModeChange = (mode: PluginsViewMode): void => {
-    setViewMode(mode);
-    if (mode === 'browse' && !catalog && !catalogLoading) {
-      void loadCatalog();
+  const toggleBrowseView = (): void => {
+    setShowBrowse((current) => {
+      const next = !current;
+      if (!next) {
+        setCatalogDetailEntry(null);
+      }
+      if (next && !catalog && !catalogLoading) {
+        void loadCatalog();
+      }
+      return next;
+    });
+  };
+
+  /**
+   * Opens the marketplace detail modal for one catalog listing.
+   *
+   * @param entry - Catalog row to inspect.
+   */
+  const openCatalogDetail = (entry: PluginCatalogEntry): void => {
+    setCatalogDetailEntry(entry);
+  };
+
+  /**
+   * Closes the marketplace detail modal.
+   */
+  const closeCatalogDetail = (): void => {
+    setCatalogDetailEntry(null);
+  };
+
+  /**
+   * Opens the read-only detail modal for one installed plugin.
+   *
+   * @param plugin - Plugin row to inspect.
+   */
+  const openDetail = (plugin: PluginInfo): void => {
+    setDescriptionMarkdown('');
+    setDescriptionLoadState(plugin.manifest.description ? 'loading' : 'idle');
+    setDetailPlugin(plugin);
+  };
+
+  /**
+   * Closes the read-only detail modal and clears loaded description text.
+   */
+  const closeDetail = (): void => {
+    setDetailPlugin(null);
+    setDescriptionMarkdown('');
+    setDescriptionLoadState('idle');
+  };
+
+  /**
+   * Opens the detail modal when a table row is activated from the keyboard.
+   *
+   * @param event - Keyboard event on the row.
+   * @param plugin - Plugin row to inspect.
+   */
+  const handleRowKeyDown = (
+    event: KeyboardEvent<HTMLTableRowElement>,
+    plugin: PluginInfo
+  ): void => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      openDetail(plugin);
     }
   };
 
@@ -197,12 +623,14 @@ export function PluginsSection(): JSX.Element {
       } else {
         await window.api.removeUnpackedPlugin(plugin.id);
       }
-    } else {
-      await window.api.setPluginEnabled(plugin.id, true);
+      await refresh();
+      return;
     }
-    await refresh();
-    if (keep) {
-      setSelectedId(plugin.id);
+    await window.api.setPluginEnabled(plugin.id, true);
+    const next = await refresh();
+    const enabled = next.find((entry) => entry.id === plugin.id);
+    if (enabled) {
+      openDetail(enabled);
     }
   };
 
@@ -272,7 +700,7 @@ export function PluginsSection(): JSX.Element {
    * @param pluginId - Plugin manifest id.
    */
   const handleUpdateFromGit = async (pluginId: string): Promise<void> => {
-    setGitUpdateBusy(true);
+    setGitUpdateBusyId(pluginId);
     setError(null);
     try {
       await window.api.updatePluginFromGit(pluginId);
@@ -280,7 +708,7 @@ export function PluginsSection(): JSX.Element {
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setGitUpdateBusy(false);
+      setGitUpdateBusyId(null);
     }
   };
 
@@ -295,6 +723,7 @@ export function PluginsSection(): JSX.Element {
     setError(null);
     try {
       const installed = await window.api.installPluginFromGit(entry.repoUrl, entry.ref);
+      setCatalogDetailEntry(null);
       setPendingInstall(installed);
     } catch (err) {
       setCatalogError(err instanceof Error ? err.message : String(err));
@@ -379,8 +808,8 @@ export function PluginsSection(): JSX.Element {
     } else {
       await window.api.removeUnpackedPlugin(plugin.id);
     }
-    if (selectedId === plugin.id) {
-      setSelectedId(null);
+    if (detailPlugin?.id === plugin.id) {
+      closeDetail();
     }
     await refresh();
   };
@@ -389,7 +818,15 @@ export function PluginsSection(): JSX.Element {
     <section>
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <h2 className="m-0 flex-1 text-[15px] font-semibold text-text">Plugins</h2>
-        {viewMode === 'installed' ? (
+        <Button
+          type="button"
+          variant="secondary"
+          aria-pressed={showBrowse}
+          onClick={toggleBrowseView}
+        >
+          {showBrowse ? 'Installed' : 'Browse plugins'}
+        </Button>
+        {!showBrowse ? (
           <>
             <Button type="button" variant="secondary" onClick={() => void handleInstall()}>
               Install from file
@@ -404,20 +841,8 @@ export function PluginsSection(): JSX.Element {
         ) : null}
       </div>
 
-      <SegmentedTabsGroup
-        value={viewMode}
-        onChange={handleViewModeChange}
-        ariaLabel="Plugin settings views"
-      >
-        <SegmentedTabs
-          fullWidth
-          tabs={[
-            { value: 'installed', label: 'Installed' },
-            { value: 'browse', label: 'Browse plugins' }
-          ]}
-        />
-
-        <SegmentedTabPanel value="installed" className="pt-4">
+      {!showBrowse ? (
+        <>
           {error ? <p className="text-danger">{error}</p> : null}
           {loading ? (
             <p className="text-muted" role="status">
@@ -429,160 +854,137 @@ export function PluginsSection(): JSX.Element {
             <p className="text-muted">No plugins installed yet.</p>
           ) : null}
 
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-            <ul className="m-0 list-none space-y-2 p-0">
-              {plugins.map((plugin) => (
-                <li key={plugin.id}>
-                  <button
-                    type="button"
-                    className={`w-full rounded-md border px-3 py-2 text-left ${
-                      selectedId === plugin.id
-                        ? 'border-accent bg-selection'
-                        : 'border-separator bg-control'
-                    }`}
-                    onClick={() => setSelectedId(plugin.id)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-text">{plugin.name}</span>
-                      {plugin.source === 'unpacked' ? (
-                        <span className="rounded bg-info/20 px-1.5 py-0.5 text-[11px] text-text">
-                          Development
-                        </span>
-                      ) : null}
-                      {plugin.source === 'git' ? (
-                        <span className="rounded bg-accent/15 px-1.5 py-0.5 text-[11px] text-text">
-                          Git
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="text-[12px] text-muted">
-                      {plugin.version} · {plugin.id}
-                    </div>
-                    {plugin.error ? (
-                      <div className="text-[12px] text-danger">{plugin.error}</div>
-                    ) : null}
-                  </button>
-                </li>
-              ))}
-            </ul>
-
-            {selected ? (
-              <div className="rounded-md border border-separator bg-control p-4">
-                <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <h3 className="m-0 flex-1 text-[15px] font-semibold text-text">
-                    {selected.name}
-                  </h3>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => void handleToggleEnabled(selected)}
-                  >
-                    {selected.enabled ? 'Disable' : 'Enable'}
-                  </Button>
-                  {selected.source === 'unpacked' ? (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => void handleReload(selected.id)}
+          {!loading && plugins.length > 0 ? (
+            <div className="overflow-x-auto rounded-md border border-separator">
+              <table className="w-full border-collapse text-[14px]">
+                <caption className="sr-only">Installed plugins</caption>
+                <thead>
+                  <tr className="border-b border-separator bg-sidebar/40 text-left">
+                    <th scope="col" className="px-3 py-2 font-medium text-text">
+                      Plugin
+                    </th>
+                    <th scope="col" className="px-3 py-2 font-medium text-text">
+                      Version
+                    </th>
+                    <th scope="col" className="px-3 py-2 font-medium text-text">
+                      Publisher
+                    </th>
+                    <th
+                      scope="col"
+                      className="w-0 whitespace-nowrap px-3 py-2 font-medium text-text"
                     >
-                      Reload
-                    </Button>
-                  ) : null}
-                  {selected.source === 'git' ? (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      disabled={gitUpdateBusy}
-                      onClick={() => void handleUpdateFromGit(selected.id)}
-                    >
-                      {gitUpdateBusy ? 'Updating…' : 'Update'}
-                    </Button>
-                  ) : null}
-                  <Button
-                    type="button"
-                    variant="primaryDanger"
-                    onClick={() => void handleRemove(selected)}
-                  >
-                    {isManagedInstall(selected) ? 'Uninstall' : 'Remove'}
-                  </Button>
-                </div>
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {plugins.map((plugin) => {
+                    const gitUpdateBusy = gitUpdateBusyId === plugin.id;
 
-                <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[13px]">
-                  <dt className="text-muted">Version</dt>
-                  <dd className="m-0 text-text">{selected.version}</dd>
-                  <dt className="text-muted">Publisher</dt>
-                  <dd className="m-0 text-text">{selected.manifest.company ?? '—'}</dd>
-                  <dt className="text-muted">Source</dt>
-                  <dd className="m-0 break-all text-text">{selected.path}</dd>
-                  {selected.repoUrl ? (
-                    <>
-                      <dt className="text-muted">Repository</dt>
-                      <dd className="m-0 break-all text-text">
-                        <a
-                          href={selected.repoUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-accent"
+                    return (
+                      <tr
+                        key={plugin.id}
+                        tabIndex={0}
+                        className="cursor-pointer border-b border-separator last:border-b-0 hover:bg-selection/40"
+                        aria-label={`View details for ${plugin.name}`}
+                        onClick={() => openDetail(plugin)}
+                        onKeyDown={(event) => handleRowKeyDown(event, plugin)}
+                      >
+                        <td className="px-3 py-2 align-top">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium text-text">{plugin.name}</span>
+                            {plugin.manifest.homepage ? (
+                              <PluginTableExternalLink
+                                href={plugin.manifest.homepage}
+                                label="Homepage"
+                                pluginName={plugin.name}
+                              />
+                            ) : null}
+                            {plugin.source === 'unpacked' ? (
+                              <span className="rounded bg-info/20 px-1.5 py-0.5 text-[14px] text-text">
+                                Development
+                              </span>
+                            ) : null}
+                            {plugin.source === 'git' ? (
+                              <span className="rounded bg-accent/15 px-1.5 py-0.5 text-[14px] text-text">
+                                Git
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="text-[14px] text-muted">{plugin.id}</div>
+                          {plugin.error ? (
+                            <div className="mt-1 text-[14px] text-danger">{plugin.error}</div>
+                          ) : null}
+                        </td>
+                        <td className="px-3 py-2 align-top text-text">{plugin.version}</td>
+                        <td className="px-3 py-2 align-top text-text">
+                          {plugin.manifest.company ? (
+                            plugin.manifest.company
+                          ) : (
+                            <span className="text-muted">—</span>
+                          )}
+                        </td>
+                        <td
+                          className="w-0 whitespace-nowrap px-3 py-2 align-top"
+                          onClick={stopRowActivation}
+                          onMouseDown={stopRowActivation}
                         >
-                          {selected.repoUrl}
-                        </a>
-                        {selected.repoRef ? (
-                          <span className="text-muted">{` (${selected.repoRef})`}</span>
-                        ) : null}
-                      </dd>
-                    </>
-                  ) : null}
-                </dl>
-
-                <div className="mt-3 flex flex-wrap gap-3 text-[13px]">
-                  {selected.manifest.homepage ? (
-                    <a
-                      href={selected.manifest.homepage}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-accent"
-                    >
-                      Website
-                    </a>
-                  ) : null}
-                  {selected.manifest.bugs?.url ? (
-                    <a
-                      href={selected.manifest.bugs.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-accent"
-                    >
-                      Report issue
-                    </a>
-                  ) : null}
-                </div>
-
-                <div className="mt-4 border-t border-separator pt-4">
-                  <h4 className="m-0 mb-2 text-[14px] font-medium text-text">Permissions</h4>
-                  <ul className="m-0 list-disc pl-5 text-[13px] text-text">
-                    {selected.permissions.map((permission) => (
-                      <li key={permission}>{PERMISSION_LABELS[permission] ?? permission}</li>
-                    ))}
-                  </ul>
-                </div>
-
-                {selected.manifest.description ? (
-                  <div className="prose prose-sm mt-4 max-w-none border-t border-separator pt-4 text-text">
-                    {descriptionMarkdown ? (
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {descriptionMarkdown}
-                      </ReactMarkdown>
-                    ) : (
-                      <p className="text-muted">Loading description…</p>
-                    )}
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        </SegmentedTabPanel>
-
-        <SegmentedTabPanel value="browse" className="pt-4">
+                          <div className="flex flex-nowrap gap-2">
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              aria-label={
+                                plugin.enabled ? `Disable ${plugin.name}` : `Enable ${plugin.name}`
+                              }
+                              onClick={() => void handleToggleEnabled(plugin)}
+                            >
+                              {plugin.enabled ? 'Disable' : 'Enable'}
+                            </Button>
+                            {plugin.source === 'unpacked' ? (
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                aria-label={`Reload ${plugin.name}`}
+                                onClick={() => void handleReload(plugin.id)}
+                              >
+                                Reload
+                              </Button>
+                            ) : null}
+                            {plugin.source === 'git' ? (
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                disabled={gitUpdateBusy}
+                                aria-label={`Update ${plugin.name}`}
+                                onClick={() => void handleUpdateFromGit(plugin.id)}
+                              >
+                                {gitUpdateBusy ? 'Updating…' : 'Update'}
+                              </Button>
+                            ) : null}
+                            <Button
+                              type="button"
+                              variant="primaryDanger"
+                              aria-label={
+                                isManagedInstall(plugin)
+                                  ? `Uninstall ${plugin.name}`
+                                  : `Remove ${plugin.name}`
+                              }
+                              onClick={() => void handleRemove(plugin)}
+                            >
+                              {isManagedInstall(plugin) ? 'Uninstall' : 'Remove'}
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <>
           {catalogError ? (
             <p className="text-danger" role="alert">
               {catalogError}
@@ -610,96 +1012,43 @@ export function PluginsSection(): JSX.Element {
           ) : null}
 
           {!catalogLoading && catalog && catalog.plugins.length > 0 ? (
-            <ul className="m-0 list-none space-y-3 p-0">
-              {catalog.plugins.map((entry) => {
-                const installed = findInstalledCatalogPlugin(plugins, entry.id);
-                const actionBusy = catalogActionBusyId === entry.id;
-
-                return (
-                  <li key={entry.id} className="rounded-md border border-separator bg-control p-4">
-                    <div className="flex flex-wrap items-start gap-3">
-                      {entry.icon ? (
-                        <img
-                          src={entry.icon}
-                          alt=""
-                          className="h-10 w-10 rounded-md border border-separator object-cover"
-                        />
-                      ) : null}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="m-0 text-[15px] font-semibold text-text">{entry.name}</h3>
-                          <span className="text-[12px] text-muted">{entry.author}</span>
-                        </div>
-                        <p className="mb-2 mt-1 text-[13px] text-text">{entry.summary}</p>
-                        <div className="flex flex-wrap gap-2 text-[12px] text-muted">
-                          {entry.categories.map((category) => (
-                            <span key={category} className="rounded bg-panel px-2 py-0.5 text-text">
-                              {category}
-                            </span>
-                          ))}
-                        </div>
-                        <div className="mt-2 flex flex-wrap gap-3 text-[13px]">
-                          <a
-                            href={entry.repoUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-accent"
-                          >
-                            View on GitHub
-                          </a>
-                          {entry.homepage ? (
-                            <a
-                              href={entry.homepage}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-accent"
-                            >
-                              Website
-                            </a>
-                          ) : null}
-                        </div>
-                      </div>
-                      <div className="flex shrink-0 flex-col gap-2">
-                        {installed ? (
-                          installed.source === 'git' ? (
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              disabled={actionBusy}
-                              aria-label={`Update ${entry.name}`}
-                              onClick={() => void handleCatalogUpdate(installed.id)}
-                            >
-                              {actionBusy ? 'Updating…' : 'Update'}
-                            </Button>
-                          ) : (
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              disabled
-                              aria-label={`${entry.name} is installed`}
-                            >
-                              Installed
-                            </Button>
-                          )
-                        ) : (
-                          <Button
-                            type="button"
-                            disabled={actionBusy}
-                            aria-label={`Install ${entry.name}`}
-                            onClick={() => void handleCatalogInstall(entry)}
-                          >
-                            {actionBusy ? 'Installing…' : 'Install'}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </li>
-                );
-              })}
+            <ul className="m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 lg:grid-cols-4">
+              {catalog.plugins.map((entry) => (
+                <PluginCatalogCard
+                  key={entry.id}
+                  entry={entry}
+                  onOpen={() => openCatalogDetail(entry)}
+                />
+              ))}
             </ul>
           ) : null}
-        </SegmentedTabPanel>
-      </SegmentedTabsGroup>
+        </>
+      )}
+
+      {catalogDetailEntry ? (
+        <PluginCatalogDetailModal
+          entry={catalogDetailEntry}
+          installed={findInstalledCatalogPlugin(plugins, catalogDetailEntry.id)}
+          actionBusy={catalogActionBusyId === catalogDetailEntry.id}
+          onClose={closeCatalogDetail}
+          onInstall={() => void handleCatalogInstall(catalogDetailEntry)}
+          onUpdate={() => {
+            const installed = findInstalledCatalogPlugin(plugins, catalogDetailEntry.id);
+            if (installed) {
+              void handleCatalogUpdate(installed.id);
+            }
+          }}
+        />
+      ) : null}
+
+      {detailPlugin ? (
+        <PluginDetailModal
+          plugin={detailPlugin}
+          descriptionMarkdown={descriptionMarkdown}
+          descriptionLoadState={descriptionLoadState}
+          onClose={closeDetail}
+        />
+      ) : null}
 
       {showGitInstallModal ? (
         <Modal onClose={closeGitInstallModal} labelledBy="plugin-git-install-title">
@@ -713,7 +1062,7 @@ export function PluginsSection(): JSX.Element {
             Enter a public repository URL. The repo must include a built{' '}
             <code className="text-text">manifest.json</code> and entry files at the repository root.
           </p>
-          <label htmlFor="plugin-git-install-url" className="mb-1 block text-[13px] text-muted">
+          <label htmlFor="plugin-git-install-url" className="mb-1 block text-[14px] text-muted">
             Repository URL
           </label>
           <Input
@@ -734,7 +1083,7 @@ export function PluginsSection(): JSX.Element {
               }
             }}
           />
-          <label htmlFor="plugin-git-install-ref" className="mb-1 block text-[13px] text-muted">
+          <label htmlFor="plugin-git-install-ref" className="mb-1 block text-[14px] text-muted">
             Branch or tag (optional)
           </label>
           <Input
