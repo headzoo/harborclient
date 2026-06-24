@@ -474,7 +474,7 @@ export interface PluginContext {
 }
 ```
 
-Install `@harborclient/plugin-api` as a **dev dependency** in your plugin project for these types. The package ships `.d.ts` only and tracks HarborClient releases. Main entries use `MainPluginContext` instead — import it from `@harborclient/plugin-api` or `@harborclient/plugin-api/main` for main-only plugins.
+Install `@harborclient/plugin-api` as a **dev dependency** in your plugin project for these types. The package ships `.d.ts` only and tracks HarborClient releases. Type definitions are maintained in [harborclient/plugin-api](https://github.com/harborclient/plugin-api). Main entries use `MainPluginContext` instead — import it from `@harborclient/plugin-api` or `@harborclient/plugin-api/main` for main-only plugins.
 
 ### hc.react
 

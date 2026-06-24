@@ -3,6 +3,11 @@
   "version": "1.8.0",
   "description": "TypeScript definitions for HarborClient plugin development",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/harborclient/plugin-api.git"
+  },
+  "homepage": "https://github.com/harborclient/plugin-api",
   "types": "./index.d.ts",
   "exports": {
     ".": {

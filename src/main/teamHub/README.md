@@ -1,6 +1,6 @@
 # Team Hub module
 
-Typed HTTP client for [HarborClient Server](https://github.com/harbor/harborclient-server), the companion service that centralizes shared collections, environments, folders, and saved requests for teams. This module runs in the Electron main process. IPC handlers and renderer UI are not wired yet; import from `#/main/teamHub` when integrating team hub sync.
+Typed HTTP client for [HarborClient Team Hub](https://github.com/harborclient/team-hub), the companion service that centralizes shared collections, environments, folders, and saved requests for teams. This module runs in the Electron main process. IPC handlers and renderer UI are not wired yet; import from `#/main/teamHub` when integrating team hub sync.
 
 ## Directory layout
 
@@ -46,7 +46,7 @@ Protected routes send `Authorization: Bearer hbk_...`. `checkHealth()` is the on
 | Folders        | `listFolders`, `createFolder`, `renameFolder`, `deleteFolder`, `reorderFolders`                     |
 | Saved requests | `listRequests`, `createRequest`, `updateRequest`, `deleteRequest`, `reorderRequests`, `moveRequest` |
 
-See HarborClient Server [API Endpoints](https://github.com/harbor/harborclient-server/blob/main/docs/endpoints.md) for request and response shapes.
+See HarborClient Team Hub [API Endpoints](https://harborclient.github.io/team-hub/endpoints.html) for request and response shapes.
 
 ## Testing
 
