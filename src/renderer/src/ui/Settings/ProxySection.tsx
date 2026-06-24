@@ -1,7 +1,7 @@
 import { useEffect, useState, type JSX } from 'react';
 import type { GeneralSettings, ProxySettings } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Input, Select } from '#/renderer/src/components/forms';
 import { DEFAULT_GENERAL_SETTINGS, PROXY_PROTOCOL_OPTIONS } from './constants';
 
 /**
@@ -69,7 +69,7 @@ export function ProxySection(): JSX.Element {
     <div className="mb-6 flex flex-col gap-2">
       <div className="mb-6 flex flex-col gap-6">
         <label className="flex items-center gap-2">
-          <input
+          <Input
             type="checkbox"
             checked={proxy.enabled}
             disabled={fieldsDisabled}
@@ -80,8 +80,7 @@ export function ProxySection(): JSX.Element {
 
         <label className="flex flex-col gap-1">
           <span className="text-[14px] font-medium text-text">Protocol</span>
-          <select
-            className={field}
+          <Select
             value={proxy.protocol}
             disabled={proxyFieldsDisabled}
             onChange={(event) =>
@@ -93,14 +92,13 @@ export function ProxySection(): JSX.Element {
                 {option.label}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
 
         <label className="flex flex-col gap-1">
           <span className="text-[14px] font-medium text-text">Host</span>
-          <input
+          <Input
             type="text"
-            className={field}
             value={proxy.host}
             disabled={proxyFieldsDisabled}
             placeholder="proxy.example.com"
@@ -110,11 +108,10 @@ export function ProxySection(): JSX.Element {
 
         <label className="flex flex-col gap-1">
           <span className="text-[14px] font-medium text-text">Port</span>
-          <input
+          <Input
             type="number"
             min={1}
             max={65535}
-            className={field}
             value={proxy.port}
             disabled={proxyFieldsDisabled}
             onChange={(event) => handleProxyFieldChange('port', Number(event.target.value))}
@@ -122,7 +119,7 @@ export function ProxySection(): JSX.Element {
         </label>
 
         <label className="flex items-center gap-2">
-          <input
+          <Input
             type="checkbox"
             checked={proxy.authEnabled}
             disabled={proxyFieldsDisabled}
@@ -135,9 +132,8 @@ export function ProxySection(): JSX.Element {
           <>
             <label className="flex flex-col gap-1">
               <span className="text-[14px] font-medium text-text">Username</span>
-              <input
+              <Input
                 type="text"
-                className={field}
                 value={proxy.username}
                 disabled={authFieldsDisabled}
                 autoComplete="off"
@@ -147,9 +143,8 @@ export function ProxySection(): JSX.Element {
 
             <label className="flex flex-col gap-1">
               <span className="text-[14px] font-medium text-text">Password</span>
-              <input
+              <Input
                 type="password"
-                className={field}
                 value={proxy.password}
                 disabled={authFieldsDisabled}
                 autoComplete="off"

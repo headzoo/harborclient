@@ -3,7 +3,7 @@ import { useId } from 'react';
 import type { ProviderOption } from '#/renderer/src/hooks/useProviders';
 import { providerOptionLabel } from '#/renderer/src/hooks/useProviders';
 import { Button } from '#/renderer/src/components/Button';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Input, Select } from '#/renderer/src/components/forms';
 
 interface Props {
   name: string;
@@ -52,9 +52,9 @@ export function GeneralSection({
         <label className="mb-1 block text-[14px] text-muted" htmlFor={nameId}>
           Name
         </label>
-        <input
+        <Input
           id={nameId}
-          className={`${field} w-full`}
+          className="w-full"
           type="text"
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
@@ -69,9 +69,9 @@ export function GeneralSection({
         <label className="mb-1 block text-[14px] text-muted" htmlFor={providerId}>
           Provider
         </label>
-        <select
+        <Select
           id={providerId}
-          className={`${field} w-full`}
+          className="w-full"
           value={connectionId}
           disabled={providerSelectDisabled}
           onChange={(e) => onConnectionIdChange(e.target.value)}
@@ -81,7 +81,7 @@ export function GeneralSection({
               {provider.name || 'Untitled'} ({providerOptionLabel(provider)})
             </option>
           ))}
-        </select>
+        </Select>
         {providersLoading && <p className="mb-0 mt-1 text-[14px] text-muted">Loading…</p>}
         {providersError && (
           <div className="mt-2 flex flex-wrap items-center gap-2">

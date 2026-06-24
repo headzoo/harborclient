@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 import type { Environment } from '#/shared/types';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Select } from '#/renderer/src/components/forms';
 
 interface Props {
   environments: Environment[];
@@ -18,8 +18,8 @@ export function EnvironmentSelect({
 }: Props): JSX.Element {
   return (
     <div className="ms-auto flex shrink-0 self-stretch items-center">
-      <select
-        className={`${field} max-w-[180px] cursor-pointer py-1 text-[14px] app-no-drag`}
+      <Select
+        className="max-w-[180px] cursor-pointer py-1 text-[14px] app-no-drag"
         value={activeEnvironmentId ?? ''}
         onChange={(e) => {
           const value = e.target.value;
@@ -34,7 +34,7 @@ export function EnvironmentSelect({
             {env.name}
           </option>
         ))}
-      </select>
+      </Select>
     </div>
   );
 }

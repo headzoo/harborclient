@@ -1,6 +1,7 @@
 import { useMemo, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { HubApiTokenRecord, HubUserRecord, TeamHub } from '#/shared/types';
+import { Input, Select } from '#/renderer/src/components/forms';
 import { Button } from '#/renderer/src/components/Button';
 import { useTeamHubTokens } from '#/renderer/src/hooks/useTeamHubTokens';
 import { useTeamHubUsers } from '#/renderer/src/hooks/useTeamHubUsers';
@@ -195,9 +196,10 @@ export function TeamTokensView({ adminHubs, onBack }: Props): JSX.Element {
           <label htmlFor="team-tokens-hub" className="mb-1 block text-[14px] font-medium text-text">
             Team hub
           </label>
-          <select
+          <Select
             id="team-tokens-hub"
-            className="w-full max-w-md rounded-md border border-separator bg-surface px-3 py-2 text-[14px] text-text"
+            variant="surface"
+            className="max-w-md"
             value={selectedHubId}
             onChange={(event) => setSelectedHubId(event.target.value)}
           >
@@ -206,7 +208,7 @@ export function TeamTokensView({ adminHubs, onBack }: Props): JSX.Element {
                 {hub.name || hub.baseUrl}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
       )}
 
@@ -286,9 +288,10 @@ export function TeamTokensView({ adminHubs, onBack }: Props): JSX.Element {
             >
               User
             </label>
-            <select
+            <Select
               id="team-token-user"
-              className="mb-4 w-full rounded-md border border-separator bg-surface px-3 py-2 text-[14px] text-text"
+              variant="surface"
+              className="mb-4"
               value={createUserId}
               disabled={creating}
               onChange={(event) => setCreateUserId(event.target.value)}
@@ -298,7 +301,7 @@ export function TeamTokensView({ adminHubs, onBack }: Props): JSX.Element {
                   {user.name || user.id}
                 </option>
               ))}
-            </select>
+            </Select>
 
             <label
               htmlFor="team-token-name"
@@ -306,10 +309,10 @@ export function TeamTokensView({ adminHubs, onBack }: Props): JSX.Element {
             >
               Token name
             </label>
-            <input
+            <Input
               id="team-token-name"
               type="text"
-              className="w-full rounded-md border border-separator bg-surface px-3 py-2 text-[14px] text-text"
+              variant="surface"
               value={createTokenName}
               disabled={creating}
               autoComplete="off"
@@ -379,10 +382,10 @@ export function TeamTokensView({ adminHubs, onBack }: Props): JSX.Element {
             >
               Confirmation
             </label>
-            <input
+            <Input
               id="team-token-delete-confirm"
               type="text"
-              className="w-full rounded-md border border-separator bg-surface px-3 py-2 text-[14px] text-text"
+              variant="surface"
               value={deleteConfirmText}
               disabled={deleting}
               autoComplete="off"

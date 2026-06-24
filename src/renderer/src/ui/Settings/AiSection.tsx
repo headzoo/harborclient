@@ -1,7 +1,7 @@
 import { useEffect, useState, type JSX } from 'react';
 import type { AiSettings } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Input } from '#/renderer/src/components/forms';
 import { DEFAULT_AI_SETTINGS } from './constants';
 
 /**
@@ -81,10 +81,9 @@ export function AiSection(): JSX.Element {
       <div className="mb-6 flex flex-col gap-6">
         <label className="flex flex-col gap-1" htmlFor="ai-openai-api-key">
           <span className="text-[14px] font-medium text-text">OpenAI API key</span>
-          <input
+          <Input
             id="ai-openai-api-key"
             type="password"
-            className={field}
             value={aiSettings.openaiApiKey}
             disabled={fieldsDisabled}
             autoComplete="off"
@@ -94,10 +93,9 @@ export function AiSection(): JSX.Element {
 
         <label className="flex flex-col gap-1" htmlFor="ai-claude-api-key">
           <span className="text-[14px] font-medium text-text">Claude API key</span>
-          <input
+          <Input
             id="ai-claude-api-key"
             type="password"
-            className={field}
             value={aiSettings.claudeApiKey}
             disabled={fieldsDisabled}
             autoComplete="off"
@@ -107,10 +105,9 @@ export function AiSection(): JSX.Element {
 
         <label className="flex flex-col gap-1" htmlFor="ai-gemini-api-key">
           <span className="text-[14px] font-medium text-text">Google Gemini API key</span>
-          <input
+          <Input
             id="ai-gemini-api-key"
             type="password"
-            className={field}
             value={aiSettings.geminiApiKey}
             disabled={fieldsDisabled}
             autoComplete="off"

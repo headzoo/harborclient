@@ -5,7 +5,7 @@ import { Button } from '#/renderer/src/components/Button';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { VariableInput } from '#/renderer/src/components/VariableInput';
 import { faXmark } from '#/renderer/src/fontawesome';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Input, Select, fieldFrame } from '#/renderer/src/components/forms';
 
 interface Props {
   /**
@@ -144,7 +144,7 @@ export function FormDataEditor({ parts, onChange, variables, onEditVariable }: P
           {rows.map((row, index) => (
             <tr className="group" key={index}>
               <td className={`${tdClass} w-6 p-1 text-center`}>
-                <input
+                <Input
                   type="checkbox"
                   className="app-no-drag"
                   checked={row.enabled}
@@ -154,9 +154,9 @@ export function FormDataEditor({ parts, onChange, variables, onEditVariable }: P
                 />
               </td>
               <td className={tdClass}>
-                <input
+                <Input
                   type="text"
-                  className={`${field} w-full`}
+                  className="w-full"
                   value={row.key}
                   placeholder="field"
                   aria-label={`Key, row ${index + 1}`}
@@ -164,8 +164,8 @@ export function FormDataEditor({ parts, onChange, variables, onEditVariable }: P
                 />
               </td>
               <td className={tdClass}>
-                <select
-                  className={`${field} w-full`}
+                <Select
+                  className="w-full"
                   value={row.type}
                   aria-label={`Type, row ${index + 1}`}
                   onChange={(e) => {
@@ -179,21 +179,20 @@ export function FormDataEditor({ parts, onChange, variables, onEditVariable }: P
                 >
                   <option value="text">Text</option>
                   <option value="file">File</option>
-                </select>
+                </Select>
               </td>
               <td className={tdClass}>
                 {row.type === 'text' ? (
-                  <div className="min-w-0 w-full overflow-hidden rounded-md border border-separator bg-control shadow-[inset_0_0.5px_1px_rgba(0,0,0,0.06)]">
-                    <VariableInput
-                      className="app-no-drag"
-                      value={row.value}
-                      onChange={(value) => updateRow(index, { value })}
-                      variables={variables}
-                      placeholder="value"
-                      aria-label={`Value, row ${index + 1}`}
-                      onEditVariable={onEditVariable}
-                    />
-                  </div>
+                  <VariableInput
+                    wrapperClassName={`${fieldFrame} w-full`}
+                    className="app-no-drag"
+                    value={row.value}
+                    onChange={(value) => updateRow(index, { value })}
+                    variables={variables}
+                    placeholder="value"
+                    aria-label={`Value, row ${index + 1}`}
+                    onEditVariable={onEditVariable}
+                  />
                 ) : (
                   <div className="flex flex-col gap-1.5">
                     <Button

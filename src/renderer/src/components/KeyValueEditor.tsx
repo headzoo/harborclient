@@ -4,7 +4,7 @@ import { Button } from '#/renderer/src/components/Button';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { VariableInput } from '#/renderer/src/components/VariableInput';
 import { faXmark } from '#/renderer/src/fontawesome';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Input, fieldFrame } from '#/renderer/src/components/forms';
 
 interface Props {
   /**
@@ -98,7 +98,7 @@ export function KeyValueEditor({
           {rows.map((row, index) => (
             <tr className="group" key={index}>
               <td className={`${tdClass} w-6 p-1 text-center`}>
-                <input
+                <Input
                   type="checkbox"
                   className="app-no-drag"
                   checked={row.enabled}
@@ -108,9 +108,9 @@ export function KeyValueEditor({
                 />
               </td>
               <td className={tdClass}>
-                <input
+                <Input
                   type="text"
-                  className={`${field} w-full`}
+                  className="w-full"
                   value={row.key}
                   placeholder={placeholderKey}
                   aria-label={`Key, row ${index + 1}`}
@@ -118,17 +118,16 @@ export function KeyValueEditor({
                 />
               </td>
               <td className={tdClass}>
-                <div className="min-w-0 w-full overflow-hidden rounded-md border border-separator bg-control shadow-[inset_0_0.5px_1px_rgba(0,0,0,0.06)]">
-                  <VariableInput
-                    className="app-no-drag"
-                    value={row.value}
-                    onChange={(value) => updateRow(index, { value })}
-                    variables={variables}
-                    placeholder={placeholderValue}
-                    aria-label={`Value, row ${index + 1}`}
-                    onEditVariable={onEditVariable}
-                  />
-                </div>
+                <VariableInput
+                  wrapperClassName={`${fieldFrame} w-full`}
+                  className="app-no-drag"
+                  value={row.value}
+                  onChange={(value) => updateRow(index, { value })}
+                  variables={variables}
+                  placeholder={placeholderValue}
+                  aria-label={`Value, row ${index + 1}`}
+                  onEditVariable={onEditVariable}
+                />
               </td>
               <td className={`${tdClass} w-7 p-1 text-center`}>
                 <Button

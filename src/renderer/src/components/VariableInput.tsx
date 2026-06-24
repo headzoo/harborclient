@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type JSX, type KeyboardEvent } from 'react';
+import { Input } from '#/renderer/src/components/forms';
 import type { Variable } from '#/shared/types';
 import { resolveVariable, tokenizeVariables } from '#/renderer/src/store';
 
@@ -43,6 +44,11 @@ interface Props {
   className?: string;
 
   /**
+   * Classes applied to the outer wrapper (e.g. field border and tint for table cells).
+   */
+  wrapperClassName?: string;
+
+  /**
    * Opens collection settings to edit the hovered variable.
    */
   onEditVariable?: () => void;
@@ -73,6 +79,7 @@ export function VariableInput({
   placeholder,
   onKeyDown,
   className = '',
+  wrapperClassName,
   onEditVariable,
   id,
   'aria-label': ariaLabel,
@@ -158,7 +165,11 @@ export function VariableInput({
   };
 
   return (
-    <div className="relative min-w-0 flex-1">
+    <div
+      className={
+        wrapperClassName ? `relative min-w-0 ${wrapperClassName}` : 'relative min-w-0 flex-1'
+      }
+    >
       <div
         ref={backdropRef}
         aria-hidden
@@ -186,9 +197,10 @@ export function VariableInput({
         )}
       </div>
 
-      <input
+      <Input
         ref={inputRef}
         id={id}
+        variant="plain"
         aria-label={ariaLabel}
         aria-labelledby={ariaLabelledBy}
         className={`relative w-full min-w-0 border-none bg-transparent px-2 py-1.5 text-[14px] text-transparent caret-text focus-visible:shadow-none ${className}`}

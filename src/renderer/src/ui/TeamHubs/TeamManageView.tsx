@@ -7,6 +7,7 @@ import type {
   TeamHubAdminResourceOptions,
   UpdateHubUserInput
 } from '#/shared/types';
+import { Input, Select } from '#/renderer/src/components/forms';
 import { Button } from '#/renderer/src/components/Button';
 import { useTeamHubUsers } from '#/renderer/src/hooks/useTeamHubUsers';
 import { TeamSecretDialog } from '#/renderer/src/ui/TeamHubs/TeamSecretDialog';
@@ -255,9 +256,10 @@ export function TeamManageView({ adminHubs, onBack }: Props): JSX.Element {
           <label htmlFor="team-manage-hub" className="mb-1 block text-[14px] font-medium text-text">
             Team hub
           </label>
-          <select
+          <Select
             id="team-manage-hub"
-            className="w-full max-w-md rounded-md border border-separator bg-surface px-3 py-2 text-[14px] text-text"
+            variant="surface"
+            className="max-w-md"
             value={selectedHubId}
             onChange={(event) => setSelectedHubId(event.target.value)}
           >
@@ -266,7 +268,7 @@ export function TeamManageView({ adminHubs, onBack }: Props): JSX.Element {
                 {hub.name || hub.baseUrl}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
       )}
 
@@ -450,10 +452,10 @@ export function TeamManageView({ adminHubs, onBack }: Props): JSX.Element {
             >
               Confirmation
             </label>
-            <input
+            <Input
               id="team-user-delete-confirm"
               type="text"
-              className="w-full rounded-md border border-separator bg-surface px-3 py-2 text-[14px] text-text"
+              variant="surface"
               value={deleteConfirmText}
               disabled={deleting}
               autoComplete="off"

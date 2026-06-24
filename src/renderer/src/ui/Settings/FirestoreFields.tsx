@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 import type { FirestoreSettings } from '#/shared/types';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Input } from '#/renderer/src/components/forms';
 
 interface Props {
   /**
@@ -37,9 +37,8 @@ export function FirestoreFields({ settings, disabled = false, onChange }: Props)
     <div className="flex flex-col gap-4">
       <label className="flex flex-col gap-1">
         <span className="text-[14px] font-medium text-text">API key</span>
-        <input
+        <Input
           type="text"
-          className={field}
           value={settings.apiKey}
           disabled={disabled}
           onChange={(event) => handleFieldChange('apiKey', event.target.value)}
@@ -48,9 +47,8 @@ export function FirestoreFields({ settings, disabled = false, onChange }: Props)
 
       <label className="flex flex-col gap-1">
         <span className="text-[14px] font-medium text-text">Auth domain</span>
-        <input
+        <Input
           type="text"
-          className={field}
           value={settings.authDomain}
           disabled={disabled}
           onChange={(event) => handleFieldChange('authDomain', event.target.value)}
@@ -59,9 +57,8 @@ export function FirestoreFields({ settings, disabled = false, onChange }: Props)
 
       <label className="flex flex-col gap-1">
         <span className="text-[14px] font-medium text-text">Project ID</span>
-        <input
+        <Input
           type="text"
-          className={field}
           value={settings.projectId}
           disabled={disabled}
           onChange={(event) => handleFieldChange('projectId', event.target.value)}
@@ -70,9 +67,8 @@ export function FirestoreFields({ settings, disabled = false, onChange }: Props)
 
       <label className="flex flex-col gap-1">
         <span className="text-[14px] font-medium text-text">App ID</span>
-        <input
+        <Input
           type="text"
-          className={field}
           value={settings.appId}
           disabled={disabled}
           onChange={(event) => handleFieldChange('appId', event.target.value)}
@@ -81,9 +77,8 @@ export function FirestoreFields({ settings, disabled = false, onChange }: Props)
 
       <label className="flex flex-col gap-1">
         <span className="text-[14px] font-medium text-text">Email</span>
-        <input
+        <Input
           type="email"
-          className={field}
           value={settings.email}
           disabled={disabled}
           onChange={(event) => handleFieldChange('email', event.target.value)}
@@ -92,9 +87,8 @@ export function FirestoreFields({ settings, disabled = false, onChange }: Props)
 
       <label className="flex flex-col gap-1">
         <span className="text-[14px] font-medium text-text">Password</span>
-        <input
+        <Input
           type="password"
-          className={field}
           value={settings.password}
           disabled={disabled}
           onChange={(event) => handleFieldChange('password', event.target.value)}

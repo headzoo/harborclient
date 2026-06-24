@@ -3,7 +3,7 @@ import type { Variable } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faPlus, faXmark } from '#/renderer/src/fontawesome';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Input } from '#/renderer/src/components/forms';
 
 /**
  * Returns a blank variable row for new table entries.
@@ -82,9 +82,9 @@ export function VariableTable({ variables, onChange, description }: Props): JSX.
             {variables.map((variable, index) => (
               <tr className="group" key={index}>
                 <td>
-                  <input
+                  <Input
                     type="text"
-                    className={`${field} w-full`}
+                    className="w-full"
                     value={variable.key}
                     placeholder="variable"
                     aria-label={`Key, row ${index + 1}`}
@@ -92,9 +92,9 @@ export function VariableTable({ variables, onChange, description }: Props): JSX.
                   />
                 </td>
                 <td>
-                  <input
+                  <Input
                     type="text"
-                    className={`${field} w-full`}
+                    className="w-full"
                     value={variable.value}
                     placeholder="value"
                     aria-label={`Value, row ${index + 1}`}
@@ -102,9 +102,9 @@ export function VariableTable({ variables, onChange, description }: Props): JSX.
                   />
                 </td>
                 <td>
-                  <input
+                  <Input
                     type="text"
-                    className={`${field} w-full`}
+                    className="w-full"
                     value={variable.defaultValue}
                     placeholder="default"
                     aria-label={`Default, row ${index + 1}`}
@@ -112,7 +112,7 @@ export function VariableTable({ variables, onChange, description }: Props): JSX.
                   />
                 </td>
                 <td className="w-14 text-center">
-                  <input
+                  <Input
                     type="checkbox"
                     checked={variable.share}
                     onChange={(e) => updateVariable(index, { share: e.target.checked })}

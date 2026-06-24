@@ -10,7 +10,7 @@ import {
   setSelectedModel
 } from '#/renderer/src/store/slices/aiChatSlice';
 import { sendChatMessage } from '#/renderer/src/store/thunks/aiChat';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Select, Textarea } from '#/renderer/src/components/forms';
 
 interface Props {
   /**
@@ -93,9 +93,9 @@ export function ChatComposer({ chatId, aiSettings, selectedModel, sending }: Pro
 
   return (
     <div className="flex shrink-0 flex-col gap-2 border-t border-separator p-3 app-no-drag">
-      <textarea
+      <Textarea
         ref={textareaRef}
-        className={`${field} min-h-[72px] w-full resize-none text-[14px]`}
+        className="min-h-[72px] w-full resize-none text-[14px]"
         value={draft}
         placeholder="Type a message…"
         aria-label="Chat message"
@@ -111,9 +111,9 @@ export function ChatComposer({ chatId, aiSettings, selectedModel, sending }: Pro
       <div className="flex items-center justify-between gap-2">
         <label className="flex min-w-0 flex-1 items-center gap-2" htmlFor="ai-chat-model">
           <span className="shrink-0 text-[14px] text-muted">Model</span>
-          <select
+          <Select
             id="ai-chat-model"
-            className={`${field} min-w-0 flex-1 cursor-pointer py-1 text-[14px]`}
+            className="min-w-0 flex-1 cursor-pointer py-1 text-[14px]"
             value={modelId}
             disabled={chatId == null || availableModels.length === 0}
             aria-label="AI model"
@@ -127,7 +127,7 @@ export function ChatComposer({ chatId, aiSettings, selectedModel, sending }: Pro
                 {model.label}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
         <Button type="button" disabled={!canSend} onClick={() => void handleSend()}>
           Send

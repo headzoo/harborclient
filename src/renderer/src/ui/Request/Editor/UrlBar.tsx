@@ -2,6 +2,7 @@ import type { HttpMethod, Variable } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
 import { MethodSelect } from '#/renderer/src/components/MethodSelect';
 import { VariableInput } from '#/renderer/src/components/VariableInput';
+import { fieldFrame } from '#/renderer/src/components/forms';
 import type { JSX } from 'react';
 
 interface Props {
@@ -61,7 +62,7 @@ export function UrlBar({
 }: Props): JSX.Element {
   return (
     <div className="flex items-center gap-2">
-      <div className="flex min-w-0 flex-1 items-center overflow-hidden rounded-md border border-separator bg-control shadow-[inset_0_0.5px_1px_rgba(0,0,0,0.06)]">
+      <div className={`flex min-w-0 flex-1 items-center ${fieldFrame}`}>
         <MethodSelect value={method} onChange={onMethodChange} />
         <div className="h-5 w-px shrink-0 bg-separator" />
         <VariableInput

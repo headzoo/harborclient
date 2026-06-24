@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import { closeAboutModal, selectAboutModal } from '#/renderer/src/store/slices/modalsSlice';
 import { fetchAppVersion } from '#/renderer/src/store/thunks';
 import { Button } from '#/renderer/src/components/Button';
-import { Modal } from '#/renderer/src/ui/shared/Modal';
+import { Modal } from '#/renderer/src/components/Modal';
 
 /**
  * About dialog showing the application name, version, and documentation link.

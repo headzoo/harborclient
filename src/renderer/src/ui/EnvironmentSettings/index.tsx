@@ -1,11 +1,11 @@
 import { useEffect, useId, useMemo, useState, type JSX } from 'react';
 import type { Environment, Variable } from '#/shared/types';
 import { VariableTable } from '#/renderer/src/components/VariableTable';
-import { cleanVariables } from '#/renderer/src/components/variableUtils';
+import { cleanVariables } from '#/renderer/src/components/utils';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faXmark } from '#/renderer/src/fontawesome';
 import { Button } from '#/renderer/src/components/Button';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Input } from '#/renderer/src/components/forms';
 import { serializeEnvironmentForm } from './serialize';
 
 interface Props {
@@ -113,9 +113,9 @@ function EnvironmentSettingsForm({
           <label className="mb-1 block text-[14px] text-muted" htmlFor={nameId}>
             Name
           </label>
-          <input
+          <Input
             id={nameId}
-            className={`${field} w-full`}
+            className="w-full"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}

@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import type { TrustedSharingKey } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
 import { useConfirm } from '#/renderer/src/hooks/useConfirm';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Input, Textarea } from '#/renderer/src/components/forms';
 
 /**
  * Trusted collaborator public keys for verifying share token signatures.
@@ -125,8 +125,8 @@ export function TrustedKeysSection(): JSX.Element {
 
       <div className="mb-4 rounded-md border border-separator p-3">
         <label className="mb-1 block text-[14px] font-medium text-text">Label</label>
-        <input
-          className={`${field} mb-3 w-full`}
+        <Input
+          className="mb-3 w-full"
           type="text"
           placeholder="e.g. Alex"
           value={label}
@@ -135,8 +135,8 @@ export function TrustedKeysSection(): JSX.Element {
         />
 
         <label className="mb-1 block text-[14px] font-medium text-text">Public key (PEM)</label>
-        <textarea
-          className={`${field} mb-3 min-h-24 w-full resize-y font-mono text-[14px]`}
+        <Textarea
+          className="mb-3 min-h-24 w-full resize-y font-mono text-[14px]"
           placeholder="-----BEGIN PUBLIC KEY-----"
           value={publicKeyPem}
           disabled={busy}

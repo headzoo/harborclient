@@ -2,7 +2,7 @@ import type { Environment } from '#/shared/types';
 import type { JSX, KeyboardEvent } from 'react';
 import type { RequestTab } from '#/renderer/src/store/drafts';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
-import { resolveTabListKeyAction } from '#/renderer/src/components/tabListKeyboard';
+import { resolveTabListKeyAction } from '#/renderer/src/components/utils';
 import { faPlus } from '#/renderer/src/fontawesome';
 import { EnvironmentSelect } from './EnvironmentSelect';
 import { TabItem } from './TabItem';

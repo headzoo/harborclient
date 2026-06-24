@@ -9,7 +9,7 @@ import {
   SegmentedTabsGroup
 } from '#/renderer/src/components/SegmentedTabs';
 import { useConfirm } from '#/renderer/src/hooks/useConfirm';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Input } from '#/renderer/src/components/forms';
 
 type AuthView = 'oauth' | 'pat';
 
@@ -89,10 +89,9 @@ function PatAuthPanel({
     <div className="flex flex-col gap-2">
       <label className="flex flex-col gap-1" htmlFor={usernameId}>
         <span className="text-[13px] text-muted">Username</span>
-        <input
+        <Input
           id={usernameId}
           type="text"
-          className={field}
           value={patUsername}
           disabled={disabled}
           onChange={(event) => onUsernameChange(event.target.value)}
@@ -100,10 +99,9 @@ function PatAuthPanel({
       </label>
       <label className="flex flex-col gap-1 mb-2" htmlFor={tokenId}>
         <span className="text-[13px] text-muted">Token</span>
-        <input
+        <Input
           id={tokenId}
           type="password"
-          className={field}
           value={patToken}
           disabled={disabled}
           onChange={(event) => onTokenChange(event.target.value)}
@@ -392,10 +390,10 @@ export function GitFields({ connection, disabled = false, onChange }: Props): JS
           Repository path
         </label>
         <div className="flex gap-2">
-          <input
+          <Input
             id={repoPathId}
             type="text"
-            className={`${field} min-w-0 flex-1`}
+            className="min-w-0 flex-1"
             value={settings.repoPath}
             disabled={disabled}
             placeholder="/path/to/your/repo"
@@ -414,9 +412,8 @@ export function GitFields({ connection, disabled = false, onChange }: Props): JS
 
       <label className="flex flex-col gap-1">
         <span className="text-[14px] font-medium text-text">Repository URL (HTTPS)</span>
-        <input
+        <Input
           type="url"
-          className={field}
           value={settings.url}
           disabled={disabled}
           placeholder="https://github.com/org/repo.git"
@@ -429,9 +426,8 @@ export function GitFields({ connection, disabled = false, onChange }: Props): JS
 
       <label className="flex flex-col gap-1">
         <span className="text-[14px] font-medium text-text">Branch</span>
-        <input
+        <Input
           type="text"
-          className={field}
           value={settings.branch}
           disabled={disabled}
           onChange={(event) => updateSettings({ branch: event.target.value })}
@@ -440,9 +436,8 @@ export function GitFields({ connection, disabled = false, onChange }: Props): JS
 
       <label className="flex flex-col gap-1">
         <span className="text-[14px] font-medium text-text">HarborClient subdirectory</span>
-        <input
+        <Input
           type="text"
-          className={field}
           value={settings.subdir}
           disabled={disabled}
           onChange={(event) => updateSettings({ subdir: event.target.value })}
@@ -502,10 +497,9 @@ export function GitFields({ connection, disabled = false, onChange }: Props): JS
         <summary className="text-[14px] font-medium text-text cursor-pointer">Advanced</summary>
         <label className="flex flex-col gap-1 mt-3" htmlFor={oauthClientIdId}>
           <span className="text-[13px] text-muted">GitHub OAuth Client ID</span>
-          <input
+          <Input
             id={oauthClientIdId}
             type="text"
-            className={field}
             value={settings.oauthClientId ?? ''}
             disabled={disabled}
             placeholder="Leave blank to use HarborClient's app"

@@ -1,5 +1,6 @@
 import type { JSX } from 'react';
 import type { HttpMethod } from '#/shared/types';
+import { Select } from '#/renderer/src/components/forms';
 
 const METHODS: HttpMethod[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
 
@@ -22,7 +23,8 @@ interface Props {
  */
 export function MethodSelect({ value, onChange }: Props): JSX.Element {
   return (
-    <select
+    <Select
+      variant="plain"
       className="w-[100px] shrink-0 cursor-pointer appearance-none border-none bg-transparent px-2 py-1 text-[14px] font-semibold app-no-drag"
       value={value}
       aria-label="HTTP method"
@@ -33,6 +35,6 @@ export function MethodSelect({ value, onChange }: Props): JSX.Element {
           {method}
         </option>
       ))}
-    </select>
+    </Select>
   );
 }

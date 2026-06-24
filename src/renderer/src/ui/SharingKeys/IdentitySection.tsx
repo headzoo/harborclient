@@ -2,7 +2,7 @@ import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { SharingIdentity } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Input, Textarea } from '#/renderer/src/components/forms';
 
 /**
  * Local sharing identity: fingerprint, export, and import.
@@ -119,17 +119,17 @@ export function IdentitySection(): JSX.Element {
           >
             Fingerprint
           </label>
-          <input
+          <Input
             id="identity-fingerprint"
-            className={`${field} mb-4 w-full font-mono text-[14px]`}
+            className="mb-4 w-full font-mono text-[14px]"
             readOnly
             value={identity.fingerprint}
             onFocus={(event) => event.target.select()}
           />
 
           <label className="mb-1 block text-[14px] font-medium text-text">Public key</label>
-          <textarea
-            className={`${field} mb-4 min-h-28 w-full resize-y font-mono text-[14px]`}
+          <Textarea
+            className="mb-4 min-h-28 w-full resize-y font-mono text-[14px]"
             readOnly
             value={identity.publicKeyPem}
             onFocus={(event) => event.target.select()}

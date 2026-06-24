@@ -48,7 +48,7 @@ style, and path aliases.
 Never use native browser dialogs (`alert`, `confirm`, `prompt`) in the renderer.
 They block the Electron renderer thread and break visual consistency.
 
-- Use custom modals built on [`Modal`](src/renderer/src/ui/shared/Modal.tsx) for
+- Use custom modals built on [`Modal`](src/renderer/src/components/Modal.tsx) for
   blocking messages and confirmations (`AlertModal`, `ConfirmModal`, or
   feature-specific dialogs like `QuitPrompt`).
 - Show errors inline (`text-danger`) when the user is already inside a modal or
@@ -92,7 +92,7 @@ detailed audit of known gaps and proposed fixes.
 
 **Dialogs and dynamic content**
 
-- Build blocking dialogs on [`Modal`](src/renderer/src/ui/shared/Modal.tsx) with
+- Build blocking dialogs on [`Modal`](src/renderer/src/components/Modal.tsx) with
   `role="dialog"`, `aria-modal`, an accessible name (`aria-labelledby` or
   `aria-label`), focus trap, initial focus, and focus restoration on close. Do
   not hand-roll one-off overlays.

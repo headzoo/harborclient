@@ -15,7 +15,7 @@ import CodeMirror from '@uiw/react-codemirror';
 import { tags } from '@lezer/highlight';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import type { CodeEditorSetup, CodeEditorTheme, ScriptPhase, Variable } from '#/shared/types';
-import { getCodeEditorThemeExtension } from '#/renderer/src/components/codeEditorThemes';
+import { getCodeEditorThemeExtension } from './themes';
 import { useAppSelector } from '#/renderer/src/store/hooks';
 import {
   selectCodeEditorSetup,

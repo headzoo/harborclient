@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 import type { PostgresSettings } from '#/shared/types';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Input } from '#/renderer/src/components/forms';
 
 interface Props {
   /**
@@ -37,9 +37,8 @@ export function PostgresFields({ settings, disabled = false, onChange }: Props):
     <div className="flex flex-col gap-4">
       <label className="flex flex-col gap-1">
         <span className="text-[14px] font-medium text-text">Host</span>
-        <input
+        <Input
           type="text"
-          className={field}
           value={settings.host}
           disabled={disabled}
           onChange={(event) => handleFieldChange('host', event.target.value)}
@@ -48,9 +47,8 @@ export function PostgresFields({ settings, disabled = false, onChange }: Props):
 
       <label className="flex flex-col gap-1">
         <span className="text-[14px] font-medium text-text">Port</span>
-        <input
+        <Input
           type="number"
-          className={field}
           value={settings.port}
           disabled={disabled}
           onChange={(event) => handleFieldChange('port', Number(event.target.value))}
@@ -59,9 +57,8 @@ export function PostgresFields({ settings, disabled = false, onChange }: Props):
 
       <label className="flex flex-col gap-1">
         <span className="text-[14px] font-medium text-text">User</span>
-        <input
+        <Input
           type="text"
-          className={field}
           value={settings.user}
           disabled={disabled}
           onChange={(event) => handleFieldChange('user', event.target.value)}
@@ -70,9 +67,8 @@ export function PostgresFields({ settings, disabled = false, onChange }: Props):
 
       <label className="flex flex-col gap-1">
         <span className="text-[14px] font-medium text-text">Password</span>
-        <input
+        <Input
           type="password"
-          className={field}
           value={settings.password}
           disabled={disabled}
           onChange={(event) => handleFieldChange('password', event.target.value)}
@@ -81,9 +77,8 @@ export function PostgresFields({ settings, disabled = false, onChange }: Props):
 
       <label className="flex flex-col gap-1">
         <span className="text-[14px] font-medium text-text">Database</span>
-        <input
+        <Input
           type="text"
-          className={field}
           value={settings.database}
           disabled={disabled}
           onChange={(event) => handleFieldChange('database', event.target.value)}

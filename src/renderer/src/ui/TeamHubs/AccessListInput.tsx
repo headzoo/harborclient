@@ -1,13 +1,11 @@
 import { useRef, useState, type JSX, type ReactNode } from 'react';
 import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form';
+import { Input } from '#/renderer/src/components/forms';
 import {
   applyAccessSuggestion,
   filterAccessListSuggestions,
   getCurrentAccessToken
 } from '#/renderer/src/ui/TeamHubs/teamUserFormHelpers';
-
-const inputClassName =
-  'w-full rounded-md border border-separator bg-surface px-3 py-2 text-[14px] text-text';
 
 /**
  * One autocomplete suggestion for an access list field.
@@ -129,10 +127,10 @@ export function AccessListInput<TFieldValues extends FieldValues>({
             <label htmlFor={inputId} className="mb-1 block text-[14px] font-medium text-text">
               {label}
             </label>
-            <input
+            <Input
               id={inputId}
               type="text"
-              className={inputClassName}
+              variant="surface"
               placeholder={placeholder}
               disabled={disabled}
               value={field.value ?? ''}

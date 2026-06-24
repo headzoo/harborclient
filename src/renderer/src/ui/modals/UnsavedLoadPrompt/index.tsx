@@ -6,7 +6,7 @@ import {
 } from '#/renderer/src/store/slices/modalsSlice';
 import { requestLoadRequest } from '#/renderer/src/store/thunks/requests';
 import { Button } from '#/renderer/src/components/Button';
-import { Modal } from '#/renderer/src/ui/shared/Modal';
+import { Modal } from '#/renderer/src/components/Modal';
 
 /**
  * Confirms opening a request when settings or request tabs have unsaved edits.

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- refactor(ui): enhance form components and modal structure. (`75b3b22`)
+
 ## 1.6.1 - 2026-06-24
 
 - refactor(ui): improve action menu structure in Collections component. (`c967150`)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveTabListKeyAction } from '#/renderer/src/components/tabListKeyboard';
+import { resolveTabListKeyAction } from '#/renderer/src/components/utils';
 
 describe('resolveTabListKeyAction', () => {
   it('returns null for unhandled keys', () => {

@@ -6,6 +6,7 @@ import type {
   TeamHubAdminResourceOptions,
   UpdateHubUserInput
 } from '#/shared/types';
+import { Input, Select } from '#/renderer/src/components/forms';
 import { AccessListInput } from '#/renderer/src/ui/TeamHubs/AccessListInput';
 import {
   defaultCreateFormValues,
@@ -14,9 +15,6 @@ import {
   hubUserToFormValues,
   type TeamUserFormValues
 } from '#/renderer/src/ui/TeamHubs/teamUserFormHelpers';
-
-const inputClassName =
-  'w-full rounded-md border border-separator bg-surface px-3 py-2 text-[14px] text-text';
 
 interface BaseProps {
   /**
@@ -146,10 +144,10 @@ export function TeamUserForm(props: Props): JSX.Element {
         <label htmlFor="team-user-name" className="mb-1 block text-[14px] font-medium text-text">
           Name
         </label>
-        <input
+        <Input
           id="team-user-name"
           type="text"
-          className={inputClassName}
+          variant="surface"
           disabled={fieldsDisabled}
           aria-invalid={errors.name ? true : undefined}
           {...register('name', {
@@ -164,15 +162,15 @@ export function TeamUserForm(props: Props): JSX.Element {
         <label htmlFor="team-user-role" className="mb-1 block text-[14px] font-medium text-text">
           Role
         </label>
-        <select
+        <Select
           id="team-user-role"
-          className={inputClassName}
+          variant="surface"
           disabled={fieldsDisabled}
           {...register('role')}
         >
           <option value="user">user</option>
           <option value="admin">admin</option>
-        </select>
+        </Select>
       </div>
 
       {!isAdminRole && (
@@ -210,7 +208,7 @@ export function TeamUserForm(props: Props): JSX.Element {
       )}
 
       <div className="flex items-center gap-2">
-        <input
+        <Input
           id="team-user-llm-access"
           type="checkbox"
           className="h-4 w-4"
@@ -239,11 +237,11 @@ export function TeamUserForm(props: Props): JSX.Element {
         >
           LLM monthly token limit
         </label>
-        <input
+        <Input
           id="team-user-llm-monthly-limit"
           type="number"
           min={1}
-          className={inputClassName}
+          variant="surface"
           disabled={fieldsDisabled || isAdminRole}
           placeholder="Leave blank for unlimited"
           {...register('llmMonthlyTokenLimitText', {

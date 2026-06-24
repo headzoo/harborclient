@@ -7,7 +7,7 @@ import {
 } from '#/shared/shortcuts';
 import { Button } from '#/renderer/src/components/Button';
 import { useConfirm } from '#/renderer/src/hooks/useConfirm';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { field } from '#/renderer/src/components/forms';
 import { formatErrorMessage } from '#/renderer/src/ui/modals/dialogHelpers';
 import { acceleratorFromKeyboardEvent } from './acceleratorFromKeyboardEvent';
 

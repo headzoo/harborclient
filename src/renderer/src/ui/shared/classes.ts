@@ -2,9 +2,6 @@
  * Shared macOS-style Tailwind class strings.
  */
 
-export const field =
-  'rounded-md border border-separator bg-control px-2 py-1 text-[15px] text-text shadow-[inset_0_0.5px_1px_rgba(0,0,0,0.06)] app-no-drag';
-
 export const segmentGroup =
   'inline-flex rounded-md p-0.5 shadow-[inset_0_0.5px_1px_rgba(0,0,0,0.06)] app-no-drag';
 

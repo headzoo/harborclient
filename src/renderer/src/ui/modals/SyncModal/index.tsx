@@ -6,7 +6,7 @@ import {
   type SyncProviderProgress
 } from '#/renderer/src/store/slices/modalsSlice';
 import { Button } from '#/renderer/src/components/Button';
-import { Modal } from '#/renderer/src/ui/shared/Modal';
+import { Modal } from '#/renderer/src/components/Modal';
 
 /**
  * Returns a human-readable label for a provider kind.

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type JSX } from 'react';
 import type { AuthConfig, Collection, KeyValue, Variable } from '#/shared/types';
 import { normalizeAuth } from '#/shared/auth';
 import { Button } from '#/renderer/src/components/Button';
-import { cleanVariables } from '#/renderer/src/components/variableUtils';
+import { cleanVariables } from '#/renderer/src/components/utils';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import {
   SegmentedTabs,

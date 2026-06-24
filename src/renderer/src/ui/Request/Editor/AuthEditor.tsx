@@ -2,7 +2,7 @@ import type { JSX } from 'react';
 import type { AuthConfig, AuthType, Variable } from '#/shared/types';
 import { CodeEditor } from '#/renderer/src/components/CodeEditor';
 import { VariableInput } from '#/renderer/src/components/VariableInput';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Select, fieldFrame } from '#/renderer/src/components/forms';
 
 interface Props {
   /**
@@ -29,12 +29,6 @@ interface Props {
 }
 
 /**
- * Shell styling for variable-aware inputs outside table cells.
- */
-const variableFieldShell =
-  'overflow-hidden rounded-md border border-separator bg-control shadow-[inset_0_0.5px_1px_rgba(0,0,0,0.06)]';
-
-/**
  * Two-pane authorization editor with auth type selection and credential fields.
  */
 export function AuthEditor({ auth, onChange, variables, onEditVariables }: Props): JSX.Element {
@@ -53,16 +47,16 @@ export function AuthEditor({ auth, onChange, variables, onEditVariables }: Props
         <label className="mb-1 block text-[14px] text-muted" htmlFor="auth-type">
           Auth Type
         </label>
-        <select
+        <Select
           id="auth-type"
-          className={`${field} w-full`}
+          className="w-full"
           value={auth.type}
           onChange={(event) => handleTypeChange(event.target.value as AuthType)}
         >
           <option value="none">None</option>
           <option value="basic">Basic Auth</option>
           <option value="bearer">Bearer Token</option>
-        </select>
+        </Select>
       </div>
 
       <div className="min-w-0 flex-1">
@@ -78,33 +72,31 @@ export function AuthEditor({ auth, onChange, variables, onEditVariables }: Props
               <label className="mb-1 block text-[14px] text-muted" htmlFor="auth-username">
                 Username
               </label>
-              <div className={variableFieldShell}>
-                <VariableInput
-                  id="auth-username"
-                  value={auth.basic.username}
-                  onChange={(username) => onChange({ ...auth, basic: { ...auth.basic, username } })}
-                  variables={variables}
-                  onEditVariable={onEditVariables}
-                  placeholder="username"
-                  className="app-no-drag"
-                />
-              </div>
+              <VariableInput
+                id="auth-username"
+                wrapperClassName={`${fieldFrame} w-full`}
+                value={auth.basic.username}
+                onChange={(username) => onChange({ ...auth, basic: { ...auth.basic, username } })}
+                variables={variables}
+                onEditVariable={onEditVariables}
+                placeholder="username"
+                className="app-no-drag"
+              />
             </div>
             <div>
               <label className="mb-1 block text-[14px] text-muted" htmlFor="auth-password">
                 Password
               </label>
-              <div className={variableFieldShell}>
-                <VariableInput
-                  id="auth-password"
-                  value={auth.basic.password}
-                  onChange={(password) => onChange({ ...auth, basic: { ...auth.basic, password } })}
-                  variables={variables}
-                  onEditVariable={onEditVariables}
-                  placeholder="password"
-                  className="app-no-drag"
-                />
-              </div>
+              <VariableInput
+                id="auth-password"
+                wrapperClassName={`${fieldFrame} w-full`}
+                value={auth.basic.password}
+                onChange={(password) => onChange({ ...auth, basic: { ...auth.basic, password } })}
+                variables={variables}
+                onEditVariable={onEditVariables}
+                placeholder="password"
+                className="app-no-drag"
+              />
             </div>
           </div>
         )}

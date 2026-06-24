@@ -53,8 +53,8 @@ import {
   SegmentedTabPanel,
   SegmentedTabsGroup
 } from '#/renderer/src/components/SegmentedTabs';
-import { field } from '#/renderer/src/ui/shared/classes';
-import { Modal } from '#/renderer/src/ui/shared/Modal';
+import { Input } from '#/renderer/src/components/forms';
+import { Modal } from '#/renderer/src/components/Modal';
 import { formatErrorMessage, showAlert, showConfirm } from '#/renderer/src/ui/modals/dialogHelpers';
 import { Collections } from './Collections';
 import { GitSourceControlPanel } from '#/renderer/src/ui/modals/GitSourceControlPanel';
@@ -514,8 +514,8 @@ export function Sidebar({
           >
             {folderModal.mode === 'create' ? 'New folder' : 'Rename folder'}
           </h2>
-          <input
-            className={`${field} mt-3 w-full`}
+          <Input
+            className="mt-3 w-full"
             type="text"
             autoFocus
             placeholder="Folder name"
@@ -572,8 +572,8 @@ export function Sidebar({
             )}
 
             <SegmentedTabPanel value="create">
-              <input
-                className={`${field} w-full`}
+              <Input
+                className="w-full"
                 type="text"
                 autoFocus
                 placeholder="Environment name"

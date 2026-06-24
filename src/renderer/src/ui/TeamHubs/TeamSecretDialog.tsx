@@ -1,4 +1,5 @@
 import { useState, type JSX } from 'react';
+import { Textarea } from '#/renderer/src/components/forms';
 import { Button } from '#/renderer/src/components/Button';
 
 interface Props {
@@ -58,10 +59,11 @@ export function TeamSecretDialog({ title, description, secret, onClose }: Props)
         <label htmlFor="team-secret-value" className="mb-1 block text-[14px] font-medium text-text">
           Token secret
         </label>
-        <textarea
+        <Textarea
           id="team-secret-value"
           readOnly
-          className="h-24 w-full resize-none rounded-md border border-separator bg-surface px-3 py-2 font-mono text-[13px] text-text"
+          variant="surface"
+          className="h-24 resize-none font-mono text-[13px]"
           value={secret}
         />
 

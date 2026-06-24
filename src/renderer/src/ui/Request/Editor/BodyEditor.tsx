@@ -2,6 +2,7 @@ import type { JSX } from 'react';
 import type { BodyType, Variable } from '#/shared/types';
 import { parseFormParts, serializeFormParts } from '#/shared/formData';
 import { parseUrlEncodedParts, serializeUrlEncodedParts } from '#/shared/urlencoded';
+import { Input } from '#/renderer/src/components/forms';
 import { CodeEditor } from '#/renderer/src/components/CodeEditor';
 import { FormDataEditor } from '#/renderer/src/components/FormDataEditor';
 import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
@@ -64,7 +65,7 @@ export function BodyEditor({
             key={value}
             className="inline-flex cursor-pointer items-center gap-1.5 text-[14px] text-text app-no-drag"
           >
-            <input
+            <Input
               type="radio"
               name="body-type"
               className="app-no-drag"

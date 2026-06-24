@@ -4,7 +4,7 @@ import { CodeEditor } from '#/renderer/src/components/CodeEditor';
 import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
 import { SegmentedTabPanel } from '#/renderer/src/components/SegmentedTabs';
 import type { RequestDraft } from '#/renderer/src/store/drafts';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Textarea } from '#/renderer/src/components/forms';
 import { AuthEditor } from './AuthEditor';
 import { BodyEditor } from './BodyEditor';
 import { CookiesEditor } from './CookiesEditor';
@@ -125,8 +125,8 @@ export function TabContent({
         />
       </SegmentedTabPanel>
       <SegmentedTabPanel value="comment">
-        <textarea
-          className={`${field} w-full min-h-[200px] resize-y`}
+        <Textarea
+          className="w-full min-h-[200px] resize-y"
           value={draft.comment}
           onChange={(event) => update({ comment: event.target.value })}
           placeholder="Notes for this request"

@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
 import type { StorageConnection, StorageProvider } from '#/shared/types';
 import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Input } from '#/renderer/src/components/forms';
 import { createBlankConnection, PROVIDER_OPTIONS } from './constants';
 import { FirestoreFields } from './FirestoreFields';
 import { MySqlFields } from './MySqlFields';
@@ -72,9 +72,8 @@ export function StorageConnectionForm({
     <div className="flex flex-col gap-4">
       <label className="flex flex-col gap-1">
         <span className="text-[14px] font-medium text-text">Name</span>
-        <input
+        <Input
           type="text"
-          className={field}
           value={connection.name}
           disabled={disabled}
           placeholder="My database"

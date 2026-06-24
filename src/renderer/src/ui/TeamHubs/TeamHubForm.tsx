@@ -1,5 +1,6 @@
 import type { JSX } from 'react';
 import type { TeamHub } from '#/shared/types';
+import { Input } from '#/renderer/src/components/forms';
 
 interface Props {
   /**
@@ -42,10 +43,10 @@ export function TeamHubForm({
         <label htmlFor="team-hub-name" className="mb-1 block text-[14px] font-medium text-text">
           Name
         </label>
-        <input
+        <Input
           id="team-hub-name"
           type="text"
-          className="w-full rounded-md border border-separator bg-surface px-3 py-2 text-[14px] text-text"
+          variant="surface"
           value={hub.name}
           disabled={disabled}
           aria-invalid={fieldErrors.name ? true : undefined}
@@ -63,10 +64,10 @@ export function TeamHubForm({
         <label htmlFor="team-hub-base-url" className="mb-1 block text-[14px] font-medium text-text">
           Team hub URL
         </label>
-        <input
+        <Input
           id="team-hub-base-url"
           type="url"
-          className="w-full rounded-md border border-separator bg-surface px-3 py-2 text-[14px] text-text"
+          variant="surface"
           value={hub.baseUrl}
           disabled={disabled}
           aria-invalid={fieldErrors.baseUrl ? true : undefined}
@@ -84,11 +85,11 @@ export function TeamHubForm({
         <label htmlFor="team-hub-token" className="mb-1 block text-[14px] font-medium text-text">
           API token
         </label>
-        <input
+        <Input
           id="team-hub-token"
           type="password"
           autoComplete="off"
-          className="w-full rounded-md border border-separator bg-surface px-3 py-2 text-[14px] text-text"
+          variant="surface"
           value={hub.token}
           disabled={disabled}
           aria-invalid={fieldErrors.token ? true : undefined}

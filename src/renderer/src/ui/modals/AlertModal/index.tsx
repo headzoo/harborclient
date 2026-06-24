@@ -2,7 +2,7 @@ import { useCallback, type JSX } from 'react';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import { selectAlertModal, setAlertModal } from '#/renderer/src/store/slices/modalsSlice';
 import { Button } from '#/renderer/src/components/Button';
-import { Modal } from '#/renderer/src/ui/shared/Modal';
+import { Modal } from '#/renderer/src/components/Modal';
 
 /**
  * Blocking alert dialog with a single OK button for errors and messages.

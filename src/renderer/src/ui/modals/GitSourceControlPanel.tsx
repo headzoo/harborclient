@@ -3,8 +3,8 @@ import toast from 'react-hot-toast';
 import type { GitLogEntry, SourceControlStatus } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
 import { useConfirm } from '#/renderer/src/hooks/useConfirm';
-import { Modal } from '#/renderer/src/ui/shared/Modal';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Modal } from '#/renderer/src/components/Modal';
+import { Textarea } from '#/renderer/src/components/forms';
 
 /**
  * Pre-filled commit message when the working tree has uncommitted changes.
@@ -160,8 +160,8 @@ export function GitSourceControlPanel({
 
         <label className="flex flex-col gap-1">
           <span className="text-[14px] font-medium text-text">Commit message</span>
-          <textarea
-            className={`${field} min-h-[80px]`}
+          <Textarea
+            className="min-h-[80px]"
             value={message}
             disabled={busy}
             onChange={(event) => setMessageDraft({ edited: true, value: event.target.value })}

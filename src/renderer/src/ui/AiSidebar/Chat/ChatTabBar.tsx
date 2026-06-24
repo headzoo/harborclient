@@ -1,7 +1,7 @@
 import { useMemo, type JSX, type KeyboardEvent } from 'react';
 import type { AiSettings } from '#/shared/types';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
-import { resolveTabListKeyAction } from '#/renderer/src/components/tabListKeyboard';
+import { resolveTabListKeyAction } from '#/renderer/src/components/utils';
 import { faClockRotateLeft, faPlus } from '#/renderer/src/fontawesome';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import {

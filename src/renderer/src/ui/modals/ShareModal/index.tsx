@@ -8,8 +8,8 @@ import {
 } from '#/renderer/src/store/slices/modalsSlice';
 import { generateShareToken } from '#/renderer/src/store/thunks';
 import { Button } from '#/renderer/src/components/Button';
-import { field } from '#/renderer/src/ui/shared/classes';
-import { Modal } from '#/renderer/src/ui/shared/Modal';
+import { Select, Textarea } from '#/renderer/src/components/forms';
+import { Modal } from '#/renderer/src/components/Modal';
 
 /**
  * Modal for generating and copying an encrypted collection share token.
@@ -46,8 +46,8 @@ export function ShareModal(): JSX.Element | null {
       ) : (
         <>
           <label className="mb-1 block text-[14px] font-medium text-text">Recipient</label>
-          <select
-            className={`${field} mb-3 w-full`}
+          <Select
+            className="mb-3 w-full"
             value={share.recipientKid}
             disabled={share.tokenLoading}
             onChange={(event) => dispatch(setShareRecipientKid(event.target.value))}
@@ -58,15 +58,15 @@ export function ShareModal(): JSX.Element | null {
                 {key.label}
               </option>
             ))}
-          </select>
+          </Select>
         </>
       )}
       {share.tokenError && <p className="mb-3 text-[14px] text-danger">{share.tokenError}</p>}
       {share.tokenLoading ? (
         <p className="text-[14px] text-muted">Creating share token…</p>
       ) : share.token ? (
-        <textarea
-          className={`${field} min-h-28 w-full resize-y font-mono text-[14px]`}
+        <Textarea
+          className="min-h-28 w-full resize-y font-mono text-[14px]"
           readOnly
           value={share.token}
           onFocus={(e) => e.target.select()}

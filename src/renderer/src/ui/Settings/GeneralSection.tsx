@@ -2,7 +2,7 @@ import { useEffect, useState, type JSX } from 'react';
 import type { GeneralSettings, ThemeSource } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
 import { applyThemeAttribute } from '#/renderer/src/theme';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Input, Select } from '#/renderer/src/components/forms';
 import { DEFAULT_GENERAL_SETTINGS, THEME_OPTIONS } from './constants';
 
 /**
@@ -92,8 +92,7 @@ export function GeneralSection(): JSX.Element {
       <div className="mb-6 flex flex-col gap-6">
         <label className="flex flex-col gap-1">
           <span className="text-[14px] font-medium text-text">Theme</span>
-          <select
-            className={field}
+          <Select
             value={theme}
             disabled={loading}
             onChange={(event) => void handleThemeChange(event.target.value as ThemeSource)}
@@ -103,15 +102,14 @@ export function GeneralSection(): JSX.Element {
                 {option.label}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
 
         <label className="flex flex-col gap-1">
           <span className="text-[14px] font-medium text-text">Request timeout (ms)</span>
-          <input
+          <Input
             type="number"
             min={0}
-            className={field}
             value={generalSettings.requestTimeoutMs}
             disabled={generalLoading || generalSaving}
             onChange={(event) =>
@@ -123,10 +121,9 @@ export function GeneralSection(): JSX.Element {
 
         <label className="flex flex-col gap-1">
           <span className="text-[14px] font-medium text-text">Max response size (MB)</span>
-          <input
+          <Input
             type="number"
             min={0}
-            className={field}
             value={generalSettings.maxResponseSizeMb}
             disabled={generalLoading || generalSaving}
             onChange={(event) =>
@@ -139,7 +136,7 @@ export function GeneralSection(): JSX.Element {
         </label>
 
         <label className="flex items-center gap-2">
-          <input
+          <Input
             type="checkbox"
             checked={generalSettings.verifySsl}
             disabled={generalLoading || generalSaving}

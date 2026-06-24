@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type JSX } from 'react';
+import { Input } from '#/renderer/src/components/forms';
 import { BreadcrumbPrefix } from '#/renderer/src/ui/Request/Editor/BreadcrumbPrefix';
 
 interface Props {
@@ -68,8 +69,9 @@ export function Name({
             onCollectionClick={onCollectionClick}
             onFolderClick={onFolderClick}
           />
-          <input
+          <Input
             ref={nameInputRef}
+            variant="plain"
             className="min-w-0 flex-1 border-none bg-transparent p-0 text-[15px] font-semibold text-text outline-none app-no-drag"
             type="text"
             value={name}

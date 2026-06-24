@@ -23,8 +23,8 @@ import {
 } from '#/renderer/src/components/SegmentedTabs';
 import { Button } from '#/renderer/src/components/Button';
 import { providerOptionLabel, useProviders } from '#/renderer/src/hooks/useProviders';
-import { field } from '#/renderer/src/ui/shared/classes';
-import { Modal } from '#/renderer/src/ui/shared/Modal';
+import { Input, Select, Textarea } from '#/renderer/src/components/forms';
+import { Modal } from '#/renderer/src/components/Modal';
 import { formatErrorMessage } from '#/renderer/src/ui/modals/dialogHelpers';
 
 /**
@@ -135,9 +135,9 @@ export function CollectionModal(): JSX.Element | null {
       <label className="mb-1 block text-[14px] text-muted" htmlFor={providerSelectId}>
         Provider
       </label>
-      <select
+      <Select
         id={providerSelectId}
-        className={`${field} w-full`}
+        className="w-full"
         value={resolvedProviderId}
         disabled={providerSelectDisabled}
         onChange={(e) => dispatch(setCollectionModalProviderId(e.target.value))}
@@ -147,7 +147,7 @@ export function CollectionModal(): JSX.Element | null {
             {provider.name || 'Untitled'} ({providerOptionLabel(provider)})
           </option>
         ))}
-      </select>
+      </Select>
       {providersLoading && <p className="mb-0 mt-1 text-[14px] text-muted">Loading…</p>}
       {providersError && <p className="mb-0 mt-1 text-[14px] text-danger">{providersError}</p>}
     </div>
@@ -193,8 +193,8 @@ export function CollectionModal(): JSX.Element | null {
               Paste a share token from a trusted sender. Add their public key under File → Sharing
               Keys first. Restart HarborClient after joining to load collections from that database.
             </p>
-            <textarea
-              className={`${field} min-h-28 w-full resize-y font-mono text-[14px]`}
+            <Textarea
+              className="min-h-28 w-full resize-y font-mono text-[14px]"
               autoFocus
               placeholder="Paste share token"
               value={collectionModal.shareTokenInput}
@@ -214,8 +214,8 @@ export function CollectionModal(): JSX.Element | null {
           </SegmentedTabPanel>
 
           <SegmentedTabPanel value="create">
-            <input
-              className={`${field} w-full`}
+            <Input
+              className="w-full"
               type="text"
               autoFocus
               placeholder="Collection name"
@@ -257,8 +257,8 @@ export function CollectionModal(): JSX.Element | null {
           {collectionModal.submitError && (
             <p className="mb-3 text-[14px] text-danger">{collectionModal.submitError}</p>
           )}
-          <input
-            className={`${field} w-full`}
+          <Input
+            className="w-full"
             type="text"
             autoFocus
             placeholder="Collection name"

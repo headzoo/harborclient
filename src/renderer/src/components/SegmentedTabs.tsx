@@ -9,7 +9,7 @@ import {
   type KeyboardEvent,
   type ReactNode
 } from 'react';
-import { resolveTabListKeyAction } from '#/renderer/src/components/tabListKeyboard';
+import { resolveTabListKeyAction } from '#/renderer/src/components/utils';
 import { segment, segmentGroup } from '#/renderer/src/ui/shared/classes';
 
 export interface TabItem<T extends string> {

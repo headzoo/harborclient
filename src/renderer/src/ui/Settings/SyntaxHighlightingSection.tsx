@@ -1,11 +1,11 @@
 import { useEffect, useState, type JSX } from 'react';
 import { CodeEditor } from '#/renderer/src/components/CodeEditor';
-import { CODE_EDITOR_THEME_OPTIONS } from '#/renderer/src/components/codeEditorThemes';
+import { CODE_EDITOR_THEME_OPTIONS } from '#/renderer/src/components/CodeEditor/themes';
 import { useAppDispatch } from '#/renderer/src/store/hooks';
 import { setGeneralSettingsState } from '#/renderer/src/store/slices/settingsSlice';
 import type { CodeEditorSetup, GeneralSettings } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
-import { field } from '#/renderer/src/ui/shared/classes';
+import { Input, Select } from '#/renderer/src/components/forms';
 import { DEFAULT_GENERAL_SETTINGS } from './constants';
 
 const PREVIEW_SAMPLE = `const response = hc.response.json();
@@ -91,8 +91,7 @@ export function SyntaxHighlightingSection(): JSX.Element {
       <div className="flex flex-col gap-6">
         <label className="flex flex-col gap-1">
           <span className="text-[14px] font-medium text-text">Theme</span>
-          <select
-            className={field}
+          <Select
             value={generalSettings.codeEditorTheme}
             disabled={loading || saving}
             onChange={(event) =>
@@ -104,12 +103,12 @@ export function SyntaxHighlightingSection(): JSX.Element {
                 {option.label}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
 
         {SETUP_OPTIONS.map((option) => (
           <label key={option.key} className="flex items-center gap-2">
-            <input
+            <Input
               type="checkbox"
               checked={generalSettings.codeEditorSetup[option.key]}
               disabled={loading || saving}
