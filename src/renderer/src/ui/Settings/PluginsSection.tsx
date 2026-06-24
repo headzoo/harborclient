@@ -143,6 +143,8 @@ export function PluginsSection(): JSX.Element {
       } else {
         await window.api.removeUnpackedPlugin(plugin.id);
       }
+    } else {
+      await window.api.setPluginEnabled(plugin.id, true);
     }
     await refresh();
     if (keep) {

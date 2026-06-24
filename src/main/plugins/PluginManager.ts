@@ -9,12 +9,13 @@ import {
   writeFileSync
 } from 'fs';
 import { randomUUID } from 'crypto';
-import { dirname, join, normalize, relative, resolve } from 'path';
+import { dirname, join, normalize, posix, relative, resolve } from 'path';
 import * as git from 'isomorphic-git';
 import http from 'isomorphic-git/http/node';
 import fs from 'fs';
 import JSZip from 'jszip';
 import type { BrowserWindow } from 'electron';
+import { collectPluginHotReloadWatchTargets } from '#/main/plugins/pluginHotReloadWatch';
 import { validatePluginManifest } from '#/main/plugins/manifestSchema';
 import { PluginFsAllowlist } from '#/main/plugins/pluginFsAllowlist';
 import {
@@ -180,7 +181,7 @@ export class PluginManager {
           }
         : entry;
       this.#records.set(info.id, {
-        info: { ...info, enabled: enablement[info.id] ?? true },
+        info: { ...info, enabled: enablement[info.id] ?? false },
         watchers: []
       });
     }
@@ -192,7 +193,7 @@ export class PluginManager {
       try {
         const info = this.#loadFromDirectory(directory, 'unpacked');
         this.#records.set(pluginId, {
-          info: { ...info, enabled: enablement[pluginId] ?? true },
+          info: { ...info, enabled: enablement[pluginId] ?? false },
           watchers: []
         });
       } catch (error) {
@@ -221,9 +222,7 @@ export class PluginManager {
     for (const directory of directories) {
       try {
         const info = this.loadUnpacked(directory);
-        if (info.enabled) {
-          this.#startWatcher(info.id);
-        }
+        this.setEnabled(info.id, true);
       } catch (error) {
         console.error(`Failed to load dev plugin from ${directory}:`, error);
       }
@@ -276,27 +275,41 @@ export class PluginManager {
     rmSync(targetDir, { recursive: true, force: true });
     mkdirSync(targetDir, { recursive: true });
 
-    const writes: Promise<void>[] = [];
+    const entries: Array<{ relativePath: string; file: JSZip.JSZipObject }> = [];
     zip.forEach((relativePath, file) => {
-      if (file.dir) {
-        mkdirSync(join(targetDir, relativePath), { recursive: true });
-        return;
-      }
-      writes.push(
-        file.async('uint8array').then((bytes) => {
-          const absolutePath = join(targetDir, relativePath);
-          mkdirSync(dirname(absolutePath), { recursive: true });
-          writeFileSync(absolutePath, bytes);
-        })
-      );
+      entries.push({ relativePath, file });
     });
-    await Promise.all(writes);
 
-    const info = this.#loadFromDirectory(targetDir, 'installed');
-    setPluginEnabled(info.id, true);
-    this.#records.set(info.id, { info: { ...info, enabled: true }, watchers: [] });
-    this.#emitChanged(info.id);
-    return this.get(info.id)!;
+    try {
+      const resolvedEntries = entries.map(({ relativePath, file }) => ({
+        absolutePath: this.#assertSafeInstallEntryPath(targetDir, relativePath),
+        file
+      }));
+
+      const writes: Promise<void>[] = [];
+      for (const { absolutePath, file } of resolvedEntries) {
+        if (file.dir) {
+          mkdirSync(absolutePath, { recursive: true });
+          continue;
+        }
+        writes.push(
+          file.async('uint8array').then((bytes) => {
+            mkdirSync(dirname(absolutePath), { recursive: true });
+            writeFileSync(absolutePath, bytes);
+          })
+        );
+      }
+      await Promise.all(writes);
+
+      const info = this.#loadFromDirectory(targetDir, 'installed');
+      setPluginEnabled(info.id, false);
+      this.#records.set(info.id, { info: { ...info, enabled: false }, watchers: [] });
+      this.#emitChanged(info.id);
+      return this.get(info.id)!;
+    } catch (error) {
+      rmSync(targetDir, { recursive: true, force: true });
+      throw error;
+    }
   }
 
   /**
@@ -331,11 +344,11 @@ export class PluginManager {
       renameSync(tempDir, targetDir);
 
       setGitPluginOrigin(pluginId, { url: normalizedUrl, ref: trimmedRef });
-      setPluginEnabled(pluginId, true);
+      setPluginEnabled(pluginId, false);
 
       const info: PluginInfo = {
         ...this.#loadFromDirectory(targetDir, 'git'),
-        enabled: true,
+        enabled: false,
         repoUrl: normalizedUrl,
         repoRef: trimmedRef
       };
@@ -417,10 +430,9 @@ export class PluginManager {
     const absolute = resolve(directory);
     const info = this.#loadFromDirectory(absolute, 'unpacked');
     setUnpackedPluginPath(info.id, absolute);
-    setPluginEnabled(info.id, true);
+    setPluginEnabled(info.id, false);
     this.#stopWatcher(info.id);
-    this.#records.set(info.id, { info: { ...info, enabled: true }, watchers: [] });
-    this.#startWatcher(info.id);
+    this.#records.set(info.id, { info: { ...info, enabled: false }, watchers: [] });
     this.#emitChanged(info.id);
     return this.get(info.id)!;
   }
@@ -543,6 +555,33 @@ export class PluginManager {
   }
 
   /**
+   * Resolves trusted main-entry source and permissions for SES activation.
+   *
+   * Main-process IPC uses this instead of trusting renderer-supplied activation
+   * payloads so only enabled plugins run manifest-declared main code with declared
+   * permissions.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @returns Main entry source text and granted permissions from disk state.
+   */
+  resolveMainActivation(pluginId: string): {
+    source: string;
+    permissions: PluginPermission[];
+  } {
+    const record = this.#records.get(pluginId);
+    if (!record) {
+      throw new Error(`Unknown plugin: ${pluginId}`);
+    }
+    if (!record.info.enabled) {
+      throw new Error(`Plugin ${pluginId} is not enabled.`);
+    }
+    return {
+      source: this.readEntrySource(pluginId, 'main'),
+      permissions: this.getPluginPermissions(pluginId)
+    };
+  }
+
+  /**
    * Reads a plugin asset relative to the plugin root.
    *
    * @param pluginId - Plugin manifest id.
@@ -566,6 +605,7 @@ export class PluginManager {
    *
    * @param pluginId - Plugin manifest id.
    * @param key - Storage key within the plugin namespace.
+   * @throws When the stored value is present but not valid JSON.
    */
   getStorageValue(pluginId: string, key: string): unknown {
     this.#assertPluginExists(pluginId);
@@ -576,7 +616,7 @@ export class PluginManager {
     try {
       return JSON.parse(raw) as unknown;
     } catch {
-      return undefined;
+      throw new Error(`Plugin ${pluginId} storage key "${key}" contains invalid JSON.`);
     }
   }
 
@@ -699,18 +739,56 @@ export class PluginManager {
   }
 
   /**
+   * Resolves a path relative to a root directory and rejects traversal outside it.
+   *
+   * @param rootDir - Absolute directory that must contain the resolved path.
+   * @param relativePath - Path relative to the root directory.
+   * @returns Absolute resolved path within rootDir.
+   */
+  #resolvePathWithinRoot(rootDir: string, relativePath: string): string {
+    const normalizedRoot = resolve(rootDir);
+    const absolutePath = resolve(normalizedRoot, relativePath);
+    const rel = relative(normalizedRoot, absolutePath);
+    if (rel.startsWith('..') || rel.includes(`..${normalize('/')}`)) {
+      throw new Error(`Plugin asset path escapes plugin directory: ${relativePath}`);
+    }
+    return absolutePath;
+  }
+
+  /**
+   * Validates a zip entry path and returns its safe absolute install destination.
+   *
+   * @param targetDir - Absolute plugin install directory.
+   * @param relativePath - Zip entry path relative to the archive root.
+   * @returns Absolute path where the entry may be written.
+   */
+  #assertSafeInstallEntryPath(targetDir: string, relativePath: string): string {
+    if (!relativePath || relativePath.startsWith('/') || relativePath.includes('\\')) {
+      throw new Error(`Plugin archive contains an unsafe path: ${relativePath}`);
+    }
+    if (/^[A-Za-z]:[/\\]/.test(relativePath)) {
+      throw new Error(`Plugin archive contains an unsafe path: ${relativePath}`);
+    }
+
+    const normalized = posix.normalize(relativePath.replace(/\\/g, '/'));
+    if (normalized === '.' || normalized === '..' || normalized.startsWith('../')) {
+      throw new Error(`Plugin archive contains an unsafe path: ${relativePath}`);
+    }
+    if (normalized.split('/').some((segment) => segment === '..')) {
+      throw new Error(`Plugin archive contains an unsafe path: ${relativePath}`);
+    }
+
+    return this.#resolvePathWithinRoot(targetDir, relativePath);
+  }
+
+  /**
    * Resolves a plugin-relative path and rejects path traversal.
    *
    * @param pluginRoot - Absolute plugin directory.
    * @param relativePath - Path relative to the plugin root.
    */
   #resolvePluginPath(pluginRoot: string, relativePath: string): string {
-    const normalizedRoot = resolve(pluginRoot);
-    const absolutePath = resolve(normalizedRoot, relativePath);
-    const rel = relative(normalizedRoot, absolutePath);
-    if (rel.startsWith('..') || rel.includes(`..${normalize('/')}`)) {
-      throw new Error(`Plugin asset path escapes plugin directory: ${relativePath}`);
-    }
+    const absolutePath = this.#resolvePathWithinRoot(pluginRoot, relativePath);
     if (!existsSync(absolutePath)) {
       throw new Error(`Plugin asset not found: ${relativePath}`);
     }
@@ -740,17 +818,11 @@ export class PluginManager {
     }
     this.#stopWatcher(pluginId);
 
-    const watched = new Set<string>();
-    watched.add(join(record.info.path, MANIFEST_FILENAME));
-    for (const entry of [record.info.manifest.renderer, record.info.manifest.main]) {
-      if (entry) {
-        try {
-          watched.add(this.#resolvePluginPath(record.info.path, entry));
-        } catch {
-          watched.add(join(record.info.path, entry));
-        }
-      }
-    }
+    const { files, directories } = collectPluginHotReloadWatchTargets(
+      record.info.path,
+      record.info.manifest
+    );
+    const watched = new Set([...files, ...directories]);
 
     const watchers: ReturnType<typeof watch>[] = [];
     for (const filePath of watched) {

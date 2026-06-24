@@ -1,8 +1,13 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs';
+import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import JSZip from 'jszip';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { clearDevRegistryForTesting, setGitPluginOrigin } from '#/main/plugins/devRegistry';
+import {
+  clearDevRegistryForTesting,
+  getPluginEnablement,
+  setGitPluginOrigin
+} from '#/main/plugins/devRegistry';
 import { PluginManager } from '#/main/plugins/PluginManager';
 import {
   clearLocalDatabaseForTesting,
@@ -32,8 +37,17 @@ async function createManager(): Promise<{ manager: PluginManager; rootDir: strin
  *
  * @param rootDir - userData root.
  * @param pluginId - Plugin manifest id.
+ * @param options - Optional manifest and entry overrides.
  */
-function writePlugin(rootDir: string, pluginId: string): string {
+function writePlugin(
+  rootDir: string,
+  pluginId: string,
+  options: {
+    main?: string;
+    mainSource?: string;
+    permissions?: string[];
+  } = {}
+): string {
   const pluginDir = join(rootDir, 'plugins', pluginId);
   mkdirSync(join(pluginDir, 'dist'), { recursive: true });
   writeFileSync(
@@ -45,14 +59,64 @@ function writePlugin(rootDir: string, pluginId: string): string {
         version: '1.0.0',
         engines: { harborclient: '>=1.0.0' },
         renderer: 'dist/renderer.js',
-        permissions: ['ui']
+        ...(options.main ? { main: options.main } : {}),
+        permissions: options.permissions ?? ['ui']
       },
       null,
       2
     )
   );
   writeFileSync(join(pluginDir, 'dist', 'renderer.js'), 'export function activate() {}');
+  if (options.main) {
+    writeFileSync(
+      join(pluginDir, options.main),
+      options.mainSource ?? 'export function activate() {}'
+    );
+  }
   return pluginDir;
+}
+
+const TEST_PLUGIN_ID = 'com.example.archive';
+
+/**
+ * Builds a minimal valid plugin archive buffer for install tests.
+ *
+ * @param extraEntries - Additional zip paths and payloads to include.
+ */
+async function buildPluginArchive(
+  extraEntries: Array<{ path: string; content: string }> = []
+): Promise<Buffer> {
+  const zip = new JSZip();
+  zip.file(
+    'manifest.json',
+    JSON.stringify({
+      id: TEST_PLUGIN_ID,
+      name: 'Archive Plugin',
+      version: '1.0.0',
+      engines: { harborclient: '>=1.0.0' },
+      renderer: 'dist/renderer.js',
+      permissions: ['ui']
+    })
+  );
+  zip.file('dist/renderer.js', 'export function activate() {}');
+  for (const entry of extraEntries) {
+    zip.file(entry.path, entry.content);
+  }
+  return Buffer.from(await zip.generateAsync({ type: 'uint8array' }));
+}
+
+/**
+ * Writes a plugin archive buffer to a temp file path.
+ *
+ * @param archive - Plugin archive contents.
+ */
+async function writeArchiveFile(archive: Buffer): Promise<string> {
+  const archivePath = join(tmpdir(), `harborclient-plugin-${Date.now()}-${Math.random()}.hcp`);
+  writeFileSync(archivePath, new Uint8Array(archive));
+  cleanups.push(() => {
+    rmSync(archivePath, { force: true });
+  });
+  return archivePath;
 }
 
 beforeEach(() => {
@@ -76,6 +140,15 @@ describe('PluginManager', () => {
     expect(plugins[0]?.id).toBe('com.example.sample');
   });
 
+  it('discovers manually dropped plugins as disabled until explicitly enabled', async () => {
+    const { manager, rootDir } = await createManager();
+    writePlugin(rootDir, 'com.example.dropped');
+    const plugins = manager.discover();
+    expect(plugins[0]?.enabled).toBe(false);
+    manager.setEnabled('com.example.dropped', true);
+    expect(manager.get('com.example.dropped')?.enabled).toBe(true);
+  });
+
   it('namespaces plugin storage by plugin id', async () => {
     const { manager, rootDir } = await createManager();
     writePlugin(rootDir, 'com.example.one');
@@ -85,6 +158,16 @@ describe('PluginManager', () => {
     manager.setStorageValue('com.example.two', 'enabled', false);
     expect(manager.getStorageValue('com.example.one', 'enabled')).toBe(true);
     expect(manager.getStorageValue('com.example.two', 'enabled')).toBe(false);
+  });
+
+  it('throws when plugin storage contains invalid JSON', async () => {
+    const { manager, rootDir } = await createManager();
+    writePlugin(rootDir, 'com.example.one');
+    manager.discover();
+    getLocalDatabase().setPluginValue('com.example.one', 'state', '{not json');
+    expect(() => manager.getStorageValue('com.example.one', 'state')).toThrow(
+      'Plugin com.example.one storage key "state" contains invalid JSON.'
+    );
   });
 
   it('marks git-installed plugins with repository metadata on discover', async () => {
@@ -101,7 +184,7 @@ describe('PluginManager', () => {
     expect(plugins[0]?.repoRef).toBe('main');
   });
 
-  it('loads unpacked plugins from a source directory', async () => {
+  it('loads unpacked plugins from a source directory as disabled until enabled', async () => {
     const { manager, rootDir } = await createManager();
     const sourceDir = join(rootDir, 'dev-plugin');
     mkdirSync(join(sourceDir, 'dist'), { recursive: true });
@@ -120,5 +203,94 @@ describe('PluginManager', () => {
     const info = manager.loadUnpacked(sourceDir);
     expect(info.source).toBe('unpacked');
     expect(info.path).toBe(sourceDir);
+    expect(info.enabled).toBe(false);
+    expect(getPluginEnablement()['com.example.dev']).toBe(false);
+  });
+
+  it('enables a plugin after explicit confirmation', async () => {
+    const { manager, rootDir } = await createManager();
+    const sourceDir = join(rootDir, 'dev-plugin');
+    mkdirSync(join(sourceDir, 'dist'), { recursive: true });
+    writeFileSync(
+      join(sourceDir, 'manifest.json'),
+      JSON.stringify({
+        id: 'com.example.dev',
+        name: 'Dev Plugin',
+        version: '0.1.0',
+        engines: { harborclient: '>=1.0.0' },
+        renderer: 'dist/renderer.js',
+        permissions: ['ui']
+      })
+    );
+    writeFileSync(join(sourceDir, 'dist', 'renderer.js'), 'export function activate() {}');
+    const info = manager.loadUnpacked(sourceDir);
+    expect(info.enabled).toBe(false);
+
+    const enabled = manager.setEnabled(info.id, true);
+
+    expect(enabled.enabled).toBe(true);
+    expect(getPluginEnablement()[info.id]).toBe(true);
+  });
+
+  it('installs a valid plugin archive', async () => {
+    const { manager } = await createManager();
+    const archivePath = await writeArchiveFile(await buildPluginArchive());
+
+    const info = await manager.installFromFile(archivePath);
+
+    expect(info.id).toBe(TEST_PLUGIN_ID);
+    expect(info.source).toBe('installed');
+    expect(info.enabled).toBe(false);
+    expect(manager.get(TEST_PLUGIN_ID)?.id).toBe(TEST_PLUGIN_ID);
+  });
+
+  it('rejects plugin archives with zip-slip paths', async () => {
+    const { manager, rootDir } = await createManager();
+    const archivePath = await writeArchiveFile(
+      await buildPluginArchive([{ path: '../../outside.txt', content: 'pwned' }])
+    );
+    const outsidePath = join(rootDir, 'outside.txt');
+    const pluginDir = join(rootDir, 'plugins', TEST_PLUGIN_ID);
+
+    await expect(manager.installFromFile(archivePath)).rejects.toThrow(
+      /unsafe path|escapes plugin directory/i
+    );
+    expect(existsSync(outsidePath)).toBe(false);
+    expect(existsSync(pluginDir)).toBe(false);
+  });
+
+  it('resolveMainActivation returns disk source and manifest permissions for enabled plugins', async () => {
+    const { manager, rootDir } = await createManager();
+    const mainSource = 'export function activate(hc) { hc.registerBeforeSendHook(() => {}); }';
+    writePlugin(rootDir, 'com.example.main', {
+      main: 'dist/main.js',
+      mainSource,
+      permissions: ['http', 'ipc']
+    });
+    manager.discover();
+    manager.setEnabled('com.example.main', true);
+
+    const resolved = manager.resolveMainActivation('com.example.main');
+
+    expect(resolved.source).toBe(mainSource);
+    expect(resolved.permissions).toEqual(['http', 'ipc']);
+  });
+
+  it('resolveMainActivation rejects disabled plugins', async () => {
+    const { manager, rootDir } = await createManager();
+    writePlugin(rootDir, 'com.example.main', { main: 'dist/main.js' });
+    manager.discover();
+
+    expect(() => manager.resolveMainActivation('com.example.main')).toThrow(
+      'Plugin com.example.main is not enabled.'
+    );
+  });
+
+  it('resolveMainActivation rejects unknown plugin ids', async () => {
+    const { manager } = await createManager();
+
+    expect(() => manager.resolveMainActivation('com.example.missing')).toThrow(
+      'Unknown plugin: com.example.missing'
+    );
   });
 });

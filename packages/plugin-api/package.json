@@ -1,7 +1,15 @@
 {
   "name": "@harborclient/plugin-api",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "TypeScript definitions for HarborClient plugin development",
   "license": "MIT",
-  "types": "./index.d.ts"
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts"
+    },
+    "./main": {
+      "types": "./main.d.ts"
+    }
+  }
 }

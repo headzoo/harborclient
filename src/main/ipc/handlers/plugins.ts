@@ -12,7 +12,8 @@ import {
   runPluginBeforeSendHooks
 } from '#/main/plugins/pluginRunnerHost';
 import type { PluginHttpRequest, PluginHttpResponse } from '#/shared/plugin/types';
-import type { SendRequestInput, HttpMethod } from '#/shared/types';
+import { parseHttpMethod } from '#/shared/httpMethod';
+import type { KeyValue, SendRequestInput } from '#/shared/types';
 
 let manager: PluginManager | null = null;
 
@@ -53,6 +54,66 @@ export function toPluginHttpRequest(req: SendRequestInput): PluginHttpRequest {
     headers,
     body: req.body ?? ''
   };
+}
+
+/**
+ * Looks up a header value in a plugin hook result by case-insensitive key.
+ *
+ * @param mutated - Header map returned from before-send hooks.
+ * @param key - Header name to resolve.
+ * @returns Matching entry with the plugin's key casing, or undefined when absent.
+ */
+function lookupMutatedHeader(
+  mutated: Record<string, string>,
+  key: string
+): { key: string; value: string } | undefined {
+  const lower = key.toLowerCase();
+  for (const [mutatedKey, value] of Object.entries(mutated)) {
+    if (mutatedKey.toLowerCase() === lower) {
+      return { key: mutatedKey, value };
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Applies plugin before-send header mutations back onto editable header rows.
+ *
+ * Enabled rows visible to hooks are updated or disabled when removed; new keys
+ * from the hook result are appended as enabled rows.
+ *
+ * @param original - Request headers from the renderer.
+ * @param mutated - Header map after plugin before-send hooks ran.
+ * @returns Header rows ready for outbound request building.
+ */
+export function mergePluginHttpHeaders(
+  original: KeyValue[],
+  mutated: Record<string, string>
+): KeyValue[] {
+  const headers = original.map((header) => ({ ...header }));
+  const matchedLower = new Set<string>();
+
+  for (const header of headers) {
+    if (!header.enabled || !header.key.trim()) {
+      continue;
+    }
+    const hit = lookupMutatedHeader(mutated, header.key);
+    if (hit) {
+      header.value = hit.value;
+      header.enabled = true;
+      matchedLower.add(hit.key.toLowerCase());
+    } else {
+      header.enabled = false;
+    }
+  }
+
+  for (const [key, value] of Object.entries(mutated)) {
+    if (!matchedLower.has(key.toLowerCase())) {
+      headers.push({ key, value, enabled: true });
+    }
+  }
+
+  return headers;
 }
 
 /**
@@ -136,13 +197,10 @@ export function registerPluginHandlers(pluginManager: PluginManager): void {
     pluginManager.setStorageValue(pluginId, key, value);
   });
 
-  handle(
-    'plugins:activateMain',
-    ipcArgSchemas.pluginActivateMain,
-    async (_event, pluginId, source, permissions) => {
-      await activatePluginMain(pluginId, source, permissions);
-    }
-  );
+  handle('plugins:activateMain', ipcArgSchemas.pluginActivateMain, async (_event, pluginId) => {
+    const { source, permissions } = pluginManager.resolveMainActivation(pluginId);
+    await activatePluginMain(pluginId, source, permissions);
+  });
 
   handle('plugins:deactivateMain', ipcArgSchemas.pluginId, async (_event, pluginId) => {
     await deactivatePluginMain(pluginId);
@@ -258,21 +316,11 @@ export function registerPluginHandlers(pluginManager: PluginManager): void {
 export async function applyPluginBeforeSendHooks(req: SendRequestInput): Promise<SendRequestInput> {
   const pluginRequest = toPluginHttpRequest(req);
   const mutated = await runPluginBeforeSendHooks(pluginRequest);
-  const headers = req.headers.map((header) => ({ ...header }));
-  for (const [key, value] of Object.entries(mutated.headers)) {
-    const existing = headers.find((header) => header.key.toLowerCase() === key.toLowerCase());
-    if (existing) {
-      existing.value = value;
-      existing.enabled = true;
-    } else {
-      headers.push({ key, value, enabled: true });
-    }
-  }
   return {
     ...req,
-    method: mutated.method as HttpMethod,
+    method: parseHttpMethod(mutated.method) ?? req.method,
     url: mutated.url,
-    headers,
+    headers: mergePluginHttpHeaders(req.headers, mutated.headers),
     body: mutated.body
   };
 }

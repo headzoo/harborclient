@@ -33,7 +33,6 @@ import type {
   PluginFsPickFileOptions,
   PluginFsSaveFileOptions,
   PluginInfo,
-  PluginPermission,
   SerializableMenuContribution,
   RequestExport,
   SaveRequestInput,
@@ -504,6 +503,19 @@ function getTheme(): Promise<ThemeSource> {
  */
 function setTheme(theme: ThemeSource): Promise<void> {
   return ipcRenderer.invoke('theme:set', theme);
+}
+
+/**
+ * Subscribes to theme preference change notifications from the main process.
+ *
+ * @param callback - Called with the new persisted theme preference.
+ */
+function onThemeChanged(callback: (theme: ThemeSource) => void): () => void {
+  const listener = (_event: Electron.IpcRendererEvent, theme: ThemeSource): void => {
+    callback(theme);
+  };
+  ipcRenderer.on('theme:changed', listener);
+  return () => ipcRenderer.removeListener('theme:changed', listener);
 }
 
 /**
@@ -1312,16 +1324,12 @@ function setPluginStorage(pluginId: string, key: string, value: unknown): Promis
 /**
  * Activates a plugin main entry in the SES utilityProcess runner.
  *
+ * Main entry source and permissions are resolved in the main process from disk.
+ *
  * @param pluginId - Plugin manifest id.
- * @param source - Bundled main entry source.
- * @param permissions - Granted plugin permissions.
  */
-function activatePluginMain(
-  pluginId: string,
-  source: string,
-  permissions: PluginPermission[]
-): Promise<void> {
-  return ipcRenderer.invoke('plugins:activateMain', pluginId, source, permissions);
+function activatePluginMain(pluginId: string): Promise<void> {
+  return ipcRenderer.invoke('plugins:activateMain', pluginId);
 }
 
 /**
@@ -1466,6 +1474,7 @@ const api: Api = {
   checkForUpdates,
   getTheme,
   setTheme,
+  onThemeChanged,
   minimizeWindow,
   toggleMaximizeWindow,
   closeWindow,

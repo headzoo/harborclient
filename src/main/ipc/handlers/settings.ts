@@ -92,9 +92,10 @@ export function registerSettingsHandlers(db: IStorage): void {
   );
 
   // Persists and applies the light/dark/system/high-contrast theme preference.
-  handle('theme:set', ipcArgSchemas.themeSet, async (_event, theme) => {
+  handle('theme:set', ipcArgSchemas.themeSet, async (event, theme) => {
     nativeTheme.themeSource = resolveNativeThemeSource(theme as ThemeSource);
     await db.setSetting(THEME_SETTING_KEY, theme);
+    event.sender.send('theme:changed', theme);
   });
 
   // Returns general HTTP execution settings (timeout, size limit, SSL verify).

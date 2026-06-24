@@ -7,6 +7,13 @@ import type {
   Disposable
 } from '#/shared/plugin/types';
 import {
+  activeThemeKey,
+  pluginContributionId,
+  pluginSettingsSectionId,
+  toActiveTheme
+} from '#/shared/plugin/types';
+import type { ThemeSource } from '#/shared/types';
+import {
   registerCollectionSettingsTabContribution,
   registerContextMenuItemContribution,
   registerFooterPanelContribution,
@@ -21,7 +28,6 @@ import {
   registerStatusBarItemContribution,
   registerThemeContribution
 } from '#/renderer/src/plugins/registry';
-import { pluginContributionId, pluginSettingsSectionId } from '#/shared/plugin/types';
 
 const commandHandlers = new Map<string, Set<(...args: unknown[]) => void | Promise<void>>>();
 
@@ -176,37 +182,30 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
         assertManifestContribution(manifest, 'themes', theme.id);
         return registerThemeContribution(pluginId, theme);
       },
-      getActive: async () => {
-        const theme = await window.api.getTheme();
-        if (theme.startsWith('plugin:')) {
-          const [, activePluginId, themeId] = theme.split(':');
-          return { source: 'plugin', pluginId: activePluginId, themeId };
-        }
-        return { source: 'builtin', id: theme as 'light' | 'dark' | 'system' | 'high-contrast' };
-      },
+      getActive: async () => toActiveTheme(await window.api.getTheme()),
       onDidChange: (listener) => {
-        let active = true;
-        const poll = async (): Promise<void> => {
-          if (!active) return;
-          const theme = await window.api.getTheme();
-          if (theme.startsWith('plugin:')) {
-            const [, activePluginId, themeId] = theme.split(':');
-            listener({ source: 'plugin', pluginId: activePluginId, themeId });
-          } else {
-            listener({
-              source: 'builtin',
-              id: theme as 'light' | 'dark' | 'system' | 'high-contrast'
-            });
+        let lastKey: string | null = null;
+
+        /**
+         * Notifies the listener when the active theme differs from the last emission.
+         *
+         * @param theme - Persisted theme preference.
+         */
+        const notify = (theme: ThemeSource): void => {
+          const active = toActiveTheme(theme);
+          const key = activeThemeKey(active);
+          if (lastKey === key) {
+            return;
           }
+          lastKey = key;
+          listener(active);
         };
-        void poll();
-        const interval = window.setInterval(() => {
-          void poll();
-        }, 1000);
+
+        void window.api.getTheme().then(notify);
+        const unsubscribe = window.api.onThemeChanged(notify);
         return {
           dispose: () => {
-            active = false;
-            window.clearInterval(interval);
+            unsubscribe();
           }
         };
       }

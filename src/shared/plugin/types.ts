@@ -1,28 +1,17 @@
 import type * as React from 'react';
-import type { KeyValue } from '#/shared/types';
+import type { ThemeSource } from '#/shared/types';
+import type {
+  ActiveTheme,
+  AppMenu,
+  BuiltinThemeId,
+  CollectionSettingsTabContext,
+  ContextMenuTarget,
+  RequestTabContext,
+  ResponseTabContext,
+  ThemeColorToken
+} from '#/shared/plugin/api';
 
-/**
- * Request draft shape exposed to plugin request tabs.
- */
-export interface RequestDraft {
-  method: string;
-  url: string;
-  params: KeyValue[];
-  headers: KeyValue[];
-  body: string;
-}
-
-/**
- * HTTP response shape exposed to plugin tabs.
- */
-export interface HttpResponse {
-  status: number;
-  statusText: string;
-  headers: KeyValue[];
-  body: string;
-  durationMs: number;
-  sizeBytes: number;
-}
+export type * from '#/shared/plugin/api';
 
 /**
  * Plugin capability flags declared in manifest.json and enforced at runtime.
@@ -136,272 +125,6 @@ export type PluginEntryKind = 'renderer' | 'main';
 export interface PluginAssetResult {
   content: string;
   mimeType: string;
-}
-
-/**
- * Disposable returned by plugin registration APIs.
- */
-export interface Disposable {
-  dispose(): void;
-}
-
-/**
- * Shared fields for UI contributions registered at activation time.
- */
-export interface UiContributionBase {
-  /** Must match an id in the corresponding manifest contributes.* array */
-  id: string;
-  title: string;
-}
-
-/**
- * Settings sidebar section contribution.
- */
-export interface SettingsSectionContribution extends UiContributionBase {
-  Component: React.ComponentType;
-}
-
-/**
- * Full-height switchable sidebar panel contribution.
- */
-export interface SidebarPanelContribution extends UiContributionBase {
-  icon?: string;
-  Component: React.ComponentType;
-  order?: number;
-}
-
-/**
- * Collapsible block inside the scrollable sidebar.
- */
-export interface SidebarSectionContribution extends UiContributionBase {
-  Component: React.ComponentType;
-  order?: number;
-}
-
-/**
- * Full main-area overlay contribution.
- */
-export interface MainViewContribution extends UiContributionBase {
-  Component: React.ComponentType;
-}
-
-/**
- * Context passed to request editor tab components.
- */
-export interface RequestTabContext {
-  draft: RequestDraft;
-  response: HttpResponse | null;
-  readOnly: true;
-}
-
-/**
- * Request editor segmented tab contribution.
- */
-export interface RequestTabContribution extends UiContributionBase {
-  Component: React.ComponentType<{ context: RequestTabContext }>;
-  order?: number;
-}
-
-/**
- * Context passed to response viewer tab components.
- */
-export interface ResponseTabContext {
-  draft: RequestDraft;
-  response: HttpResponse | null;
-}
-
-/**
- * Response viewer tab contribution.
- */
-export interface ResponseTabContribution extends UiContributionBase {
-  Component: React.ComponentType<{ context: ResponseTabContext }>;
-  order?: number;
-  when?: 'always' | 'hasResponse';
-}
-
-/**
- * Context passed to collection settings tab components.
- */
-export interface CollectionSettingsTabContext {
-  collectionId: number;
-  readOnly: boolean;
-}
-
-/**
- * Collection settings segmented tab contribution.
- */
-export interface CollectionSettingsTabContribution extends UiContributionBase {
-  Component: React.ComponentType<{ context: CollectionSettingsTabContext }>;
-  order?: number;
-}
-
-/**
- * Slide-up footer panel contribution.
- */
-export interface FooterPanelContribution extends UiContributionBase {
-  Component: React.ComponentType;
-}
-
-/**
- * Application menu identifiers open to plugin menu items.
- */
-export type AppMenu = 'file' | 'edit' | 'view' | 'help';
-
-/**
- * Application menu item contribution.
- */
-export interface MenuItemContribution {
-  menu: AppMenu;
-  command: string;
-  label?: string;
-  group?: string;
-  order?: number;
-}
-
-/**
- * Request URL bar toolbar action contribution.
- */
-export interface RequestToolbarActionContribution {
-  id: string;
-  title: string;
-  command: string;
-  icon?: string;
-  order?: number;
-}
-
-/**
- * Sidebar row types eligible for context menu contributions.
- */
-export type ContextMenuTarget = 'collection' | 'folder' | 'request';
-
-/**
- * Sidebar row context menu item contribution.
- */
-export interface ContextMenuItemContribution {
-  id: string;
-  title: string;
-  command: string;
-  when: ContextMenuTarget | ContextMenuTarget[];
-  group?: string;
-  order?: number;
-}
-
-/**
- * Footer status bar item contribution.
- */
-export interface StatusBarItemContribution {
-  id: string;
-  Component: React.ComponentType;
-  alignment?: 'left' | 'right';
-  order?: number;
-}
-
-/**
- * HarborClient UI color tokens overridable by plugin themes.
- */
-export type ThemeColorToken =
-  | 'surface'
-  | 'sidebar'
-  | 'sidebar-section'
-  | 'control'
-  | 'field'
-  | 'separator'
-  | 'text'
-  | 'text-secondary'
-  | 'muted'
-  | 'accent'
-  | 'selection'
-  | 'danger'
-  | 'danger-light'
-  | 'warning'
-  | 'success'
-  | 'info'
-  | 'method-get'
-  | 'method-post'
-  | 'method-put'
-  | 'method-patch'
-  | 'method-delete'
-  | 'method-head'
-  | 'method-options';
-
-/**
- * Plugin theme registration payload.
- */
-export interface ThemeContribution {
-  id: string;
-  title: string;
-  type: 'light' | 'dark';
-  colors?: Partial<Record<ThemeColorToken, string>>;
-  stylesheet?: string;
-}
-
-/**
- * Built-in appearance theme identifiers.
- */
-export type BuiltinThemeId = 'light' | 'dark' | 'system' | 'high-contrast';
-
-/**
- * Active theme selection — built-in or plugin-provided.
- */
-export type ActiveTheme =
-  | { source: 'builtin'; id: BuiltinThemeId }
-  | { source: 'plugin'; pluginId: string; themeId: string };
-
-/**
- * Plugin theme registration and observation API.
- */
-export interface PluginThemes {
-  register(theme: ThemeContribution): Disposable;
-  getActive(): Promise<ActiveTheme>;
-  onDidChange(listener: (theme: ActiveTheme) => void): Disposable;
-}
-
-/**
- * Plugin-scoped persistent key-value storage.
- */
-export interface PluginStorage {
-  get<T>(key: string): Promise<T | undefined>;
-  set<T>(key: string, value: T): Promise<void>;
-}
-
-/**
- * Command registration and execution API.
- */
-export interface PluginCommands {
-  register(id: string, handler: (...args: unknown[]) => void | Promise<void>): Disposable;
-  execute(id: string, ...args: unknown[]): Promise<void>;
-}
-
-/**
- * UI registration and toast API exposed to renderer plugins.
- */
-export interface PluginUi {
-  registerSettingsSection(section: SettingsSectionContribution): Disposable;
-  registerSidebarPanel(panel: SidebarPanelContribution): Disposable;
-  registerSidebarSection(section: SidebarSectionContribution): Disposable;
-  registerMainView(view: MainViewContribution): Disposable;
-  registerRequestTab(tab: RequestTabContribution): Disposable;
-  registerResponseTab(tab: ResponseTabContribution): Disposable;
-  registerCollectionSettingsTab(tab: CollectionSettingsTabContribution): Disposable;
-  registerFooterPanel(panel: FooterPanelContribution): Disposable;
-  registerMenuItem(item: MenuItemContribution): Disposable;
-  registerRequestToolbarAction(action: RequestToolbarActionContribution): Disposable;
-  registerContextMenuItem(item: ContextMenuItemContribution): Disposable;
-  registerStatusBarItem(item: StatusBarItemContribution): Disposable;
-  showToast(message: string, options?: { duration?: number }): void;
-}
-
-/**
- * Renderer plugin activation context.
- */
-export interface PluginContext {
-  react: typeof React;
-  ui: PluginUi;
-  themes: PluginThemes;
-  commands: PluginCommands;
-  storage: PluginStorage;
-  fs: PluginFs;
-  subscriptions: Disposable[];
 }
 
 /**
@@ -552,39 +275,6 @@ export interface RegisteredStatusBarItem {
 }
 
 /**
- * Options for picking a file through hc.fs.
- */
-export interface PluginFsPickFileOptions {
-  /** Dialog title. */
-  title?: string;
-  /** File extension filters. */
-  filters?: Array<{ name: string; extensions: string[] }>;
-  /** Allow multiple file selection. */
-  multiple?: boolean;
-}
-
-/**
- * Options for saving a file through hc.fs.
- */
-export interface PluginFsSaveFileOptions {
-  /** Suggested file name or path. */
-  defaultPath?: string;
-  /** File extension filters. */
-  filters?: Array<{ name: string; extensions: string[] }>;
-}
-
-/**
- * Plugin filesystem API backed by main-process allowlist enforcement.
- */
-export interface PluginFs {
-  pickFile: (options?: PluginFsPickFileOptions) => Promise<string[]>;
-  pickDirectory: (defaultPath?: string) => Promise<string | null>;
-  saveFile: (content: string, options?: PluginFsSaveFileOptions) => Promise<string | null>;
-  readFile: (path: string) => Promise<string>;
-  writeFile: (path: string, content: string) => Promise<void>;
-}
-
-/**
  * Serializable menu contribution pushed to the main process for menu merge.
  */
 export interface SerializableMenuContribution {
@@ -594,26 +284,6 @@ export interface SerializableMenuContribution {
   label?: string;
   group?: string;
   order?: number;
-}
-
-/**
- * Serialized HTTP request context for main-process plugin hooks.
- */
-export interface PluginHttpRequest {
-  method: string;
-  url: string;
-  headers: Record<string, string>;
-  body: string;
-}
-
-/**
- * Serialized HTTP response context for main-process plugin hooks.
- */
-export interface PluginHttpResponse {
-  status: number;
-  statusText: string;
-  headers: Record<string, string>;
-  body: string;
 }
 
 /**
@@ -677,4 +347,30 @@ export function parsePluginThemeValue(value: string): { pluginId: string; themeI
     return null;
   }
   return { pluginId: match[1], themeId: match[2] };
+}
+
+/**
+ * Converts a persisted theme preference to the plugin {@link ActiveTheme} shape.
+ *
+ * @param theme - Raw theme setting from storage or IPC.
+ * @returns Built-in or plugin-scoped active theme reference.
+ */
+export function toActiveTheme(theme: ThemeSource): ActiveTheme {
+  const parsed = parsePluginThemeValue(theme);
+  if (parsed) {
+    return { source: 'plugin', pluginId: parsed.pluginId, themeId: parsed.themeId };
+  }
+  return { source: 'builtin', id: theme as BuiltinThemeId };
+}
+
+/**
+ * Returns a stable string key for comparing {@link ActiveTheme} values.
+ *
+ * @param theme - Active theme reference.
+ * @returns Serialized key suitable for deduplication.
+ */
+export function activeThemeKey(theme: ActiveTheme): string {
+  return theme.source === 'plugin'
+    ? `plugin:${theme.pluginId}:${theme.themeId}`
+    : `builtin:${theme.id}`;
 }

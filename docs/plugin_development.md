@@ -469,11 +469,12 @@ export interface PluginContext {
   themes: PluginThemes;
   commands: PluginCommands;
   storage: PluginStorage;
+  fs: PluginFs;
   subscriptions: Disposable[];
 }
 ```
 
-Install `@harborclient/plugin-api` as a **dev dependency** in your plugin project for these types. The package ships `.d.ts` only and tracks HarborClient releases.
+Install `@harborclient/plugin-api` as a **dev dependency** in your plugin project for these types. The package ships `.d.ts` only and tracks HarborClient releases. Main entries use `MainPluginContext` instead — import it from `@harborclient/plugin-api` or `@harborclient/plugin-api/main` for main-only plugins.
 
 ### hc.react
 
@@ -1025,6 +1026,8 @@ These built-in surfaces are not open to plugin contributions:
 
 Optional `main` entry modules export `activate(hc)` and `deactivate()` like renderer entries, but run inside the SES-hardened utilityProcess. Use this entry for HTTP hooks and custom IPC — not for React UI.
 
+Import `MainPluginContext` from `@harborclient/plugin-api` (or `@harborclient/plugin-api/main` for main-only plugins) and type your entry as `activate(hc: MainPluginContext)`.
+
 ### hc.storage
 
 Same namespaced `get` / `set` API as the renderer. Requires the `storage` permission.
@@ -1033,13 +1036,16 @@ Same namespaced `get` / `set` API as the renderer. Requires the `storage` permis
 
 **Signature:** `(handler: (request) => void \| Promise<void>) => Disposable`
 
-Register a callback that runs before each outgoing HTTP request. Mutate the request object to change method, URL, headers, or body. Requires the `http` permission.
+Register a callback that runs before each outgoing HTTP request. Mutate the request object to change method, URL, headers, or body. Requires the `http` permission. Remove a header with `delete request.headers['Header-Name']`.
 
-```javascript
-export function activate(hc) {
+```typescript
+import type { MainPluginContext } from '@harborclient/plugin-api';
+
+export function activate(hc: MainPluginContext): void {
   hc.subscriptions.push(
     hc.http.onBeforeSend(async (request) => {
       request.headers['X-Plugin-Trace'] = '1';
+      delete request.headers['Authorization'];
     }),
   );
 }
@@ -1078,8 +1084,10 @@ This example is a **main-only** plugin that logs every outbound HTTP request to 
 
 ### src/main.ts
 
-```javascript
-export function activate(hc) {
+```typescript
+import type { MainPluginContext } from '@harborclient/plugin-api';
+
+export function activate(hc: MainPluginContext): void {
   hc.subscriptions.push(
     hc.http.onBeforeSend((request) => {
       console.log(`→ ${request.method} ${request.url}`);

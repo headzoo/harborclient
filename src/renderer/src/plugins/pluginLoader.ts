@@ -1,4 +1,4 @@
-import type { PluginInfo } from '#/shared/plugin/types';
+import type { PluginContext, PluginInfo } from '#/shared/plugin/types';
 import { createPluginContext } from '#/renderer/src/plugins/createPluginContext';
 import { clearPluginContributions } from '#/renderer/src/plugins/registry';
 import { applyPersistedPluginTheme } from '#/renderer/src/plugins/themeRuntime';
@@ -32,6 +32,34 @@ async function importPluginModule(
 }
 
 /**
+ * Tears down partial renderer activation after activate() throws before load completes.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param hc - Activation context whose subscriptions may hold partial resources.
+ * @param module - Imported plugin module that may export deactivate().
+ */
+export async function disposePartialRendererActivation(
+  pluginId: string,
+  hc: PluginContext,
+  module: { deactivate?: () => void }
+): Promise<void> {
+  try {
+    module.deactivate?.();
+  } catch {
+    // Plugin deactivate may fail during partial activation.
+  }
+  for (const disposable of hc.subscriptions) {
+    try {
+      disposable.dispose();
+    } catch {
+      // Ignore dispose errors during rollback.
+    }
+  }
+  clearPluginContributions(pluginId);
+  await applyPersistedPluginTheme();
+}
+
+/**
  * Deactivates and unloads one plugin from the renderer host.
  *
  * @param pluginId - Plugin manifest id.
@@ -39,6 +67,7 @@ async function importPluginModule(
 export async function unloadPlugin(pluginId: string): Promise<void> {
   const entry = loaded.get(pluginId);
   if (!entry) {
+    clearPluginContributions(pluginId);
     return;
   }
   entry.deactivate?.();
@@ -71,8 +100,7 @@ async function loadPlugin(plugin: PluginInfo): Promise<void> {
 
   if (!plugin.manifest.renderer) {
     if (plugin.manifest.main) {
-      const mainSource = await window.api.readPluginEntry(plugin.id, 'main');
-      await window.api.activatePluginMain(plugin.id, mainSource, plugin.permissions);
+      await window.api.activatePluginMain(plugin.id);
     }
     return;
   }
@@ -84,7 +112,12 @@ async function loadPlugin(plugin: PluginInfo): Promise<void> {
   }
 
   const hc = createPluginContext(plugin.id, plugin.manifest);
-  await module.activate(hc);
+  try {
+    await module.activate(hc);
+  } catch (error) {
+    await disposePartialRendererActivation(plugin.id, hc, module);
+    throw error;
+  }
   loaded.set(plugin.id, {
     pluginId: plugin.id,
     deactivate: module.deactivate,
@@ -92,8 +125,7 @@ async function loadPlugin(plugin: PluginInfo): Promise<void> {
   });
 
   if (plugin.manifest.main) {
-    const mainSource = await window.api.readPluginEntry(plugin.id, 'main');
-    await window.api.activatePluginMain(plugin.id, mainSource, plugin.permissions);
+    await window.api.activatePluginMain(plugin.id);
   }
 
   await applyPersistedPluginTheme();

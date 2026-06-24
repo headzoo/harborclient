@@ -70,6 +70,8 @@ interface PluginState {
   >;
   ipcHandlers: Map<string, (...args: unknown[]) => unknown>;
   subscriptions: Array<{ dispose: () => void }>;
+  /** Optional deactivate export captured from the activation compartment. */
+  deactivate?: () => void;
 }
 
 const plugins = new Map<string, PluginState>();
@@ -170,7 +172,7 @@ async function activatePlugin(
       throw new Error('Plugin main entry must export activate(hc).');
     }
     __activate(hc);
-    globalThis.__pluginDeactivate = typeof __deactivate === 'function' ? __deactivate : undefined;
+    typeof __deactivate === 'function' ? __deactivate : undefined;
   `;
 
   const compartment = new Compartment({
@@ -181,7 +183,8 @@ async function activatePlugin(
     __options__: true
   });
 
-  compartment.evaluate(fullScript);
+  const deactivate = compartment.evaluate(fullScript);
+  state.deactivate = typeof deactivate === 'function' ? deactivate : undefined;
 }
 
 /**
@@ -195,15 +198,7 @@ function deactivatePlugin(pluginId: string): void {
     return;
   }
   try {
-    const compartment = new Compartment({
-      globals: {
-        console
-      },
-      __options__: true
-    });
-    compartment.evaluate(
-      'if (typeof globalThis.__pluginDeactivate === "function") { globalThis.__pluginDeactivate(); }'
-    );
+    state.deactivate?.();
   } catch {
     // Ignore deactivate errors during teardown.
   }

@@ -403,15 +403,6 @@ export const shortcutOverrides = z.record(
 
 const pluginId = z.string().min(1);
 const pluginEntryKind = z.enum(['renderer', 'main']);
-const pluginPermission = z.enum([
-  'ui',
-  'storage',
-  'filesystem:pick',
-  'filesystem:read',
-  'filesystem:write',
-  'http',
-  'ipc'
-]);
 
 /**
  * Tuple schemas for IPC handler argument validation.
@@ -495,7 +486,7 @@ export const ipcArgSchemas = {
   pluginReadAsset: z.tuple([pluginId, z.string().min(1)]),
   pluginStorageKey: z.tuple([pluginId, z.string().min(1)]),
   pluginStorageSet: z.tuple([pluginId, z.string().min(1), z.unknown()]),
-  pluginActivateMain: z.tuple([pluginId, z.string(), z.array(pluginPermission)]),
+  pluginActivateMain: z.tuple([pluginId]),
   pluginInvokeMain: z.tuple([pluginId, z.string().min(1), z.array(z.unknown())]),
   pluginMenuContributions: z.tuple([
     z.array(

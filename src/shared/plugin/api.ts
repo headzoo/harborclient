@@ -976,4 +976,3 @@ export interface MainPluginContext {
    */
   ipc: PluginIpc;
 }
-//# sourceMappingURL=index.d.ts.map

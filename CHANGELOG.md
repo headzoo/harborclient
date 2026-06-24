@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(plugin-api): add sync command and enhance plugin context. (`6bb99d2`)
+
 ## 1.8.0 - 2026-06-24
 
 - feat(tests): implement mock for electron-store in vitest setup. (`1dfbcf3`)

@@ -6,7 +6,6 @@ import type {
   PluginFsPickFileOptions,
   PluginFsSaveFileOptions,
   PluginInfo,
-  PluginPermission,
   SerializableMenuContribution
 } from '#/shared/plugin/types';
 
@@ -2516,6 +2515,14 @@ export interface Api {
   setTheme: (theme: ThemeSource) => Promise<void>;
 
   /**
+   * Subscribes to theme preference changes pushed from the main process.
+   *
+   * @param callback - Called with the new persisted theme preference.
+   * @returns Unsubscribe function.
+   */
+  onThemeChanged: (callback: (theme: ThemeSource) => void) => () => void;
+
+  /**
    * Minimizes the focused application window.
    */
   minimizeWindow: () => Promise<void>;
@@ -3126,15 +3133,11 @@ export interface Api {
   /**
    * Activates a plugin main entry in the SES utilityProcess runner.
    *
+   * Main entry source and permissions are resolved in the main process from disk.
+   *
    * @param pluginId - Plugin manifest id.
-   * @param source - Bundled main entry source.
-   * @param permissions - Granted plugin permissions.
    */
-  activatePluginMain: (
-    pluginId: string,
-    source: string,
-    permissions: PluginPermission[]
-  ) => Promise<void>;
+  activatePluginMain: (pluginId: string) => Promise<void>;
 
   /**
    * Deactivates a plugin main entry in the SES utilityProcess runner.

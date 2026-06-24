@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  clearPluginContributions,
   getRegisteredPluginThemes,
   getRegisteredRequestTabs,
   getRegisteredSettingsSections,
@@ -62,5 +63,35 @@ describe('plugin registry', () => {
 
     disposable.dispose();
     expect(getRegisteredRequestTabs()).not.toBe(third);
+  });
+
+  it('clearPluginContributions removes one plugin from every bucket', () => {
+    registerSettingsSectionContribution('com.example.a', {
+      id: 'plugin:com.example.a:general',
+      title: 'A Settings',
+      Component: StubSection
+    });
+    registerRequestTabContribution('com.example.a', {
+      id: 'plugin:com.example.a:tab',
+      title: 'A Tab',
+      Component: StubRequestTab
+    });
+    registerSettingsSectionContribution('com.example.b', {
+      id: 'plugin:com.example.b:general',
+      title: 'B Settings',
+      Component: StubSection
+    });
+
+    clearPluginContributions('com.example.a');
+
+    expect(
+      getRegisteredSettingsSections().every((section) => section.pluginId !== 'com.example.a')
+    ).toBe(true);
+    expect(getRegisteredRequestTabs().every((tab) => tab.pluginId !== 'com.example.a')).toBe(true);
+    expect(
+      getRegisteredSettingsSections().some((section) => section.pluginId === 'com.example.b')
+    ).toBe(true);
+
+    clearPluginContributions('com.example.b');
   });
 });
