@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- refactor(plugins): update author references to company in plugin metadata. (`d41f110`)
 - feat(plugins): add Dotenv and OpenAPI plugins to the catalog. (`a4f2d6c`)
 
 ## 1.8.7 - 2026-06-25

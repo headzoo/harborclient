@@ -378,8 +378,8 @@ function PluginCatalogDetailModal({
       <p className="m-0 mb-4 text-[14px] text-text">{entry.summary}</p>
 
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[14px]">
-        <dt className="text-muted">Author</dt>
-        <dd className="m-0 text-text">{entry.author}</dd>
+        <dt className="text-muted">Publisher</dt>
+        <dd className="m-0 text-text">{entry.company}</dd>
         <dt className="text-muted">Version</dt>
         <dd className="m-0 text-text">{displayVersion}</dd>
         <dt className="text-muted">Plugin id</dt>

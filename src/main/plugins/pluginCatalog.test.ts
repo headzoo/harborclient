@@ -12,7 +12,7 @@ const sampleCatalog = {
       name: 'Demo Plugin',
       version: '1.0.0',
       summary: 'A sample plugin for tests.',
-      author: 'Example Inc.',
+      company: 'Example Inc.',
       categories: ['utilities'],
       repoUrl: 'https://github.com/example/demo-plugin'
     }

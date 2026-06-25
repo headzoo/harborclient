@@ -25,7 +25,7 @@ type CatalogEntry = (typeof catalog.plugins)[number];
       <tr>
         <th scope="col">Plugin</th>
         <th scope="col">Summary</th>
-        <th scope="col">Author</th>
+        <th scope="col">Publisher</th>
         <th scope="col">Screenshot</th>
         <th scope="col">Repository</th>
       </tr>
@@ -37,7 +37,7 @@ type CatalogEntry = (typeof catalog.plugins)[number];
           <div class="text-muted">{{ entry.categories.join(', ') }}</div>
         </td>
         <td>{{ entry.summary }}</td>
-        <td>{{ entry.author }}</td>
+        <td>{{ entry.company }}</td>
         <td>
           <img
             v-if="entry.screenshot"
