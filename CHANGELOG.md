@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- refactor(plugin-api): remove deprecated TypeScript definitions and enhance plugin context. (`a260bfc`)
+
 ## 1.8.4 - 2026-06-25
 
 - chore: update .gitignore and format PluginHttpRequest interface. (`8bc1f4c`)

@@ -886,6 +886,12 @@ export interface PluginUi {
  */
 export interface PluginContext {
   /**
+   * Plugin manifest id from `manifest.json`.
+   *
+   * Use for IPC routing and logging instead of hardcoding the manifest id in plugin code.
+   */
+  pluginId: string;
+  /**
    * The same React instance HarborClient uses in the renderer.
    *
    * Use for `useState`, `useEffect`, and JSX. Do not bundle React in your plugin.

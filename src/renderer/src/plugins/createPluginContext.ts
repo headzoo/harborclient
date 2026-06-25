@@ -131,6 +131,7 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
   const assertUi = (): void => assertPermission('ui');
 
   return {
+    pluginId,
     react: React,
     subscriptions,
     storage: {

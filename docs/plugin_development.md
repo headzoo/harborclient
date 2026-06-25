@@ -230,7 +230,7 @@ Plugins can ship a renderer entry, a main entry, or both:
 | **renderer** | Renderer (React) | Settings panels, sidebar UI, request tabs | No SES — `contextIsolation` plus IPC-only `hc` |
 | **main** | utilityProcess + SES | HTTP hooks, custom IPC, background logic | SES `lockdown()` in the child process only |
 
-Renderer UI uses `hc.react`, the host's React instance. **Do not bundle React** in your plugin; import hooks and JSX through `hc.react` instead.
+Renderer UI uses `hc.react`, the host's React instance. **Do not bundle React** in your plugin; call `installReact(hc.react)` and use the JSX runtime documented in [React and JSX](#react-and-jsx).
 
 Main-process plugin code reuses the same utilityProcess script runner infrastructure as [request scripts](/request-scripts). `lockdown()` runs only in that child process — never in the Electron main process or renderer.
 
@@ -510,6 +510,7 @@ export interface PluginUi {
 }
 
 export interface PluginContext {
+  pluginId: string;
   react: typeof React;
   ui: PluginUi;
   themes: PluginThemes;
@@ -520,20 +521,79 @@ export interface PluginContext {
 }
 ```
 
-Install `@harborclient/plugin-api` as a **dev dependency** in your plugin project for these types. The package ships `.d.ts` only and tracks HarborClient releases. Type definitions are maintained in [harborclient/plugin-api](https://github.com/harborclient/plugin-api). Main entries use `MainPluginContext` instead — import it from `@harborclient/plugin-api` or `@harborclient/plugin-api/main` for main-only plugins.
+Install `@harborclient/plugin-api` as a **dev dependency** in your plugin project for types and the JSX runtime helpers. The package tracks HarborClient releases. Type definitions are maintained in [harborclient/plugin-api](https://github.com/harborclient/plugin-api). Main entries use `MainPluginContext` instead — import it from `@harborclient/plugin-api` or `@harborclient/plugin-api/main` for main-only plugins.
+
+### hc.pluginId
+
+**Type:** `string`
+
+The plugin manifest `id`. Use for IPC routing and logging instead of hardcoding the manifest id in plugin source.
 
 ### hc.react
 
 **Type:** `typeof React`
 
-The same React instance HarborClient uses in the renderer. Use it for `useState`, `useEffect`, and JSX:
+The same React instance HarborClient uses in the renderer. Do not import or bundle `react` / `react-dom` in your plugin bundle.
 
-```tsx
-const React = hc.react;
-const [value, setValue] = React.useState('');
+### React and JSX
+
+Plugins must share the host React instance. `@harborclient/plugin-api` ships a small JSX runtime and hook barrel that forwards to `hc.react` after you call `installReact(hc.react)` at the start of `activate()`.
+
+**TypeScript** (`tsconfig.json`):
+
+```json
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "@harborclient/plugin-api"
+  }
+}
 ```
 
-Do not import or bundle `react` / `react-dom` in your plugin bundle.
+**esbuild** (renderer bundle):
+
+```bash
+esbuild src/renderer.tsx \
+  --bundle --outfile=dist/renderer.js --format=esm \
+  --jsx=automatic --jsx-import-source=@harborclient/plugin-api \
+  --external:react --external:react-dom
+```
+
+**Renderer entry:**
+
+```tsx
+import { installReact } from '@harborclient/plugin-api';
+import type { PluginContext } from '@harborclient/plugin-api';
+
+export function activate(hc: PluginContext): void {
+  installReact(hc.react);
+  // register contributions…
+}
+```
+
+**Hooks in components** — import from `@harborclient/plugin-api/react` (not from `react`):
+
+```tsx
+import { useState, useEffect } from '@harborclient/plugin-api/react';
+```
+
+**Single-file escape hatch** — `createPluginComponent` builds a component from a factory that receives host React:
+
+```tsx
+import { installReact, createPluginComponent } from '@harborclient/plugin-api';
+
+export function activate(hc: PluginContext): void {
+  installReact(hc.react);
+  const Panel = createPluginComponent((React) => {
+    return function Panel() {
+      const [count, setCount] = React.useState(0);
+      return React.createElement('button', { onClick: () => setCount(count + 1) }, count);
+    };
+  });
+}
+```
+
+See [harborclient-plugin-skeleton](https://github.com/harborclient/plugin-skeleton) for a complete starter project with renderer and main entries.
 
 ### hc.ui overview
 
@@ -1213,7 +1273,7 @@ This example adds a read-only **Audit** tab to the request editor. It summarizes
   "id": "com.example.request-audit",
   "name": "Request Audit",
   "version": "1.0.0",
-  "engines": { "harborclient": ">=1.7.0" },
+  "engines": { "harborclient": ">=1.9.0" },
   "renderer": "dist/renderer.js",
   "permissions": ["ui"],
   "contributes": {
@@ -1225,9 +1285,10 @@ This example adds a read-only **Audit** tab to the request editor. It summarizes
 ### src/renderer.tsx
 
 ```tsx
+import { installReact } from '@harborclient/plugin-api';
 import type { PluginContext, RequestTabContext } from '@harborclient/plugin-api';
 
-function AuditTab({ context }: { context: RequestTabContext }): React.JSX.Element {
+function AuditTab({ context }: { context: RequestTabContext }) {
   const { draft, response } = context;
   const summary = {
     method: draft.method,
@@ -1238,13 +1299,14 @@ function AuditTab({ context }: { context: RequestTabContext }): React.JSX.Elemen
   };
 
   return (
-    <pre className="m-0 overflow-auto rounded-md bg-control p-3 text-[13px] text-text">
+    <pre className="m-0 overflow-auto rounded-md bg-control p-3 text-[14px] text-text">
       {JSON.stringify(summary, null, 2)}
     </pre>
   );
 }
 
 export function activate(hc: PluginContext): void {
+  installReact(hc.react);
   hc.subscriptions.push(
     hc.ui.registerRequestTab({
       id: 'audit',
@@ -1345,7 +1407,8 @@ You can also build `request-logger.zip` and rename it to `request-logger.hcp`; H
   "name": "request-logger",
   "private": true,
   "devDependencies": {
-    "@harborclient/plugin-api": "^1.7.0",
+    "@harborclient/plugin-api": "^0.2.0",
+    "@types/react": "^19.0.0",
     "esbuild": "^0.25.0",
     "typescript": "^5.0.0"
   },
@@ -1356,11 +1419,11 @@ You can also build `request-logger.zip` and rename it to `request-logger.hcp`; H
 }
 ```
 
-For renderer plugins, mark `react` and `react-dom` as **external** so your bundle does not include a second React copy. At runtime, use `hc.react` instead.
+For renderer plugins, mark `react` and `react-dom` as **external**, set `--jsx=automatic --jsx-import-source=@harborclient/plugin-api`, and call `installReact(hc.react)` at the start of `activate()`. See [React and JSX](#react-and-jsx).
 
 ### TypeScript
 
-Use `jsx: react-jsx` and import types from `@harborclient/plugin-api`. Your entry module should export `activate` and optionally `deactivate` as named exports.
+Use `jsx: react-jsx` with `jsxImportSource: '@harborclient/plugin-api'` and import types from `@harborclient/plugin-api`. Your entry module should export `activate` and optionally `deactivate` as named exports.
 
 ### Main entry
 
@@ -1378,19 +1441,20 @@ Create a plugin project folder with `manifest.json` at the root (see [manifest.j
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@harborclient/plugin-api": "^1.7.0",
+    "@harborclient/plugin-api": "^0.2.0",
+    "@types/react": "^19.0.0",
     "esbuild": "^0.25.0",
     "typescript": "^5.0.0"
   },
   "scripts": {
-    "build": "esbuild src/renderer.tsx --bundle --outfile=dist/renderer.js --format=esm --external:react --external:react-dom",
-    "dev": "esbuild src/renderer.tsx --bundle --outfile=dist/renderer.js --format=esm --external:react --external:react-dom --watch",
+    "build": "esbuild src/renderer.tsx --bundle --outfile=dist/renderer.js --format=esm --jsx=automatic --jsx-import-source=@harborclient/plugin-api --external:react --external:react-dom",
+    "dev": "esbuild src/renderer.tsx --bundle --outfile=dist/renderer.js --format=esm --jsx=automatic --jsx-import-source=@harborclient/plugin-api --external:react --external:react-dom --watch",
     "pack": "pnpm build && zip -r ../my-plugin.hcp manifest.json README.md assets dist"
   }
 }
 ```
 
-Run `pnpm install`, add `src/renderer.tsx` (exporting `activate(hc)`), then `pnpm build` or `pnpm dev` before loading the folder in HarborClient. Mark `react` and `react-dom` as **external** — the host injects React through `hc.react` at runtime. See [Building a plugin](#building-a-plugin) for TypeScript options and main-entry builds.
+Run `pnpm install`, add `src/renderer.tsx` (exporting `activate(hc)` with `installReact(hc.react)`), then `pnpm build` or `pnpm dev` before loading the folder in HarborClient. Mark `react` and `react-dom` as **external** and use the JSX import source shown above. See [Building a plugin](#building-a-plugin) and [React and JSX](#react-and-jsx).
 
 ```mermaid
 flowchart LR
