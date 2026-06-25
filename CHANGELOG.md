@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- chore: update package description and plugin-api dependency version. (`8d5a812`)
 - feat(plugins): consume @harborclient/plugin-api and add renderer runtime APIs. (`652b604`)
 - docs: update plugin development and settings documentation. (`6660fcc`)
 - refactor(plugin-api): remove deprecated TypeScript definitions and enhance plugin context. (`a260bfc`)

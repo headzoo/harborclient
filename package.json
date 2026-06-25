@@ -1,7 +1,7 @@
 {
   "name": "harborclient",
   "version": "1.8.4",
-  "description": "A Postman-style HTTP client built with Electron",
+  "description": "The free API client that keeps your work private: no accounts, no subscriptions, no lock-in.",
   "main": "./out/main/index.js",
   "desktopName": "harborclient",
   "homepage": "https://harborclient.com/",
@@ -80,7 +80,7 @@
   },
   "devDependencies": {
     "@braintree/sanitize-url": "^7.1.2",
-    "@harborclient/plugin-api": "file:../harborclient-plugin-api",
+    "@harborclient/plugin-api": "^0.3.2",
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.1.0",
     "@tailwindcss/vite": "^4.3.1",

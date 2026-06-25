@@ -133,8 +133,8 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
       '@harborclient/plugin-api':
-        specifier: file:../harborclient-plugin-api
-        version: file:../harborclient-plugin-api(react@19.2.7)
+        specifier: ^0.3.2
+        version: 0.3.2(react@19.2.7)
       '@tailwindcss/vite':
         specifier: ^4.3.1
         version: 4.3.1(vite@6.4.3(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0))
@@ -1180,8 +1180,8 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
-  '@harborclient/plugin-api@file:../harborclient-plugin-api':
-    resolution: {directory: ../harborclient-plugin-api, type: directory}
+  '@harborclient/plugin-api@0.3.2':
+    resolution: {integrity: sha512-rHgg4ot6Kk7iWarWsMhPc0HFhcbtK+jVauhaIn5RCpubofmELUdrFGwfzg85q0m+Vx1sOVvym7SdhEqnzYiFlA==}
     peerDependencies:
       react: '>=18'
 
@@ -7923,7 +7923,7 @@ snapshots:
       protobufjs: 7.6.4
       yargs: 17.7.2
 
-  '@harborclient/plugin-api@file:../harborclient-plugin-api(react@19.2.7)':
+  '@harborclient/plugin-api@0.3.2(react@19.2.7)':
     dependencies:
       react: 19.2.7
 
