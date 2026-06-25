@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { app } from 'electron';
-import { readPluginSignature, verifyPlugin } from '@harborclient/plugin-api/signing';
+import { readPluginSignature, verifyPlugin } from '@harborclient/sdk/signing';
 import {
   parsePluginTrustedKeys,
   PLUGIN_TRUSTED_KEYS_URL,

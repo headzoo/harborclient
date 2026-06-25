@@ -1,4 +1,4 @@
-import type { PluginVariableInput } from '@harborclient/plugin-api';
+import type { PluginVariableInput } from '@harborclient/sdk';
 import type { Variable } from '#/shared/types';
 import { store } from '#/renderer/src/store/redux';
 import { selectEnvironments } from '#/renderer/src/store/selectors';

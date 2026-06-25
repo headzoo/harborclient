@@ -1,4 +1,4 @@
-import type { PluginHttpRequest, PluginHttpResponse } from '@harborclient/plugin-api';
+import type { PluginHttpRequest, PluginHttpResponse } from '@harborclient/sdk';
 import type { SendRequestInput, SendResult } from '#/shared/types';
 
 /**

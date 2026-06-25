@@ -82,7 +82,7 @@
   },
   "devDependencies": {
     "@braintree/sanitize-url": "^7.1.2",
-    "@harborclient/plugin-api": "^0.4.1",
+    "@harborclient/sdk": "^0.4.3",
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.1.0",
     "@tailwindcss/vite": "^4.3.1",

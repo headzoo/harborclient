@@ -4,10 +4,10 @@ HarborClient plugins extend the app with installable packages: custom settings p
 
 To install or manage plugins in the app, see [Settings → Plugins](/settings#plugins) or browse the [plugin marketplace](/plugins).
 
-**Plugin developer documentation** — package layout, manifest reference, renderer and main APIs, examples, dev workflow, and marketplace publishing — lives in the [@harborclient/plugin-api](https://harborclient.github.io/plugin-api/) docs site. Start with the [introduction](https://harborclient.github.io/plugin-api/) and follow the sidebar for the full guide.
+**Plugin developer documentation** — package layout, manifest reference, renderer and main APIs, examples, dev workflow, and marketplace publishing — lives in the [@harborclient/sdk](https://harborclient.github.io/sdk/) docs site. Start with the [introduction](https://harborclient.github.io/sdk/) and follow the sidebar for the full guide.
 
 Install the SDK in your plugin project:
 
 ```bash
-pnpm add -D @harborclient/plugin-api
+pnpm add -D @harborclient/sdk
 ```

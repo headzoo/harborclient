@@ -2,7 +2,7 @@ import { generateKeyPairSync } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { signPlugin } from '@harborclient/plugin-api/signing';
+import { signPlugin } from '@harborclient/sdk/signing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PLUGIN_TRUSTED_KEYS_URL } from '#/shared/plugin/catalog';
 

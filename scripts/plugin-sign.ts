@@ -1,4 +1,4 @@
-import { runSignCli } from '@harborclient/plugin-api/signing';
+import { runSignCli } from '@harborclient/sdk/signing';
 
 /**
  * HarborClient wrapper for the plugin signing CLI.

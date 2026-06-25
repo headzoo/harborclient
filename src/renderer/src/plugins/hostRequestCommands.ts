@@ -5,8 +5,8 @@ import type {
   CreateCollectionResult,
   OpenRequestDraftParam,
   OpenRequestDraftPayload
-} from '@harborclient/plugin-api';
-export type { OpenRequestDraftPayload } from '@harborclient/plugin-api';
+} from '@harborclient/sdk';
+export type { OpenRequestDraftPayload } from '@harborclient/sdk';
 import { parseHttpMethod } from '#/shared/httpMethod';
 import { defaultAuth } from '#/shared/auth';
 import { store } from '#/renderer/src/store/redux';

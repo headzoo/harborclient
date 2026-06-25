@@ -1,4 +1,4 @@
-import { runVerifyCli } from '@harborclient/plugin-api/signing';
+import { runVerifyCli } from '@harborclient/sdk/signing';
 
 /**
  * HarborClient wrapper for the plugin verification CLI.

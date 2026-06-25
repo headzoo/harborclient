@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- chore(plugins): update plugin API references from @harborclient/plugin-api to @harborclient/sdk. (`25e66f5`)
 - chore(plugins): remove version references from plugin metadata. (`cb7ad8b`)
 
 ## 1.8.9 - 2026-06-25
