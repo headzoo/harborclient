@@ -148,7 +148,7 @@ export function TabContent({
       {pluginTabs.map((entry) => {
         const Component = entry.Component;
         return (
-          <SegmentedTabPanel key={entry.id} value={entry.id}>
+          <SegmentedTabPanel key={entry.id} value={entry.id} className="min-h-[320px]">
             <Component context={requestTabContext} />
           </SegmentedTabPanel>
         );

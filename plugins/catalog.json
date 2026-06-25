@@ -22,6 +22,17 @@
       "repoUrl": "https://github.com/harborclient/plugin-history",
       "ref": "v1.0.0",
       "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-history/main/screenshot.png"
+    },
+    {
+      "id": "com.harborclient.plugins.curl",
+      "name": "cURL",
+      "version": "1.0.0",
+      "summary": "Adds a tab to the request editor that shows an equivalent `curl` command for the configured request.",
+      "author": "HarborClient",
+      "categories": ["requests"],
+      "repoUrl": "https://github.com/harborclient/plugin-curl",
+      "ref": "v1.0.0",
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-curl/main/screenshot.png"
     }
   ]
 }

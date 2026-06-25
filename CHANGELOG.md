@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(plugin-api): enhance request editor and plugin context. (`58a3176`)
 - refactor(plugins): update section title from "Plugins" to "Marketplace". (`8774550`)
 - fix(docs): update plugin marketplace terminology in documentation. (`6819017`)
 - feat(plugins): enhance error handling and UI for plugin management. (`d6364af`)

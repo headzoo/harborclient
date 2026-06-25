@@ -4,7 +4,8 @@ import type { Variable } from '#/shared/types';
 import { isTabDirty } from '#/renderer/src/store/drafts';
 import {
   toPluginHttpResponse,
-  toPluginRequestDraft
+  toPluginRequestDraft,
+  toPluginRequestTabContext
 } from '#/renderer/src/plugins/pluginContextAdapters';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import {
@@ -120,12 +121,8 @@ export function Request({ onEditVariables }: Props): JSX.Element {
    * Read-only plugin context for request editor tabs.
    */
   const requestTabContext = useMemo<RequestTabContext>(
-    () => ({
-      draft: toPluginRequestDraft(draft),
-      response: toPluginHttpResponse(response),
-      readOnly: true
-    }),
-    [draft, response]
+    () => toPluginRequestTabContext(draft, activeCollection, response),
+    [draft, activeCollection, response]
   );
 
   /**

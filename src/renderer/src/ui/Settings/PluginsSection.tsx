@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type JSX, type KeyboardEvent } from 'react';
+import toast from 'react-hot-toast';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { PluginCatalog, PluginCatalogEntry } from '#/shared/plugin/catalog';
@@ -812,11 +813,12 @@ export function PluginsSection(): JSX.Element {
   /**
    * Reloads one unpacked plugin from disk.
    *
-   * @param pluginId - Plugin manifest id.
+   * @param plugin - Plugin to reload from its unpacked source path.
    */
-  const handleReload = async (pluginId: string): Promise<void> => {
-    await window.api.reloadPlugin(pluginId);
+  const handleReload = async (plugin: PluginInfo): Promise<void> => {
+    await window.api.reloadPlugin(plugin.id);
     await refresh();
+    toast.success(`${plugin.name} reloaded.`);
   };
 
   /**
@@ -981,7 +983,7 @@ export function PluginsSection(): JSX.Element {
                                 type="button"
                                 variant="secondary"
                                 aria-label={`Reload ${plugin.name}`}
-                                onClick={() => void handleReload(plugin.id)}
+                                onClick={() => void handleReload(plugin)}
                               >
                                 Reload
                               </Button>

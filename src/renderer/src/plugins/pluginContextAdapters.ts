@@ -1,6 +1,7 @@
 import type { RequestDraft as StoreRequestDraft } from '#/renderer/src/store/drafts';
-import type { SendResult } from '#/shared/types';
-import type { HttpResponse, RequestDraft } from '#/shared/plugin/types';
+import type { Collection, SendResult } from '#/shared/types';
+import { defaultAuth, normalizeAuth } from '#/shared/auth';
+import type { HttpResponse, RequestDraft, RequestTabContext } from '#/shared/plugin/types';
 
 /**
  * Maps the store request draft to the plugin-facing read-only shape.
@@ -13,7 +14,30 @@ export function toPluginRequestDraft(draft: StoreRequestDraft): RequestDraft {
     url: draft.url,
     params: draft.params.map((row) => ({ ...row })),
     headers: draft.headers.map((row) => ({ ...row })),
-    body: draft.body
+    body: draft.body,
+    auth: normalizeAuth(draft.auth),
+    body_type: draft.body_type
+  };
+}
+
+/**
+ * Builds the read-only context passed to request editor plugin tabs.
+ *
+ * @param draft - Active request draft from Redux.
+ * @param collection - Collection owning the request, when known.
+ * @param response - Last send result for the tab, if any.
+ */
+export function toPluginRequestTabContext(
+  draft: StoreRequestDraft,
+  collection: Collection | undefined,
+  response: SendResult | null
+): RequestTabContext {
+  return {
+    draft: toPluginRequestDraft(draft),
+    response: toPluginHttpResponse(response),
+    readOnly: true,
+    collectionAuth: normalizeAuth(collection?.auth ?? defaultAuth()),
+    collectionHeaders: (collection?.headers ?? []).map((row) => ({ ...row }))
   };
 }
 

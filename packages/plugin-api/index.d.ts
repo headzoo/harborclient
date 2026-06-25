@@ -91,6 +91,36 @@ export interface MainViewContribution extends UiContributionBase {
   Component: React.ComponentType;
 }
 /**
+ * Authorization type for the Auth tab; none inherits collection auth at send time.
+ */
+export type AuthType = 'none' | 'basic' | 'bearer';
+/**
+ * Basic and bearer credential fields stored together so switching type preserves values.
+ */
+export interface AuthConfig {
+  /**
+   * Selected auth mode; none means no request-level override.
+   */
+  type: AuthType;
+  /**
+   * Username and password for Basic Auth.
+   */
+  basic: {
+    username: string;
+    password: string;
+  };
+  /**
+   * Token value for Bearer Token auth.
+   */
+  bearer: {
+    token: string;
+  };
+}
+/**
+ * Request body encoding selected in the Body tab.
+ */
+export type BodyType = 'none' | 'json' | 'text' | 'multipart' | 'urlencoded';
+/**
  * Snapshot of the active request being edited in the request editor.
  *
  * Passed to request and response tab components via {@link RequestTabContext} and
@@ -128,6 +158,14 @@ export interface RequestDraft {
    * Request body content as a string.
    */
   body: string;
+  /**
+   * Authorization settings from the Auth tab.
+   */
+  auth: AuthConfig;
+  /**
+   * Body encoding selected in the Body tab.
+   */
+  body_type: BodyType;
 }
 /**
  * Snapshot of the last HTTP response received for the active request send.
@@ -183,6 +221,18 @@ export interface RequestTabContext {
    * Always `true` — request tab content must not mutate the draft.
    */
   readOnly: true;
+  /**
+   * Collection-level auth used when {@link RequestDraft.auth} type is `none`.
+   */
+  collectionAuth: AuthConfig;
+  /**
+   * Collection-level headers merged before request headers at send time.
+   */
+  collectionHeaders: Array<{
+    key: string;
+    value: string;
+    enabled: boolean;
+  }>;
 }
 /**
  * Adds a segmented tab to the request editor (alongside Params, Headers, Body, and so on).
