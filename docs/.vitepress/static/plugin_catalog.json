@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-25T13:24:00.141Z",
+  "updatedAt": "2026-06-25T14:02:54.476Z",
   "plugins": [
     {
       "id": "com.harborclient.plugins.curl",
@@ -14,6 +14,20 @@
       "repoUrl": "https://github.com/harborclient/plugin-curl",
       "ref": "v1.0.0",
       "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-curl/main/screenshot.png"
+    },
+    {
+      "id": "com.harborclient.plugins.dotenv",
+      "name": "Dotenv",
+      "version": "1.0.0",
+      "summary": "HarborClient plugin that links a .env file to an environment and keeps variables in sync.",
+      "author": "HarborClient",
+      "categories": [
+        "environments",
+        "import"
+      ],
+      "repoUrl": "https://github.com/harborclient/plugin-dotenv",
+      "ref": "v1.0.0",
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-dotenv/main/screenshot.png"
     },
     {
       "id": "com.harborclient.plugins.history",
@@ -41,6 +55,20 @@
       "repoUrl": "https://github.com/harborclient/plugin-interval",
       "ref": "v1.0.0",
       "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-interval/main/screenshot.png"
+    },
+    {
+      "id": "com.harborclient.plugins.openapi",
+      "name": "OpenAPI",
+      "version": "1.0.0",
+      "summary": "HarborClient plugin that imports an OpenAPI 3.x specification and creates a collection with requests grouped by the first tag on each operation.",
+      "author": "HarborClient",
+      "categories": [
+        "requests",
+        "import"
+      ],
+      "repoUrl": "https://github.com/harborclient/plugin-openapi",
+      "ref": "v1.0.0",
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-openapi/main/screenshot.png"
     },
     {
       "id": "com.harborclient.plugins.request-history",

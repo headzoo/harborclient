@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parsePluginCatalog } from '#/shared/plugin/catalog';
+import { parsePluginCatalog, parsePluginTrustedKeys } from '#/shared/plugin/catalog';
 
 const validCatalog = {
   schemaVersion: 1 as const,
@@ -66,5 +66,41 @@ describe('parsePluginCatalog', () => {
         plugins: [validCatalog.plugins[0], validCatalog.plugins[0]]
       })
     ).toThrow(/duplicate id/i);
+  });
+});
+
+const validTrustedKeys = [
+  {
+    author: 'HarborClient',
+    key: 'https://harborclient.com/plugins/public.key'
+  }
+];
+
+describe('parsePluginTrustedKeys', () => {
+  it('accepts a valid trusted keys payload', () => {
+    expect(parsePluginTrustedKeys(validTrustedKeys)).toEqual(validTrustedKeys);
+  });
+
+  it('rejects duplicate key URLs', () => {
+    expect(() =>
+      parsePluginTrustedKeys([
+        validTrustedKeys[0],
+        {
+          author: 'Other',
+          key: 'https://harborclient.com/plugins/public.key'
+        }
+      ])
+    ).toThrow(/duplicate key url/i);
+  });
+
+  it('rejects invalid key URLs', () => {
+    expect(() =>
+      parsePluginTrustedKeys([
+        {
+          author: 'HarborClient',
+          key: 'not-a-url'
+        }
+      ])
+    ).toThrow();
   });
 });

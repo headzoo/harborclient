@@ -10,6 +10,11 @@ export const PLUGIN_CATALOG_URL = 'https://harborclient.com/plugin_catalog.json'
  */
 export const PLUGIN_SIGNING_PUBLIC_KEY_URL = 'https://harborclient.com/plugins/public.key';
 
+/**
+ * Public URL of the trusted plugin signing key registry served from harborclient.com.
+ */
+export const PLUGIN_TRUSTED_KEYS_URL = 'https://harborclient.com/plugins/trusted.json';
+
 const pluginManifestId = z
   .string()
   .min(3)
@@ -99,6 +104,42 @@ export function parsePluginCatalog(raw: unknown): PluginCatalog {
       throw new Error(`Plugin catalog contains duplicate id: ${entry.id}`);
     }
     seen.add(entry.id);
+  }
+
+  return parsed;
+}
+
+const pluginTrustedKeyEntrySchema = z.object({
+  author: z.string().min(1),
+  key: z.string().url()
+});
+
+/**
+ * One trusted plugin signing key URL entry from trusted.json.
+ */
+export type PluginTrustedKeyEntry = z.infer<typeof pluginTrustedKeyEntrySchema>;
+
+/**
+ * Parsed trusted plugin signing key registry.
+ */
+export type PluginTrustedKeys = PluginTrustedKeyEntry[];
+
+/**
+ * Parses and validates a trusted plugin signing key registry payload.
+ *
+ * @param raw - Unknown JSON value from disk or an HTTP response.
+ * @returns Validated trusted key entries with unique key URLs.
+ * @throws When the payload is invalid or contains duplicate key URLs.
+ */
+export function parsePluginTrustedKeys(raw: unknown): PluginTrustedKeys {
+  const parsed = z.array(pluginTrustedKeyEntrySchema).parse(raw);
+  const seen = new Set<string>();
+
+  for (const entry of parsed) {
+    if (seen.has(entry.key)) {
+      throw new Error(`Plugin trusted keys contain duplicate key URL: ${entry.key}`);
+    }
+    seen.add(entry.key);
   }
 
   return parsed;
