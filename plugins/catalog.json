@@ -2,15 +2,26 @@
   "schemaVersion": 1,
   "plugins": [
     {
-      "id": "com.harborclient.plugins.solarized",
-      "name": "Solarized Theme",
+      "id": "com.harborclient.plugins.curl",
+      "name": "cURL",
       "version": "1.0.0",
-      "summary": "A Solarized theme for HarborClient.",
+      "summary": "Adds a tab to the request editor that shows an equivalent `curl` command for the configured request.",
       "author": "HarborClient",
-      "categories": ["themes"],
-      "repoUrl": "https://github.com/harborclient/plugin-solarized",
+      "categories": ["requests"],
+      "repoUrl": "https://github.com/harborclient/plugin-curl",
       "ref": "v1.0.0",
-      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-solarized/main/assets/screenshots/appearance.png"
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-curl/main/screenshot.png"
+    },
+    {
+      "id": "com.harborclient.plugins.dotenv",
+      "name": "Dotenv",
+      "version": "1.0.0",
+      "summary": "HarborClient plugin that links a .env file to an environment and keeps variables in sync.",
+      "author": "HarborClient",
+      "categories": ["environments", "import"],
+      "repoUrl": "https://github.com/harborclient/plugin-dotenv",
+      "ref": "v1.0.0",
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-dotenv/main/screenshot.png"
     },
     {
       "id": "com.harborclient.plugins.history",
@@ -24,15 +35,26 @@
       "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-history/main/screenshot.png"
     },
     {
-      "id": "com.harborclient.plugins.curl",
-      "name": "cURL",
+      "id": "com.harborclient.plugins.interval",
+      "name": "Interval",
       "version": "1.0.0",
-      "summary": "Adds a tab to the request editor that shows an equivalent `curl` command for the configured request.",
+      "summary": "Adds a Timer tab to the request editor for interval polling and one-shot delayed sends.",
       "author": "HarborClient",
       "categories": ["requests"],
-      "repoUrl": "https://github.com/harborclient/plugin-curl",
+      "repoUrl": "https://github.com/harborclient/plugin-interval",
       "ref": "v1.0.0",
-      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-curl/main/screenshot.png"
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-interval/main/screenshot.png"
+    },
+    {
+      "id": "com.harborclient.plugins.openapi",
+      "name": "OpenAPI",
+      "version": "1.0.0",
+      "summary": "HarborClient plugin that imports an OpenAPI 3.x specification and creates a collection with requests grouped by the first tag on each operation.",
+      "author": "HarborClient",
+      "categories": ["requests", "import"],
+      "repoUrl": "https://github.com/harborclient/plugin-openapi",
+      "ref": "v1.0.0",
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-openapi/main/screenshot.png"
     },
     {
       "id": "com.harborclient.plugins.request-history",
@@ -46,15 +68,15 @@
       "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-request-history/main/screenshot.png"
     },
     {
-      "id": "com.harborclient.plugins.interval",
-      "name": "Interval",
+      "id": "com.harborclient.plugins.solarized",
+      "name": "Solarized Theme",
       "version": "1.0.0",
-      "summary": "Adds a Timer tab to the request editor for interval polling and one-shot delayed sends.",
+      "summary": "A Solarized theme for HarborClient.",
       "author": "HarborClient",
-      "categories": ["requests"],
-      "repoUrl": "https://github.com/harborclient/plugin-interval",
+      "categories": ["themes"],
+      "repoUrl": "https://github.com/harborclient/plugin-solarized",
       "ref": "v1.0.0",
-      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-interval/main/screenshot.png"
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-solarized/main/assets/screenshots/appearance.png"
     }
   ]
 }

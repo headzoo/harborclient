@@ -343,6 +343,7 @@ export function registerPluginHandlers(pluginManager: PluginManager): void {
 
   handle('plugins:fsReadFile', ipcArgSchemas.pluginFsReadFile, (_event, pluginId, path) => {
     pluginManager.assertPermission(pluginId, 'filesystem:read');
+    pluginManager.reconcileFilesystemGrants(pluginId);
     return pluginManager.fsAllowlist.readTextFile(pluginId, path);
   });
 
@@ -351,9 +352,18 @@ export function registerPluginHandlers(pluginManager: PluginManager): void {
     ipcArgSchemas.pluginFsWriteFile,
     (_event, pluginId, path, content) => {
       pluginManager.assertPermission(pluginId, 'filesystem:write');
+      pluginManager.reconcileFilesystemGrants(pluginId);
       pluginManager.fsAllowlist.writeTextFile(pluginId, path, content);
     }
   );
+
+  handle('plugins:fsWatchFile', ipcArgSchemas.pluginFsWatchFile, (_event, pluginId, path) => {
+    pluginManager.watchFilesystemPath(pluginId, path);
+  });
+
+  handle('plugins:fsUnwatchFile', ipcArgSchemas.pluginFsUnwatchFile, (_event, pluginId, path) => {
+    pluginManager.unwatchFilesystemPath(pluginId, path);
+  });
 }
 
 /**

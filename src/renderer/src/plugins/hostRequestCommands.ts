@@ -1,5 +1,11 @@
-import type { KeyValue, SavedRequest } from '#/shared/types';
-import type { OpenRequestDraftParam, OpenRequestDraftPayload } from '@harborclient/plugin-api';
+import type { KeyValue, SaveRequestInput, SavedRequest } from '#/shared/types';
+import type {
+  CreateCollectionPayload,
+  CreateCollectionRequest,
+  CreateCollectionResult,
+  OpenRequestDraftParam,
+  OpenRequestDraftPayload
+} from '@harborclient/plugin-api';
 export type { OpenRequestDraftPayload } from '@harborclient/plugin-api';
 import { parseHttpMethod } from '#/shared/httpMethod';
 import { defaultAuth } from '#/shared/auth';
@@ -12,8 +18,14 @@ import {
   type RequestDraft
 } from '#/renderer/src/store/drafts';
 import { closeOverlay } from '#/renderer/src/store/slices/navigationSlice';
+import { setSelectedCollectionId } from '#/renderer/src/store/slices/collectionsSlice';
 import { openTabWithDraft, setActiveTab } from '#/renderer/src/store/slices/tabsSlice';
 import { requestLoadRequest, sendRequest } from '#/renderer/src/store/thunks/requests';
+import {
+  createCollection,
+  createFolder,
+  refreshCollectionContents
+} from '#/renderer/src/store/thunks/collections';
 import { registerCommand } from '#/renderer/src/plugins/createPluginContext';
 
 const HOST_PLUGIN_ID = 'harborclient';
@@ -135,6 +147,118 @@ export function triggerSendRequest(): void {
 }
 
 /**
+ * Validates and normalizes a plugin bulk-collection payload.
+ *
+ * @param payload - Raw payload from a plugin host command.
+ * @returns Normalized collection name and request rows.
+ */
+export function validateCreateCollectionPayload(payload: unknown): CreateCollectionPayload {
+  if (!payload || typeof payload !== 'object') {
+    throw new Error('harborclient.createCollection requires a payload object.');
+  }
+
+  const { name, requests } = payload as CreateCollectionPayload;
+  const trimmedName = typeof name === 'string' ? name.trim() : '';
+  if (!trimmedName) {
+    throw new Error('Collection name is required.');
+  }
+  if (!Array.isArray(requests)) {
+    throw new Error('Collection requests must be an array.');
+  }
+
+  return { name: trimmedName, requests };
+}
+
+/**
+ * Returns sorted unique folder names referenced by plugin request rows.
+ *
+ * @param requests - Request rows that may include folder names.
+ * @returns Distinct non-empty folder names in locale order.
+ */
+export function uniqueFolderNames(requests: CreateCollectionRequest[]): string[] {
+  const folders = new Set<string>();
+  for (const request of requests) {
+    const folder = typeof request.folder === 'string' ? request.folder.trim() : '';
+    if (folder) {
+      folders.add(folder);
+    }
+  }
+  return [...folders].sort((left, right) => left.localeCompare(right));
+}
+
+/**
+ * Maps a plugin request row into a save payload for the active database.
+ *
+ * @param request - Request row from a plugin bulk-collection import.
+ * @param collectionId - Target collection database id.
+ * @param folderId - Folder id when grouped, or null for collection root.
+ * @returns Input accepted by {@link window.api.saveRequest}.
+ */
+export function pluginRequestToSaveInput(
+  request: CreateCollectionRequest,
+  collectionId: number,
+  folderId: number | null
+): SaveRequestInput {
+  const trimmedName = typeof request.name === 'string' ? request.name.trim() : '';
+  if (!trimmedName) {
+    throw new Error('Each request must have a non-empty name.');
+  }
+
+  const method = parseHttpMethod(request.method) ?? 'GET';
+  const body = typeof request.body === 'string' ? request.body : '';
+  const bodyType = request.bodyType ?? (body.trim() ? 'text' : 'none');
+
+  return {
+    collection_id: collectionId,
+    folder_id: folderId,
+    name: trimmedName,
+    method,
+    url: typeof request.url === 'string' ? request.url : '',
+    headers: headersToKeyValues(request.headers),
+    params: paramsToKeyValues(request.params),
+    body,
+    body_type: bodyType,
+    auth: defaultAuth(),
+    pre_request_script: '',
+    post_request_script: '',
+    comment: typeof request.comment === 'string' ? request.comment : ''
+  };
+}
+
+/**
+ * Bulk-creates a collection with folders and saved requests supplied by a plugin.
+ *
+ * @param payload - Collection name and request rows to persist.
+ * @returns Database id of the created collection.
+ */
+export async function createCollectionFromPlugin(
+  payload: CreateCollectionPayload
+): Promise<CreateCollectionResult> {
+  const validated = validateCreateCollectionPayload(payload);
+  const collection = await store.dispatch(createCollection({ name: validated.name })).unwrap();
+
+  const folderIds = new Map<string, number>();
+  for (const folderName of uniqueFolderNames(validated.requests)) {
+    const folder = await store
+      .dispatch(createFolder({ collectionId: collection.id, name: folderName }))
+      .unwrap();
+    folderIds.set(folderName, folder.id);
+  }
+
+  for (const request of validated.requests) {
+    const folderName = typeof request.folder === 'string' ? request.folder.trim() : '';
+    const folderId = folderName ? (folderIds.get(folderName) ?? null) : null;
+    const saveInput = pluginRequestToSaveInput(request, collection.id, folderId);
+    await window.api.saveRequest(saveInput);
+  }
+
+  store.dispatch(setSelectedCollectionId(collection.id));
+  await store.dispatch(refreshCollectionContents(collection.id));
+
+  return { collectionId: collection.id };
+}
+
+/**
  * Registers host commands that let plugins open request editor tabs.
  *
  * @returns Disposer that unregisters the host request commands.
@@ -155,6 +279,9 @@ export function registerHostRequestCommands(): () => void {
     }),
     registerCommand(HOST_PLUGIN_ID, 'sendRequest', () => {
       triggerSendRequest();
+    }),
+    registerCommand(HOST_PLUGIN_ID, 'createCollection', async (payload) => {
+      await createCollectionFromPlugin(payload as CreateCollectionPayload);
     })
   ];
 

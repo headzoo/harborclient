@@ -90,5 +90,16 @@ describe('createPluginContext runtime surfaces', () => {
     );
     await expect(hc.host.loadRequest(1)).rejects.toThrow(/lacks permission: ui/);
     await expect(hc.host.sendRequest()).rejects.toThrow(/lacks permission: ui/);
+    await expect(hc.host.createEnvironmentWithVariables('Dev', [])).rejects.toThrow(
+      /lacks permission: ui/
+    );
+    await expect(hc.host.updateEnvironmentVariables(1, [])).rejects.toThrow(/lacks permission: ui/);
+  });
+
+  it('rejects hc.fs.watchFile without the filesystem:read permission', () => {
+    const hc = createPluginContext('com.example.test', createManifest(['ui']));
+    expect(() => hc.fs.watchFile('/tmp/example.env', () => {})).toThrow(
+      /lacks permission: filesystem:read/
+    );
   });
 });

@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron';
+import { normalize, resolve } from 'path';
 import type {
   Api,
   AuthConfig,
@@ -1449,6 +1450,27 @@ function pluginFsWriteFile(pluginId: string, path: string, content: string): Pro
   return ipcRenderer.invoke('plugins:fsWriteFile', pluginId, path, content);
 }
 
+/**
+ * Watches an allowlisted file for a plugin and invokes the callback on change.
+ */
+function pluginFsWatchFile(pluginId: string, path: string, callback: () => void): () => void {
+  const normalizedPath = normalize(resolve(path));
+  void ipcRenderer.invoke('plugins:fsWatchFile', pluginId, path);
+  const listener = (
+    _event: Electron.IpcRendererEvent,
+    payload: { pluginId: string; path: string }
+  ): void => {
+    if (payload.pluginId === pluginId && payload.path === normalizedPath) {
+      callback();
+    }
+  };
+  ipcRenderer.on('plugins:fsChanged', listener);
+  return () => {
+    void ipcRenderer.invoke('plugins:fsUnwatchFile', pluginId, path);
+    ipcRenderer.removeListener('plugins:fsChanged', listener);
+  };
+}
+
 const api: Api = {
   listCollections,
   createCollection,
@@ -1593,7 +1615,8 @@ const api: Api = {
   pluginFsPickDirectory,
   pluginFsSaveFile,
   pluginFsReadFile,
-  pluginFsWriteFile
+  pluginFsWriteFile,
+  pluginFsWatchFile
 };
 
 contextBridge.exposeInMainWorld('api', api);

@@ -17,7 +17,9 @@ import JSZip from 'jszip';
 import type { BrowserWindow } from 'electron';
 import { collectPluginHotReloadWatchTargets } from '#/main/plugins/pluginHotReloadWatch';
 import { validatePluginManifest } from '#/main/plugins/manifestSchema';
-import { PluginFsAllowlist } from '#/main/plugins/pluginFsAllowlist';
+import { PluginFsAllowlist, normalizePath } from '#/main/plugins/pluginFsAllowlist';
+import { PluginFsWatcher } from '#/main/plugins/pluginFsWatcher';
+import { collectFilesystemPathsFromPluginStorage } from '#/main/plugins/pluginStorageGrantPaths';
 import {
   clearPluginEnabled,
   getGitPluginOrigins,
@@ -91,6 +93,7 @@ export class PluginManager {
   readonly #records = new Map<string, PluginRecord>();
   readonly #reloadTimers = new Map<string, ReturnType<typeof setTimeout>>();
   readonly #fsAllowlist = new PluginFsAllowlist();
+  readonly #fsWatcher = new PluginFsWatcher(this.#fsAllowlist);
   #notifyWindow: (() => BrowserWindow | null) | null = null;
 
   /**
@@ -109,6 +112,29 @@ export class PluginManager {
    */
   setNotifyWindow(getter: () => BrowserWindow | null): void {
     this.#notifyWindow = getter;
+    this.#fsWatcher.setWindowProvider(getter);
+  }
+
+  /**
+   * Starts watching one allowlisted filesystem path for a plugin.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @param targetPath - Absolute file path on the plugin allowlist.
+   */
+  watchFilesystemPath(pluginId: string, targetPath: string): void {
+    this.assertPermission(pluginId, 'filesystem:read');
+    this.reconcileFilesystemGrants(pluginId);
+    this.#fsWatcher.watchFile(pluginId, targetPath);
+  }
+
+  /**
+   * Stops watching one filesystem path for a plugin.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @param targetPath - Absolute file path previously watched.
+   */
+  unwatchFilesystemPath(pluginId: string, targetPath: string): void {
+    this.#fsWatcher.unwatchFile(pluginId, targetPath);
   }
 
   /**
@@ -158,7 +184,60 @@ export class PluginManager {
    */
   grantFilesystemPath(pluginId: string, targetPath: string): void {
     this.#assertPluginExists(pluginId);
-    this.#fsAllowlist.grantPath(pluginId, targetPath);
+    const normalized = normalizePath(targetPath);
+    this.#fsAllowlist.grantPath(pluginId, normalized);
+    getLocalDatabase().addPluginFsGrant(pluginId, normalized);
+  }
+
+  /**
+   * Restores persisted user-granted filesystem paths into the in-memory allowlist.
+   *
+   * @param pluginId - Plugin manifest id.
+   */
+  restoreFilesystemGrants(pluginId: string): void {
+    for (const path of getLocalDatabase().listPluginFsGrants(pluginId)) {
+      this.#fsAllowlist.grantPath(pluginId, path);
+    }
+  }
+
+  /**
+   * Restores persisted grants and re-grants paths referenced in plugin storage.
+   *
+   * Linked `.env` paths saved before grant persistence was added are promoted into
+   * `plugin_fs_grants` so reads and watches succeed after restart.
+   *
+   * @param pluginId - Plugin manifest id.
+   */
+  reconcileFilesystemGrants(pluginId: string): void {
+    this.#assertPluginExists(pluginId);
+    this.restoreFilesystemGrants(pluginId);
+    this.#promoteStoredFilesystemGrants(pluginId);
+  }
+
+  /**
+   * Grants and persists filesystem paths referenced in plugin storage JSON.
+   *
+   * @param pluginId - Plugin manifest id.
+   */
+  #promoteStoredFilesystemGrants(pluginId: string): void {
+    const storedPaths = collectFilesystemPathsFromPluginStorage(
+      getLocalDatabase().listPluginStorageEntries(pluginId)
+    );
+    for (const path of storedPaths) {
+      const normalized = normalizePath(path);
+      this.#fsAllowlist.grantPath(pluginId, normalized);
+      getLocalDatabase().addPluginFsGrant(pluginId, normalized);
+    }
+  }
+
+  /**
+   * Clears persisted and in-memory filesystem grants for one plugin.
+   *
+   * @param pluginId - Plugin manifest id.
+   */
+  clearFilesystemGrants(pluginId: string): void {
+    getLocalDatabase().clearPluginFsGrants(pluginId);
+    this.#fsAllowlist.clearPlugin(pluginId);
   }
 
   /**
@@ -555,7 +634,8 @@ export class PluginManager {
       throw new Error('Only installed plugins can be uninstalled.');
     }
     this.#stopWatcher(pluginId);
-    this.#fsAllowlist.clearPlugin(pluginId);
+    this.#fsWatcher.clearPlugin(pluginId);
+    this.clearFilesystemGrants(pluginId);
     rmSync(record.info.path, { recursive: true, force: true });
     if (record.info.source === 'git') {
       removeGitPluginOrigin(pluginId);
@@ -579,7 +659,8 @@ export class PluginManager {
       throw new Error('Only unpacked plugins can be removed from the dev registry.');
     }
     this.#stopWatcher(pluginId);
-    this.#fsAllowlist.clearPlugin(pluginId);
+    this.#fsWatcher.clearPlugin(pluginId);
+    this.clearFilesystemGrants(pluginId);
     removeUnpackedPluginPath(pluginId);
     clearPluginEnabled(pluginId);
     this.#records.delete(pluginId);
@@ -720,6 +801,8 @@ export class PluginManager {
     }
     const manifest = validatePluginManifest(manifestRaw, this.#appVersion);
     this.#fsAllowlist.seedPluginDirectory(manifest.id, directory);
+    this.restoreFilesystemGrants(manifest.id);
+    this.#promoteStoredFilesystemGrants(manifest.id);
     return {
       id: manifest.id,
       name: manifest.name,

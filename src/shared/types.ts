@@ -3227,6 +3227,11 @@ export interface Api {
    * Writes a UTF-8 file to an allowlisted path for a plugin.
    */
   pluginFsWriteFile: (pluginId: string, path: string, content: string) => Promise<void>;
+
+  /**
+   * Watches an allowlisted file for changes and invokes the callback when it changes.
+   */
+  pluginFsWatchFile: (pluginId: string, path: string, callback: () => void) => () => void;
 }
 
 declare global {

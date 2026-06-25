@@ -5,6 +5,11 @@ import { z } from 'zod';
  */
 export const PLUGIN_CATALOG_URL = 'https://harborclient.com/plugin_catalog.json';
 
+/**
+ * Public URL of the official HarborClient plugin signing key served from harborclient.com.
+ */
+export const PLUGIN_SIGNING_PUBLIC_KEY_URL = 'https://harborclient.com/plugins/public.key';
+
 const pluginManifestId = z
   .string()
   .min(3)

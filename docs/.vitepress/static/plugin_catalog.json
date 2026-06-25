@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-25T02:13:25.310Z",
+  "updatedAt": "2026-06-25T13:24:00.141Z",
   "plugins": [
     {
       "id": "com.harborclient.plugins.curl",
@@ -28,6 +28,19 @@
       "repoUrl": "https://github.com/harborclient/plugin-history",
       "ref": "v1.0.0",
       "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-history/main/screenshot.png"
+    },
+    {
+      "id": "com.harborclient.plugins.interval",
+      "name": "Interval",
+      "version": "1.0.0",
+      "summary": "Adds a Timer tab to the request editor for interval polling and one-shot delayed sends.",
+      "author": "HarborClient",
+      "categories": [
+        "requests"
+      ],
+      "repoUrl": "https://github.com/harborclient/plugin-interval",
+      "ref": "v1.0.0",
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-interval/main/screenshot.png"
     },
     {
       "id": "com.harborclient.plugins.request-history",

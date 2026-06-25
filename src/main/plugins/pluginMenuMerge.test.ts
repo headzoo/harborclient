@@ -8,7 +8,7 @@ describe('mergePluginMenuItemsIntoTemplate', () => {
     const template: MenuItemConstructorOptions[] = [
       {
         label: 'File',
-        submenu: [{ label: 'New Request' }]
+        submenu: [{ label: 'New Request' }, { type: 'separator' }, { role: 'quit' }]
       },
       {
         label: 'Help',
@@ -47,11 +47,11 @@ describe('mergePluginMenuItemsIntoTemplate', () => {
     });
 
     const fileSubmenu = template[0]?.submenu as MenuItemConstructorOptions[];
-    expect(fileSubmenu).toHaveLength(5);
-    expect(fileSubmenu[1]).toEqual({ type: 'separator' });
+    expect(fileSubmenu).toHaveLength(6);
     expect(fileSubmenu[2]?.label).toBe('One');
     expect(fileSubmenu[3]).toEqual({ type: 'separator' });
     expect(fileSubmenu[4]?.label).toBe('Two');
+    expect(fileSubmenu[5]).toEqual({ role: 'quit' });
 
     const helpSubmenu = template[1]?.submenu as MenuItemConstructorOptions[];
     expect(helpSubmenu).toHaveLength(3);
@@ -60,6 +60,37 @@ describe('mergePluginMenuItemsIntoTemplate', () => {
 
     fileSubmenu[2]?.click?.({} as never, {} as never, {} as never);
     expect(clicked).toEqual([contributions[0]]);
+  });
+
+  it('places plugin file menu items above Quit without duplicating separators', () => {
+    const template: MenuItemConstructorOptions[] = [
+      {
+        label: 'File',
+        submenu: [{ label: 'Import' }, { type: 'separator' }, { role: 'quit' }]
+      }
+    ];
+
+    mergePluginMenuItemsIntoTemplate(
+      template,
+      [
+        {
+          pluginId: 'com.harborclient.plugins.openapi',
+          menu: 'file',
+          command: 'openapi.import',
+          label: 'Import OpenAPI',
+          group: 'import'
+        }
+      ],
+      vi.fn()
+    );
+
+    const fileSubmenu = template[0]?.submenu as MenuItemConstructorOptions[];
+    expect(fileSubmenu.map((item) => item.label ?? item.role ?? item.type)).toEqual([
+      'Import',
+      'separator',
+      'Import OpenAPI',
+      'quit'
+    ]);
   });
 
   it('ignores contributions for menus that are not in the template', () => {

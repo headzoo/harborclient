@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(plugins): enhance plugin filesystem management and add new APIs. (`8312934`)
+
 ## 1.8.6 - 2026-06-25
 
 - feat(plugins): add Interval plugin to the catalog. (`ddea307`)

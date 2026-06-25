@@ -29,6 +29,11 @@ import {
   registerThemeContribution
 } from '#/renderer/src/plugins/registry';
 import {
+  createEnvironmentWithVariables,
+  updateEnvironmentVariables
+} from '#/renderer/src/plugins/hostEnvironmentCommands';
+import {
+  createCollectionFromPlugin,
   loadSavedRequest,
   openRequestDraft,
   triggerSendRequest
@@ -203,6 +208,17 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
       writeFile: async (path, content) => {
         assertPermission('filesystem:write');
         await window.api.pluginFsWriteFile(pluginId, path, content);
+      },
+      watchFile: (path, listener) => {
+        assertPermission('filesystem:read');
+        const unsubscribe = window.api.pluginFsWatchFile(pluginId, path, () => {
+          listener(path);
+        });
+        return {
+          dispose: () => {
+            unsubscribe();
+          }
+        };
       }
     },
     commands: {
@@ -384,6 +400,18 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
       sendRequest: async () => {
         assertUi();
         triggerSendRequest();
+      },
+      createEnvironmentWithVariables: async (name, variables) => {
+        assertUi();
+        return createEnvironmentWithVariables(name, variables);
+      },
+      updateEnvironmentVariables: async (environmentId, variables) => {
+        assertUi();
+        await updateEnvironmentVariables(environmentId, variables);
+      },
+      createCollection: async (payload) => {
+        assertUi();
+        return createCollectionFromPlugin(payload);
       }
     }
   };

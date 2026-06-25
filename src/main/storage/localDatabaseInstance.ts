@@ -8,7 +8,10 @@ let instance: LocalDatabase | null = null;
  * @param userDataPath - Electron app userData path for the registry file.
  */
 export async function initLocalDatabase(userDataPath: string): Promise<LocalDatabase> {
-  if (instance) return instance;
+  if (instance) {
+    await instance.init();
+    return instance;
+  }
 
   const database = new LocalDatabase(userDataPath);
   await database.init();

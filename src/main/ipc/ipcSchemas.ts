@@ -527,5 +527,7 @@ export const ipcArgSchemas = {
     pluginId,
     z.string().min(1),
     z.string().max(MAX_IPC_REQUEST_BODY_CHARS)
-  ])
+  ]),
+  pluginFsWatchFile: z.tuple([pluginId, z.string().min(1)]),
+  pluginFsUnwatchFile: z.tuple([pluginId, z.string().min(1)])
 } as const;

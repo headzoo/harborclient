@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { SavedRequest } from '#/shared/types';
-import { draftFromOpenPayload, findSavedRequest } from '#/renderer/src/plugins/hostRequestCommands';
+import {
+  draftFromOpenPayload,
+  findSavedRequest,
+  pluginRequestToSaveInput,
+  uniqueFolderNames,
+  validateCreateCollectionPayload
+} from '#/renderer/src/plugins/hostRequestCommands';
 import { toPluginHttpRequest } from '#/shared/plugin/httpRequest';
 import type { RootState } from '#/renderer/src/store/redux';
 
@@ -83,5 +89,55 @@ describe('hostRequestCommands', () => {
 
     expect(findSavedRequest(state, 42)).toEqual(saved);
     expect(findSavedRequest(state, 99)).toBeUndefined();
+  });
+
+  it('validates bulk collection payloads and maps plugin requests to save input', () => {
+    expect(validateCreateCollectionPayload({ name: ' API ', requests: [] })).toEqual({
+      name: 'API',
+      requests: []
+    });
+
+    expect(
+      uniqueFolderNames([
+        { name: 'A', folder: 'pets' },
+        { name: 'B', folder: 'users' },
+        { name: 'C', folder: 'pets' }
+      ])
+    ).toEqual(['pets', 'users']);
+
+    const saveInput = pluginRequestToSaveInput(
+      {
+        name: 'List pets',
+        method: 'get',
+        url: 'https://example.com/pets',
+        headers: { Accept: 'application/json' },
+        params: [{ key: 'limit', value: '10' }],
+        body: '{"ok":true}',
+        bodyType: 'json',
+        folder: 'pets',
+        comment: 'Generated from OpenAPI'
+      },
+      7,
+      3
+    );
+
+    expect(saveInput.collection_id).toBe(7);
+    expect(saveInput.folder_id).toBe(3);
+    expect(saveInput.name).toBe('List pets');
+    expect(saveInput.method).toBe('GET');
+    expect(saveInput.url).toBe('https://example.com/pets');
+    expect(saveInput.body_type).toBe('json');
+    expect(saveInput.comment).toBe('Generated from OpenAPI');
+  });
+
+  it('rejects invalid bulk collection payloads', () => {
+    expect(() => validateCreateCollectionPayload(null)).toThrow(/payload object/);
+    expect(() => validateCreateCollectionPayload({ name: ' ', requests: [] })).toThrow(
+      /name is required/
+    );
+    expect(() => validateCreateCollectionPayload({ name: 'API', requests: 'bad' })).toThrow(
+      /must be an array/
+    );
+    expect(() => pluginRequestToSaveInput({ name: ' ' }, 1, null)).toThrow(/non-empty name/);
   });
 });

@@ -122,14 +122,13 @@ export class LocalDatabase {
    * Opens the registry SQLite database and ensures schema exists.
    */
   async init(): Promise<void> {
-    if (this.#db) return;
+    if (!this.#db) {
+      const dbPath = join(this.#userDataPath, REGISTRY_DB_FILENAME);
+      this.#db = new Database(dbPath);
+      this.#db.pragma('journal_mode = WAL');
+      this.#db.pragma('foreign_keys = ON');
 
-    const dbPath = join(this.#userDataPath, REGISTRY_DB_FILENAME);
-    this.#db = new Database(dbPath);
-    this.#db.pragma('journal_mode = WAL');
-    this.#db.pragma('foreign_keys = ON');
-
-    this.#db.exec(`
+      this.#db.exec(`
       CREATE TABLE IF NOT EXISTS collection_registry (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -174,11 +173,39 @@ export class LocalDatabase {
         value TEXT NOT NULL,
         PRIMARY KEY (plugin_id, key)
       );
-    `);
 
+      CREATE TABLE IF NOT EXISTS plugin_fs_grants (
+        plugin_id TEXT NOT NULL,
+        path TEXT NOT NULL,
+        PRIMARY KEY (plugin_id, path)
+      );
+    `);
+    }
+
+    this.migratePluginTables();
     this.migrateRegistrySortOrder();
     this.migrateRegistryCollectionUuid();
     this.migrateEnvironmentUuid();
+  }
+
+  /**
+   * Ensures plugin storage and filesystem grant tables exist on legacy databases.
+   */
+  private migratePluginTables(): void {
+    this.getDb().exec(`
+      CREATE TABLE IF NOT EXISTS plugin_storage (
+        plugin_id TEXT NOT NULL,
+        key TEXT NOT NULL,
+        value TEXT NOT NULL,
+        PRIMARY KEY (plugin_id, key)
+      );
+
+      CREATE TABLE IF NOT EXISTS plugin_fs_grants (
+        plugin_id TEXT NOT NULL,
+        path TEXT NOT NULL,
+        PRIMARY KEY (plugin_id, path)
+      );
+    `);
   }
 
   /**
@@ -791,6 +818,18 @@ export class LocalDatabase {
   }
 
   /**
+   * Lists all persisted storage rows for one plugin.
+   *
+   * @param pluginId - Plugin manifest id.
+   */
+  listPluginStorageEntries(pluginId: string): Array<{ key: string; value: string }> {
+    const rows = this.getDb()
+      .prepare('SELECT key, value FROM plugin_storage WHERE plugin_id = ? ORDER BY key')
+      .all(pluginId) as Array<{ key: string; value: string }>;
+    return rows;
+  }
+
+  /**
    * Persists a plugin-scoped JSON value.
    *
    * @param pluginId - Plugin manifest id.
@@ -805,6 +844,44 @@ export class LocalDatabase {
          ON CONFLICT(plugin_id, key) DO UPDATE SET value = excluded.value`
       )
       .run(pluginId, key, value);
+  }
+
+  /**
+   * Persists a user-granted filesystem path for one plugin.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @param path - Normalized absolute path approved via pick/save dialogs.
+   */
+  addPluginFsGrant(pluginId: string, path: string): void {
+    this.getDb()
+      .prepare(
+        `INSERT INTO plugin_fs_grants (plugin_id, path)
+         VALUES (?, ?)
+         ON CONFLICT(plugin_id, path) DO NOTHING`
+      )
+      .run(pluginId, path);
+  }
+
+  /**
+   * Lists persisted filesystem grants for one plugin.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @returns Normalized absolute paths previously granted for the plugin.
+   */
+  listPluginFsGrants(pluginId: string): string[] {
+    const rows = this.getDb()
+      .prepare('SELECT path FROM plugin_fs_grants WHERE plugin_id = ? ORDER BY path')
+      .all(pluginId) as Array<{ path: string }>;
+    return rows.map((row) => row.path);
+  }
+
+  /**
+   * Removes all persisted filesystem grants for one plugin.
+   *
+   * @param pluginId - Plugin manifest id.
+   */
+  clearPluginFsGrants(pluginId: string): void {
+    this.getDb().prepare('DELETE FROM plugin_fs_grants WHERE plugin_id = ?').run(pluginId);
   }
 }
 

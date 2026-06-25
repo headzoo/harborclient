@@ -31,11 +31,13 @@
     "release:minor": "gh workflow run Release --ref main -f release_type=minor",
     "release:major": "gh workflow run Release --ref main -f release_type=major",
     "docs:build": "pnpm docs:build:nav && vitepress build docs",
-    "docs:build:nav": "node scripts/sync-docs-assets.mjs && node scripts/generate-download-links.mjs && node --experimental-strip-types scripts/generate-plugin-catalog.ts && node scripts/build-docs-nav.mjs && node scripts/assert-docs-slugs.mjs",
+    "docs:build:nav": "node scripts/sync-docs-assets.mjs && node scripts/sync-plugin-signing-key.mjs && node scripts/generate-download-links.mjs && node --experimental-strip-types scripts/generate-plugin-catalog.ts && node scripts/build-docs-nav.mjs && node scripts/assert-docs-slugs.mjs",
     "docs:preview": "pnpm docs:build && vitepress preview docs",
     "docs:serve": "pnpm docs:build:nav && concurrently --kill-others --prefixColors=auto -n nav,vp \"node scripts/watch-docs-nav.mjs\" \"vitepress dev docs\"",
     "kill": "pkill -f \"harborclient/node_modules/.pnpm/electron\"",
-    "screenshots": "node scripts/capture-screenshots.mjs"
+    "screenshots": "node scripts/capture-screenshots.mjs",
+    "plugin:sign": "node --experimental-strip-types scripts/plugin-sign.ts",
+    "plugin:verify": "node --experimental-strip-types scripts/plugin-verify.ts"
   },
   "packageManager": "pnpm@10.17.1",
   "dependencies": {
@@ -80,7 +82,7 @@
   },
   "devDependencies": {
     "@braintree/sanitize-url": "^7.1.2",
-    "@harborclient/plugin-api": "^0.3.4",
+    "@harborclient/plugin-api": "^0.4.1",
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.1.0",
     "@tailwindcss/vite": "^4.3.1",
