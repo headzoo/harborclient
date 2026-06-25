@@ -226,6 +226,25 @@ When your HarborClient Team Hub administrator enables LLM support, HarborClient 
 
 See the [AI assistant](/ai) guide and the team hub [LLM proxy documentation](https://harborclient.github.io/team-hub/llm.html).
 
+## Team Hub plugin sources
+
+Team Hub administrators can declare plugin marketplace and trusted-publisher URLs in
+`server.yaml`:
+
+```yaml
+plugins:
+  catalogs:
+    - https://harborclient.com/plugin_catalog.json
+  trusted:
+    - https://harborclient.com/plugins/trusted.json
+```
+
+HarborClient fetches these from `GET /plugins/sources` for each connected hub and merges them
+into **Settings → Plugins → Settings** as read-only rows labeled **From {hub name}**. Users
+cannot remove or disable Team Hub endpoints in the app; change them on the Team Hub server.
+
+See [Plugin marketplace](/plugins) for how custom and hub-provided sources are merged.
+
 ## Limitations
 
 | Topic                      | Behavior                                                                                                                |

@@ -37,6 +37,7 @@ import type {
   SidebarExpansionState
 } from '#/shared/types';
 import type { CollectionRunnerConfig } from '#/shared/collectionRunner';
+import { pluginSourcesSchema } from '#/shared/plugin/catalog';
 
 export {
   bodyType,
@@ -500,6 +501,7 @@ export const ipcArgSchemas = {
   pluginInstallFromPath: z.tuple([z.string().min(1)]),
   pluginInstallFromGit: z.tuple([z.string().min(1), z.string().min(1).optional()]),
   pluginLoadUnpackedFromPath: z.tuple([z.string().min(1)]),
+  pluginSources: z.tuple([pluginSourcesSchema]),
   pluginReadEntry: z.tuple([pluginId, pluginEntryKind]),
   pluginReadAsset: z.tuple([pluginId, z.string().min(1)]),
   pluginStorageKey: z.tuple([pluginId, z.string().min(1)]),

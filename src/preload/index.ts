@@ -36,6 +36,8 @@ import type {
   PluginFsSaveFileOptions,
   PluginInfo,
   PluginCatalog,
+  PluginSourcesSettings,
+  TeamHubPluginSourcesView,
   SerializableMenuContribution,
   RequestExport,
   SaveRequestInput,
@@ -1253,6 +1255,29 @@ function getPluginCatalog(): Promise<PluginCatalog> {
 }
 
 /**
+ * Returns persisted plugin catalog and trusted-key source settings.
+ */
+function getPluginSources(): Promise<PluginSourcesSettings> {
+  return ipcRenderer.invoke('plugins:getSources');
+}
+
+/**
+ * Persists plugin catalog and trusted-key source settings.
+ *
+ * @param settings - Catalog and trusted registry endpoints to store.
+ */
+function setPluginSources(settings: PluginSourcesSettings): Promise<PluginSourcesSettings> {
+  return ipcRenderer.invoke('plugins:setSources', settings);
+}
+
+/**
+ * Refreshes and returns read-only plugin source URLs from connected Team Hubs.
+ */
+function getTeamHubPluginSources(): Promise<TeamHubPluginSourcesView> {
+  return ipcRenderer.invoke('plugins:getTeamHubSources');
+}
+
+/**
  * Installs a plugin via native file picker.
  */
 function installPlugin(): Promise<PluginInfo | null> {
@@ -1646,6 +1671,9 @@ const api: Api = {
   restartApp,
   listPlugins,
   getPluginCatalog,
+  getPluginSources,
+  setPluginSources,
+  getTeamHubPluginSources,
   installPlugin,
   installPluginFromPath,
   installPluginFromGit,

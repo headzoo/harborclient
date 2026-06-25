@@ -268,6 +268,14 @@ export const listHubLlmModelsResponseSchema = z.object({
 });
 
 /**
+ * JSON shape for GET /plugins/sources response body.
+ */
+export const pluginSourcesResponseSchema = z.object({
+  catalogs: z.array(z.string()),
+  trusted: z.array(z.string())
+});
+
+/**
  * JSON shape for POST /llm/chat/step response body.
  */
 export const hubChatStepResponseSchema = z.object({

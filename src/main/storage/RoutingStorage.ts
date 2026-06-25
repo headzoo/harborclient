@@ -20,6 +20,7 @@ import type {
 import { logVerbose } from '#/main/logger';
 import { isStorageConnectionConfigured } from '#/main/settings/storageSettings';
 import { getSlotForConnection } from '#/main/settings/storageSlots';
+import { refreshTeamHubPluginSources } from '#/main/settings/teamHubPluginSources';
 import { unlinkSync } from 'fs';
 import type {
   AuthConfig,
@@ -814,6 +815,10 @@ export class RoutingStorage implements IStorage {
         console.warn(`Failed to sync collections from team hub "${hub.name}":`, err);
       }
     }
+
+    void refreshTeamHubPluginSources().catch((err) => {
+      console.warn('Failed to refresh Team Hub plugin sources:', err);
+    });
 
     for (const connection of connections) {
       if (connection.type !== 'git' || !router.byConnectionId.has(connection.id)) {

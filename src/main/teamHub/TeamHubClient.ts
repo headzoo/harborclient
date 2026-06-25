@@ -11,6 +11,7 @@ import {
   listEnvironmentsResponseSchema,
   listFoldersResponseSchema,
   listHubLlmModelsResponseSchema,
+  pluginSourcesResponseSchema,
   listRequestsResponseSchema,
   hubChatStepResponseSchema,
   savedRequestRecordSchema,
@@ -40,6 +41,7 @@ import type {
   HubApiTokenRecord,
   HubUserRecord,
   MoveRequestInput,
+  PluginSourcesResponse,
   RenameFolderInput,
   ReorderFoldersInput,
   ReorderRequestsInput,
@@ -634,6 +636,16 @@ export class TeamHubClient implements ITeamHubClient {
       schema: listHubLlmModelsResponseSchema
     });
     return (result as { models: HubLlmModel[] }).models;
+  }
+
+  /**
+   * Returns plugin catalog and trusted-publisher URLs configured on this Team Hub.
+   */
+  async getPluginSources(): Promise<PluginSourcesResponse> {
+    const result = await this.request('GET', '/plugins/sources', {
+      schema: pluginSourcesResponseSchema
+    });
+    return result as PluginSourcesResponse;
   }
 
   /**

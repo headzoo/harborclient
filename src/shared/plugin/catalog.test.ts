@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { parsePluginCatalog, parsePluginTrustedKeys } from '#/shared/plugin/catalog';
+import {
+  getDefaultPluginSources,
+  isHarborClientEndpoint,
+  normalizePluginSources,
+  parsePluginCatalog,
+  parsePluginTrustedKeys,
+  PLUGIN_CATALOG_URL,
+  PLUGIN_TRUSTED_KEYS_URL
+} from '#/shared/plugin/catalog';
 
 const validCatalog = {
   schemaVersion: 1 as const,
@@ -102,5 +110,45 @@ describe('parsePluginTrustedKeys', () => {
         }
       ])
     ).toThrow();
+  });
+});
+
+describe('plugin source settings helpers', () => {
+  it('returns HarborClient defaults with both endpoints enabled', () => {
+    expect(getDefaultPluginSources()).toEqual({
+      catalogs: [{ url: PLUGIN_CATALOG_URL, enabled: true }],
+      trusted: [{ url: PLUGIN_TRUSTED_KEYS_URL, enabled: true }]
+    });
+  });
+
+  it('dedupes plugin source URLs while preserving the first row', () => {
+    expect(
+      normalizePluginSources({
+        catalogs: [
+          { url: 'https://example.com/catalog.json', enabled: true },
+          { url: 'https://example.com/catalog.json', enabled: false }
+        ],
+        trusted: [{ url: 'https://example.com/trusted.json', enabled: true }]
+      })
+    ).toEqual({
+      catalogs: [{ url: 'https://example.com/catalog.json', enabled: true }],
+      trusted: [{ url: 'https://example.com/trusted.json', enabled: true }]
+    });
+  });
+
+  it('returns defaults when both lists are empty after normalization', () => {
+    expect(
+      normalizePluginSources({
+        catalogs: [],
+        trusted: []
+      })
+    ).toEqual(getDefaultPluginSources());
+  });
+
+  it('identifies harborclient.com endpoints and subdomains', () => {
+    expect(isHarborClientEndpoint(PLUGIN_CATALOG_URL)).toBe(true);
+    expect(isHarborClientEndpoint('https://cdn.harborclient.com/plugin_catalog.json')).toBe(true);
+    expect(isHarborClientEndpoint('https://example.com/catalog.json')).toBe(false);
+    expect(isHarborClientEndpoint('not-a-url')).toBe(false);
   });
 });

@@ -10,6 +10,7 @@ import type {
   HealthResponse,
   HubUserRecord,
   MoveRequestInput,
+  PluginSourcesResponse,
   RenameFolderInput,
   ReorderFoldersInput,
   ReorderRequestsInput,
@@ -106,6 +107,11 @@ export interface ITeamHubClient {
    * Lists all hub-offered LLM models for admin user management.
    */
   listAdminLlmModels(): Promise<HubLlmModel[]>;
+
+  /**
+   * Returns plugin catalog and trusted-publisher URLs configured on this Team Hub.
+   */
+  getPluginSources(): Promise<PluginSourcesResponse>;
 
   /**
    * Loads collection, environment, and LLM model options for admin user forms.

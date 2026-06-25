@@ -8,6 +8,21 @@ import type {
 } from '#/shared/types';
 
 /**
+ * Response body from `GET /plugins/sources`.
+ */
+export interface PluginSourcesResponse {
+  /**
+   * Plugin marketplace catalog JSON URLs configured on the Team Hub.
+   */
+  catalogs: string[];
+
+  /**
+   * Trusted publisher signing-key registry JSON URLs configured on the Team Hub.
+   */
+  trusted: string[];
+}
+
+/**
  * Connection settings for {@link TeamHubClient}.
  */
 export interface TeamHubClientConfig {

@@ -3,9 +3,62 @@ import { join } from 'path';
 import { app } from 'electron';
 import {
   parsePluginCatalog,
-  PLUGIN_CATALOG_URL,
-  type PluginCatalog
+  type PluginCatalog,
+  type PluginCatalogEntry
 } from '#/shared/plugin/catalog';
+import { getEnabledCatalogUrls } from '#/main/settings/pluginSourcesSettings';
+
+/**
+ * Fetches and parses one plugin catalog document from a remote URL.
+ *
+ * @param url - Catalog JSON endpoint.
+ * @returns Parsed catalog when the request succeeds and the payload is valid.
+ */
+async function fetchCatalogFromUrl(url: string): Promise<PluginCatalog | null> {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const raw: unknown = await response.json();
+    return parsePluginCatalog(raw);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Merges plugin catalog entries from multiple sources, keeping the first
+ * occurrence of each plugin id.
+ *
+ * @param catalogs - Parsed catalogs in fetch priority order.
+ * @returns Combined catalog with deduplicated plugin ids.
+ */
+export function mergePluginCatalogs(catalogs: PluginCatalog[]): PluginCatalog {
+  const seen = new Set<string>();
+  const plugins: PluginCatalogEntry[] = [];
+
+  for (const catalog of catalogs) {
+    for (const entry of catalog.plugins) {
+      if (seen.has(entry.id)) {
+        continue;
+      }
+      seen.add(entry.id);
+      plugins.push(entry);
+    }
+  }
+
+  return {
+    schemaVersion: 1,
+    plugins
+  };
+}
 
 /**
  * Candidate filesystem paths for the repository catalog used when the remote
@@ -56,26 +109,26 @@ export function readLocalPluginCatalog(paths = getLocalPluginCatalogPaths()): Pl
 }
 
 /**
- * Fetches the public plugin marketplace catalog, falling back to the local
- * repository catalog when harborclient.com has not been deployed yet.
+ * Fetches the public plugin marketplace catalog from all enabled sources,
+ * falling back to the local repository catalog when no remote source succeeds.
  *
+ * @param catalogUrls - Optional override list of catalog URLs for tests.
  * @returns Parsed catalog entries sorted for display by the renderer.
  * @throws When neither the remote nor local catalog can be loaded.
  */
-export async function fetchPluginCatalog(): Promise<PluginCatalog> {
-  try {
-    const response = await fetch(PLUGIN_CATALOG_URL, {
-      headers: {
-        Accept: 'application/json'
-      }
-    });
+export async function fetchPluginCatalog(catalogUrls?: string[]): Promise<PluginCatalog> {
+  const urls = catalogUrls ?? getEnabledCatalogUrls();
+  const fetched: PluginCatalog[] = [];
 
-    if (response.ok) {
-      const raw: unknown = await response.json();
-      return parsePluginCatalog(raw);
+  for (const url of urls) {
+    const catalog = await fetchCatalogFromUrl(url);
+    if (catalog) {
+      fetched.push(catalog);
     }
-  } catch {
-    // Network errors fall through to the local catalog.
+  }
+
+  if (fetched.length > 0) {
+    return mergePluginCatalogs(fetched);
   }
 
   const local = readLocalPluginCatalog();

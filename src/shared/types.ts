@@ -8,7 +8,7 @@ import type {
   PluginInfo,
   SerializableMenuContribution
 } from '#/shared/plugin/types';
-import type { PluginCatalog } from '#/shared/plugin/catalog';
+import type { PluginCatalog, PluginSourcesSettings } from '#/shared/plugin/catalog';
 import type { CollectionRunnerConfig } from '#/shared/collectionRunner';
 
 export type { AuthConfig, AuthType, OAuthFetchTokenResult } from '#/shared/auth';
@@ -22,7 +22,11 @@ export type {
   PluginPermission,
   SerializableMenuContribution
 } from '#/shared/plugin/types';
-export type { PluginCatalog, PluginCatalogEntry } from '#/shared/plugin/catalog';
+export type {
+  PluginCatalog,
+  PluginCatalogEntry,
+  PluginSourcesSettings
+} from '#/shared/plugin/catalog';
 export type { CollectionRunnerConfig } from '#/shared/collectionRunner';
 
 /**
@@ -1763,6 +1767,41 @@ export interface TeamHub {
 }
 
 /**
+ * One plugin source URL provided by a connected Team Hub.
+ */
+export interface TeamHubPluginSource {
+  /**
+   * Team hub connection identifier from local settings.
+   */
+  hubId: string;
+
+  /**
+   * User-defined Team Hub display name.
+   */
+  hubName: string;
+
+  /**
+   * Catalog or trusted registry endpoint URL from the Team Hub.
+   */
+  url: string;
+}
+
+/**
+ * Read-only Team Hub plugin sources returned to the renderer.
+ */
+export interface TeamHubPluginSourcesView {
+  /**
+   * Catalog endpoint URLs from connected Team Hubs.
+   */
+  catalogs: TeamHubPluginSource[];
+
+  /**
+   * Trusted publisher registry URLs from connected Team Hubs.
+   */
+  trusted: TeamHubPluginSource[];
+}
+
+/**
  * Result of probing a team hub token via `GET /auth/session`.
  */
 export interface TeamHubSessionScanResult {
@@ -3084,9 +3123,26 @@ export interface Api {
   listPlugins: () => Promise<PluginInfo[]>;
 
   /**
-   * Fetches the curated plugin marketplace catalog from harborclient.com.
+   * Fetches the curated plugin marketplace catalog from configured sources.
    */
   getPluginCatalog: () => Promise<PluginCatalog>;
+
+  /**
+   * Returns persisted plugin catalog and trusted-key source settings.
+   */
+  getPluginSources: () => Promise<PluginSourcesSettings>;
+
+  /**
+   * Persists plugin catalog and trusted-key source settings.
+   *
+   * @param settings - Catalog and trusted registry endpoints to store.
+   */
+  setPluginSources: (settings: PluginSourcesSettings) => Promise<PluginSourcesSettings>;
+
+  /**
+   * Refreshes and returns read-only plugin source URLs from connected Team Hubs.
+   */
+  getTeamHubPluginSources: () => Promise<TeamHubPluginSourcesView>;
 
   /**
    * Installs a plugin from a native file picker (.hcp / .zip).

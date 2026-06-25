@@ -18,6 +18,8 @@ import {
   removeSlotForConnection
 } from '#/main/settings/storageSlots';
 import { deleteTeamHub, listTeamHubs, saveTeamHub } from '#/main/settings/teamHubSettings';
+import { refreshTeamHubPluginSources } from '#/main/settings/teamHubPluginSources';
+import { clearTrustedKeysCache } from '#/main/plugins/pluginSignature';
 import { scanTeamHubSessions } from '#/main/settings/teamHubSessionScan';
 import { TeamHubClient } from '#/main/teamHub/TeamHubClient';
 import { getAiSettings, setAiSettings } from '#/main/settings/aiSettings';
@@ -268,6 +270,11 @@ export function registerSettingsHandlers(db: IStorage): void {
       }
     }
 
+    await refreshTeamHubPluginSources().catch((err) => {
+      console.warn('Failed to refresh Team Hub plugin sources:', err);
+    });
+    clearTrustedKeysCache();
+
     return hubs;
   });
 
@@ -284,7 +291,12 @@ export function registerSettingsHandlers(db: IStorage): void {
       await db.removeTeamHub(id);
       removeSlotForConnection(id);
     }
-    return deleteTeamHub(id);
+    const hubs = deleteTeamHub(id);
+    await refreshTeamHubPluginSources().catch((err) => {
+      console.warn('Failed to refresh Team Hub plugin sources:', err);
+    });
+    clearTrustedKeysCache();
+    return hubs;
   });
 
   // Returns the id of the active database connection.

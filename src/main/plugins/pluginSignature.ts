@@ -4,10 +4,11 @@ import { app } from 'electron';
 import { readPluginSignature, verifyPlugin } from '@harborclient/sdk/signing';
 import {
   parsePluginTrustedKeys,
-  PLUGIN_TRUSTED_KEYS_URL,
+  type PluginTrustedKeyEntry,
   type PluginTrustedKeys
 } from '#/shared/plugin/catalog';
 import type { PluginManifest, PluginSignatureInfo } from '#/shared/plugin/types';
+import { getEnabledTrustedUrls } from '#/main/settings/pluginSourcesSettings';
 
 /**
  * Thrown when the trusted key registry or a publisher public key cannot be fetched.
@@ -77,32 +78,33 @@ export function readLocalPluginTrustedKeys(
 }
 
 /**
- * Fetches the public trusted plugin signing key registry, falling back to the
- * local repository file when harborclient.com is unreachable.
+ * Fetches the public trusted plugin signing key registry from all enabled
+ * sources, falling back to the local repository file when harborclient.com is
+ * unreachable.
  *
+ * @param trustedUrls - Optional override list of trusted.json URLs for tests.
  * @returns Parsed trusted key entries for publisher matching.
  * @throws {@link PluginSignatureUnavailableError} When neither remote nor local
  *   trusted keys can be loaded.
  */
-export async function fetchTrustedKeys(): Promise<PluginTrustedKeys> {
+export async function fetchTrustedKeys(trustedUrls?: string[]): Promise<PluginTrustedKeys> {
   if (cachedTrustedKeys) {
     return cachedTrustedKeys;
   }
 
-  try {
-    const response = await fetch(PLUGIN_TRUSTED_KEYS_URL, {
-      headers: {
-        Accept: 'application/json'
-      }
-    });
+  const urls = trustedUrls ?? getEnabledTrustedUrls();
+  const fetched: PluginTrustedKeys[] = [];
 
-    if (response.ok) {
-      const raw: unknown = await response.json();
-      cachedTrustedKeys = parsePluginTrustedKeys(raw);
-      return cachedTrustedKeys;
+  for (const url of urls) {
+    const registry = await fetchTrustedKeysFromUrl(url);
+    if (registry) {
+      fetched.push(registry);
     }
-  } catch {
-    // Network errors fall through to the local registry.
+  }
+
+  if (fetched.length > 0) {
+    cachedTrustedKeys = mergePluginTrustedKeys(fetched);
+    return cachedTrustedKeys;
   }
 
   const local = readLocalPluginTrustedKeys();
@@ -114,6 +116,14 @@ export async function fetchTrustedKeys(): Promise<PluginTrustedKeys> {
   throw new PluginSignatureUnavailableError(
     'Could not reach the trusted plugin key registry and no local trusted keys were found.'
   );
+}
+
+/**
+ * Clears in-memory trusted key caches so tests can stub fetch independently.
+ */
+export function clearPluginSignatureCachesForTesting(): void {
+  clearTrustedKeysCache();
+  publicKeyCache.clear();
 }
 
 /**
@@ -173,11 +183,59 @@ export async function fetchPublicKeyPem(url: string): Promise<string> {
 }
 
 /**
- * Clears in-memory trusted key caches so tests can stub fetch independently.
+ * Fetches and parses one trusted plugin signing key registry from a remote URL.
+ *
+ * @param url - trusted.json endpoint.
+ * @returns Parsed trusted keys when the request succeeds and the payload is valid.
  */
-export function clearPluginSignatureCachesForTesting(): void {
+async function fetchTrustedKeysFromUrl(url: string): Promise<PluginTrustedKeys | null> {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const raw: unknown = await response.json();
+    return parsePluginTrustedKeys(raw);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Merges trusted plugin signing key entries from multiple sources, keeping the
+ * first occurrence of each key URL.
+ *
+ * @param registries - Parsed trusted key registries in fetch priority order.
+ * @returns Combined trusted keys with deduplicated key URLs.
+ */
+export function mergePluginTrustedKeys(registries: PluginTrustedKeys[]): PluginTrustedKeys {
+  const seen = new Set<string>();
+  const merged: PluginTrustedKeyEntry[] = [];
+
+  for (const registry of registries) {
+    for (const entry of registry) {
+      if (seen.has(entry.key)) {
+        continue;
+      }
+      seen.add(entry.key);
+      merged.push(entry);
+    }
+  }
+
+  return merged;
+}
+
+/**
+ * Clears in-memory trusted key caches so updated source settings take effect.
+ */
+export function clearTrustedKeysCache(): void {
   cachedTrustedKeys = null;
-  publicKeyCache.clear();
 }
 
 /**

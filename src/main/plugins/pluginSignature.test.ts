@@ -20,6 +20,10 @@ vi.mock('electron', () => ({
   }
 }));
 
+vi.mock('#/main/settings/pluginSourcesSettings', () => ({
+  getEnabledTrustedUrls: () => [PLUGIN_TRUSTED_KEYS_URL]
+}));
+
 /**
  * Creates a temporary app root containing plugins/trusted.json for tests.
  *
@@ -276,5 +280,44 @@ describe('pluginSignature', () => {
 
     const { fetchTrustedKeys } = await import('#/main/plugins/pluginSignature');
     await expect(fetchTrustedKeys()).resolves.toEqual([{ author: TEST_AUTHOR, key: TEST_KEY_URL }]);
+  });
+
+  it('fetchTrustedKeys merges registries from multiple URLs with first-source-wins keys', async () => {
+    const secondRegistry = [
+      {
+        author: TEST_AUTHOR,
+        key: TEST_KEY_URL
+      },
+      {
+        author: 'Other Publisher',
+        key: 'https://example.com/other.key'
+      }
+    ];
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input);
+      if (url === PLUGIN_TRUSTED_KEYS_URL) {
+        return new Response(JSON.stringify([{ author: TEST_AUTHOR, key: TEST_KEY_URL }]), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      if (url === 'https://example.com/trusted.json') {
+        return new Response(JSON.stringify(secondRegistry), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      return new Response('', { status: 404 });
+    });
+
+    const { fetchTrustedKeys, mergePluginTrustedKeys, clearPluginSignatureCachesForTesting } =
+      await import('#/main/plugins/pluginSignature');
+    clearPluginSignatureCachesForTesting();
+    await expect(
+      fetchTrustedKeys([PLUGIN_TRUSTED_KEYS_URL, 'https://example.com/trusted.json'])
+    ).resolves.toEqual(
+      mergePluginTrustedKeys([[{ author: TEST_AUTHOR, key: TEST_KEY_URL }], secondRegistry])
+    );
   });
 });

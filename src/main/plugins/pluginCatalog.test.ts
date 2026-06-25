@@ -28,6 +28,10 @@ vi.mock('electron', () => ({
   }
 }));
 
+vi.mock('#/main/settings/pluginSourcesSettings', () => ({
+  getEnabledCatalogUrls: () => [PLUGIN_CATALOG_URL]
+}));
+
 /**
  * Creates a temporary app root containing plugins/catalog.json for tests.
  *
@@ -92,6 +96,55 @@ describe('pluginCatalog', () => {
 
     const { fetchPluginCatalog } = await import('#/main/plugins/pluginCatalog');
     await expect(fetchPluginCatalog()).rejects.toThrow(/no local catalog was found/i);
+  });
+
+  it('fetchPluginCatalog merges catalogs from multiple URLs with first-source-wins ids', async () => {
+    const secondCatalog = {
+      schemaVersion: 1 as const,
+      plugins: [
+        {
+          id: 'com.example.demo',
+          name: 'Duplicate Plugin',
+          version: '9.9.9',
+          summary: 'Should be ignored because the first catalog wins.',
+          author: 'Example Inc.',
+          categories: ['utilities'],
+          repoUrl: 'https://github.com/example/duplicate-plugin'
+        },
+        {
+          id: 'com.example.other',
+          name: 'Other Plugin',
+          version: '2.0.0',
+          summary: 'Comes from the second catalog.',
+          author: 'Example Inc.',
+          categories: ['utilities'],
+          repoUrl: 'https://github.com/example/other-plugin'
+        }
+      ]
+    };
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input);
+      if (url === PLUGIN_CATALOG_URL) {
+        return new Response(JSON.stringify(sampleCatalog), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      if (url === 'https://example.com/catalog.json') {
+        return new Response(JSON.stringify(secondCatalog), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+      return new Response('', { status: 404 });
+    });
+
+    const { fetchPluginCatalog, mergePluginCatalogs } =
+      await import('#/main/plugins/pluginCatalog');
+    await expect(
+      fetchPluginCatalog([PLUGIN_CATALOG_URL, 'https://example.com/catalog.json'])
+    ).resolves.toEqual(mergePluginCatalogs([sampleCatalog, secondCatalog]));
   });
 });
 

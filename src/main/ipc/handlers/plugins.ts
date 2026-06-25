@@ -1,6 +1,9 @@
 import { BrowserWindow, dialog } from 'electron';
 import type { PluginManager } from '#/main/plugins/PluginManager';
 import { fetchPluginCatalog } from '#/main/plugins/pluginCatalog';
+import { clearTrustedKeysCache } from '#/main/plugins/pluginSignature';
+import { getPluginSources, setPluginSources } from '#/main/settings/pluginSourcesSettings';
+import { refreshTeamHubPluginSources } from '#/main/settings/teamHubPluginSources';
 import { rebuildAppMenu } from '#/main/appMenu';
 import { handle } from '#/main/ipc/handle';
 import { ipcArgSchemas } from '#/main/ipc/ipcSchemas';
@@ -165,6 +168,18 @@ export function registerPluginHandlers(pluginManager: PluginManager): void {
   handle('plugins:list', ipcArgSchemas.none, () => pluginManager.list());
 
   handle('plugins:catalog', ipcArgSchemas.none, () => fetchPluginCatalog());
+
+  handle('plugins:getSources', ipcArgSchemas.none, () => getPluginSources());
+
+  handle('plugins:setSources', ipcArgSchemas.pluginSources, (_event, settings) => {
+    const saved = setPluginSources(settings);
+    clearTrustedKeysCache();
+    return saved;
+  });
+
+  handle('plugins:getTeamHubSources', ipcArgSchemas.none, async () =>
+    refreshTeamHubPluginSources()
+  );
 
   handle('plugins:install', ipcArgSchemas.none, async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({

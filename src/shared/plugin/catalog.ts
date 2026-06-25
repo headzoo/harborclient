@@ -144,3 +144,118 @@ export function parsePluginTrustedKeys(raw: unknown): PluginTrustedKeys {
 
   return parsed;
 }
+
+/**
+ * Validates that a plugin source URL uses http or https and returns the trimmed value.
+ *
+ * @param url - Catalog or trusted registry URL from user settings.
+ * @returns Trimmed URL when valid.
+ */
+function parsePluginSourceUrl(url: string): string {
+  const trimmed = url.trim();
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    throw new Error(`Plugin source URL is not valid: ${url}`);
+  }
+
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error(`Plugin source URL must use http:// or https://: ${url}`);
+  }
+
+  return trimmed;
+}
+
+const pluginSourceSchema = z.object({
+  url: z.string().min(1).transform(parsePluginSourceUrl),
+  enabled: z.boolean()
+});
+
+/**
+ * Zod schema for persisted plugin catalog and trusted-key source settings.
+ */
+export const pluginSourcesSchema = z.object({
+  catalogs: z.array(pluginSourceSchema),
+  trusted: z.array(pluginSourceSchema)
+});
+
+/**
+ * One configurable remote endpoint for plugin catalogs or trusted publisher keys.
+ */
+export type PluginSource = z.infer<typeof pluginSourceSchema>;
+
+/**
+ * User-configured plugin catalog and trusted-key registry endpoints.
+ */
+export type PluginSourcesSettings = z.infer<typeof pluginSourcesSchema>;
+
+/**
+ * Returns the built-in HarborClient catalog and trusted-key endpoints, enabled by default.
+ *
+ * @returns Default plugin source settings with HarborClient URLs first in each list.
+ */
+export function getDefaultPluginSources(): PluginSourcesSettings {
+  return {
+    catalogs: [{ url: PLUGIN_CATALOG_URL, enabled: true }],
+    trusted: [{ url: PLUGIN_TRUSTED_KEYS_URL, enabled: true }]
+  };
+}
+
+/**
+ * Deduplicates plugin source rows by URL while preserving the first occurrence.
+ *
+ * @param sources - Raw or normalized plugin source rows.
+ * @returns Sources with duplicate URLs removed.
+ */
+function dedupePluginSources(sources: PluginSource[]): PluginSource[] {
+  const seen = new Set<string>();
+  const deduped: PluginSource[] = [];
+
+  for (const source of sources) {
+    if (seen.has(source.url)) {
+      continue;
+    }
+    seen.add(source.url);
+    deduped.push(source);
+  }
+
+  return deduped;
+}
+
+/**
+ * Normalizes persisted plugin source settings with trimmed URLs and deduplication.
+ *
+ * @param raw - Unknown settings from storage or user input.
+ * @returns Validated settings, or defaults when both lists are empty after normalization.
+ */
+export function normalizePluginSources(raw: unknown): PluginSourcesSettings {
+  const parsed = pluginSourcesSchema.safeParse(raw);
+  if (!parsed.success) {
+    return getDefaultPluginSources();
+  }
+
+  const catalogs = dedupePluginSources(parsed.data.catalogs);
+  const trusted = dedupePluginSources(parsed.data.trusted);
+
+  if (catalogs.length === 0 && trusted.length === 0) {
+    return getDefaultPluginSources();
+  }
+
+  return { catalogs, trusted };
+}
+
+/**
+ * Returns whether a plugin source URL is hosted on harborclient.com or a subdomain.
+ *
+ * @param url - Catalog or trusted registry URL to inspect.
+ * @returns True when the hostname is harborclient.com or ends with .harborclient.com.
+ */
+export function isHarborClientEndpoint(url: string): boolean {
+  try {
+    const hostname = new URL(url.trim()).hostname.toLowerCase();
+    return hostname === 'harborclient.com' || hostname.endsWith('.harborclient.com');
+  } catch {
+    return false;
+  }
+}

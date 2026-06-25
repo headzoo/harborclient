@@ -2,9 +2,20 @@ import { useCallback, useEffect, useMemo, useState, type JSX, type KeyboardEvent
 import toast from 'react-hot-toast';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import type { PluginCatalog, PluginCatalogEntry } from '#/shared/plugin/catalog';
+import type {
+  PluginCatalog,
+  PluginCatalogEntry,
+  PluginSource,
+  PluginSourcesSettings
+} from '#/shared/plugin/catalog';
+import {
+  getDefaultPluginSources,
+  isHarborClientEndpoint,
+  pluginSourcesSchema
+} from '#/shared/plugin/catalog';
 import { buildPluginCatalogSearchIndex, searchPluginCatalog } from '#/shared/plugin/catalogSearch';
 import type { PluginInfo, PluginPermission } from '#/shared/plugin/types';
+import type { TeamHubPluginSource, TeamHubPluginSourcesView } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { Input } from '#/renderer/src/components/forms';
@@ -465,6 +476,430 @@ function PluginCatalogDetailModal({
   );
 }
 
+type PluginSourceKind = 'catalogs' | 'trusted';
+
+interface PluginSourcesModalProps {
+  /**
+   * Draft plugin source settings edited in the modal.
+   */
+  settings: PluginSourcesSettings;
+
+  /**
+   * Whether settings are being loaded or saved.
+   */
+  busy: boolean;
+
+  /**
+   * Load or save error message shown inside the modal.
+   */
+  error: string | null;
+
+  /**
+   * Closes the modal without saving.
+   */
+  onClose: () => void;
+
+  /**
+   * Persists the draft settings.
+   */
+  onSave: () => void;
+
+  /**
+   * Replaces the draft with HarborClient default endpoints.
+   */
+  onResetDefaults: () => void;
+
+  /**
+   * Updates one draft source row.
+   *
+   * @param kind - Catalog or trusted endpoint list being edited.
+   * @param index - Row index within the list.
+   * @param source - Updated source row.
+   */
+  onUpdateSource: (kind: PluginSourceKind, index: number, source: PluginSource) => void;
+
+  /**
+   * Removes one draft source row.
+   *
+   * @param kind - Catalog or trusted endpoint list being edited.
+   * @param index - Row index to remove.
+   */
+  onRemoveSource: (kind: PluginSourceKind, index: number) => void;
+
+  /**
+   * Adds a new draft source row.
+   *
+   * @param kind - Catalog or trusted endpoint list being edited.
+   * @param url - Endpoint URL to append.
+   */
+  onAddSource: (kind: PluginSourceKind, url: string) => string | null;
+
+  /**
+   * Read-only plugin source rows provided by connected Team Hubs.
+   */
+  hubSources: TeamHubPluginSourcesView;
+}
+
+/**
+ * Validates a plugin source URL before it is added to the draft settings.
+ *
+ * @param url - Raw URL from the add-endpoint input.
+ * @returns Trimmed URL when valid.
+ */
+function parseDraftPluginSourceUrl(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed) {
+    throw new Error('URL is required.');
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    throw new Error('Enter a valid http:// or https:// URL.');
+  }
+
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error('Enter a valid http:// or https:// URL.');
+  }
+
+  return trimmed;
+}
+
+interface PluginSourceListSectionProps {
+  /**
+   * Stable id prefix used for form control ids in this section.
+   */
+  sectionId: string;
+
+  /**
+   * Section heading shown above the endpoint list.
+   */
+  title: string;
+
+  /**
+   * Helper text describing what the endpoint list controls.
+   */
+  description: string;
+
+  /**
+   * Catalog or trusted endpoint rows in the draft settings.
+   */
+  sources: PluginSource[];
+
+  /**
+   * Whether the parent modal is loading or saving.
+   */
+  busy: boolean;
+
+  /**
+   * Adds a new endpoint row to this section.
+   *
+   * @param url - Endpoint URL to append.
+   */
+  onAdd: (url: string) => string | null;
+
+  /**
+   * Updates one endpoint row.
+   *
+   * @param index - Row index within the list.
+   * @param source - Updated source row.
+   */
+  onUpdate: (index: number, source: PluginSource) => void;
+
+  /**
+   * Removes one endpoint row.
+   *
+   * @param index - Row index to remove.
+   */
+  onRemove: (index: number) => void;
+
+  /**
+   * Read-only plugin source rows provided by connected Team Hubs.
+   */
+  hubSources: TeamHubPluginSource[];
+}
+
+/**
+ * Renders one editable list of plugin catalog or trusted-key endpoints.
+ */
+function PluginSourceListSection({
+  sectionId,
+  title,
+  description,
+  sources,
+  hubSources,
+  busy,
+  onAdd,
+  onUpdate,
+  onRemove
+}: PluginSourceListSectionProps): JSX.Element {
+  const [draftUrl, setDraftUrl] = useState('');
+  const [addError, setAddError] = useState<string | null>(null);
+  const [pendingUntrustedUrl, setPendingUntrustedUrl] = useState<string | null>(null);
+
+  /**
+   * Attempts to add the current draft URL to the section list.
+   */
+  const handleAdd = (): void => {
+    try {
+      const trimmed = parseDraftPluginSourceUrl(draftUrl);
+      if (
+        sources.some((source) => source.url === trimmed) ||
+        hubSources.some((source) => source.url === trimmed)
+      ) {
+        setAddError('That endpoint is already in the list.');
+        return;
+      }
+
+      const error = onAdd(trimmed);
+      if (error) {
+        setAddError(error);
+        return;
+      }
+
+      if (!isHarborClientEndpoint(trimmed)) {
+        setPendingUntrustedUrl(trimmed);
+      }
+
+      setDraftUrl('');
+      setAddError(null);
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const addInputId = `${sectionId}-add-url`;
+  const addErrorId = `${sectionId}-add-error`;
+  const untrustedWarningId = `${sectionId}-untrusted-warning`;
+
+  return (
+    <section className="space-y-3" aria-labelledby={`${sectionId}-title`}>
+      <div>
+        <h3 id={`${sectionId}-title`} className="m-0 text-[14px] font-medium text-text">
+          {title}
+        </h3>
+        <p className="m-0 mt-1 text-[14px] text-muted">{description}</p>
+      </div>
+
+      {sources.length === 0 && hubSources.length === 0 ? (
+        <p className="m-0 text-[14px] text-muted" role="status">
+          No endpoints configured.
+        </p>
+      ) : (
+        <ul className="m-0 list-none space-y-2 p-0 mb-3">
+          {sources.map((source, index) => {
+            const checkboxId = `${sectionId}-enabled-${index}`;
+            const untrusted = !isHarborClientEndpoint(source.url);
+
+            return (
+              <li
+                key={source.url}
+                className="flex flex-wrap items-start gap-2 rounded-md border border-separator bg-control p-3"
+              >
+                <div className="flex min-w-0 flex-1 items-start gap-2">
+                  <input
+                    id={checkboxId}
+                    type="checkbox"
+                    className="mt-1"
+                    checked={source.enabled}
+                    disabled={busy}
+                    aria-label={`Enable ${source.url}`}
+                    onChange={(event) => {
+                      onUpdate(index, { ...source, enabled: event.target.checked });
+                    }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <label htmlFor={checkboxId} className="block break-all text-[14px] text-text">
+                      {source.url}
+                    </label>
+                    {untrusted ? (
+                      <span className="mt-1 inline-block rounded bg-danger/20 px-1.5 py-0.5 text-[14px] text-danger">
+                        Untrusted source
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={busy}
+                  aria-label={`Remove ${source.url}`}
+                  onClick={() => onRemove(index)}
+                >
+                  Remove
+                </Button>
+              </li>
+            );
+          })}
+          {hubSources.map((source) => {
+            const checkboxId = `${sectionId}-hub-${source.hubId}-${source.url}`;
+
+            return (
+              <li
+                key={`${source.hubId}:${source.url}`}
+                className="flex flex-wrap items-start gap-2 rounded-md border border-separator bg-control p-3"
+              >
+                <div className="flex min-w-0 flex-1 items-start gap-2">
+                  <input
+                    id={checkboxId}
+                    type="checkbox"
+                    className="mt-1"
+                    checked
+                    disabled
+                    aria-label={`${source.url} from ${source.hubName}`}
+                    readOnly
+                  />
+                  <div className="min-w-0 flex-1">
+                    <label htmlFor={checkboxId} className="block break-all text-[14px] text-text">
+                      {source.url}
+                    </label>
+                    <span className="mt-1 inline-block rounded bg-accent/15 px-1.5 py-0.5 text-[14px] text-text">
+                      From {source.hubName}
+                    </span>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {sources.some((source) => !isHarborClientEndpoint(source.url)) ? (
+        <p id={untrustedWarningId} className="m-0 text-[14px] text-danger" role="alert">
+          Third-party endpoints can list or vouch for unverified plugins. Only add catalogs and
+          trusted-key registries from sources you trust.
+        </p>
+      ) : null}
+
+      <div>
+        <label htmlFor={addInputId} className="mb-1 block text-[14px] text-muted">
+          Add endpoint URL
+        </label>
+        <div className="flex flex-wrap gap-2">
+          <Input
+            id={addInputId}
+            type="url"
+            className="min-w-[min(100%,20rem)] flex-1"
+            placeholder="https://example.com/plugin_catalog.json"
+            value={draftUrl}
+            disabled={busy}
+            aria-invalid={addError ? true : undefined}
+            aria-describedby={
+              [addError ? addErrorId : null, pendingUntrustedUrl ? untrustedWarningId : null]
+                .filter(Boolean)
+                .join(' ') || undefined
+            }
+            onChange={(event) => {
+              setDraftUrl(event.target.value);
+              setAddError(null);
+              setPendingUntrustedUrl(null);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                handleAdd();
+              }
+            }}
+          />
+          <Button type="button" variant="secondary" disabled={busy} onClick={handleAdd}>
+            Add
+          </Button>
+        </div>
+        {addError ? (
+          <p id={addErrorId} className="mt-2 text-[14px] text-danger" role="alert">
+            {addError}
+          </p>
+        ) : null}
+        {pendingUntrustedUrl ? (
+          <p id={untrustedWarningId} className="mt-2 text-[14px] text-danger" role="alert">
+            {pendingUntrustedUrl} is not hosted on harborclient.com. Third-party endpoints can list
+            or vouch for unverified plugins. Only add this source if you trust it.
+          </p>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Modal for configuring plugin marketplace catalog and trusted publisher endpoints.
+ */
+function PluginSourcesModal({
+  settings,
+  hubSources,
+  busy,
+  error,
+  onClose,
+  onSave,
+  onResetDefaults,
+  onUpdateSource,
+  onRemoveSource,
+  onAddSource
+}: PluginSourcesModalProps): JSX.Element {
+  return (
+    <Modal
+      onClose={onClose}
+      className="w-[min(42rem,calc(100vw-2rem))]"
+      labelledBy="plugin-sources-title"
+    >
+      <h2 id="plugin-sources-title" className="m-0 mb-2 text-[15px] font-semibold text-text">
+        Plugin sources
+      </h2>
+      <p className="mb-4 text-[14px] text-muted">
+        Configure where HarborClient loads marketplace catalogs and trusted publisher keys. Enabled
+        endpoints are fetched in list order; the first source wins when entries overlap. Team Hub
+        endpoints are managed by your hub administrator and cannot be removed here.
+      </p>
+
+      {error ? (
+        <p className="mb-4 text-[14px] text-danger" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      <div className="max-h-[min(32rem,60vh)] space-y-6 overflow-y-auto pr-1">
+        <PluginSourceListSection
+          sectionId="plugin-catalog-sources"
+          title="Catalog endpoints"
+          description="JSON catalogs listing installable plugins for the Marketplace view."
+          sources={settings.catalogs}
+          hubSources={hubSources.catalogs}
+          busy={busy}
+          onAdd={(url) => onAddSource('catalogs', url)}
+          onUpdate={(index, source) => onUpdateSource('catalogs', index, source)}
+          onRemove={(index) => onRemoveSource('catalogs', index)}
+        />
+        <PluginSourceListSection
+          sectionId="plugin-trusted-sources"
+          title="Trusted publisher endpoints"
+          description="JSON registries mapping publisher names to trusted signing key URLs."
+          sources={settings.trusted}
+          hubSources={hubSources.trusted}
+          busy={busy}
+          onAdd={(url) => onAddSource('trusted', url)}
+          onUpdate={(index, source) => onUpdateSource('trusted', index, source)}
+          onRemove={(index) => onRemoveSource('trusted', index)}
+        />
+      </div>
+
+      <div className="mt-4 flex flex-wrap justify-between gap-2 border-t border-separator pt-4">
+        <Button type="button" variant="secondary" disabled={busy} onClick={onResetDefaults}>
+          Reset defaults
+        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="secondary" disabled={busy} onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="button" disabled={busy} onClick={onSave}>
+            {busy ? 'Saving…' : 'Save'}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 /**
  * Settings section for installing, enabling, and inspecting plugins.
  */
@@ -492,6 +927,131 @@ export function PluginsSection(): JSX.Element {
   const [gitInstallError, setGitInstallError] = useState<string | null>(null);
   const [gitInstallBusy, setGitInstallBusy] = useState(false);
   const [gitUpdateBusyId, setGitUpdateBusyId] = useState<string | null>(null);
+  const [showPluginSourcesModal, setShowPluginSourcesModal] = useState(false);
+  const [pluginSourcesDraft, setPluginSourcesDraft] =
+    useState<PluginSourcesSettings>(getDefaultPluginSources());
+  const [pluginSourcesBusy, setPluginSourcesBusy] = useState(false);
+  const [pluginSourcesLoadError, setPluginSourcesLoadError] = useState<string | null>(null);
+  const [teamHubPluginSources, setTeamHubPluginSources] = useState<{
+    catalogs: TeamHubPluginSource[];
+    trusted: TeamHubPluginSource[];
+  }>({ catalogs: [], trusted: [] });
+
+  /**
+   * Opens the plugin sources settings modal and loads persisted endpoints.
+   */
+  const openPluginSourcesModal = (): void => {
+    setPluginSourcesLoadError(null);
+    setPluginSourcesBusy(true);
+    setShowPluginSourcesModal(true);
+    void Promise.all([window.api.getPluginSources(), window.api.getTeamHubPluginSources()])
+      .then(([settings, hubSources]) => {
+        setPluginSourcesDraft(settings);
+        setTeamHubPluginSources(hubSources);
+      })
+      .catch((err) => {
+        setPluginSourcesLoadError(err instanceof Error ? err.message : String(err));
+        setPluginSourcesDraft(getDefaultPluginSources());
+        setTeamHubPluginSources({ catalogs: [], trusted: [] });
+      })
+      .finally(() => {
+        setPluginSourcesBusy(false);
+      });
+  };
+
+  /**
+   * Closes the plugin sources settings modal without saving.
+   */
+  const closePluginSourcesModal = (): void => {
+    if (pluginSourcesBusy) {
+      return;
+    }
+    setShowPluginSourcesModal(false);
+    setPluginSourcesLoadError(null);
+  };
+
+  /**
+   * Replaces the draft plugin source settings with HarborClient defaults.
+   */
+  const resetPluginSourcesDraft = (): void => {
+    setPluginSourcesDraft(getDefaultPluginSources());
+    setPluginSourcesLoadError(null);
+  };
+
+  /**
+   * Updates one draft plugin source row in the modal.
+   *
+   * @param kind - Catalog or trusted endpoint list being edited.
+   * @param index - Row index within the list.
+   * @param source - Updated source row.
+   */
+  const updatePluginSourceDraft = (
+    kind: PluginSourceKind,
+    index: number,
+    source: PluginSource
+  ): void => {
+    setPluginSourcesDraft((current) => ({
+      ...current,
+      [kind]: current[kind].map((entry, entryIndex) => (entryIndex === index ? source : entry))
+    }));
+  };
+
+  /**
+   * Removes one draft plugin source row from the modal.
+   *
+   * @param kind - Catalog or trusted endpoint list being edited.
+   * @param index - Row index to remove.
+   */
+  const removePluginSourceDraft = (kind: PluginSourceKind, index: number): void => {
+    setPluginSourcesDraft((current) => ({
+      ...current,
+      [kind]: current[kind].filter((_entry, entryIndex) => entryIndex !== index)
+    }));
+  };
+
+  /**
+   * Adds one draft plugin source row to the modal.
+   *
+   * @param kind - Catalog or trusted endpoint list being edited.
+   * @param url - Endpoint URL to append.
+   * @returns Validation error message, or null when the row was added.
+   */
+  const addPluginSourceDraft = (kind: PluginSourceKind, url: string): string | null => {
+    const candidate: PluginSourcesSettings = {
+      ...pluginSourcesDraft,
+      [kind]: [...pluginSourcesDraft[kind], { url, enabled: true }]
+    };
+    const parsed = pluginSourcesSchema.safeParse(candidate);
+    if (!parsed.success) {
+      return 'Enter a valid http:// or https:// URL.';
+    }
+    setPluginSourcesDraft(parsed.data);
+    return null;
+  };
+
+  /**
+   * Persists draft plugin source settings and refreshes the marketplace catalog.
+   */
+  const savePluginSources = async (): Promise<void> => {
+    setPluginSourcesBusy(true);
+    setPluginSourcesLoadError(null);
+    try {
+      const saved = await window.api.setPluginSources(pluginSourcesDraft);
+      setPluginSourcesDraft(saved);
+      setShowPluginSourcesModal(false);
+      if (showBrowse) {
+        setCatalog(null);
+        await loadCatalog();
+      }
+      toast.success('Plugin sources saved.');
+    } catch (err) {
+      setPluginSourcesLoadError(
+        formatIpcErrorMessage(err, 'Plugin source settings could not be saved.')
+      );
+    } finally {
+      setPluginSourcesBusy(false);
+    }
+  };
 
   /**
    * Shows a blocking alert when a user-initiated plugin action fails.
@@ -925,6 +1485,9 @@ export function PluginsSection(): JSX.Element {
             <Button type="button" variant="secondary" onClick={() => void handleLoadUnpacked()}>
               Load unpacked…
             </Button>
+            <Button type="button" variant="secondary" onClick={openPluginSourcesModal}>
+              Settings
+            </Button>
           </>
         ) : null}
       </div>
@@ -1181,6 +1744,21 @@ export function PluginsSection(): JSX.Element {
           descriptionMarkdown={descriptionMarkdown}
           descriptionLoadState={descriptionLoadState}
           onClose={closeDetail}
+        />
+      ) : null}
+
+      {showPluginSourcesModal ? (
+        <PluginSourcesModal
+          settings={pluginSourcesDraft}
+          hubSources={teamHubPluginSources}
+          busy={pluginSourcesBusy}
+          error={pluginSourcesLoadError}
+          onClose={closePluginSourcesModal}
+          onSave={() => void savePluginSources()}
+          onResetDefaults={resetPluginSourcesDraft}
+          onUpdateSource={updatePluginSourceDraft}
+          onRemoveSource={removePluginSourceDraft}
+          onAddSource={addPluginSourceDraft}
         />
       ) : null}
 

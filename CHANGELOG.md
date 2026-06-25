@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(plugins): enhance plugin source management and Team Hub integration. (`9ada4b8`)
+
 ## 1.8.12 - 2026-06-25
 
 - feat(variables): introduce dynamic variables support and enhance documentation. (`3497443`)

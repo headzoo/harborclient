@@ -632,4 +632,33 @@ describe('TeamHubClient', () => {
       });
     });
   });
+
+  describe('getPluginSources', () => {
+    it('returns plugin source URLs configured on the Team Hub', async () => {
+      const payload = {
+        catalogs: ['https://harborclient.com/plugin_catalog.json'],
+        trusted: ['https://harborclient.com/plugins/trusted.json']
+      };
+
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(payload), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      await expect(client.getPluginSources()).resolves.toEqual(payload);
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://127.0.0.1:8788/plugins/sources',
+        expect.objectContaining({
+          method: 'GET',
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${token}`
+          })
+        })
+      );
+    });
+  });
 });
