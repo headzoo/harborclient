@@ -7,6 +7,7 @@ import {
   toPluginRequestDraft,
   toPluginRequestTabContext
 } from '#/renderer/src/plugins/pluginContextAdapters';
+import { buildRuntimeVars } from '#/renderer/src/scripting/scriptOrchestration';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import {
   selectActiveEnvironmentId,
@@ -120,10 +121,10 @@ export function Request({ onEditVariables }: Props): JSX.Element {
   /**
    * Read-only plugin context for request editor tabs.
    */
-  const requestTabContext = useMemo<RequestTabContext>(
-    () => toPluginRequestTabContext(draft, activeCollection, response),
-    [draft, activeCollection, response]
-  );
+  const requestTabContext = useMemo<RequestTabContext>(() => {
+    const runtimeVars = buildRuntimeVars(activeVariables);
+    return toPluginRequestTabContext(draft, activeCollection, response, runtimeVars);
+  }, [draft, activeCollection, response, activeVariables]);
 
   /**
    * Read-only plugin context for response viewer tabs.

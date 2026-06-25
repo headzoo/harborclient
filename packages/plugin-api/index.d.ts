@@ -233,6 +233,13 @@ export interface RequestTabContext {
     value: string;
     enabled: boolean;
   }>;
+  /**
+   * Merged collection and environment values for {{key}} substitution.
+   *
+   * Environment overrides collection on duplicate keys. Empty variable values
+   * fall back to each variable's defaultValue (same as Send).
+   */
+  variables: Record<string, string>;
 }
 /**
  * Adds a segmented tab to the request editor (alongside Params, Headers, Body, and so on).

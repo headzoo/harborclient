@@ -30,14 +30,16 @@ export function toPluginRequestDraft(draft: StoreRequestDraft): RequestDraft {
 export function toPluginRequestTabContext(
   draft: StoreRequestDraft,
   collection: Collection | undefined,
-  response: SendResult | null
+  response: SendResult | null,
+  runtimeVars: Record<string, string>
 ): RequestTabContext {
   return {
     draft: toPluginRequestDraft(draft),
     response: toPluginHttpResponse(response),
     readOnly: true,
     collectionAuth: normalizeAuth(collection?.auth ?? defaultAuth()),
-    collectionHeaders: (collection?.headers ?? []).map((row) => ({ ...row }))
+    collectionHeaders: (collection?.headers ?? []).map((row) => ({ ...row })),
+    variables: runtimeVars
   };
 }
 

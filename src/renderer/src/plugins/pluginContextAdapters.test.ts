@@ -67,7 +67,9 @@ describe('toPluginRequestDraft', () => {
 
 describe('toPluginRequestTabContext', () => {
   it('includes collection auth and headers with normalized defaults', () => {
-    const context = toPluginRequestTabContext(sampleDraft(), sampleCollection(), null);
+    const context = toPluginRequestTabContext(sampleDraft(), sampleCollection(), null, {
+      host: 'example.com'
+    });
 
     expect(context.readOnly).toBe(true);
     expect(context.response).toBeNull();
@@ -76,10 +78,11 @@ describe('toPluginRequestTabContext', () => {
     expect(context.collectionHeaders).toEqual([
       { key: 'X-Collection', value: 'yes', enabled: true }
     ]);
+    expect(context.variables).toEqual({ host: 'example.com' });
   });
 
   it('uses default auth and empty headers when collection is undefined', () => {
-    const context = toPluginRequestTabContext(sampleDraft(), undefined, null);
+    const context = toPluginRequestTabContext(sampleDraft(), undefined, null, {});
 
     expect(context.collectionAuth).toEqual(defaultAuth());
     expect(context.collectionHeaders).toEqual([]);
