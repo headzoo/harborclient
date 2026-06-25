@@ -3,6 +3,9 @@
 ## Unreleased
 
 - feat(plugins): add Dotenv and OpenAPI plugins to the catalog. (`a4f2d6c`)
+
+## 1.8.7 - 2026-06-25
+
 - feat(plugins): enhance plugin filesystem management and add new APIs. (`8312934`)
 
 ## 1.8.6 - 2026-06-25
