@@ -1,6 +1,5 @@
 import type { ScriptRequestContext, ScriptRunResult, Variable } from '#/shared/types';
-
-const VARIABLE_PATTERN = /\{\{\s*([\w.-]+)\s*\}\}/g;
+import { resolveDynamicVariable, VARIABLE_TOKEN_PATTERN } from '#/shared/dynamicVariables';
 
 /**
  * Builds a runtime variable map from collection variables.
@@ -21,14 +20,22 @@ export function buildRuntimeVars(variables: Variable[]): Record<string, string> 
 /**
  * Replaces {{key}} placeholders using a runtime variable map.
  *
+ * Runtime variables take precedence over dynamic variables. Unknown tokens are left unchanged.
+ *
  * @param text - Text containing variable placeholders.
  * @param runtimeVars - Current runtime variable values.
  * @returns Text with known variables substituted.
  */
 export function substituteWithMap(text: string, runtimeVars: Record<string, string>): string {
-  return text.replace(VARIABLE_PATTERN, (match, key: string) => {
+  const pattern = new RegExp(VARIABLE_TOKEN_PATTERN.source, 'g');
+
+  return text.replace(pattern, (match, key: string) => {
     const value = runtimeVars[key];
-    return value !== undefined ? value : match;
+    if (value !== undefined) {
+      return value;
+    }
+    const dynamic = resolveDynamicVariable(key);
+    return dynamic !== undefined ? dynamic : match;
   });
 }
 

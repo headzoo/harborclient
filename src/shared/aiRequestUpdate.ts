@@ -90,6 +90,11 @@ export interface AiAuthPatch {
    * Bearer token credentials.
    */
   bearer?: Partial<AuthConfig['bearer']>;
+
+  /**
+   * OAuth 2.0 Client Credentials settings.
+   */
+  oauth2?: Partial<AuthConfig['oauth2']>;
 }
 
 /**
@@ -343,6 +348,10 @@ export function applyAuthPatch(current: AuthConfig, patch: AiAuthPatch): AuthCon
     bearer: {
       ...current.bearer,
       ...patch.bearer
+    },
+    oauth2: {
+      ...current.oauth2,
+      ...patch.oauth2
     }
   });
 }

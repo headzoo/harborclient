@@ -72,7 +72,8 @@ export function cloneDraft(draft: RequestDraft): RequestDraft {
     auth: {
       ...normalized.auth,
       basic: { ...normalized.auth.basic },
-      bearer: { ...normalized.auth.bearer }
+      bearer: { ...normalized.auth.bearer },
+      oauth2: { ...normalized.auth.oauth2 }
     }
   };
 }

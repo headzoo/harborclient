@@ -92,8 +92,8 @@ export function runIstorageContractSuite(label: string, createTestDb: CreateTest
         'console.log("pre");',
         'console.log("post");',
         {
+          ...defaultAuth(),
           type: 'bearer',
-          basic: { username: '', password: '' },
           bearer: { token: 'collection-token' }
         }
       );
@@ -294,9 +294,9 @@ export function runIstorageContractSuite(label: string, createTestDb: CreateTest
         'pre script',
         'post script',
         {
+          ...defaultAuth(),
           type: 'basic',
-          basic: { username: 'admin', password: 'secret' },
-          bearer: { token: '' }
+          basic: { username: 'admin', password: 'secret' }
         }
       );
       await db.saveRequest(

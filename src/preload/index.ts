@@ -1,3 +1,4 @@
+import type { OAuthFetchTokenResult } from '#/shared/auth';
 import { contextBridge, ipcRenderer } from 'electron';
 import { normalize, resolve } from 'path';
 import type {
@@ -926,6 +927,30 @@ function gitRevokeOAuth(connectionId: string): Promise<void> {
 }
 
 /**
+ * Fetches or returns a cached OAuth 2.0 access token using Client Credentials.
+ *
+ * @param cacheKey - Stable cache key; empty string skips persistence.
+ * @param config - Resolved OAuth 2.0 configuration.
+ * @param force - When true, bypass cache and fetch a fresh token.
+ */
+function oauthFetchToken(
+  cacheKey: string,
+  config: AuthConfig['oauth2'],
+  force: boolean
+): Promise<OAuthFetchTokenResult> {
+  return ipcRenderer.invoke('oauth:fetchToken', cacheKey, config, force);
+}
+
+/**
+ * Clears a cached OAuth 2.0 access token for the given cache key.
+ *
+ * @param cacheKey - Stable cache key such as request:1 or collection:2.
+ */
+function oauthClearToken(cacheKey: string): Promise<void> {
+  return ipcRenderer.invoke('oauth:clearToken', cacheKey);
+}
+
+/**
  * Returns the active database connection id via IPC.
  */
 function getActiveStorageId(): Promise<string> {
@@ -1583,6 +1608,8 @@ const api: Api = {
   gitStartOAuth,
   gitCompleteOAuth,
   gitRevokeOAuth,
+  oauthFetchToken,
+  oauthClearToken,
   getActiveStorageId,
   setActiveStorageId,
   getRequestEditorTab,

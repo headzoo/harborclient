@@ -1,4 +1,4 @@
-import type { AuthConfig } from '#/shared/auth';
+import type { AuthConfig, OAuthFetchTokenResult } from '#/shared/auth';
 import type { ShortcutBinding, ShortcutOverrides } from '#/shared/shortcuts';
 import type {
   PluginAssetResult,
@@ -11,7 +11,7 @@ import type {
 import type { PluginCatalog } from '#/shared/plugin/catalog';
 import type { CollectionRunnerConfig } from '#/shared/collectionRunner';
 
-export type { AuthConfig, AuthType } from '#/shared/auth';
+export type { AuthConfig, AuthType, OAuthFetchTokenResult } from '#/shared/auth';
 export type { ShortcutBinding, ShortcutId, ShortcutOverrides } from '#/shared/shortcuts';
 export type {
   PluginAssetResult,
@@ -2838,6 +2838,26 @@ export interface Api {
    * @param connectionId - Git connection id.
    */
   gitRevokeOAuth: (connectionId: string) => Promise<void>;
+
+  /**
+   * Fetches or returns a cached OAuth 2.0 access token using Client Credentials.
+   *
+   * @param cacheKey - Stable cache key; empty string skips persistence.
+   * @param config - Resolved OAuth 2.0 configuration.
+   * @param force - When true, bypass cache and fetch a fresh token.
+   */
+  oauthFetchToken: (
+    cacheKey: string,
+    config: AuthConfig['oauth2'],
+    force: boolean
+  ) => Promise<OAuthFetchTokenResult>;
+
+  /**
+   * Clears a cached OAuth 2.0 access token for the given cache key.
+   *
+   * @param cacheKey - Stable cache key such as request:1 or collection:2.
+   */
+  oauthClearToken: (cacheKey: string) => Promise<void>;
 
   /**
    * Returns the id of the active database connection.

@@ -22,6 +22,7 @@ import {
   selectCodeEditorTheme
 } from '#/renderer/src/store/slices/settingsSlice';
 import { resolveVariable } from '#/renderer/src/store';
+import { getDynamicVariableDescription, VARIABLE_NAME_CHARS } from '#/shared/dynamicVariables';
 import { createHcCompletionSource } from '#/renderer/src/scripting/hcCompletions';
 
 export type CodeEditorLanguage = 'json' | 'text' | 'javascript';
@@ -214,7 +215,7 @@ const editorTheme = EditorView.theme({
 });
 
 const variableMatcher = new MatchDecorator({
-  regexp: /\{\{\s*([\w.-]+)\s*\}\}/g,
+  regexp: new RegExp(`\\{\\{\\s*([${VARIABLE_NAME_CHARS}]+)\\s*\\}\\}`, 'g'),
   decoration: Decoration.mark({ class: 'cm-variable-token' })
 });
 
@@ -255,14 +256,16 @@ function variableTooltip(
 ): ReturnType<typeof hoverTooltip> {
   return hoverTooltip((view, pos) => {
     const line = view.state.doc.lineAt(pos);
-    const pattern = /\{\{\s*([\w.-]+)\s*\}\}/g;
+    const pattern = new RegExp(`\\{\\{\\s*([${VARIABLE_NAME_CHARS}]+)\\s*\\}\\}`, 'g');
 
     for (const match of line.text.matchAll(pattern)) {
       const start = line.from + (match.index ?? 0);
       const end = start + match[0].length;
       if (pos < start || pos > end) continue;
 
-      const value = resolveVariable(match[1], variables);
+      const key = match[1];
+      const value = resolveVariable(key, variables);
+      const dynamicDescription = getDynamicVariableDescription(key);
       return {
         pos: start,
         end,
@@ -272,8 +275,12 @@ function variableTooltip(
           dom.className = 'cm-variable-tooltip';
 
           const valueEl = document.createElement('div');
-          valueEl.textContent = value ?? 'Not defined';
-          if (value === undefined) {
+          if (value !== undefined) {
+            valueEl.textContent = value;
+          } else if (dynamicDescription) {
+            valueEl.textContent = `Dynamic: ${dynamicDescription}`;
+          } else {
+            valueEl.textContent = 'Not defined';
             valueEl.className = 'cm-variable-tooltip-muted';
           }
           dom.appendChild(valueEl);

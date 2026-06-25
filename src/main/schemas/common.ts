@@ -14,7 +14,19 @@ export const bodyType = z.enum(['none', 'json', 'text', 'multipart', 'urlencoded
 /**
  * Authorization type for the Auth tab.
  */
-export const authType = z.enum(['none', 'basic', 'bearer']);
+export const authType = z.enum(['none', 'basic', 'bearer', 'oauth2']);
+
+/**
+ * OAuth 2.0 Client Credentials settings for requests and collections.
+ */
+export const oauth2Config = z.object({
+  tokenUrl: z.string(),
+  clientId: z.string(),
+  clientSecret: z.string(),
+  scope: z.string(),
+  audience: z.string(),
+  clientAuth: z.enum(['body', 'header'])
+}) satisfies z.ZodType<AuthConfig['oauth2']>;
 
 /**
  * Authorization settings for requests and collections.
@@ -27,7 +39,8 @@ export const authConfig = z.object({
   }),
   bearer: z.object({
     token: z.string()
-  })
+  }),
+  oauth2: oauth2Config
 }) satisfies z.ZodType<AuthConfig>;
 
 /**

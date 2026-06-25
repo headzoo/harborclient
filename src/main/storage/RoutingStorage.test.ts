@@ -3,6 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, expect, it, vi } from 'vitest';
 import type { StorageConnection, SqliteSettings } from '#/shared/types';
+import { defaultAuth } from '#/shared/auth';
 import { decodeGlobalId, ID_OFFSET } from '#/main/storage/idNamespace';
 import { LocalDatabase } from '#/main/storage/LocalDatabase';
 import { RoutingStorage } from '#/main/storage/RoutingStorage';
@@ -460,8 +461,8 @@ describeSqlite('RoutingStorage duplicateCollection', () => {
       'console.log("pre")',
       'console.log("post")',
       {
+        ...defaultAuth(),
         type: 'bearer',
-        basic: { username: '', password: '' },
         bearer: { token: 'source-token' }
       }
     );
@@ -491,8 +492,8 @@ describeSqlite('RoutingStorage duplicateCollection', () => {
     expect(duplicated.pre_request_script).toBe('console.log("pre")');
     expect(duplicated.post_request_script).toBe('console.log("post")');
     expect(duplicated.auth).toEqual({
+      ...defaultAuth(),
       type: 'bearer',
-      basic: { username: '', password: '' },
       bearer: { token: 'source-token' }
     });
 

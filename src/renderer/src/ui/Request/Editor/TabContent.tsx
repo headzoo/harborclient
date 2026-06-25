@@ -95,6 +95,7 @@ export function TabContent({
           onChange={(auth) => update({ auth })}
           variables={variables}
           onEditVariables={onEditVariables}
+          oauthCacheKey={draft.id != null ? `request:${draft.id}` : undefined}
         />
       </SegmentedTabPanel>
       <SegmentedTabPanel value="cookies">

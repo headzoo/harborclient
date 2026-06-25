@@ -1,6 +1,5 @@
 import type { Variable } from '#/shared/types';
-
-const VARIABLE_PATTERN = /\{\{\s*([\w.-]+)\s*\}\}/g;
+import { resolveDynamicVariable, VARIABLE_TOKEN_PATTERN } from '#/shared/dynamicVariables';
 
 /**
  * A segment of text, optionally marking a {{variable}} token.
@@ -32,7 +31,7 @@ function variableLookup(variables: Variable[]): Map<string, string> {
  */
 export function tokenizeVariables(text: string): VariableToken[] {
   const tokens: VariableToken[] = [];
-  const pattern = new RegExp(VARIABLE_PATTERN.source, 'g');
+  const pattern = new RegExp(VARIABLE_TOKEN_PATTERN.source, 'g');
   let lastIndex = 0;
 
   for (const match of text.matchAll(pattern)) {
@@ -65,16 +64,24 @@ export function resolveVariable(key: string, variables: Variable[]): string | un
 /**
  * Replaces {{key}} placeholders in text with collection variable values.
  *
+ * Static collection/environment variables take precedence over dynamic variables.
+ * Unknown tokens are left unchanged.
+ *
  * @param text - Text containing variable placeholders.
  * @param variables - Collection-scoped variables.
  * @returns Text with known variables substituted; unknown tokens are left unchanged.
  */
 export function substituteVariables(text: string, variables: Variable[]): string {
   const lookup = variableLookup(variables);
+  const pattern = new RegExp(VARIABLE_TOKEN_PATTERN.source, 'g');
 
-  return text.replace(VARIABLE_PATTERN, (match, key: string) => {
+  return text.replace(pattern, (match, key: string) => {
     const value = lookup.get(key);
-    return value !== undefined ? value : match;
+    if (value !== undefined) {
+      return value;
+    }
+    const dynamic = resolveDynamicVariable(key);
+    return dynamic !== undefined ? dynamic : match;
   });
 }
 

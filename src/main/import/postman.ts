@@ -31,6 +31,7 @@ interface PostmanAuth {
   type?: string;
   bearer?: Array<{ key?: string; value?: string }>;
   basic?: Array<{ key?: string; value?: string }>;
+  oauth2?: Array<{ key?: string; value?: string }>;
 }
 
 /**
@@ -146,7 +147,7 @@ function readAuthField(
 /**
  * Maps a Postman auth block to HarborClient's AuthConfig shape.
  *
- * Unsupported Postman auth types (apikey, oauth2, etc.) fall back to none.
+ * Unsupported Postman auth types (apikey, oauth2 authorization code, etc.) fall back to none.
  *
  * @param auth - Postman auth object from a collection or request.
  * @returns HarborClient auth configuration.
@@ -174,6 +175,28 @@ function convertAuth(auth: PostmanAuth | undefined): AuthConfig {
         password: readAuthField(auth.basic, 'password')
       }
     };
+  }
+
+  if (auth.type === 'oauth2') {
+    const grantType = readAuthField(auth.oauth2, 'grant_type');
+    if (grantType === 'client_credentials') {
+      const clientAuthValue = readAuthField(auth.oauth2, 'client_authentication');
+      return {
+        ...fallback,
+        type: 'oauth2',
+        oauth2: {
+          tokenUrl:
+            readAuthField(auth.oauth2, 'accessTokenUrl') ||
+            readAuthField(auth.oauth2, 'tokenUrl') ||
+            readAuthField(auth.oauth2, 'accessToken'),
+          clientId: readAuthField(auth.oauth2, 'clientId'),
+          clientSecret: readAuthField(auth.oauth2, 'clientSecret'),
+          scope: readAuthField(auth.oauth2, 'scope'),
+          audience: readAuthField(auth.oauth2, 'audience'),
+          clientAuth: clientAuthValue === 'header' ? 'header' : 'body'
+        }
+      };
+    }
   }
 
   return fallback;

@@ -435,6 +435,10 @@ export const sidebar: DefaultTheme.SidebarItem[] =
         "link": "/environments#variables"
       },
       {
+        "text": "Dynamic variables",
+        "link": "/environments#dynamic-variables"
+      },
+      {
         "text": "Precedence",
         "link": "/environments#precedence"
       },
@@ -445,6 +449,97 @@ export const sidebar: DefaultTheme.SidebarItem[] =
       {
         "text": "Export and import",
         "link": "/environments#export-and-import"
+      }
+    ],
+    "collapsed": false
+  },
+  {
+    "text": "Variables",
+    "link": "/variables",
+    "items": [
+      {
+        "text": "Static vs dynamic variables",
+        "link": "/variables#static-vs-dynamic-variables"
+      },
+      {
+        "text": "Using dynamic variables in scripts",
+        "link": "/variables#using-dynamic-variables-in-scripts"
+      },
+      {
+        "text": "Dynamic variable reference",
+        "link": "/variables#dynamic-variable-reference"
+      },
+      {
+        "text": "Common",
+        "link": "/variables#common"
+      },
+      {
+        "text": "Text, numbers, and colors",
+        "link": "/variables#text-numbers-and-colors"
+      },
+      {
+        "text": "Internet and IP addresses",
+        "link": "/variables#internet-and-ip-addresses"
+      },
+      {
+        "text": "Names",
+        "link": "/variables#names"
+      },
+      {
+        "text": "Profession",
+        "link": "/variables#profession"
+      },
+      {
+        "text": "Phone, address, and location",
+        "link": "/variables#phone-address-and-location"
+      },
+      {
+        "text": "Images",
+        "link": "/variables#images"
+      },
+      {
+        "text": "Finance",
+        "link": "/variables#finance"
+      },
+      {
+        "text": "Business",
+        "link": "/variables#business"
+      },
+      {
+        "text": "Catchphrases",
+        "link": "/variables#catchphrases"
+      },
+      {
+        "text": "Databases",
+        "link": "/variables#databases"
+      },
+      {
+        "text": "Dates",
+        "link": "/variables#dates"
+      },
+      {
+        "text": "Domains, emails, and usernames",
+        "link": "/variables#domains-emails-and-usernames"
+      },
+      {
+        "text": "Files and directories",
+        "link": "/variables#files-and-directories"
+      },
+      {
+        "text": "Stores",
+        "link": "/variables#stores"
+      },
+      {
+        "text": "Grammar",
+        "link": "/variables#grammar"
+      },
+      {
+        "text": "Lorem ipsum",
+        "link": "/variables#lorem-ipsum"
+      },
+      {
+        "text": "Notes",
+        "link": "/variables#notes"
       }
     ],
     "collapsed": false

@@ -6,7 +6,14 @@ import {
   MAX_IPC_URL_CHARS
 } from '#/main/ipc/ipcLimits';
 import { HARD_MAX_RESPONSE_SIZE_MB } from '#/main/settings/generalSettings';
-import { authConfig, bodyType, httpMethod, keyValue, variable } from '#/main/schemas/common';
+import {
+  authConfig,
+  bodyType,
+  httpMethod,
+  keyValue,
+  oauth2Config,
+  variable
+} from '#/main/schemas/common';
 import { CODE_EDITOR_THEME_IDS } from '#/shared/codeEditorSettings';
 import { requestExportSchema } from '#/main/storage/collectionSchemas';
 import type {
@@ -37,7 +44,8 @@ export {
   keyValue,
   variable,
   authConfig,
-  authType
+  authType,
+  oauth2Config
 } from '#/main/schemas/common';
 
 /**
@@ -539,5 +547,7 @@ export const ipcArgSchemas = {
     z.string().max(MAX_IPC_REQUEST_BODY_CHARS)
   ]),
   pluginFsWatchFile: z.tuple([pluginId, z.string().min(1)]),
-  pluginFsUnwatchFile: z.tuple([pluginId, z.string().min(1)])
+  pluginFsUnwatchFile: z.tuple([pluginId, z.string().min(1)]),
+  oauthFetchToken: z.tuple([z.string(), oauth2Config, z.boolean()]),
+  oauthClearToken: z.tuple([z.string().min(1)])
 } as const;

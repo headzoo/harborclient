@@ -2,6 +2,16 @@
   "schemaVersion": 1,
   "plugins": [
     {
+      "id": "com.harborclient.plugins.aws-sigv4",
+      "name": "AWS SigV4",
+      "version": "1.0.0",
+      "summary": "HarborClient plugin that signs outgoing HTTP requests with AWS Signature Version 4.",
+      "author": "HarborClient",
+      "categories": ["requests", "auth"],
+      "repoUrl": "https://github.com/harborclient/plugin-aws-sigv4",
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-aws-sigv4/main/screenshot.png"
+    },
+    {
       "id": "com.harborclient.plugins.curl",
       "name": "cURL",
       "version": "1.0.3",

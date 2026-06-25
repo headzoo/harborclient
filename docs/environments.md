@@ -41,11 +41,28 @@ Each variable has four fields:
 
 When Value is empty, HarborClient uses Default instead.
 
+## Dynamic variables
+
+HarborClient supports Postman-style **dynamic variables** whose values are generated fresh each time a request is sent. Use them in `{{$name}}` placeholders in:
+
+- Request URLs
+- Headers and query params
+- Request body
+- Auth fields
+
+See [Variables](/variables) for the complete list of supported dynamic variables.
+
+HarborClient variable names are case-sensitive and include the leading `$` for dynamic placeholders.
+
+Dynamic variables resolve **after** collection and environment variables. If you define a static variable with the same key (for example `$randomInt`), the static value wins.
+
+Dynamic placeholders are highlighted in the request editor. Hover a token to see its description.
+
 ## Precedence
 
 At send time, HarborClient builds a runtime variable map from the active collection and the active environment. Collection variables are loaded first; environment variables are applied on top. When both define the same key, the **environment wins**.
 
-Values set with `hc.variables.set` in a pre- or post-request script override both collection and environment variables for the remainder of that send. See [Request scripts](/request-scripts) for script execution order and the `hc.variables` API.
+Values set with `hc.variables.set` in a pre- or post-request script override both collection and environment variables for the remainder of that send. Dynamic variables (`{{$name}}`) resolve after static variables when no runtime value is defined for that key. See [Request scripts](/request-scripts) for script execution order and the `hc.variables` API.
 
 ```mermaid
 flowchart LR
@@ -53,6 +70,7 @@ flowchart LR
   EnvVars[environment.variables] --> Runtime
   Runtime --> Substitute["URL / headers / body / scripts"]
   ScriptSet["hc.variables.set"] --> Substitute
+  DynamicVars["{{$dynamic}}"] --> Substitute
 ```
 
 The request editor highlights `{{variable}}` tokens using the merged set of collection and environment variables, with environment values shown when keys overlap.

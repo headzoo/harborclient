@@ -1,7 +1,22 @@
 import type { RequestDraft as StoreRequestDraft } from '#/renderer/src/store/drafts';
 import type { Collection, SendResult } from '#/shared/types';
 import { defaultAuth, normalizeAuth } from '#/shared/auth';
-import type { HttpResponse, RequestDraft, RequestTabContext } from '#/shared/plugin/types';
+import type {
+  AuthConfig as PluginAuthConfig,
+  HttpResponse,
+  RequestDraft,
+  RequestTabContext
+} from '#/shared/plugin/types';
+
+/**
+ * Adapts app auth config to the plugin SDK shape until the SDK adds oauth2.
+ *
+ * @param auth - Normalized HarborClient auth configuration.
+ * @returns Auth config compatible with plugin-facing types.
+ */
+function toPluginAuthConfig(auth: ReturnType<typeof normalizeAuth>): PluginAuthConfig {
+  return auth as PluginAuthConfig;
+}
 
 /**
  * Maps the store request draft to the plugin-facing read-only shape.
@@ -15,7 +30,7 @@ export function toPluginRequestDraft(draft: StoreRequestDraft): RequestDraft {
     params: draft.params.map((row) => ({ ...row })),
     headers: draft.headers.map((row) => ({ ...row })),
     body: draft.body,
-    auth: normalizeAuth(draft.auth),
+    auth: toPluginAuthConfig(normalizeAuth(draft.auth)),
     body_type: draft.body_type
   };
 }
@@ -37,7 +52,7 @@ export function toPluginRequestTabContext(
     draft: toPluginRequestDraft(draft),
     response: toPluginHttpResponse(response),
     readOnly: true,
-    collectionAuth: normalizeAuth(collection?.auth ?? defaultAuth()),
+    collectionAuth: toPluginAuthConfig(normalizeAuth(collection?.auth ?? defaultAuth())),
     collectionHeaders: (collection?.headers ?? []).map((row) => ({ ...row })),
     variables: runtimeVars
   };

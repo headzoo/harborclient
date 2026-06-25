@@ -81,7 +81,7 @@ describe('createHcCompletionSource', () => {
     const source = createHcCompletionSource('pre', variables);
     const result = await complete(source, mockContext('hc.collection.variables.'));
 
-    expect(labels(result!.options).sort()).toEqual(['get', 'set']);
+    expect(labels(result!.options).sort()).toEqual(['get', 'replaceIn', 'set']);
   });
 
   it('lists collection members', async () => {
@@ -109,7 +109,7 @@ describe('createHcCompletionSource', () => {
     const source = createHcCompletionSource('pre', variables);
     const result = await complete(source, mockContext('hc.environment.variables.'));
 
-    expect(labels(result!.options).sort()).toEqual(['get', 'set']);
+    expect(labels(result!.options).sort()).toEqual(['get', 'replaceIn', 'set']);
   });
 
   it('lists request header helpers', async () => {

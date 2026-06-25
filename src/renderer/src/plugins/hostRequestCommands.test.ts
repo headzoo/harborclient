@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { SavedRequest } from '#/shared/types';
+import { defaultAuth } from '#/shared/auth';
 import {
   draftFromOpenPayload,
   findSavedRequest,
@@ -67,7 +68,7 @@ describe('hostRequestCommands', () => {
       url: 'https://example.com/users',
       headers: [],
       params: [],
-      auth: { type: 'none', basic: { username: '', password: '' }, bearer: { token: '' } },
+      auth: defaultAuth(),
       body: '',
       body_type: 'none',
       pre_request_script: '',

@@ -135,6 +135,17 @@ hc.variables.set('token', 'abc123');
 hc.variables.set('timestamp', String(Date.now()));
 ```
 
+#### hc.variables.replaceIn(template)
+
+**Signature:** `(template: string) => string`
+
+Replaces `{{key}}` placeholders in a string using the same resolution order as send-time substitution: session values set with `hc.variables.set`, then merged runtime variables (collection and environment), then dynamic variables such as `{{$guid}}` and `{{$randomEmail}}`. Unknown tokens are left unchanged. See [Variables](/variables) for the full dynamic variable list.
+
+```javascript
+hc.request.url = hc.variables.replaceIn('https://api.example.com/users/{{$guid}}');
+console.log(hc.variables.replaceIn('Bearer {{token}}'));
+```
+
 ### hc.collection.variables
 
 Get and set collection variables for the current send. Values set with `hc.collection.variables.set` are persisted to the collection after the send completes (unlike `hc.variables.set`, which is ephemeral).
@@ -500,6 +511,7 @@ After import, open each script and rewrite it against the `hc` API described abo
 | Postman (`pm`) | HarborClient (`hc`) | Notes |
 | --- | --- | --- |
 | `pm.variables.get(key)` / `pm.variables.set(key, value)` | `hc.variables.get(key)` / `hc.variables.set(key, value)` | Session-only; not persisted after the send |
+| `pm.variables.replaceIn(template)` | `hc.variables.replaceIn(template)` | Resolves `{{key}}`, runtime vars, and dynamic `{{$name}}` tokens |
 | `pm.environment.get(key)` / `pm.environment.set(key, value)` | `hc.environment.variables.get(key)` / `hc.environment.variables.set(key, value)` | Persists to the active environment when one is selected |
 | `pm.collectionVariables.get(key)` / `pm.collectionVariables.set(key, value)` | `hc.collection.variables.get(key)` / `hc.collection.variables.set(key, value)` | Persists to the collection after the send |
 | `pm.globals.get(key)` / `pm.globals.set(key, value)` | `hc.variables.set(key, value)` or `hc.environment.variables.set(key, value)` | HarborClient has no workspace globals; use session variables or environment variables |

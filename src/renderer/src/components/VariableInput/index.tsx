@@ -2,10 +2,12 @@ import { useEffect, useMemo, useRef, useState, type JSX, type KeyboardEvent } fr
 import { Input } from '#/renderer/src/components/forms';
 import type { Variable } from '#/shared/types';
 import { resolveVariable, tokenizeVariables } from '#/renderer/src/store';
+import { getDynamicVariableDescription } from '#/shared/dynamicVariables';
 
 interface TooltipState {
   key: string;
   value: string | undefined;
+  dynamicDescription?: string;
   top: number;
   left: number;
 }
@@ -154,6 +156,7 @@ export function VariableInput({
         setTooltip({
           key: token.key,
           value: resolveVariable(token.key, variables),
+          dynamicDescription: getDynamicVariableDescription(token.key),
           top: rect.top,
           left: rect.left + rect.width / 2
         });
@@ -223,6 +226,8 @@ export function VariableInput({
         >
           {tooltip.value !== undefined ? (
             tooltip.value
+          ) : tooltip.dynamicDescription ? (
+            <span className="text-muted">Dynamic: {tooltip.dynamicDescription}</span>
           ) : (
             <span className="text-muted">Not defined</span>
           )}

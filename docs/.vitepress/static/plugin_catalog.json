@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-25T18:45:27.530Z",
+  "updatedAt": "2026-06-25T18:58:50.661Z",
   "plugins": [
     {
       "id": "com.harborclient.plugins.curl",

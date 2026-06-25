@@ -10,7 +10,13 @@ import type {
   ScriptTestResult,
   SendResult
 } from '#/shared/types';
-import { buildAuthHeaderValue, defaultAuth, resolveAuthVariables } from '#/shared/auth';
+import {
+  buildAuthHeaderValue,
+  buildOAuthAuthHeaderValue,
+  buildOAuthCacheKey,
+  defaultAuth,
+  resolveAuthVariables
+} from '#/shared/auth';
 import { toPluginHttpRequest, toPluginHttpResponse } from '#/shared/plugin/httpRequest';
 import { emitPluginAfterSend } from '#/renderer/src/plugins/pluginAfterSendBus';
 import {
@@ -421,13 +427,27 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
       const resolvedAuth = resolveAuthVariables(effectiveAuth, (text) =>
         substituteWithMap(text, runtimeVars)
       );
-      const authValue = buildAuthHeaderValue(resolvedAuth);
+      let authValue = buildAuthHeaderValue(resolvedAuth);
       const manualHasAuth = [...collectionHeaders, ...draftHeaders].some(
         (header) =>
           header.enabled &&
           header.key.trim().toLowerCase() === 'authorization' &&
           header.value.trim() !== ''
       );
+      if (!authValue && resolvedAuth.type === 'oauth2' && !manualHasAuth) {
+        const usesRequestAuth = currentDraft.auth.type === 'oauth2';
+        const cacheKey =
+          usesRequestAuth && currentDraft.id != null
+            ? buildOAuthCacheKey('request', currentDraft.id)
+            : !usesRequestAuth && collection?.id != null
+              ? buildOAuthCacheKey('collection', collection.id)
+              : '';
+        const tokenResult = await window.api.oauthFetchToken(cacheKey, resolvedAuth.oauth2, false);
+        authValue = buildOAuthAuthHeaderValue(tokenResult);
+        if (!authValue) {
+          throw new Error('OAuth token response contained an invalid access token.');
+        }
+      }
       const headers =
         authValue && !manualHasAuth
           ? [

@@ -18,8 +18,8 @@ function sampleDraft(overrides: Partial<RequestDraft> = {}): RequestDraft {
     headers: [{ key: 'X-Custom', value: '1', enabled: true }],
     params: [{ key: 'q', value: 'test', enabled: true }],
     auth: {
+      ...defaultAuth(),
       type: 'bearer',
-      basic: { username: '', password: '' },
       bearer: { token: 'draft-token' }
     },
     body: '{"ok":true}',
@@ -42,9 +42,9 @@ function sampleCollection(overrides: Partial<Collection> = {}): Collection {
     headers: [{ key: 'X-Collection', value: 'yes', enabled: true }],
     variables: [],
     auth: {
+      ...defaultAuth(),
       type: 'basic',
-      basic: { username: 'alice', password: 'secret' },
-      bearer: { token: '' }
+      basic: { username: 'alice', password: 'secret' }
     },
     pre_request_script: '',
     post_request_script: '',

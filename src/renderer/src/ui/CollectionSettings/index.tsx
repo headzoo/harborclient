@@ -265,7 +265,12 @@ function CollectionSettingsForm({
             <HeadersSection headers={headers} variables={variables} onChange={setHeaders} />
           </SegmentedTabPanel>
           <SegmentedTabPanel value="auth">
-            <AuthSection auth={auth} variables={variables} onChange={setAuth} />
+            <AuthSection
+              auth={auth}
+              collectionId={collection.id}
+              variables={variables}
+              onChange={setAuth}
+            />
           </SegmentedTabPanel>
           <SegmentedTabPanel value="pre">
             <ScriptSection

@@ -37,7 +37,15 @@ const validSaveRequest = {
   auth: {
     type: 'none' as const,
     basic: { username: '', password: '' },
-    bearer: { token: '' }
+    bearer: { token: '' },
+    oauth2: {
+      tokenUrl: '',
+      clientId: '',
+      clientSecret: '',
+      scope: '',
+      audience: '',
+      clientAuth: 'body' as const
+    }
   }
 };
 
@@ -437,5 +445,42 @@ describe('IPC size limits', () => {
     expect(
       saveRequestInput.safeParse({ ...validSaveRequest, comment: atLimitComment }).success
     ).toBe(true);
+  });
+
+  it('accepts oauth2 auth config on saveRequestInput', () => {
+    expect(
+      saveRequestInput.safeParse({
+        ...validSaveRequest,
+        auth: {
+          ...validSaveRequest.auth,
+          type: 'oauth2',
+          oauth2: {
+            tokenUrl: 'https://example.com/oauth/token',
+            clientId: 'client',
+            clientSecret: 'secret',
+            scope: 'read',
+            audience: 'api',
+            clientAuth: 'header'
+          }
+        }
+      }).success
+    ).toBe(true);
+  });
+
+  it('validates oauth IPC tuple schemas', () => {
+    const oauthConfig = {
+      tokenUrl: 'https://example.com/oauth/token',
+      clientId: 'client',
+      clientSecret: 'secret',
+      scope: 'read',
+      audience: '',
+      clientAuth: 'body' as const
+    };
+
+    expect(ipcArgSchemas.oauthFetchToken.safeParse(['request:1', oauthConfig, false]).success).toBe(
+      true
+    );
+    expect(ipcArgSchemas.oauthClearToken.safeParse(['request:1']).success).toBe(true);
+    expect(ipcArgSchemas.oauthClearToken.safeParse(['']).success).toBe(false);
   });
 });

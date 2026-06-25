@@ -3,6 +3,7 @@ import { MoveCoordinator } from '#/main/storage/CollectionMover';
 import type { CollectionRegistryEntry, LocalDatabase } from '#/main/storage/LocalDatabase';
 import type { MountedBackend, RoutingInternals } from '#/main/storage/routingInternals';
 import type { Collection } from '#/shared/types';
+import { defaultAuth } from '#/shared/auth';
 
 /**
  * Builds a minimal routing internals mock for move coordinator tests.
@@ -62,11 +63,7 @@ describe('MoveCoordinator team hub source', () => {
       name: 'Team API',
       variables: [],
       headers: [],
-      auth: {
-        type: 'none',
-        basic: { username: '', password: '' },
-        bearer: { token: '' }
-      },
+      auth: defaultAuth(),
       pre_request_script: '',
       post_request_script: '',
       created_at: '2026-01-01T00:00:00.000Z'

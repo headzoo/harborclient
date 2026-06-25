@@ -9,6 +9,11 @@ interface Props {
   auth: AuthConfig;
 
   /**
+   * Collection id used for OAuth token cache keys.
+   */
+  collectionId: number;
+
+  /**
    * Collection-scoped variables for highlighting and tooltips.
    */
   variables: Variable[];
@@ -24,14 +29,19 @@ interface Props {
 /**
  * Collection authorization editor for the Authorization tab.
  */
-export function AuthSection({ auth, variables, onChange }: Props): JSX.Element {
+export function AuthSection({ auth, collectionId, variables, onChange }: Props): JSX.Element {
   return (
     <div className="mb-6">
       <p className="mb-3 text-[14px] text-muted">
         Default authorization for every request in this collection. Requests can override these
         settings on their Authorization tab. Values support {'{{variable}}'} syntax.
       </p>
-      <AuthEditor auth={auth} onChange={onChange} variables={variables} />
+      <AuthEditor
+        auth={auth}
+        onChange={onChange}
+        variables={variables}
+        oauthCacheKey={`collection:${collectionId}`}
+      />
     </div>
   );
 }

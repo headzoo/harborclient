@@ -33,6 +33,22 @@ describe('substituteWithMap', () => {
   it('leaves unknown tokens unchanged', () => {
     expect(substituteWithMap('{{known}}/{{missing}}', { known: 'ok' })).toBe('ok/{{missing}}');
   });
+
+  it('resolves dynamic variables when no runtime value is defined', () => {
+    const result = substituteWithMap('{{$timestamp}}', {});
+    expect(result).toMatch(/^\d+$/);
+  });
+
+  it('prefers runtime variables over dynamic variables with the same key', () => {
+    expect(substituteWithMap('{{$randomInt}}', { $randomInt: '99' })).toBe('99');
+  });
+
+  it('can produce different values for repeated dynamic tokens in one string', () => {
+    const result = substituteWithMap('{{$randomInt}}-{{$randomInt}}', {});
+    const [first, second] = result.split('-');
+    expect(first).toMatch(/^\d+$/);
+    expect(second).toMatch(/^\d+$/);
+  });
 });
 
 describe('mergeVariableSets', () => {

@@ -1,6 +1,7 @@
 import 'ses';
 import { transform } from 'esbuild';
 import type { ScriptRunInput, ScriptRunResult } from '#/shared/types';
+import { resolveDynamicVariable, VARIABLE_TOKEN_PATTERN } from '#/shared/dynamicVariables';
 
 /** esbuild target for lowering modern user script syntax before compartment execution. */
 const SCRIPT_TRANSPILE_TARGET = 'es2020';
@@ -108,6 +109,20 @@ const hc = {
     },
     set: function(k, v) {
       state.variableSets[k] = String(v);
+    },
+    replaceIn: function(template) {
+      const text = String(template);
+      const pattern = new RegExp(__HC_VARIABLE_PATTERN__, 'g');
+      return text.replace(pattern, function(match, key) {
+        if (Object.prototype.hasOwnProperty.call(state.variableSets, key)) {
+          return state.variableSets[key];
+        }
+        if (Object.prototype.hasOwnProperty.call(state.variables, key)) {
+          return state.variables[key];
+        }
+        const dynamic = __hcResolveDynamic__(key);
+        return dynamic !== undefined ? dynamic : match;
+      });
     }
   },
   collection: {
@@ -313,7 +328,13 @@ export async function evaluateScript(input: ScriptRunInput): Promise<ScriptRunRe
 
   try {
     const compartment = new Compartment({
-      globals: { __CONTEXT__: contextPayload, Date, Math },
+      globals: {
+        __CONTEXT__: contextPayload,
+        Date,
+        Math,
+        __HC_VARIABLE_PATTERN__: VARIABLE_TOKEN_PATTERN.source,
+        __hcResolveDynamic__: (key: string) => resolveDynamicVariable(key)
+      },
       __options__: true
     });
     const fullScript = `${BOOTSTRAP}\n${compiledScript}\nJSON.stringify(state);`;

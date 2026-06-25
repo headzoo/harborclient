@@ -75,6 +75,25 @@ describe('substituteVariables', () => {
 
     expect(result).toBe('Bearer abc123');
   });
+
+  it('resolves dynamic variables when no static variable is defined', () => {
+    const result = substituteVariables('id={{ $guid }}', []);
+
+    expect(result).not.toContain('{{');
+    expect(result).toMatch(/^id=[0-9a-f-]{36}$/i);
+  });
+
+  it('prefers static variables over dynamic variables with the same key', () => {
+    const result = substituteVariables('{{$randomInt}}', [variable('$randomInt', '42')]);
+
+    expect(result).toBe('42');
+  });
+
+  it('leaves unknown dynamic-style tokens unchanged', () => {
+    const result = substituteVariables('{{$notRegistered}}', []);
+
+    expect(result).toBe('{{$notRegistered}}');
+  });
 });
 
 describe('tokenizeVariables', () => {
@@ -98,6 +117,12 @@ describe('tokenizeVariables', () => {
       { text: 'https://' },
       { text: '{{ host }}', key: 'host' },
       { text: '/users' }
+    ]);
+  });
+
+  it('tokenizeVariables recognizes dynamic variable keys with $ prefix', () => {
+    expect(tokenizeVariables('{{$randomUUID}}')).toEqual([
+      { text: '{{$randomUUID}}', key: '$randomUUID' }
     ]);
   });
 });

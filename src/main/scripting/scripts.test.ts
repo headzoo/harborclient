@@ -30,6 +30,54 @@ describe('evaluateScript', () => {
     });
   });
 
+  it('resolves dynamic variables via hc.variables.replaceIn', async () => {
+    const { evaluateScript } = await import('#/main/scripting/scriptEvaluator');
+    const result = await evaluateScript({
+      phase: 'pre',
+      script: `
+        const resolved = hc.variables.replaceIn('{{$guid}}');
+        hc.variables.set('resolvedGuid', resolved);
+      `,
+      request: {
+        method: 'GET',
+        url: 'https://example.com',
+        headers: [],
+        params: [],
+        body: '',
+        bodyType: 'none'
+      },
+      variables: {}
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.variableSets.resolvedGuid).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    );
+  });
+
+  it('prefers runtime variables over dynamic variables in replaceIn', async () => {
+    const { evaluateScript } = await import('#/main/scripting/scriptEvaluator');
+    const result = await evaluateScript({
+      phase: 'pre',
+      script: `
+        const resolved = hc.variables.replaceIn('{{host}}');
+        hc.variables.set('resolvedHost', resolved);
+      `,
+      request: {
+        method: 'GET',
+        url: 'https://example.com',
+        headers: [],
+        params: [],
+        body: '',
+        bodyType: 'none'
+      },
+      variables: { host: 'api.example.com' }
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.variableSets.resolvedHost).toBe('api.example.com');
+  });
+
   it('mutates request url and sets variables in pre script', async () => {
     const { evaluateScript } = await import('#/main/scripting/scriptEvaluator');
     const result = await evaluateScript({

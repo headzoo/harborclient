@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TeamHubClient } from '#/main/teamHub/TeamHubClient';
 import { TeamHubClientError } from '#/main/teamHub/TeamHubClientError';
+import { defaultAuth } from '#/shared/auth';
 
 describe('TeamHubClient', () => {
   const originalFetch = globalThis.fetch;
@@ -477,11 +478,7 @@ describe('TeamHubClient', () => {
         name: 'Shared API',
         variables: [],
         headers: [],
-        auth: {
-          type: 'none' as const,
-          basic: { username: '', password: '' },
-          bearer: { token: '' }
-        },
+        auth: defaultAuth(),
         preRequestScript: '',
         postRequestScript: '',
         createdAt: '2026-01-01T00:00:00.000Z'

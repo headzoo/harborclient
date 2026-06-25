@@ -1,9 +1,14 @@
 import type { Completion, CompletionContext, CompletionSource } from '@codemirror/autocomplete';
 import type { ScriptPhase, Variable } from '#/shared/types';
+import {
+  DYNAMIC_VARIABLE_NAMES,
+  getDynamicVariableDescription,
+  VARIABLE_NAME_CHARS
+} from '#/shared/dynamicVariables';
 
 /**
  * Hand-maintained completion surface for the hc sandbox API.
- * Keep in sync with the bootstrap in src/main/scripting/scripts.ts.
+ * Keep in sync with the bootstrap in src/main/scripting/scriptEvaluator.ts.
  */
 interface HcCompletionOption {
   label: string;
@@ -41,7 +46,12 @@ const HC_REQUEST_HEADERS: HcCompletionOption[] = [
 
 const HC_VARIABLES: HcCompletionOption[] = [
   { label: 'get', type: 'method', detail: '(key) => string | undefined' },
-  { label: 'set', type: 'method', detail: '(key, value) => void' }
+  { label: 'set', type: 'method', detail: '(key, value) => void' },
+  {
+    label: 'replaceIn',
+    type: 'method',
+    detail: '(template) => string — resolve {{vars}} and dynamic $ tokens'
+  }
 ];
 
 const HC_COLLECTION: HcCompletionOption[] = [
@@ -128,7 +138,7 @@ function variableCompletions(
   context: CompletionContext,
   variables: Variable[]
 ): { from: number; options: Completion[] } | null {
-  const match = context.matchBefore(/\{\{\s*[\w.-]*$/);
+  const match = context.matchBefore(new RegExp(`\\{\\{\\s*[${VARIABLE_NAME_CHARS}]*$`));
   if (!match) return null;
 
   const braceIndex = match.text.indexOf('{{');
@@ -138,7 +148,7 @@ function variableCompletions(
   const partial = inner.trimStart().toLowerCase();
   const from = match.from + braceIndex + 2 + (inner.length - inner.trimStart().length);
 
-  const options: Completion[] = variables
+  const staticOptions: Completion[] = variables
     .filter((variable) => variable.key.trim())
     .filter((variable) => !partial || variable.key.trim().toLowerCase().startsWith(partial))
     .map((variable) => ({
@@ -147,6 +157,16 @@ function variableCompletions(
       apply: variable.key.trim()
     }));
 
+  const dynamicOptions: Completion[] = DYNAMIC_VARIABLE_NAMES.filter(
+    (name) => !partial || name.toLowerCase().startsWith(partial)
+  ).map((name) => ({
+    label: name,
+    type: 'variable',
+    detail: getDynamicVariableDescription(name),
+    apply: name
+  }));
+
+  const options = [...staticOptions, ...dynamicOptions];
   if (options.length === 0) return null;
   return { from, options };
 }

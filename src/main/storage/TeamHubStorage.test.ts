@@ -3,6 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, expect, it, vi } from 'vitest';
 import { TeamHubStorage } from '#/main/storage/TeamHubStorage';
+import { defaultAuth } from '#/shared/auth';
 import { TeamHubIdMap } from '#/main/storage/TeamHubIdMap';
 import type { TeamHubClient } from '#/main/teamHub/TeamHubClient';
 import { describeSqlite } from '#/test/nativeModules';
@@ -67,11 +68,7 @@ describeSqlite('TeamHubStorage', () => {
       name: 'New',
       variables: [],
       headers: [],
-      auth: {
-        type: 'none',
-        basic: { username: '', password: '' },
-        bearer: { token: '' }
-      },
+      auth: defaultAuth(),
       preRequestScript: '',
       postRequestScript: '',
       createdAt: '2026-01-01T00:00:00.000Z'
@@ -81,11 +78,7 @@ describeSqlite('TeamHubStorage', () => {
       name: 'Renamed',
       variables: [],
       headers: [],
-      auth: {
-        type: 'none',
-        basic: { username: '', password: '' },
-        bearer: { token: '' }
-      },
+      auth: defaultAuth(),
       preRequestScript: 'pre',
       postRequestScript: 'post',
       createdAt: '2026-01-01T00:00:00.000Z'
@@ -93,11 +86,15 @@ describeSqlite('TeamHubStorage', () => {
     const db = createStorage({ createCollection, updateCollection });
 
     const created = await db.createCollection('New');
-    const updated = await db.updateCollection(created.id, 'Renamed', [], [], 'pre', 'post', {
-      type: 'none',
-      basic: { username: '', password: '' },
-      bearer: { token: '' }
-    });
+    const updated = await db.updateCollection(
+      created.id,
+      'Renamed',
+      [],
+      [],
+      'pre',
+      'post',
+      defaultAuth()
+    );
 
     expect(createCollection).toHaveBeenCalledWith({ name: 'New' });
     expect(updateCollection).toHaveBeenCalledWith(serverId, {
@@ -106,11 +103,7 @@ describeSqlite('TeamHubStorage', () => {
       headers: [],
       preRequestScript: 'pre',
       postRequestScript: 'post',
-      auth: {
-        type: 'none',
-        basic: { username: '', password: '' },
-        bearer: { token: '' }
-      }
+      auth: defaultAuth()
     });
     expect(updated.name).toBe('Renamed');
   });
@@ -158,11 +151,7 @@ describeSqlite('TeamHubStorage', () => {
       url: '{{base}}/health',
       headers: [],
       params: [],
-      auth: {
-        type: 'none',
-        basic: { username: '', password: '' },
-        bearer: { token: '' }
-      },
+      auth: defaultAuth(),
       body: '',
       body_type: 'none',
       pre_request_script: '',

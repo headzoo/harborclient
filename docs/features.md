@@ -1,6 +1,6 @@
 # Features
 
-- **Request builder** — Method selector, URL bar, query params, headers, and body (none, JSON, or plain text). See [Making requests](/requests) for the full guide.
+- **Request builder** — Method selector, URL bar, query params, headers, body (none, JSON, or plain text), and authorization (None, Basic, Bearer, OAuth 2.0 Client Credentials). See [Making requests](/requests) for the full guide.
 - **HTTP methods** — GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS
 - **Response viewer** — Status, timing, size, response body (with JSON pretty-print), and headers
 - **Collections** — Organize saved requests into named collections with create, rename, and delete. See [Collections](/collections) for the full guide.
