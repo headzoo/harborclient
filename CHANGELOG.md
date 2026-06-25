@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.8.12 - 2026-06-25
+
 - feat(variables): introduce dynamic variables support and enhance documentation. (`3497443`)
 - feat(collections): implement collection runner functionality. (`b15ade9`)
 - chore(plugins): add JWT Inspector plugin to catalog.json. (`c0f910f`)
