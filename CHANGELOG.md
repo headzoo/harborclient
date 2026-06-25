@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.8.11 - 2026-06-25
+
 - chore(plugins): update plugin versions to 1.0.3 and adjust screenshot path. (`637d83c`)
 
 ## 1.8.10 - 2026-06-25
