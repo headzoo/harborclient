@@ -850,7 +850,7 @@ export function PluginsSection(): JSX.Element {
   return (
     <section>
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <h2 className="m-0 flex-1 text-[15px] font-semibold text-text">Plugins</h2>
+        <h2 className="m-0 flex-1 text-[15px] font-semibold text-text">Marketplace</h2>
         <Button
           type="button"
           variant="secondary"
