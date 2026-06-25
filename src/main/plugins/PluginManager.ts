@@ -32,12 +32,14 @@ import {
   setUnpackedPluginPath
 } from '#/main/plugins/devRegistry';
 import { assertSafeGitPluginUrl } from '#/main/plugins/gitPluginUrl';
+import { evaluatePluginSignature } from '#/main/plugins/pluginSignature';
 import { getLocalDatabase } from '#/main/storage/localDatabaseInstance';
 import type {
   PluginAssetResult,
   PluginEntryKind,
   PluginInfo,
   PluginPermission,
+  PluginSignatureInfo,
   PluginSource
 } from '#/shared/plugin/types';
 
@@ -313,12 +315,13 @@ export class PluginManager {
    */
   registerStartupDevPaths(directories: string[]): void {
     for (const directory of directories) {
-      try {
-        const info = this.loadUnpacked(directory);
-        this.setEnabled(info.id, true);
-      } catch (error) {
-        console.error(`Failed to load dev plugin from ${directory}:`, error);
-      }
+      void this.loadUnpacked(directory)
+        .then((info) => {
+          this.setEnabled(info.id, true);
+        })
+        .catch((error) => {
+          console.error(`Failed to load dev plugin from ${directory}:`, error);
+        });
     }
   }
 
@@ -395,10 +398,16 @@ export class PluginManager {
       await Promise.all(writes);
 
       const info = this.#loadFromDirectory(targetDir, 'installed');
-      setPluginEnabled(info.id, false);
-      this.#records.set(info.id, { info: { ...info, enabled: false }, watchers: [] });
-      this.#emitChanged(info.id);
-      return this.get(info.id)!;
+      const committed = await this.#commitWithSignature(info, () => {
+        rmSync(targetDir, { recursive: true, force: true });
+      });
+      setPluginEnabled(committed.id, false);
+      this.#records.set(committed.id, {
+        info: { ...committed, enabled: false },
+        watchers: []
+      });
+      this.#emitChanged(committed.id);
+      return this.get(committed.id)!;
     } catch (error) {
       rmSync(targetDir, { recursive: true, force: true });
       throw error;
@@ -439,15 +448,22 @@ export class PluginManager {
       setGitPluginOrigin(pluginId, { url: normalizedUrl, ref: trimmedRef });
       setPluginEnabled(pluginId, false);
 
-      const info: PluginInfo = {
-        ...this.#loadFromDirectory(targetDir, 'git'),
-        enabled: false,
-        repoUrl: normalizedUrl,
-        repoRef: trimmedRef
-      };
-      this.#records.set(pluginId, { info, watchers: [] });
+      const loaded = this.#loadFromDirectory(targetDir, 'git');
+      const committed = await this.#commitWithSignature(
+        {
+          ...loaded,
+          enabled: false,
+          repoUrl: normalizedUrl,
+          repoRef: trimmedRef
+        },
+        () => {
+          rmSync(targetDir, { recursive: true, force: true });
+          removeGitPluginOrigin(pluginId);
+        }
+      );
+      this.#records.set(pluginId, { info: committed, watchers: [] });
       this.#emitChanged(pluginId);
-      return info;
+      return committed;
     } catch (error) {
       rmSync(tempDir, { recursive: true, force: true });
       throw error;
@@ -498,15 +514,21 @@ export class PluginManager {
       rmSync(targetDir, { recursive: true, force: true });
       renameSync(tempDir, targetDir);
 
-      const info: PluginInfo = {
-        ...this.#loadFromDirectory(targetDir, 'git'),
-        enabled: record.info.enabled,
-        repoUrl: normalizedUrl,
-        repoRef: trimmedRef
-      };
-      this.#records.set(pluginId, { info, watchers: [] });
+      const loaded = this.#loadFromDirectory(targetDir, 'git');
+      const committed = await this.#commitWithSignature(
+        {
+          ...loaded,
+          enabled: record.info.enabled,
+          repoUrl: normalizedUrl,
+          repoRef: trimmedRef
+        },
+        () => {
+          rmSync(targetDir, { recursive: true, force: true });
+        }
+      );
+      this.#records.set(pluginId, { info: committed, watchers: [] });
       this.#emitChanged(pluginId);
-      return info;
+      return committed;
     } catch (error) {
       rmSync(tempDir, { recursive: true, force: true });
       throw error;
@@ -519,15 +541,37 @@ export class PluginManager {
    * @param directory - Absolute path containing manifest.json.
    * @returns Loaded plugin metadata.
    */
-  loadUnpacked(directory: string): PluginInfo {
+  async loadUnpacked(directory: string): Promise<PluginInfo> {
     const absolute = resolve(directory);
     const info = this.#loadFromDirectory(absolute, 'unpacked');
-    setUnpackedPluginPath(info.id, absolute);
-    setPluginEnabled(info.id, false);
-    this.#stopWatcher(info.id);
-    this.#records.set(info.id, { info: { ...info, enabled: false }, watchers: [] });
-    this.#emitChanged(info.id);
-    return this.get(info.id)!;
+    const committed = await this.#commitWithSignature(info, () => {
+      removeUnpackedPluginPath(info.id);
+    });
+    setUnpackedPluginPath(committed.id, absolute);
+    setPluginEnabled(committed.id, false);
+    this.#stopWatcher(committed.id);
+    this.#records.set(committed.id, { info: { ...committed, enabled: false }, watchers: [] });
+    this.#emitChanged(committed.id);
+    return this.get(committed.id)!;
+  }
+
+  /**
+   * Re-evaluates publisher signatures for all known plugins and notifies listeners.
+   */
+  async refreshSignatures(): Promise<void> {
+    for (const [pluginId, record] of this.#records) {
+      if (record.info.error) {
+        continue;
+      }
+
+      try {
+        const signature = await evaluatePluginSignature(record.info.path, record.info.manifest);
+        record.info = { ...record.info, signature };
+        this.#emitChanged(pluginId);
+      } catch (error) {
+        console.error(`Failed to refresh signature for ${pluginId}:`, error);
+      }
+    }
   }
 
   /**
@@ -535,7 +579,7 @@ export class PluginManager {
    *
    * @param pluginId - Plugin manifest id.
    */
-  reload(pluginId: string): PluginInfo {
+  async reload(pluginId: string): Promise<PluginInfo> {
     const existing = this.#records.get(pluginId);
     if (!existing) {
       throw new Error(`Unknown plugin: ${pluginId}`);
@@ -547,8 +591,15 @@ export class PluginManager {
     this.#stopWatcher(pluginId);
 
     const info = this.#loadFromDirectory(directory, source);
+    let signature = existing.info.signature;
+    try {
+      signature = await evaluatePluginSignature(directory, info.manifest);
+    } catch (error) {
+      console.error(`Failed to refresh signature for ${pluginId} during reload:`, error);
+    }
+
     this.#records.set(pluginId, {
-      info: { ...info, enabled },
+      info: { ...info, enabled, signature },
       watchers: []
     });
     if (source === 'unpacked' && enabled) {
@@ -783,6 +834,31 @@ export class PluginManager {
   }
 
   /**
+   * Verifies a plugin signature after files are on disk and rejects untrusted or
+   * invalid packages before they are recorded.
+   *
+   * @param info - Loaded plugin metadata for the directory being committed.
+   * @param cleanup - Removes extracted or cloned files when verification fails.
+   * @returns Plugin metadata with signature status attached.
+   */
+  async #commitWithSignature(info: PluginInfo, cleanup: () => void): Promise<PluginInfo> {
+    let signature: PluginSignatureInfo;
+    try {
+      signature = await evaluatePluginSignature(info.path, info.manifest);
+    } catch (error) {
+      cleanup();
+      throw error;
+    }
+
+    if (signature.status === 'untrusted' || signature.status === 'invalid') {
+      cleanup();
+      throw new Error(signature.error ?? 'Plugin signature could not be verified.');
+    }
+
+    return { ...info, signature };
+  }
+
+  /**
    * Loads manifest.json from a plugin directory.
    *
    * @param directory - Absolute plugin root path.
@@ -1010,9 +1086,7 @@ export class PluginManager {
       pluginId,
       setTimeout(() => {
         this.#reloadTimers.delete(pluginId);
-        try {
-          this.reload(pluginId);
-        } catch (error) {
+        void this.reload(pluginId).catch((error) => {
           const record = this.#records.get(pluginId);
           if (record) {
             record.info = {
@@ -1021,7 +1095,7 @@ export class PluginManager {
             };
           }
           this.#emitChanged(pluginId);
-        }
+        });
       }, RELOAD_DEBOUNCE_MS)
     );
   }

@@ -2,7 +2,7 @@ import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import JSZip from 'jszip';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   clearDevRegistryForTesting,
   getPluginEnablement,
@@ -12,6 +12,7 @@ import {
   setUnpackedPluginPath
 } from '#/main/plugins/devRegistry';
 import { PluginManager } from '#/main/plugins/PluginManager';
+import * as pluginSignature from '#/main/plugins/pluginSignature';
 import {
   clearLocalDatabaseForTesting,
   getLocalDatabase,
@@ -228,7 +229,7 @@ describe('PluginManager', () => {
     manager.setEnabled('com.example.runtime', true);
     manager.setRuntimeError('com.example.runtime', 'Hook failed');
 
-    manager.reload('com.example.runtime');
+    await manager.reload('com.example.runtime');
 
     expect(manager.get('com.example.runtime')?.runtimeError).toBeUndefined();
   });
@@ -296,7 +297,7 @@ describe('PluginManager', () => {
       })
     );
     writeFileSync(join(sourceDir, 'dist', 'renderer.js'), 'export function activate() {}');
-    const info = manager.loadUnpacked(sourceDir);
+    const info = await manager.loadUnpacked(sourceDir);
     expect(info.source).toBe('unpacked');
     expect(info.path).toBe(sourceDir);
     expect(info.enabled).toBe(false);
@@ -319,7 +320,7 @@ describe('PluginManager', () => {
       })
     );
     writeFileSync(join(sourceDir, 'dist', 'renderer.js'), 'export function activate() {}');
-    const info = manager.loadUnpacked(sourceDir);
+    const info = await manager.loadUnpacked(sourceDir);
     expect(info.enabled).toBe(false);
 
     const enabled = manager.setEnabled(info.id, true);
@@ -337,7 +338,58 @@ describe('PluginManager', () => {
     expect(info.id).toBe(TEST_PLUGIN_ID);
     expect(info.source).toBe('installed');
     expect(info.enabled).toBe(false);
+    expect(info.signature?.status).toBe('unsigned');
     expect(manager.get(TEST_PLUGIN_ID)?.id).toBe(TEST_PLUGIN_ID);
+  });
+
+  it('installs a verified signed plugin archive', async () => {
+    const evaluateSpy = vi.spyOn(pluginSignature, 'evaluatePluginSignature').mockResolvedValue({
+      status: 'verified',
+      company: 'Example Inc.',
+      keyId: 'test-key'
+    });
+    const { manager, rootDir } = await createManager();
+    const archivePath = await writeArchiveFile(await buildPluginArchive());
+
+    const info = await manager.installFromFile(archivePath);
+
+    expect(evaluateSpy).toHaveBeenCalled();
+    expect(info.signature?.status).toBe('verified');
+    expect(existsSync(join(rootDir, 'plugins', TEST_PLUGIN_ID))).toBe(true);
+    evaluateSpy.mockRestore();
+  });
+
+  it('rejects plugin archives with invalid signatures and cleans up the install directory', async () => {
+    vi.spyOn(pluginSignature, 'evaluatePluginSignature').mockResolvedValue({
+      status: 'invalid',
+      company: 'Example Inc.',
+      error: 'Plugin signature failed verification.'
+    });
+    const { manager, rootDir } = await createManager();
+    const archivePath = await writeArchiveFile(await buildPluginArchive());
+    const pluginDir = join(rootDir, 'plugins', TEST_PLUGIN_ID);
+
+    await expect(manager.installFromFile(archivePath)).rejects.toThrow(
+      /signature failed verification/i
+    );
+    expect(existsSync(pluginDir)).toBe(false);
+    expect(manager.get(TEST_PLUGIN_ID)).toBeUndefined();
+    vi.restoreAllMocks();
+  });
+
+  it('rejects plugin archives from untrusted publishers and cleans up the install directory', async () => {
+    vi.spyOn(pluginSignature, 'evaluatePluginSignature').mockResolvedValue({
+      status: 'untrusted',
+      company: 'Unknown Publisher',
+      error: 'No trusted signing key is registered for publisher "Unknown Publisher".'
+    });
+    const { manager, rootDir } = await createManager();
+    const archivePath = await writeArchiveFile(await buildPluginArchive());
+    const pluginDir = join(rootDir, 'plugins', TEST_PLUGIN_ID);
+
+    await expect(manager.installFromFile(archivePath)).rejects.toThrow(/No trusted signing key/i);
+    expect(existsSync(pluginDir)).toBe(false);
+    vi.restoreAllMocks();
   });
 
   it('rejects plugin archives with zip-slip paths', async () => {

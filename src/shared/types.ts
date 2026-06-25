@@ -2144,6 +2144,7 @@ export type MenuActionId =
   | 'import'
   | 'save'
   | 'settings'
+  | 'plugins'
   | 'team-hubs'
   | 'sharing-keys'
   | 'join-shared-collection'
@@ -2347,6 +2348,13 @@ export interface Api {
    * @returns The newly created environment.
    */
   duplicateEnvironment: (id: number) => Promise<Environment>;
+
+  /**
+   * Reorders environments in the sidebar.
+   *
+   * @param orderedEnvironmentIds - Environment ids in desired order.
+   */
+  reorderEnvironments: (orderedEnvironmentIds: number[]) => Promise<void>;
 
   /**
    * Lists saved requests in a collection.

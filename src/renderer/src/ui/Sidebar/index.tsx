@@ -51,6 +51,7 @@ import {
   refreshCollections,
   renameFolder,
   reorderCollections,
+  reorderEnvironments,
   reorderFolders,
   reorderRequests,
   focusSidebarItem
@@ -573,6 +574,9 @@ export function Sidebar({
                         formatErrorMessage(err, 'Failed to duplicate environment')
                       );
                     }
+                  }}
+                  onReorderEnvironments={async (orderedEnvironmentIds) => {
+                    await dispatch(reorderEnvironments({ orderedEnvironmentIds }));
                   }}
                 />
               </Section>

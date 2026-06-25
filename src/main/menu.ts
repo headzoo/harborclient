@@ -82,6 +82,10 @@ export function buildMenu(
           click: () => sendMenuAction(window, 'settings')
         },
         {
+          label: 'Plugins',
+          click: () => sendMenuAction(window, 'plugins')
+        },
+        {
           label: 'Team Hub',
           click: () => sendMenuAction(window, 'team-hubs')
         },

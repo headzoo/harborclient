@@ -208,6 +208,15 @@ function listEnvironments(): Promise<Environment[]> {
 }
 
 /**
+ * Persists a new sidebar order for environments via IPC.
+ *
+ * @param orderedEnvironmentIds - Environment ids in desired order.
+ */
+function reorderEnvironments(orderedEnvironmentIds: number[]): Promise<void> {
+  return ipcRenderer.invoke('environments:reorder', orderedEnvironmentIds);
+}
+
+/**
  * Creates a new environment via IPC.
  *
  * @param name - Display name for the environment.
@@ -1484,6 +1493,7 @@ const api: Api = {
   moveCollection,
   reorderCollections,
   listEnvironments,
+  reorderEnvironments,
   createEnvironment,
   updateEnvironment,
   deleteEnvironment,

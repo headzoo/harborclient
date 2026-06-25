@@ -73,17 +73,41 @@ export const deleteEnvironment = createAsyncThunk<void, number, ThunkApiConfig>(
 );
 
 /**
- * Deep-copies an environment and makes the clone the active selection.
+ * Deep-copies an environment and places the duplicate directly below the original.
  */
 export const duplicateEnvironment = createAsyncThunk<Environment, number, ThunkApiConfig>(
   'environments/duplicate',
-  async (id, { dispatch }) => {
+  async (id, { dispatch, getState }) => {
     const environment = await window.api.duplicateEnvironment(id);
     await dispatch(refreshEnvironments());
+
+    const environments = getState().environments.environments;
+    const sourceIndex = environments.findIndex((item) => item.id === id);
+    if (sourceIndex >= 0) {
+      const orderedIds = environments.map((item) => item.id);
+      orderedIds.splice(sourceIndex + 1, 0, environment.id);
+      const dedupedIds = orderedIds.filter(
+        (environmentId, index) => orderedIds.indexOf(environmentId) === index
+      );
+      await dispatch(reorderEnvironments({ orderedEnvironmentIds: dedupedIds }));
+    }
+
     dispatch(setActiveEnvironmentId(environment.id));
     return environment;
   }
 );
+
+/**
+ * Persists a new sidebar order for environments.
+ */
+export const reorderEnvironments = createAsyncThunk<
+  void,
+  { orderedEnvironmentIds: number[] },
+  ThunkApiConfig
+>('environments/reorderEnvironments', async ({ orderedEnvironmentIds }, { dispatch }) => {
+  await window.api.reorderEnvironments(orderedEnvironmentIds);
+  await dispatch(refreshEnvironments());
+});
 
 /**
  * Exports an environment to a user-chosen file path.

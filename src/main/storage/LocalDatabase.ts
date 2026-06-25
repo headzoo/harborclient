@@ -142,6 +142,7 @@ export class LocalDatabase {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         variables TEXT NOT NULL DEFAULT '[]',
+        sort_order INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
@@ -186,6 +187,7 @@ export class LocalDatabase {
     this.migrateRegistrySortOrder();
     this.migrateRegistryCollectionUuid();
     this.migrateEnvironmentUuid();
+    this.migrateEnvironmentSortOrder();
   }
 
   /**
@@ -293,6 +295,40 @@ export class LocalDatabase {
   private nextRegistrySortOrder(): number {
     const row = this.getDb()
       .prepare('SELECT COALESCE(MAX(sort_order), -1) AS max_order FROM collection_registry')
+      .get() as { max_order: number };
+    return row.max_order + 1;
+  }
+
+  /**
+   * Adds sort_order to legacy environment rows and backfills from name order.
+   */
+  private migrateEnvironmentSortOrder(): void {
+    const columns = this.getDb().prepare('PRAGMA table_info(environments)').all() as Array<{
+      name: string;
+    }>;
+    const hasSortOrder = columns.some((col) => col.name === 'sort_order');
+    if (hasSortOrder) return;
+
+    this.getDb().exec('ALTER TABLE environments ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0');
+
+    const rows = this.getDb()
+      .prepare('SELECT id FROM environments ORDER BY name ASC, id ASC')
+      .all() as Array<{ id: number }>;
+    const update = this.getDb().prepare('UPDATE environments SET sort_order = ? WHERE id = ?');
+    const backfill = this.getDb().transaction((entries: Array<{ id: number }>) => {
+      entries.forEach((entry, index) => {
+        update.run(index, entry.id);
+      });
+    });
+    backfill(rows);
+  }
+
+  /**
+   * Returns the next sort_order value for a new environment.
+   */
+  private nextEnvironmentSortOrder(): number {
+    const row = this.getDb()
+      .prepare('SELECT COALESCE(MAX(sort_order), -1) AS max_order FROM environments')
       .get() as { max_order: number };
     return row.max_order + 1;
   }
@@ -461,16 +497,33 @@ export class LocalDatabase {
   }
 
   /**
-   * Lists all environments ordered by name.
+   * Lists all environments ordered for sidebar display.
    *
    * @returns All environments in the database.
    */
   listEnvironments(): Environment[] {
     const rows = this.getDb()
-      .prepare('SELECT id, uuid, name, variables, created_at FROM environments ORDER BY name ASC')
+      .prepare(
+        'SELECT id, uuid, name, variables, created_at FROM environments ORDER BY sort_order ASC, name ASC'
+      )
       .all() as Record<string, unknown>[];
 
     return rows.map(rowToEnvironment);
+  }
+
+  /**
+   * Persists a new sidebar order for environments.
+   *
+   * @param orderedIds - Environment ids in desired order.
+   */
+  reorderEnvironments(orderedIds: number[]): void {
+    const reorder = this.getDb().transaction((ids: number[]) => {
+      const stmt = this.getDb().prepare('UPDATE environments SET sort_order = ? WHERE id = ?');
+      ids.forEach((id, index) => {
+        stmt.run(index, id);
+      });
+    });
+    reorder(orderedIds);
   }
 
   findEnvironmentByUuid(uuid: string): Environment | undefined {
@@ -496,9 +549,10 @@ export class LocalDatabase {
   createEnvironment(name: string, uuid?: string): Environment {
     const trimmedName = trimRequiredName(name, 'Environment name');
     const environmentUuid = uuid?.trim() || generateDocumentUuid();
+    const sortOrder = this.nextEnvironmentSortOrder();
     const result = this.getDb()
-      .prepare('INSERT INTO environments (name, uuid) VALUES (?, ?)')
-      .run(trimmedName, environmentUuid);
+      .prepare('INSERT INTO environments (name, uuid, sort_order) VALUES (?, ?, ?)')
+      .run(trimmedName, environmentUuid, sortOrder);
 
     const row = this.getDb()
       .prepare('SELECT id, uuid, name, variables, created_at FROM environments WHERE id = ?')
@@ -512,15 +566,17 @@ export class LocalDatabase {
    */
   seedEnvironment(environment: Environment): Environment {
     const environmentUuid = environment.uuid.trim() || generateDocumentUuid();
+    const sortOrder = this.nextEnvironmentSortOrder();
     this.getDb()
       .prepare(
-        'INSERT INTO environments (id, uuid, name, variables, created_at) VALUES (?, ?, ?, ?, ?)'
+        'INSERT INTO environments (id, uuid, name, variables, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?)'
       )
       .run(
         environment.id,
         environmentUuid,
         environment.name.trim(),
         JSON.stringify(environment.variables),
+        sortOrder,
         environment.created_at
       );
 

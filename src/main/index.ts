@@ -541,6 +541,7 @@ app.whenReady().then(async () => {
     logVerbose('startup: initializing plugin manager');
     pluginManager = new PluginManager(app.getPath('userData'), app.getVersion());
     pluginManager.discover();
+    void pluginManager.refreshSignatures();
     pluginManager.registerStartupDevPaths(parseDevPluginPaths());
 
     logVerbose('startup: registering IPC handlers');

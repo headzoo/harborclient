@@ -41,8 +41,8 @@ async function syncPluginStaticAsset(sourceRelative, helpMessage) {
 }
 
 await syncPluginStaticAsset(
-  'plugins/public.key',
-  'Generate it with: openssl pkey -in plugins/signing.pem -pubout -out plugins/public.key'
+  'plugins/harborclient.key',
+  'Generate it with: openssl pkey -in plugins/signing.pem -pubout -out plugins/harborclient.key'
 );
 
 const trustedSourcePath = await assertSourceExists('plugins/trusted.json');

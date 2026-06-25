@@ -107,6 +107,18 @@ export function registerEnvironmentHandlers(db: IStorage): void {
     return db.duplicateEnvironment(id);
   });
 
+  // Reorders environments in the sidebar.
+  handle(
+    'environments:reorder',
+    ipcArgSchemas.environmentReorder,
+    (_event, orderedEnvironmentIds) => {
+      if (!(db instanceof RoutingStorage)) {
+        throw new Error('Environment reorder is unavailable.');
+      }
+      return db.reorderEnvironments(orderedEnvironmentIds);
+    }
+  );
+
   // Exports an environment to a JSON file via a native save dialog.
   handle('environments:export', ipcArgSchemas.dbId, async (_event, id) => {
     const environments = await db.listEnvironments();

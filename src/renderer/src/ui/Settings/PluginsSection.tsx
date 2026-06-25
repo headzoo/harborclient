@@ -9,7 +9,7 @@ import { Button } from '#/renderer/src/components/Button';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { Input } from '#/renderer/src/components/forms';
 import { Modal } from '#/renderer/src/components/Modal';
-import { faAngleLeft } from '#/renderer/src/fontawesome';
+import { faAngleLeft, faCircleCheck } from '#/renderer/src/fontawesome';
 import { useAppDispatch } from '#/renderer/src/store/hooks';
 import { showConfirm } from '#/renderer/src/ui/modals/dialogHelpers';
 
@@ -878,7 +878,7 @@ export function PluginsSection(): JSX.Element {
   return (
     <section>
       <div className="mb-4 flex flex-wrap items-center gap-2">
-        <h2 className="m-0 flex-1 text-[15px] font-semibold text-text">Marketplace</h2>
+        <h2 className="m-0 flex-1 text-[15px] font-semibold text-text">Plugins</h2>
         <Button
           type="button"
           variant="secondary"
@@ -979,6 +979,23 @@ export function PluginsSection(): JSX.Element {
                         <td className="px-3 py-2 align-top">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-medium text-text">{plugin.name}</span>
+                            {plugin.signature?.status === 'verified' ? (
+                              <FaIcon
+                                icon={faCircleCheck}
+                                className="text-success"
+                                aria-label={`Verified publisher: ${plugin.signature.company ?? plugin.manifest.company ?? 'unknown'}`}
+                              />
+                            ) : null}
+                            {plugin.signature?.status === 'invalid' ? (
+                              <span className="rounded bg-danger/20 px-1.5 py-0.5 text-[14px] text-danger">
+                                Invalid signature
+                              </span>
+                            ) : null}
+                            {plugin.signature?.status === 'untrusted' ? (
+                              <span className="rounded bg-danger/20 px-1.5 py-0.5 text-[14px] text-danger">
+                                Untrusted publisher
+                              </span>
+                            ) : null}
                             {plugin.runtimeError && plugin.enabled ? (
                               <span className="rounded bg-danger/20 px-1.5 py-0.5 text-[14px] text-danger">
                                 Error
@@ -1240,6 +1257,18 @@ export function PluginsSection(): JSX.Element {
           <p className="mb-3 text-[14px] text-text">
             Version {pendingInstall.version} requests the following permissions:
           </p>
+          {pendingInstall.signature?.status === 'verified' ? (
+            <p className="mb-3 flex items-center gap-2 text-[14px] text-text" role="status">
+              <FaIcon icon={faCircleCheck} className="text-success" aria-hidden />
+              Verified by {pendingInstall.signature.company ?? pendingInstall.manifest.company}
+            </p>
+          ) : null}
+          {pendingInstall.signature?.status === 'unsigned' ? (
+            <p className="mb-3 text-[14px] text-danger" role="alert">
+              This plugin is not signed by a trusted publisher. Only enable it if you trust the
+              source.
+            </p>
+          ) : null}
           <ul className="mb-4 list-disc pl-5 text-[14px] text-text">
             {pendingInstall.permissions.map((permission) => (
               <li key={permission}>{PERMISSION_LABELS[permission] ?? permission}</li>
@@ -1254,7 +1283,7 @@ export function PluginsSection(): JSX.Element {
               Cancel
             </Button>
             <Button type="button" onClick={() => void closePendingInstall(true)}>
-              Enable plugin
+              {pendingInstall.signature?.status === 'unsigned' ? 'Enable anyway' : 'Enable plugin'}
             </Button>
           </div>
         </Modal>

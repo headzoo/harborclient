@@ -72,7 +72,7 @@ describe('parsePluginCatalog', () => {
 const validTrustedKeys = [
   {
     company: 'HarborClient',
-    key: 'https://harborclient.com/plugins/public.key'
+    key: 'https://harborclient.com/plugins/harborclient.key'
   }
 ];
 
@@ -87,7 +87,7 @@ describe('parsePluginTrustedKeys', () => {
         validTrustedKeys[0],
         {
           company: 'Other',
-          key: 'https://harborclient.com/plugins/public.key'
+          key: 'https://harborclient.com/plugins/harborclient.key'
         }
       ])
     ).toThrow(/duplicate key url/i);

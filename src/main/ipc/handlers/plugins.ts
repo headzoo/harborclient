@@ -209,11 +209,13 @@ export function registerPluginHandlers(pluginManager: PluginManager): void {
     return pluginManager.loadUnpacked(filePaths[0]);
   });
 
-  handle('plugins:loadUnpackedFromPath', ipcArgSchemas.pluginLoadUnpackedFromPath, (_event, path) =>
-    pluginManager.loadUnpacked(path)
+  handle(
+    'plugins:loadUnpackedFromPath',
+    ipcArgSchemas.pluginLoadUnpackedFromPath,
+    async (_event, path) => pluginManager.loadUnpacked(path)
   );
 
-  handle('plugins:reload', ipcArgSchemas.pluginId, (_event, pluginId) =>
+  handle('plugins:reload', ipcArgSchemas.pluginId, async (_event, pluginId) =>
     pluginManager.reload(pluginId)
   );
 

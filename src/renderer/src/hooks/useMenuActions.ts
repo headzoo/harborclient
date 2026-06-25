@@ -71,6 +71,9 @@ export function useMenuActions(): void {
         case 'settings':
           dispatch(openSettings());
           break;
+        case 'plugins':
+          dispatch(openSettings('plugins'));
+          break;
         case 'team-hubs':
           dispatch(openTeamHubs());
           break;

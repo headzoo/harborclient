@@ -61,6 +61,39 @@ describeSqlite('LocalDatabase collection order', () => {
   });
 });
 
+describeSqlite('LocalDatabase environment order', () => {
+  it('lists new environments by insertion order rather than name', async () => {
+    const { database } = await createRegistry();
+    database.createEnvironment('Zulu');
+    database.createEnvironment('Alpha');
+
+    expect(database.listEnvironments().map((environment) => environment.name)).toEqual([
+      'Zulu',
+      'Alpha'
+    ]);
+  });
+
+  it('reorderEnvironments persists sidebar order', async () => {
+    const { database } = await createRegistry();
+    const alpha = database.createEnvironment('Alpha');
+    const beta = database.createEnvironment('Beta');
+    const gamma = database.createEnvironment('Gamma');
+
+    expect(database.listEnvironments().map((environment) => environment.name)).toEqual([
+      'Alpha',
+      'Beta',
+      'Gamma'
+    ]);
+
+    database.reorderEnvironments([gamma.id, alpha.id, beta.id]);
+    expect(database.listEnvironments().map((environment) => environment.name)).toEqual([
+      'Gamma',
+      'Alpha',
+      'Beta'
+    ]);
+  });
+});
+
 describeSqlite('LocalDatabase chats', () => {
   it('creates chats, stores messages, and auto-titles from the first user message', async () => {
     const { database } = await createRegistry();

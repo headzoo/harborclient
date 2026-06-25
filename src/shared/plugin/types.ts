@@ -96,6 +96,24 @@ export interface GitPluginOrigin {
 }
 
 /**
+ * Result of checking a plugin package against the trusted publisher registry.
+ */
+export type PluginSignatureStatus = 'verified' | 'unsigned' | 'untrusted' | 'invalid';
+
+/**
+ * Signature verification metadata attached to a discovered or installed plugin.
+ */
+export interface PluginSignatureInfo {
+  status: PluginSignatureStatus;
+  /** manifest.company the signature was checked against. */
+  company?: string;
+  /** keyId recorded in signature.json when verified. */
+  keyId?: string;
+  /** Human-readable reason for untrusted or invalid signatures. */
+  error?: string;
+}
+
+/**
  * Summary of a discovered or installed plugin for Settings and IPC.
  */
 export interface PluginInfo {
@@ -115,6 +133,8 @@ export interface PluginInfo {
   error?: string;
   /** Activation or runtime hook failure on an otherwise valid plugin package. */
   runtimeError?: string;
+  /** Publisher signature verification result when available. */
+  signature?: PluginSignatureInfo;
 }
 
 /**

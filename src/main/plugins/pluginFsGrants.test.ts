@@ -111,7 +111,7 @@ describe('plugin filesystem grant persistence', () => {
     const pluginId = 'com.example.clear';
     const pluginDir = mkdtempSync(join(tmpdir(), 'harborclient-unpacked-plugin-'));
     writePluginAt(pluginDir, pluginId);
-    manager.loadUnpacked(pluginDir);
+    await manager.loadUnpacked(pluginDir);
 
     const envFile = join(rootDir, 'secrets.env');
     writeFileSync(envFile, 'SECRET=1\n');

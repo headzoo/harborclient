@@ -336,6 +336,15 @@ export class RoutingStorage implements IStorage {
   }
 
   /**
+   * Persists a new sidebar order for environments in the hidden registry.
+   *
+   * @param orderedEnvironmentIds - Environment ids in desired order.
+   */
+  async reorderEnvironments(orderedEnvironmentIds: number[]): Promise<void> {
+    this.database.reorderEnvironments(orderedEnvironmentIds);
+  }
+
+  /**
    * Lists requests for a collection, rewriting ids to the global namespace.
    */
   async listRequests(collectionId: number): Promise<SavedRequest[]> {

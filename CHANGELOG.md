@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(plugins): implement plugin signature verification and environment reordering. (`b8f1d2f`)
 - refactor(plugins): update author references to company in plugin metadata. (`d41f110`)
 - feat(plugins): add Dotenv and OpenAPI plugins to the catalog. (`a4f2d6c`)
 
