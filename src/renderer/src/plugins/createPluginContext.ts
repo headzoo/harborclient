@@ -28,7 +28,11 @@ import {
   registerStatusBarItemContribution,
   registerThemeContribution
 } from '#/renderer/src/plugins/registry';
-import { loadSavedRequest, openRequestDraft } from '#/renderer/src/plugins/hostRequestCommands';
+import {
+  loadSavedRequest,
+  openRequestDraft,
+  triggerSendRequest
+} from '#/renderer/src/plugins/hostRequestCommands';
 import { subscribePluginAfterSend } from '#/renderer/src/plugins/pluginAfterSendBus';
 
 const commandHandlers = new Map<string, Set<(...args: unknown[]) => void | Promise<void>>>();
@@ -376,6 +380,10 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
       loadRequest: async (requestId) => {
         assertUi();
         loadSavedRequest(requestId);
+      },
+      sendRequest: async () => {
+        assertUi();
+        triggerSendRequest();
       }
     }
   };

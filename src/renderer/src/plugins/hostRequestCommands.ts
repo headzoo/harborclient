@@ -13,7 +13,7 @@ import {
 } from '#/renderer/src/store/drafts';
 import { closeOverlay } from '#/renderer/src/store/slices/navigationSlice';
 import { openTabWithDraft, setActiveTab } from '#/renderer/src/store/slices/tabsSlice';
-import { requestLoadRequest } from '#/renderer/src/store/thunks/requests';
+import { requestLoadRequest, sendRequest } from '#/renderer/src/store/thunks/requests';
 import { registerCommand } from '#/renderer/src/plugins/createPluginContext';
 
 const HOST_PLUGIN_ID = 'harborclient';
@@ -128,6 +128,13 @@ export function openRequestDraft(payload: OpenRequestDraftPayload): void {
 }
 
 /**
+ * Sends the active request editor tab using the same pipeline as the Send button.
+ */
+export function triggerSendRequest(): void {
+  void store.dispatch(sendRequest());
+}
+
+/**
  * Registers host commands that let plugins open request editor tabs.
  *
  * @returns Disposer that unregisters the host request commands.
@@ -145,6 +152,9 @@ export function registerHostRequestCommands(): () => void {
         throw new Error('harborclient.openRequestDraft requires a draft payload object.');
       }
       openRequestDraft(payload as OpenRequestDraftPayload);
+    }),
+    registerCommand(HOST_PLUGIN_ID, 'sendRequest', () => {
+      triggerSendRequest();
     })
   ];
 

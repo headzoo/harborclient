@@ -89,5 +89,6 @@ describe('createPluginContext runtime surfaces', () => {
       /lacks permission: ui/
     );
     await expect(hc.host.loadRequest(1)).rejects.toThrow(/lacks permission: ui/);
+    await expect(hc.host.sendRequest()).rejects.toThrow(/lacks permission: ui/);
   });
 });

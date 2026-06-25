@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- chore: update @harborclient/plugin-api dependency to version 0.3.4 and enhance request handling. (`0535895`)
+
 ## 1.8.5 - 2026-06-25
 
 - chore: update package description and plugin-api dependency version. (`8d5a812`)
