@@ -276,7 +276,7 @@ Registrations from `hc.ui.*` and similar APIs return **disposables**. Push them 
 
 ## Publish to the marketplace
 
-HarborClient maintains a curated [plugin marketplace](/plugins) built from [`plugins/catalog.json`](https://github.com/harborclient/harborclient/blob/main/plugins/catalog.json) in the main repository. In the app, open **Settings → Plugins** and click **Browse plugins** to install listed plugins with one click. The app clones each listing from its public GitHub repository using the same git install flow as **Install from Git…**.
+HarborClient maintains a curated [plugin marketplace](/plugins) built from [`plugins/catalog.json`](https://github.com/harborclient/harborclient/blob/main/plugins/catalog.json) in the main repository. In the app, open **Settings → Plugins** and click **Marketplace** to install listed plugins with one click. The app clones each listing from its public GitHub repository using the same git install flow as **Install from Git…**.
 
 ### Requirements
 

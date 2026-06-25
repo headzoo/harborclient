@@ -8,7 +8,7 @@ type CatalogEntry = (typeof catalog.plugins)[number];
 <template>
   <p>
     Browse HarborClient plugins hosted on GitHub. In the desktop app, open
-    <strong>Settings → Plugins</strong> and click <strong>Browse plugins</strong>.
+    <strong>Settings → Plugins</strong> and click <strong>Marketplace</strong>.
   </p>
 
   <p v-if="catalog.updatedAt" class="text-muted">

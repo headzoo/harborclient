@@ -857,7 +857,7 @@ export function PluginsSection(): JSX.Element {
           aria-pressed={showBrowse}
           onClick={toggleBrowseView}
         >
-          {showBrowse ? 'Installed' : 'Browse plugins'}
+          {showBrowse ? 'Installed' : 'Marketplace'}
         </Button>
         {!showBrowse ? (
           <>

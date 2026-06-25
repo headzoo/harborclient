@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- fix(docs): update plugin marketplace terminology in documentation. (`6819017`)
 - feat(plugins): enhance error handling and UI for plugin management. (`d6364af`)
 
 ## 1.8.1 - 2026-06-24
