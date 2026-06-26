@@ -8,7 +8,7 @@ import {
 } from '#/renderer/src/store/slices/modalsSlice';
 import {
   openSharingKeys,
-  openTeamHubs,
+  openTeamHub,
   openSettings,
   selectAiSidebarVisible,
   selectSidebarVisible,
@@ -75,7 +75,7 @@ export function useMenuActions(): void {
           dispatch(openSettings('plugins'));
           break;
         case 'team-hubs':
-          dispatch(openTeamHubs());
+          dispatch(openTeamHub());
           break;
         case 'sharing-keys':
           dispatch(openSharingKeys());

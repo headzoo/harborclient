@@ -193,8 +193,8 @@ export default function App(): JSX.Element {
                 settingsSection={settingsSection}
                 showSharingKeys={mainView.type === 'sharing-keys'}
                 onCloseSharingKeys={() => dispatch(closeOverlay())}
-                showTeamHubs={mainView.type === 'team-hubs'}
-                onCloseTeamHubs={() => dispatch(closeOverlay())}
+                showTeamHub={mainView.type === 'team-hubs'}
+                onCloseTeamHub={() => dispatch(closeOverlay())}
                 showPluginView={mainView.type === 'plugin-view'}
                 pluginViewPluginId={mainView.type === 'plugin-view' ? mainView.pluginId : undefined}
                 pluginViewId={mainView.type === 'plugin-view' ? mainView.viewId : undefined}

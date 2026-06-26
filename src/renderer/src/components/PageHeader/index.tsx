@@ -35,8 +35,8 @@ interface Props {
  */
 export function PageHeader({ title, description, icon, children, className }: Props): JSX.Element {
   const wrapperClassName = className
-    ? `-mx-6 mb-4 flex flex-wrap items-center gap-2 border-b border-separator px-6 pb-4 ${className}`
-    : '-mx-6 mb-4 flex flex-wrap items-center gap-2 border-b border-separator px-6 pb-4';
+    ? `-mx-6 mb-4 flex flex-wrap items-center gap-2 border-b border-separator px-6 pb-6 ${className}`
+    : '-mx-6 mb-4 flex flex-wrap items-center gap-2 border-b border-separator px-6 pb-6';
 
   return (
     <div className={wrapperClassName}>

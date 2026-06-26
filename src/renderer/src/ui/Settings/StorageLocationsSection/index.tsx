@@ -7,14 +7,22 @@ import { refreshCollections } from '#/renderer/src/store/thunks/collections';
 import { Button } from '#/renderer/src/components/Button';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { createBlankConnection, providerLabel, settingsSectionMeta } from '../constants';
+import { SettingsCloseButton } from '../SettingsCloseButton';
 import { DiscoverCollectionsModal } from './DiscoverCollectionsModal';
 import { ConnectionDeleteModal } from './ConnectionDeleteModal';
 import { ConnectionEditModal } from './ConnectionEditModal';
 
+interface Props {
+  /**
+   * Closes the settings overlay.
+   */
+  onClose: () => void;
+}
+
 /**
  * Database settings with a list of named connections.
  */
-export function StorageLocationsSection(): JSX.Element {
+export function StorageLocationsSection({ onClose }: Props): JSX.Element {
   const dispatch = useAppDispatch();
   const {
     connections,
@@ -234,6 +242,7 @@ export function StorageLocationsSection(): JSX.Element {
           >
             Add storage location
           </Button>
+          <SettingsCloseButton onClose={onClose} />
         </PageHeader>
 
         {loading ? (

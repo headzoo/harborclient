@@ -2,13 +2,22 @@ import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { TrustedSharingKey } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
+import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { useConfirm } from '#/renderer/src/hooks/useConfirm';
 import { Input, Textarea } from '#/renderer/src/components/forms';
+import { SharingKeysCloseButton } from './SharingKeysCloseButton';
+
+interface Props {
+  /**
+   * Closes the sharing keys overlay.
+   */
+  onClose: () => void;
+}
 
 /**
  * Trusted collaborator public keys for verifying share token signatures.
  */
-export function TrustedKeysSection(): JSX.Element {
+export function TrustedKeysSection({ onClose }: Props): JSX.Element {
   const confirm = useConfirm();
   const [keys, setKeys] = useState<TrustedSharingKey[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,13 +124,12 @@ export function TrustedKeysSection(): JSX.Element {
 
   return (
     <div>
-      <div className="mb-4">
-        <h2 className="m-0 mb-1 text-[14px] font-medium text-text">Trusted keys</h2>
-        <p className="m-0 text-[14px] text-muted">
-          Add public keys for people you trust. Share tokens must be signed by a trusted sender, and
-          you can only create share tokens for keys listed here.
-        </p>
-      </div>
+      <PageHeader
+        title="Trusted keys"
+        description="Add public keys for people you trust. Share tokens must be signed by a trusted sender, and you can only create share tokens for keys listed here."
+      >
+        <SharingKeysCloseButton onClose={onClose} />
+      </PageHeader>
 
       <div className="mb-4 rounded-md border border-separator p-3">
         <label className="mb-1 block text-[14px] font-medium text-text">Label</label>

@@ -7,6 +7,7 @@ import type {
   TeamHubAdminRequestSummary
 } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
+import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { Modal } from '#/renderer/src/components/Modal';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faAngleLeft } from '#/renderer/src/fontawesome';
@@ -28,6 +29,11 @@ interface Props {
    * Returns to the collection list view.
    */
   onBack: () => void;
+
+  /**
+   * Notifies the parent to refresh collection metadata after a settings change.
+   */
+  onCollectionUpdated?: () => void;
 }
 
 /**
@@ -111,11 +117,19 @@ function buildRequestSections(
 /**
  * Team Hub collection contents view listing saved requests for operator inspection.
  */
-export function TeamCollectionContentsView({ hub, collection, onBack }: Props): JSX.Element {
+export function TeamCollectionContentsView({
+  hub,
+  collection,
+  onBack,
+  onCollectionUpdated
+}: Props): JSX.Element {
   const { folders, requests, loading, error, reload } = useTeamHubAdminCollectionContents(
     hub.id,
     collection.id
   );
+  const [deletionLocked, setDeletionLocked] = useState(collection.deletionLocked);
+  const [locking, setLocking] = useState(false);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
   const [deletingRequest, setDeletingRequest] = useState<TeamHubAdminRequestSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -124,6 +138,33 @@ export function TeamCollectionContentsView({ hub, collection, onBack }: Props): 
    * Derives folder-grouped request sections for the current collection contents.
    */
   const sections = useMemo(() => buildRequestSections(folders, requests), [folders, requests]);
+
+  /**
+   * Updates whether non-admin users may delete this collection on the hub.
+   *
+   * @param nextDeletionLocked - New lock flag from the checkbox.
+   */
+  const handleDeletionLockedChange = async (nextDeletionLocked: boolean): Promise<void> => {
+    setSettingsError(null);
+    setLocking(true);
+
+    try {
+      await window.api.updateTeamHubCollectionDeletionLocked(
+        hub.id,
+        collection.id,
+        nextDeletionLocked
+      );
+      setDeletionLocked(nextDeletionLocked);
+      onCollectionUpdated?.();
+      toast.success(
+        nextDeletionLocked ? 'Collection protected from user deletion.' : 'Protection removed.'
+      );
+    } catch (err: unknown) {
+      setSettingsError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLocking(false);
+    }
+  };
 
   /**
    * Closes the delete confirmation modal.
@@ -172,24 +213,38 @@ export function TeamCollectionContentsView({ hub, collection, onBack }: Props): 
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0">
-          <h2 className="m-0 mb-1 text-[14px] font-medium text-text">{collection.name}</h2>
-          <p className="m-0 truncate text-[14px] text-muted">
-            {hub.name || 'Untitled'} · {hub.baseUrl}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            className="inline-flex items-center gap-1.5"
-            onClick={onBack}
-          >
-            <FaIcon icon={faAngleLeft} className="h-3.5 w-3.5" aria-hidden />
-            Back
-          </Button>
-        </div>
+      <PageHeader
+        title={collection.name}
+        description={`${hub.name || 'Untitled'} · ${hub.baseUrl}`}
+      >
+        <Button
+          type="button"
+          className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+          onClick={onBack}
+        >
+          <FaIcon icon={faAngleLeft} className="h-3.5 w-3.5" aria-hidden />
+          Back
+        </Button>
+      </PageHeader>
+
+      <div className="mb-4 rounded-md border border-separator px-3 py-3">
+        <label
+          className="flex cursor-pointer items-center gap-2 text-[14px] text-text"
+          htmlFor="collection-deletion-lock"
+        >
+          <input
+            id="collection-deletion-lock"
+            type="checkbox"
+            className="h-4 w-4 shrink-0"
+            checked={deletionLocked}
+            disabled={locking}
+            onChange={(event) => void handleDeletionLockedChange(event.target.checked)}
+          />
+          Protect from user deletion
+        </label>
+        {settingsError ? (
+          <p className="mb-0 mt-2 text-[14px] text-danger">{settingsError}</p>
+        ) : null}
       </div>
 
       {loading ? (

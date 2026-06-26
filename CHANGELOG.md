@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(teamhub): refactor team hubs functionality and introduce new components. (`4d3e233`)
 - refactor(editor): improve layout and structure of the request editor component. (`0018bd2`)
 - feat(settings): refactor plugin settings section and introduce new components. (`c77436f`)
 - feat(settings): enhance settings sections with PageHeader and metadata. (`1206756`)

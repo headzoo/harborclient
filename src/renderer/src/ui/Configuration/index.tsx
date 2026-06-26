@@ -8,7 +8,7 @@ import type {
   Variable
 } from '#/shared/types';
 import { SharingKeys } from '#/renderer/src/ui/SharingKeys';
-import { TeamHubs } from '#/renderer/src/ui/TeamHubs';
+import { TeamHub } from '#/renderer/src/ui/TeamHub';
 import { CollectionSettings } from '../CollectionSettings';
 import { EnvironmentSettings } from '../EnvironmentSettings';
 import { Settings } from '../Settings';
@@ -41,14 +41,14 @@ interface Props {
   onCloseSharingKeys: () => void;
 
   /**
-   * Whether the team hubs view is shown.
+   * Whether the team hub view is shown.
    */
-  showTeamHubs: boolean;
+  showTeamHub: boolean;
 
   /**
-   * Closes the team hubs view.
+   * Closes the team hub view.
    */
-  onCloseTeamHubs: () => void;
+  onCloseTeamHub: () => void;
 
   /**
    * Whether a plugin main view overlay is shown.
@@ -129,8 +129,8 @@ export function Configuration({
   settingsSection,
   showSharingKeys,
   onCloseSharingKeys,
-  showTeamHubs,
-  onCloseTeamHubs,
+  showTeamHub,
+  onCloseTeamHub,
   showPluginView,
   pluginViewPluginId,
   pluginViewId,
@@ -158,8 +158,8 @@ export function Configuration({
     return <SharingKeys onClose={onCloseSharingKeys} />;
   }
 
-  if (showTeamHubs) {
-    return <TeamHubs onClose={onCloseTeamHubs} />;
+  if (showTeamHub) {
+    return <TeamHub onClose={onCloseTeamHub} />;
   }
 
   if (showPluginView && pluginViewPluginId && pluginViewId) {

@@ -2,6 +2,7 @@ import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { TeamHub, TeamHubServiceFlags } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
+import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { useAppDispatch } from '#/renderer/src/store/hooks';
 import { refreshCollections } from '#/renderer/src/store/thunks/collections';
 import { formatIpcErrorMessage, showAlert } from '#/renderer/src/ui/modals/dialogHelpers';
@@ -65,6 +66,11 @@ interface Props {
    * Opens collection management for an admin hub connection.
    */
   onManageCollections: (hub: TeamHub) => void;
+
+  /**
+   * Closes the team hub overlay.
+   */
+  onClose: () => void;
 }
 
 /**
@@ -81,7 +87,8 @@ export function TeamHubList({
   onRescanServices,
   onManageUsers,
   onManageTokens,
-  onManageCollections
+  onManageCollections,
+  onClose
 }: Props): JSX.Element {
   const dispatch = useAppDispatch();
   const [saving, setSaving] = useState(false);
@@ -232,24 +239,22 @@ export function TeamHubList({
   return (
     <>
       <div>
-        <div className="mb-4 flex items-end justify-between gap-4">
-          <div className="min-w-0">
-            <h2 className="m-0 mb-1 text-[14px] font-medium text-text">Team Hub</h2>
-            <p className="m-0 text-[14px] text-muted">
-              Connect to HarborClient Team Hub instances for shared collections and environments.
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <Button
-              type="button"
-              className="whitespace-nowrap"
-              disabled={loading}
-              onClick={handleAdd}
-            >
-              Add team hub
-            </Button>
-          </div>
-        </div>
+        <PageHeader
+          title="Team Hub"
+          description="Connect to HarborClient Team Hub instances for shared collections and environments."
+        >
+          <Button
+            type="button"
+            className="shrink-0 whitespace-nowrap"
+            disabled={loading}
+            onClick={handleAdd}
+          >
+            Add team hub
+          </Button>
+          <Button type="button" className="shrink-0 whitespace-nowrap" onClick={onClose}>
+            Close
+          </Button>
+        </PageHeader>
 
         {loading ? (
           <p className="text-[14px] text-muted">Loading…</p>

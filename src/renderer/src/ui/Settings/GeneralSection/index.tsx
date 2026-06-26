@@ -8,11 +8,19 @@ import { applyThemePreference } from '#/renderer/src/plugins/themeRuntime';
 import { usePluginThemes } from '#/renderer/src/plugins/pluginHooks';
 import { Input, Select } from '#/renderer/src/components/forms';
 import { DEFAULT_GENERAL_SETTINGS, THEME_OPTIONS, settingsSectionMeta } from '../constants';
+import { SettingsCloseButton } from '../SettingsCloseButton';
+
+interface Props {
+  /**
+   * Closes the settings overlay.
+   */
+  onClose: () => void;
+}
 
 /**
  * General settings: appearance and HTTP request defaults.
  */
-export function GeneralSection(): JSX.Element {
+export function GeneralSection({ onClose }: Props): JSX.Element {
   const [theme, setTheme] = useState<ThemeSource>('system');
   const [loading, setLoading] = useState(true);
   const [generalSettings, setGeneralSettings] = useState<GeneralSettings>(DEFAULT_GENERAL_SETTINGS);
@@ -103,12 +111,14 @@ export function GeneralSection(): JSX.Element {
   const { label, icon } = settingsSectionMeta('general');
 
   return (
-    <div className="mb-6 flex flex-col gap-2">
+    <div className="mb-6 flex flex-col">
       <PageHeader
         title={label}
         icon={icon}
         description="Set appearance, request timeouts, response size limits, and SSL verification defaults."
-      />
+      >
+        <SettingsCloseButton onClose={onClose} />
+      </PageHeader>
       <div className="mb-6 flex flex-col gap-6">
         <label className="flex flex-col gap-1">
           <span className="text-[14px] font-medium text-text">Theme</span>

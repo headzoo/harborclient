@@ -4,7 +4,7 @@ import navigationReducer, {
   openSharingKeys,
   openCollectionSettings,
   openEnvironmentSettings,
-  openTeamHubs,
+  openTeamHub,
   openSettings,
   setCollectionSettingsDirty,
   setEnvironmentSettingsDirty,
@@ -44,7 +44,7 @@ describe('navigationSlice', () => {
 
   it('opens team hubs and resets dirty flags', () => {
     let state = navigationReducer(undefined, setEnvironmentSettingsDirty(true));
-    state = navigationReducer(state, openTeamHubs());
+    state = navigationReducer(state, openTeamHub());
     expect(state.mainView).toEqual({ type: 'team-hubs' });
     expect(state.collectionSettingsDirty).toBe(false);
     expect(state.environmentSettingsDirty).toBe(false);

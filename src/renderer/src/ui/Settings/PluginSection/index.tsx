@@ -39,11 +39,19 @@ import { InstallModal } from './InstallModal';
 import { SourcesModal } from './SourcesModal';
 import { TableExternalLink } from './TableExternalLink';
 import type { SourceKind } from './types';
+import { SettingsCloseButton } from '../SettingsCloseButton';
+
+interface Props {
+  /**
+   * Closes the settings overlay.
+   */
+  onClose: () => void;
+}
 
 /**
  * Settings section for installing, enabling, and inspecting plugins.
  */
-export function PluginsSection(): JSX.Element {
+export function PluginsSection({ onClose }: Props): JSX.Element {
   const dispatch = useAppDispatch();
   const [showBrowse, setShowBrowse] = useState(false);
   const [plugins, setPlugins] = useState<PluginInfo[]>([]);
@@ -674,6 +682,7 @@ export function PluginsSection(): JSX.Element {
             </Button>
           </>
         ) : null}
+        <SettingsCloseButton onClose={onClose} />
       </PageHeader>
 
       {showBrowse ? (

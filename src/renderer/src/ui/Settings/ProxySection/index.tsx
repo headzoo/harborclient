@@ -9,11 +9,19 @@ import {
   PROXY_PROTOCOL_OPTIONS,
   settingsSectionMeta
 } from '../constants';
+import { SettingsCloseButton } from '../SettingsCloseButton';
+
+interface Props {
+  /**
+   * Closes the settings overlay.
+   */
+  onClose: () => void;
+}
 
 /**
  * Proxy settings: global HTTP proxy configuration for outbound requests.
  */
-export function ProxySection(): JSX.Element {
+export function ProxySection({ onClose }: Props): JSX.Element {
   const [generalSettings, setGeneralSettings] = useState<GeneralSettings>(DEFAULT_GENERAL_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -71,12 +79,14 @@ export function ProxySection(): JSX.Element {
   const { label, icon } = settingsSectionMeta('proxy');
 
   return (
-    <div className="mb-6 flex flex-col gap-2">
+    <div className="mb-6 flex flex-col">
       <PageHeader
         title={label}
         icon={icon}
         description="Route HarborClient's outbound HTTP requests through a proxy server."
-      />
+      >
+        <SettingsCloseButton onClose={onClose} />
+      </PageHeader>
       <div className="mb-6 flex flex-col gap-6">
         <label className="flex items-center gap-2">
           <Input

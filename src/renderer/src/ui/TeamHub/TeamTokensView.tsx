@@ -3,11 +3,12 @@ import toast from 'react-hot-toast';
 import type { HubApiTokenRecord, HubUserRecord, TeamHub } from '#/shared/types';
 import { Input, Select } from '#/renderer/src/components/forms';
 import { Button } from '#/renderer/src/components/Button';
+import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faAngleLeft } from '#/renderer/src/fontawesome';
 import { useTeamHubTokens } from '#/renderer/src/hooks/useTeamHubTokens';
 import { useTeamHubUsers } from '#/renderer/src/hooks/useTeamHubUsers';
-import { TeamSecretDialog } from '#/renderer/src/ui/TeamHubs/TeamSecretDialog';
+import { TeamSecretDialog } from '#/renderer/src/ui/TeamHub/TeamSecretDialog';
 
 interface Props {
   /**
@@ -161,28 +162,24 @@ export function TeamTokensView({ hub, onBack }: Props): JSX.Element {
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0">
-          <h2 className="m-0 mb-1 text-[14px] font-medium text-text">Tokens</h2>
-          <p className="m-0 truncate text-[14px] text-muted">
-            {hub.name || 'Untitled'} · {hub.baseUrl}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Button type="button" onClick={handleCreateClick} disabled={users.length === 0}>
-            Create token
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            className="inline-flex items-center gap-1.5"
-            onClick={onBack}
-          >
-            <FaIcon icon={faAngleLeft} className="h-3.5 w-3.5" aria-hidden />
-            Back
-          </Button>
-        </div>
-      </div>
+      <PageHeader title="Tokens" description={`${hub.name || 'Untitled'} · ${hub.baseUrl}`}>
+        <Button
+          type="button"
+          className="shrink-0 whitespace-nowrap"
+          onClick={handleCreateClick}
+          disabled={users.length === 0}
+        >
+          Create token
+        </Button>
+        <Button
+          type="button"
+          className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+          onClick={onBack}
+        >
+          <FaIcon icon={faAngleLeft} className="h-3.5 w-3.5" aria-hidden />
+          Back
+        </Button>
+      </PageHeader>
 
       {loading ? (
         <p className="text-[14px] text-muted">Loading…</p>

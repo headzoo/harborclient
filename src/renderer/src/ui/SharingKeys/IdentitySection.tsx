@@ -2,12 +2,21 @@ import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { SharingIdentity } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
+import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { Input, Textarea } from '#/renderer/src/components/forms';
+import { SharingKeysCloseButton } from './SharingKeysCloseButton';
+
+interface Props {
+  /**
+   * Closes the sharing keys overlay.
+   */
+  onClose: () => void;
+}
 
 /**
  * Local sharing identity: fingerprint, export, and import.
  */
-export function IdentitySection(): JSX.Element {
+export function IdentitySection({ onClose }: Props): JSX.Element {
   const [identity, setIdentity] = useState<SharingIdentity | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -99,13 +108,12 @@ export function IdentitySection(): JSX.Element {
 
   return (
     <div>
-      <div className="mb-4">
-        <h2 className="m-0 mb-1 text-[14px] font-medium text-text">My identity</h2>
-        <p className="m-0 text-[14px] text-muted">
-          Your key pair signs share tokens you send and decrypts tokens addressed to you. Share your
-          public key so collaborators can trust and encrypt to you.
-        </p>
-      </div>
+      <PageHeader
+        title="My identity"
+        description="Your key pair signs share tokens you send and decrypts tokens addressed to you. Share your public key so collaborators can trust and encrypt to you."
+      >
+        <SharingKeysCloseButton onClose={onClose} />
+      </PageHeader>
 
       {loading ? (
         <p role="status" className="text-[14px] text-muted">

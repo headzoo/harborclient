@@ -10,11 +10,19 @@ import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { Input, Select } from '#/renderer/src/components/forms';
 import { DEFAULT_GENERAL_SETTINGS, settingsSectionMeta } from '../constants';
 import { PREVIEW_SAMPLE, SETUP_OPTIONS } from './constants';
+import { SettingsCloseButton } from '../SettingsCloseButton';
+
+interface Props {
+  /**
+   * Closes the settings overlay.
+   */
+  onClose: () => void;
+}
 
 /**
  * Syntax highlighting settings: CodeMirror theme, editor setup toggles, and live preview.
  */
-export function SyntaxHighlightingSection(): JSX.Element {
+export function SyntaxHighlightingSection({ onClose }: Props): JSX.Element {
   const dispatch = useAppDispatch();
   const [generalSettings, setGeneralSettings] = useState<GeneralSettings>(DEFAULT_GENERAL_SETTINGS);
   const [loading, setLoading] = useState(true);
@@ -75,12 +83,14 @@ export function SyntaxHighlightingSection(): JSX.Element {
   const { label, icon } = settingsSectionMeta('syntax');
 
   return (
-    <div className="mb-6 flex flex-col gap-6">
+    <div className="mb-6 flex flex-col">
       <PageHeader
         title={label}
         icon={icon}
         description="Choose a CodeMirror theme and editor behavior for request and response editors."
-      />
+      >
+        <SettingsCloseButton onClose={onClose} />
+      </PageHeader>
       <div className="flex flex-col gap-6">
         <label className="flex flex-col gap-1">
           <span className="text-[14px] font-medium text-text">Theme</span>
@@ -118,7 +128,7 @@ export function SyntaxHighlightingSection(): JSX.Element {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 mt-6">
         <span className="text-[14px] font-medium text-text">Preview</span>
         <CodeEditor
           value={PREVIEW_SAMPLE}

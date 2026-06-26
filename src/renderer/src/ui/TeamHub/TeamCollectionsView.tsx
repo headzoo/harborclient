@@ -3,10 +3,11 @@ import toast from 'react-hot-toast';
 import type { AdminResourceOption, TeamHub } from '#/shared/types';
 import { Input } from '#/renderer/src/components/forms';
 import { Button } from '#/renderer/src/components/Button';
+import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
-import { faAngleLeft, faChevronRight } from '#/renderer/src/fontawesome';
+import { faAngleLeft } from '#/renderer/src/fontawesome';
 import { useTeamHubAdminCollections } from '#/renderer/src/hooks/useTeamHubAdminCollections';
-import { TeamCollectionContentsView } from '#/renderer/src/ui/TeamHubs/TeamCollectionContentsView';
+import { TeamCollectionContentsView } from '#/renderer/src/ui/TeamHub/TeamCollectionContentsView';
 
 interface Props {
   /**
@@ -29,7 +30,6 @@ export function TeamCollectionsView({ hub, onBack }: Props): JSX.Element {
   const [deletingCollection, setDeletingCollection] = useState<AdminResourceOption | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
-  const [lockingId, setLockingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
   /**
@@ -80,63 +80,32 @@ export function TeamCollectionsView({ hub, onBack }: Props): JSX.Element {
     }
   };
 
-  /**
-   * Updates whether non-admin users may delete a collection on the hub.
-   *
-   * @param collection - Collection row being updated.
-   * @param deletionLocked - New lock flag from the checkbox.
-   */
-  const handleDeletionLockedChange = async (
-    collection: AdminResourceOption,
-    deletionLocked: boolean
-  ): Promise<void> => {
-    setActionError(null);
-    setLockingId(collection.id);
-
-    try {
-      await window.api.updateTeamHubCollectionDeletionLocked(hub.id, collection.id, deletionLocked);
-      toast.success(
-        deletionLocked ? 'Collection protected from user deletion.' : 'Protection removed.'
-      );
-      reload();
-    } catch (err: unknown) {
-      setActionError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLockingId(null);
-    }
-  };
-
   if (selectedCollection) {
     return (
       <TeamCollectionContentsView
         hub={hub}
         collection={selectedCollection}
-        onBack={() => setSelectedCollection(null)}
+        onBack={() => {
+          setSelectedCollection(null);
+          reload();
+        }}
+        onCollectionUpdated={reload}
       />
     );
   }
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0">
-          <h2 className="m-0 mb-1 text-[14px] font-medium text-text">Collections</h2>
-          <p className="m-0 truncate text-[14px] text-muted">
-            {hub.name || 'Untitled'} · {hub.baseUrl}
-          </p>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            className="inline-flex items-center gap-1.5"
-            onClick={onBack}
-          >
-            <FaIcon icon={faAngleLeft} className="h-3.5 w-3.5" aria-hidden />
-            Back
-          </Button>
-        </div>
-      </div>
+      <PageHeader title="Collections" description={`${hub.name || 'Untitled'} · ${hub.baseUrl}`}>
+        <Button
+          type="button"
+          className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
+          onClick={onBack}
+        >
+          <FaIcon icon={faAngleLeft} className="h-3.5 w-3.5" aria-hidden />
+          Back
+        </Button>
+      </PageHeader>
 
       {loading ? (
         <p className="text-[14px] text-muted">Loading…</p>
@@ -156,47 +125,24 @@ export function TeamCollectionsView({ hub, onBack }: Props): JSX.Element {
               key={collection.id}
               className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-separator px-3 py-2"
             >
-              <button
-                type="button"
-                className="flex min-w-0 flex-1 items-center gap-2 rounded-md border-0 bg-transparent p-0 text-left hover:text-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                onClick={() => setSelectedCollection(collection)}
-              >
-                <div className="min-w-0">
-                  <span className="block truncate text-[14px] font-medium text-text">
-                    {collection.name}
-                  </span>
-                  <span className="block truncate text-[14px] text-muted">{collection.id}</span>
-                </div>
-                <FaIcon
-                  icon={faChevronRight}
-                  className="h-3.5 w-3.5 shrink-0 text-muted"
-                  aria-hidden
-                />
-              </button>
-
-              <div className="flex shrink-0 flex-wrap items-center gap-3">
-                <label
-                  className="flex cursor-pointer items-center gap-2 text-[14px] text-text"
-                  onClick={(event) => event.stopPropagation()}
+              <div className="min-w-0">
+                <span className="block truncate text-[14px] font-medium text-text">
+                  {collection.name}
+                </span>
+                <span className="block truncate text-[14px] text-muted">{collection.id}</span>
+              </div>
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setSelectedCollection(collection)}
                 >
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 shrink-0"
-                    checked={collection.deletionLocked}
-                    disabled={lockingId === collection.id}
-                    onChange={(event) =>
-                      void handleDeletionLockedChange(collection, event.target.checked)
-                    }
-                  />
-                  Protect from user deletion
-                </label>
+                  Edit
+                </Button>
                 <Button
                   type="button"
                   variant="secondaryDanger"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleDeleteClick(collection);
-                  }}
+                  onClick={() => handleDeleteClick(collection)}
                 >
                   Delete
                 </Button>

@@ -61,9 +61,9 @@ const navigationSlice = createSlice({
       state.settingsSection = action.payload ?? 'general';
     },
     /**
-     * Shows the team hubs overlay and clears dirty flags.
+     * Shows the team hub overlay and clears dirty flags.
      */
-    openTeamHubs(state) {
+    openTeamHub(state) {
       resetDirtyFlags(state);
       state.mainView = { type: 'team-hubs' };
     },
@@ -184,7 +184,7 @@ const navigationSlice = createSlice({
 
 export const {
   openSettings,
-  openTeamHubs,
+  openTeamHub,
   openSharingKeys,
   openPluginView,
   setActiveSidebarPanel,

@@ -5,11 +5,19 @@ import { Button } from '#/renderer/src/components/Button';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { Input } from '#/renderer/src/components/forms';
 import { DEFAULT_AI_SETTINGS, settingsSectionMeta } from '../constants';
+import { SettingsCloseButton } from '../SettingsCloseButton';
+
+interface Props {
+  /**
+   * Closes the settings overlay.
+   */
+  onClose: () => void;
+}
 
 /**
  * AI settings: API keys for OpenAI, Claude, and Google Gemini.
  */
-export function AiSection(): JSX.Element {
+export function AiSection({ onClose }: Props): JSX.Element {
   const [aiSettings, setAiSettingsState] = useState<AiSettings>(DEFAULT_AI_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -78,12 +86,14 @@ export function AiSection(): JSX.Element {
   const { label, icon } = settingsSectionMeta('ai');
 
   return (
-    <div className="mb-6 flex flex-col gap-2">
+    <div className="mb-6 flex flex-col">
       <PageHeader
         title={label}
         icon={icon}
         description="Store API keys for OpenAI, Claude, and Google Gemini used by the AI sidebar."
-      />
+      >
+        <SettingsCloseButton onClose={onClose} />
+      </PageHeader>
       <div className="mb-6 flex flex-col gap-6">
         <label className="flex flex-col gap-1" htmlFor="ai-openai-api-key">
           <span className="text-[14px] font-medium text-text">OpenAI API key</span>

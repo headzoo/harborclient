@@ -7,14 +7,14 @@ import type {
   UpdateHubUserInput
 } from '#/shared/types';
 import { Input, Select } from '#/renderer/src/components/forms';
-import { AccessListInput } from '#/renderer/src/ui/TeamHubs/AccessListInput';
+import { AccessListInput } from '#/renderer/src/ui/TeamHub/AccessListInput';
 import {
   defaultCreateFormValues,
   formValuesToCreateInput,
   formValuesToUpdateInput,
   hubUserToFormValues,
   type TeamUserFormValues
-} from '#/renderer/src/ui/TeamHubs/teamUserFormHelpers';
+} from '#/renderer/src/ui/TeamHub/teamUserFormHelpers';
 
 interface BaseProps {
   /**

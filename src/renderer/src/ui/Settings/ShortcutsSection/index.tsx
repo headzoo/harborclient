@@ -12,11 +12,19 @@ import { field } from '#/renderer/src/components/forms';
 import { formatErrorMessage } from '#/renderer/src/ui/modals/dialogHelpers';
 import { settingsSectionMeta } from '../constants';
 import { acceleratorFromKeyboardEvent } from './acceleratorFromKeyboardEvent';
+import { SettingsCloseButton } from '../SettingsCloseButton';
+
+interface Props {
+  /**
+   * Closes the settings overlay.
+   */
+  onClose: () => void;
+}
 
 /**
  * Keyboard shortcut settings with press-to-record editing and restore defaults.
  */
-export function ShortcutsSection(): JSX.Element {
+export function ShortcutsSection({ onClose }: Props): JSX.Element {
   const confirm = useConfirm();
   const statusId = useId();
   const [bindings, setBindings] = useState<ShortcutBinding[]>([]);
@@ -174,19 +182,21 @@ export function ShortcutsSection(): JSX.Element {
   const { label, icon } = settingsSectionMeta('shortcuts');
 
   return (
-    <section className="max-w-3xl">
+    <section>
       <PageHeader
         title={label}
         icon={icon}
         description="Click a key combination to record a new shortcut. Changes apply immediately when valid."
-      />
+      >
+        <SettingsCloseButton onClose={onClose} />
+      </PageHeader>
 
       {loading ? (
         <p className="text-muted" role="status">
           Loading shortcuts…
         </p>
       ) : (
-        <>
+        <div className="max-w-3xl mx-auto">
           <div className="overflow-x-auto rounded-md border border-separator">
             <table className="w-full border-collapse text-[14px]">
               <caption className="sr-only">Keyboard shortcuts</caption>
@@ -257,7 +267,7 @@ export function ShortcutsSection(): JSX.Element {
               {restoring ? 'Restoring…' : 'Restore defaults'}
             </Button>
           </div>
-        </>
+        </div>
       )}
     </section>
   );
