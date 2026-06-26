@@ -5,6 +5,7 @@ import { cleanVariables } from '#/renderer/src/components/utils';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faXmark } from '#/renderer/src/fontawesome';
 import { Button } from '#/renderer/src/components/Button';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { Input } from '#/renderer/src/components/forms';
 import { serializeEnvironmentForm } from './serialize';
 
@@ -110,20 +111,19 @@ function EnvironmentSettingsForm({
         </div>
 
         <div className="mb-6">
-          <label className="mb-1 block text-[14px] text-muted" htmlFor={nameId}>
-            Name
-          </label>
-          <Input
-            id={nameId}
-            className="w-full"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') void handleSave();
-              if (e.key === 'Escape') onClose();
-            }}
-          />
+          <FormGroup label="Name" htmlFor={nameId} labelTone="muted">
+            <Input
+              id={nameId}
+              className="w-full"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void handleSave();
+                if (e.key === 'Escape') onClose();
+              }}
+            />
+          </FormGroup>
         </div>
 
         <div className="mb-6">

@@ -1,5 +1,6 @@
 import type { JSX } from 'react';
 import { Button } from '#/renderer/src/components/Button';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { Input } from '#/renderer/src/components/forms';
 
 interface Props {
@@ -59,8 +60,7 @@ export function PatAuthPanel({
 }: Props): JSX.Element {
   return (
     <div className="flex flex-col gap-2">
-      <label className="flex flex-col gap-1" htmlFor={usernameId}>
-        <span className="text-[13px] text-muted">Username</span>
+      <FormGroup label="Username" htmlFor={usernameId} labelTone="muted">
         <Input
           id={usernameId}
           type="text"
@@ -68,9 +68,8 @@ export function PatAuthPanel({
           disabled={disabled}
           onChange={(event) => onUsernameChange(event.target.value)}
         />
-      </label>
-      <label className="flex flex-col gap-1 mb-2" htmlFor={tokenId}>
-        <span className="text-[13px] text-muted">Token</span>
+      </FormGroup>
+      <FormGroup label="Token" htmlFor={tokenId} labelTone="muted" className="mb-2">
         <Input
           id={tokenId}
           type="password"
@@ -78,7 +77,7 @@ export function PatAuthPanel({
           disabled={disabled}
           onChange={(event) => onTokenChange(event.target.value)}
         />
-      </label>
+      </FormGroup>
       <Button variant="primary" disabled={disabled} onClick={onSave}>
         Save token
       </Button>

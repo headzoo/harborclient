@@ -1,6 +1,7 @@
 import { useCallback, useId, useState, type JSX } from 'react';
 import type { DiscoveredCollection } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { Modal } from '#/renderer/src/components/Modal';
 
 interface Props {
@@ -162,7 +163,7 @@ export function DiscoverCollectionsModal({
               key={collection.providerCollectionId}
               className="rounded-md border border-separator bg-control px-3 py-2"
             >
-              <div className="flex items-start gap-2">
+              <FormGroup label={collection.name} htmlFor={checkboxId} layout="checkboxAdjacent">
                 <input
                   id={checkboxId}
                   type="checkbox"
@@ -173,10 +174,7 @@ export function DiscoverCollectionsModal({
                     handleToggle(collection.providerCollectionId, event.target.checked)
                   }
                 />
-                <label htmlFor={checkboxId} className="min-w-0 flex-1 text-[14px] text-text">
-                  {collection.name}
-                </label>
-              </div>
+              </FormGroup>
             </li>
           );
         })}

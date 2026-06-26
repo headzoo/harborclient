@@ -3,6 +3,7 @@ import type { AuthConfig, AuthType, Variable } from '#/shared/types';
 import { buildOAuthAuthHeaderValue } from '#/shared/auth';
 import { Button } from '#/renderer/src/components/Button';
 import { CodeEditor } from '#/renderer/src/components/CodeEditor';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { VariableInput } from '#/renderer/src/components/VariableInput';
 import { Select, fieldFrame } from '#/renderer/src/components/forms';
 
@@ -115,20 +116,19 @@ export function AuthEditor({
   return (
     <div className="flex gap-6">
       <div className="w-[220px] shrink-0">
-        <label className="mb-1 block text-[14px] text-muted" htmlFor="auth-type">
-          Auth Type
-        </label>
-        <Select
-          id="auth-type"
-          className="w-full"
-          value={auth.type}
-          onChange={(event) => handleTypeChange(event.target.value as AuthType)}
-        >
-          <option value="none">None</option>
-          <option value="basic">Basic Auth</option>
-          <option value="bearer">Bearer Token</option>
-          <option value="oauth2">OAuth 2.0</option>
-        </Select>
+        <FormGroup label="Auth Type" htmlFor="auth-type" labelTone="muted">
+          <Select
+            id="auth-type"
+            className="w-full"
+            value={auth.type}
+            onChange={(event) => handleTypeChange(event.target.value as AuthType)}
+          >
+            <option value="none">None</option>
+            <option value="basic">Basic Auth</option>
+            <option value="bearer">Bearer Token</option>
+            <option value="oauth2">OAuth 2.0</option>
+          </Select>
+        </FormGroup>
       </div>
 
       <div className="min-w-0 flex-1">
@@ -141,159 +141,157 @@ export function AuthEditor({
         {auth.type === 'basic' && (
           <div className="flex flex-col gap-3">
             <div>
-              <label className="mb-1 block text-[14px] text-muted" htmlFor="auth-username">
-                Username
-              </label>
-              <VariableInput
-                id="auth-username"
-                wrapperClassName={`${fieldFrame} w-full`}
-                value={auth.basic.username}
-                onChange={(username) => onChange({ ...auth, basic: { ...auth.basic, username } })}
-                variables={variables}
-                onEditVariable={onEditVariables}
-                placeholder="username"
-                className="app-no-drag"
-              />
+              <FormGroup label="Username" htmlFor="auth-username" labelTone="muted">
+                <VariableInput
+                  id="auth-username"
+                  wrapperClassName={`${fieldFrame} w-full`}
+                  value={auth.basic.username}
+                  onChange={(username) => onChange({ ...auth, basic: { ...auth.basic, username } })}
+                  variables={variables}
+                  onEditVariable={onEditVariables}
+                  placeholder="username"
+                  className="app-no-drag"
+                />
+              </FormGroup>
             </div>
             <div>
-              <label className="mb-1 block text-[14px] text-muted" htmlFor="auth-password">
-                Password
-              </label>
-              <VariableInput
-                id="auth-password"
-                wrapperClassName={`${fieldFrame} w-full`}
-                value={auth.basic.password}
-                onChange={(password) => onChange({ ...auth, basic: { ...auth.basic, password } })}
-                variables={variables}
-                onEditVariable={onEditVariables}
-                placeholder="password"
-                className="app-no-drag"
-              />
+              <FormGroup label="Password" htmlFor="auth-password" labelTone="muted">
+                <VariableInput
+                  id="auth-password"
+                  wrapperClassName={`${fieldFrame} w-full`}
+                  value={auth.basic.password}
+                  onChange={(password) => onChange({ ...auth, basic: { ...auth.basic, password } })}
+                  variables={variables}
+                  onEditVariable={onEditVariables}
+                  placeholder="password"
+                  className="app-no-drag"
+                />
+              </FormGroup>
             </div>
           </div>
         )}
 
         {auth.type === 'bearer' && (
           <div>
-            <label className="mb-1 block text-[14px] text-muted" htmlFor="auth-token">
-              Token
-            </label>
-            <CodeEditor
-              id="auth-token"
-              value={auth.bearer.token}
-              onChange={(token) => onChange({ ...auth, bearer: { token } })}
-              language="text"
-              placeholder="Bearer token"
-              variables={variables}
-              onEditVariable={onEditVariables}
-              minHeight="120px"
-            />
+            <FormGroup label="Token" htmlFor="auth-token" labelTone="muted">
+              <CodeEditor
+                id="auth-token"
+                value={auth.bearer.token}
+                onChange={(token) => onChange({ ...auth, bearer: { token } })}
+                language="text"
+                placeholder="Bearer token"
+                variables={variables}
+                onEditVariable={onEditVariables}
+                minHeight="120px"
+              />
+            </FormGroup>
           </div>
         )}
 
         {auth.type === 'oauth2' && (
           <div className="flex flex-col gap-3">
             <div>
-              <label className="mb-1 block text-[14px] text-muted" htmlFor="auth-oauth-token-url">
-                Token URL
-              </label>
-              <VariableInput
-                id="auth-oauth-token-url"
-                wrapperClassName={`${fieldFrame} w-full`}
-                value={auth.oauth2.tokenUrl}
-                onChange={(tokenUrl) => onChange({ ...auth, oauth2: { ...auth.oauth2, tokenUrl } })}
-                variables={variables}
-                onEditVariable={onEditVariables}
-                placeholder="https://example.com/oauth/token"
-                className="app-no-drag"
-              />
+              <FormGroup label="Token URL" htmlFor="auth-oauth-token-url" labelTone="muted">
+                <VariableInput
+                  id="auth-oauth-token-url"
+                  wrapperClassName={`${fieldFrame} w-full`}
+                  value={auth.oauth2.tokenUrl}
+                  onChange={(tokenUrl) =>
+                    onChange({ ...auth, oauth2: { ...auth.oauth2, tokenUrl } })
+                  }
+                  variables={variables}
+                  onEditVariable={onEditVariables}
+                  placeholder="https://example.com/oauth/token"
+                  className="app-no-drag"
+                />
+              </FormGroup>
             </div>
             <div>
-              <label className="mb-1 block text-[14px] text-muted" htmlFor="auth-oauth-client-id">
-                Client ID
-              </label>
-              <VariableInput
-                id="auth-oauth-client-id"
-                wrapperClassName={`${fieldFrame} w-full`}
-                value={auth.oauth2.clientId}
-                onChange={(clientId) => onChange({ ...auth, oauth2: { ...auth.oauth2, clientId } })}
-                variables={variables}
-                onEditVariable={onEditVariables}
-                placeholder="client id"
-                className="app-no-drag"
-              />
+              <FormGroup label="Client ID" htmlFor="auth-oauth-client-id" labelTone="muted">
+                <VariableInput
+                  id="auth-oauth-client-id"
+                  wrapperClassName={`${fieldFrame} w-full`}
+                  value={auth.oauth2.clientId}
+                  onChange={(clientId) =>
+                    onChange({ ...auth, oauth2: { ...auth.oauth2, clientId } })
+                  }
+                  variables={variables}
+                  onEditVariable={onEditVariables}
+                  placeholder="client id"
+                  className="app-no-drag"
+                />
+              </FormGroup>
             </div>
             <div>
-              <label
-                className="mb-1 block text-[14px] text-muted"
-                htmlFor="auth-oauth-client-secret"
+              <FormGroup label="Client Secret" htmlFor="auth-oauth-client-secret" labelTone="muted">
+                <VariableInput
+                  id="auth-oauth-client-secret"
+                  wrapperClassName={`${fieldFrame} w-full`}
+                  value={auth.oauth2.clientSecret}
+                  onChange={(clientSecret) =>
+                    onChange({ ...auth, oauth2: { ...auth.oauth2, clientSecret } })
+                  }
+                  variables={variables}
+                  onEditVariable={onEditVariables}
+                  placeholder="client secret"
+                  className="app-no-drag"
+                />
+              </FormGroup>
+            </div>
+            <div>
+              <FormGroup label="Scope" htmlFor="auth-oauth-scope" labelTone="muted">
+                <VariableInput
+                  id="auth-oauth-scope"
+                  wrapperClassName={`${fieldFrame} w-full`}
+                  value={auth.oauth2.scope}
+                  onChange={(scope) => onChange({ ...auth, oauth2: { ...auth.oauth2, scope } })}
+                  variables={variables}
+                  onEditVariable={onEditVariables}
+                  placeholder="read write"
+                  className="app-no-drag"
+                />
+              </FormGroup>
+            </div>
+            <div>
+              <FormGroup label="Audience" htmlFor="auth-oauth-audience" labelTone="muted">
+                <VariableInput
+                  id="auth-oauth-audience"
+                  wrapperClassName={`${fieldFrame} w-full`}
+                  value={auth.oauth2.audience}
+                  onChange={(audience) =>
+                    onChange({ ...auth, oauth2: { ...auth.oauth2, audience } })
+                  }
+                  variables={variables}
+                  onEditVariable={onEditVariables}
+                  placeholder="optional audience"
+                  className="app-no-drag"
+                />
+              </FormGroup>
+            </div>
+            <div>
+              <FormGroup
+                label="Client Authentication"
+                htmlFor="auth-oauth-client-auth"
+                labelTone="muted"
               >
-                Client Secret
-              </label>
-              <VariableInput
-                id="auth-oauth-client-secret"
-                wrapperClassName={`${fieldFrame} w-full`}
-                value={auth.oauth2.clientSecret}
-                onChange={(clientSecret) =>
-                  onChange({ ...auth, oauth2: { ...auth.oauth2, clientSecret } })
-                }
-                variables={variables}
-                onEditVariable={onEditVariables}
-                placeholder="client secret"
-                className="app-no-drag"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-[14px] text-muted" htmlFor="auth-oauth-scope">
-                Scope
-              </label>
-              <VariableInput
-                id="auth-oauth-scope"
-                wrapperClassName={`${fieldFrame} w-full`}
-                value={auth.oauth2.scope}
-                onChange={(scope) => onChange({ ...auth, oauth2: { ...auth.oauth2, scope } })}
-                variables={variables}
-                onEditVariable={onEditVariables}
-                placeholder="read write"
-                className="app-no-drag"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-[14px] text-muted" htmlFor="auth-oauth-audience">
-                Audience
-              </label>
-              <VariableInput
-                id="auth-oauth-audience"
-                wrapperClassName={`${fieldFrame} w-full`}
-                value={auth.oauth2.audience}
-                onChange={(audience) => onChange({ ...auth, oauth2: { ...auth.oauth2, audience } })}
-                variables={variables}
-                onEditVariable={onEditVariables}
-                placeholder="optional audience"
-                className="app-no-drag"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-[14px] text-muted" htmlFor="auth-oauth-client-auth">
-                Client Authentication
-              </label>
-              <Select
-                id="auth-oauth-client-auth"
-                className="w-full"
-                value={auth.oauth2.clientAuth}
-                onChange={(event) =>
-                  onChange({
-                    ...auth,
-                    oauth2: {
-                      ...auth.oauth2,
-                      clientAuth: event.target.value as AuthConfig['oauth2']['clientAuth']
-                    }
-                  })
-                }
-              >
-                <option value="body">Send as request body</option>
-                <option value="header">Send as Basic Auth header</option>
-              </Select>
+                <Select
+                  id="auth-oauth-client-auth"
+                  className="w-full"
+                  value={auth.oauth2.clientAuth}
+                  onChange={(event) =>
+                    onChange({
+                      ...auth,
+                      oauth2: {
+                        ...auth.oauth2,
+                        clientAuth: event.target.value as AuthConfig['oauth2']['clientAuth']
+                      }
+                    })
+                  }
+                >
+                  <option value="body">Send as request body</option>
+                  <option value="header">Send as Basic Auth header</option>
+                </Select>
+              </FormGroup>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Button

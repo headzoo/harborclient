@@ -1,5 +1,6 @@
 import type { JSX, KeyboardEvent } from 'react';
 import { Button } from '#/renderer/src/components/Button';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { Input } from '#/renderer/src/components/forms';
 import { Modal } from '#/renderer/src/components/Modal';
 
@@ -83,33 +84,35 @@ export function GitInstallModal({
       closeDisabled={busy}
       disableEscape={busy}
     >
-      <label htmlFor="plugin-git-install-url" className="mb-1 block text-[14px] text-muted">
-        Repository URL
-      </label>
-      <Input
-        id="plugin-git-install-url"
-        className="mb-3 w-full"
-        type="url"
-        autoFocus
-        placeholder="https://github.com/example/my-plugin.git"
-        value={url}
-        disabled={busy}
-        onChange={(event) => onUrlChange(event.target.value)}
-        onKeyDown={handleKeyDown}
-      />
-      <label htmlFor="plugin-git-install-ref" className="mb-1 block text-[14px] text-muted">
-        Branch or tag (optional)
-      </label>
-      <Input
-        id="plugin-git-install-ref"
-        className="w-full"
-        type="text"
-        placeholder="main"
-        value={ref}
-        disabled={busy}
-        onChange={(event) => onRefChange(event.target.value)}
-        onKeyDown={handleKeyDown}
-      />
+      <FormGroup label="Repository URL" htmlFor="plugin-git-install-url" labelTone="muted">
+        <Input
+          id="plugin-git-install-url"
+          className="mb-3 w-full"
+          type="url"
+          autoFocus
+          placeholder="https://github.com/example/my-plugin.git"
+          value={url}
+          disabled={busy}
+          onChange={(event) => onUrlChange(event.target.value)}
+          onKeyDown={handleKeyDown}
+        />
+      </FormGroup>
+      <FormGroup
+        label="Branch or tag (optional)"
+        htmlFor="plugin-git-install-ref"
+        labelTone="muted"
+      >
+        <Input
+          id="plugin-git-install-ref"
+          className="w-full"
+          type="text"
+          placeholder="main"
+          value={ref}
+          disabled={busy}
+          onChange={(event) => onRefChange(event.target.value)}
+          onKeyDown={handleKeyDown}
+        />
+      </FormGroup>
       {error ? (
         <p className="mt-3 text-[14px] text-danger" role="alert">
           {error}

@@ -1,6 +1,7 @@
 import { useRef, useState, type JSX, type ReactNode } from 'react';
 import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form';
 import { Input } from '#/renderer/src/components/forms';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import {
   applyAccessSuggestion,
   filterAccessListSuggestions,
@@ -124,28 +125,26 @@ export function AccessListInput<TFieldValues extends FieldValues>({
 
         return (
           <div className="relative">
-            <label htmlFor={inputId} className="mb-1 block text-[14px] font-medium text-text">
-              {label}
-            </label>
-            <Input
-              id={inputId}
-              type="text"
-              variant="surface"
-              placeholder={placeholder}
-              disabled={disabled}
-              value={field.value ?? ''}
-              autoComplete="off"
-              onChange={field.onChange}
-              onBlur={() => {
-                field.onBlur();
-                handleBlur();
-              }}
-              onFocus={() => {
-                clearBlurTimeout();
-                setFocused(true);
-              }}
-            />
-            {helperText && <p className="mt-1 text-[14px] text-muted">{helperText}</p>}
+            <FormGroup label={label} htmlFor={inputId} description={helperText}>
+              <Input
+                id={inputId}
+                type="text"
+                variant="surface"
+                placeholder={placeholder}
+                disabled={disabled}
+                value={field.value ?? ''}
+                autoComplete="off"
+                onChange={field.onChange}
+                onBlur={() => {
+                  field.onBlur();
+                  handleBlur();
+                }}
+                onFocus={() => {
+                  clearBlurTimeout();
+                  setFocused(true);
+                }}
+              />
+            </FormGroup>
             {showDropdown && (
               <ul
                 className="absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-separator bg-surface py-1 shadow-lg"

@@ -11,6 +11,7 @@ import { buildPluginCatalogSearchIndex, searchPluginCatalog } from '#/shared/plu
 import type { PluginInfo } from '#/shared/plugin/types';
 import type { TeamHubPluginSource } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { Input } from '#/renderer/src/components/forms';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
@@ -687,18 +688,17 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
 
       {showBrowse ? (
         <div className="mb-4">
-          <label htmlFor="plugin-catalog-search" className="sr-only">
-            Search plugins
-          </label>
-          <Input
-            id="plugin-catalog-search"
-            type="search"
-            placeholder="Search plugins"
-            value={catalogSearchQuery}
-            disabled={catalogLoading}
-            className="w-full max-w-md"
-            onChange={(event) => setCatalogSearchQuery(event.target.value)}
-          />
+          <FormGroup label="Search plugins" htmlFor="plugin-catalog-search" srOnly>
+            <Input
+              id="plugin-catalog-search"
+              type="search"
+              placeholder="Search plugins"
+              value={catalogSearchQuery}
+              disabled={catalogLoading}
+              className="w-full max-w-md"
+              onChange={(event) => setCatalogSearchQuery(event.target.value)}
+            />
+          </FormGroup>
         </div>
       ) : null}
 

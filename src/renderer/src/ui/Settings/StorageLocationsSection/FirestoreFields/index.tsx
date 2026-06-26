@@ -1,5 +1,6 @@
 import type { JSX } from 'react';
 import type { FirestoreSettings } from '#/shared/types';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { Input } from '#/renderer/src/components/forms';
 
 interface Props {
@@ -35,65 +36,59 @@ export function FirestoreFields({ settings, disabled = false, onChange }: Props)
 
   return (
     <div className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-medium text-text">API key</span>
+      <FormGroup label="API key">
         <Input
           type="text"
           value={settings.apiKey}
           disabled={disabled}
           onChange={(event) => handleFieldChange('apiKey', event.target.value)}
         />
-      </label>
+      </FormGroup>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-medium text-text">Auth domain</span>
+      <FormGroup label="Auth domain">
         <Input
           type="text"
           value={settings.authDomain}
           disabled={disabled}
           onChange={(event) => handleFieldChange('authDomain', event.target.value)}
         />
-      </label>
+      </FormGroup>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-medium text-text">Project ID</span>
+      <FormGroup label="Project ID">
         <Input
           type="text"
           value={settings.projectId}
           disabled={disabled}
           onChange={(event) => handleFieldChange('projectId', event.target.value)}
         />
-      </label>
+      </FormGroup>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-medium text-text">App ID</span>
+      <FormGroup label="App ID">
         <Input
           type="text"
           value={settings.appId}
           disabled={disabled}
           onChange={(event) => handleFieldChange('appId', event.target.value)}
         />
-      </label>
+      </FormGroup>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-medium text-text">Email</span>
+      <FormGroup label="Email">
         <Input
           type="email"
           value={settings.email}
           disabled={disabled}
           onChange={(event) => handleFieldChange('email', event.target.value)}
         />
-      </label>
+      </FormGroup>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-medium text-text">Password</span>
+      <FormGroup label="Password">
         <Input
           type="password"
           value={settings.password}
           disabled={disabled}
           onChange={(event) => handleFieldChange('password', event.target.value)}
         />
-      </label>
+      </FormGroup>
     </div>
   );
 }

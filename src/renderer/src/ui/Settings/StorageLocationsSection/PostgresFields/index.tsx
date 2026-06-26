@@ -1,5 +1,6 @@
 import type { JSX } from 'react';
 import type { PostgresSettings } from '#/shared/types';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { Input } from '#/renderer/src/components/forms';
 
 interface Props {
@@ -35,55 +36,50 @@ export function PostgresFields({ settings, disabled = false, onChange }: Props):
 
   return (
     <div className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-medium text-text">Host</span>
+      <FormGroup label="Host">
         <Input
           type="text"
           value={settings.host}
           disabled={disabled}
           onChange={(event) => handleFieldChange('host', event.target.value)}
         />
-      </label>
+      </FormGroup>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-medium text-text">Port</span>
+      <FormGroup label="Port">
         <Input
           type="number"
           value={settings.port}
           disabled={disabled}
           onChange={(event) => handleFieldChange('port', Number(event.target.value))}
         />
-      </label>
+      </FormGroup>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-medium text-text">User</span>
+      <FormGroup label="User">
         <Input
           type="text"
           value={settings.user}
           disabled={disabled}
           onChange={(event) => handleFieldChange('user', event.target.value)}
         />
-      </label>
+      </FormGroup>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-medium text-text">Password</span>
+      <FormGroup label="Password">
         <Input
           type="password"
           value={settings.password}
           disabled={disabled}
           onChange={(event) => handleFieldChange('password', event.target.value)}
         />
-      </label>
+      </FormGroup>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-medium text-text">Database</span>
+      <FormGroup label="Database">
         <Input
           type="text"
           value={settings.database}
           disabled={disabled}
           onChange={(event) => handleFieldChange('database', event.target.value)}
         />
-      </label>
+      </FormGroup>
     </div>
   );
 }

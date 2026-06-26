@@ -2,6 +2,7 @@ import { useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { AdminResourceOption, TeamHub } from '#/shared/types';
 import { Input } from '#/renderer/src/components/forms';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { Button } from '#/renderer/src/components/Button';
 import { Modal } from '#/renderer/src/components/Modal';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
@@ -171,16 +172,19 @@ export function TeamCollectionsView({ hub, onBack }: Props): JSX.Element {
           closeDisabled={deleting}
           disableEscape={deleting}
         >
-          <label className="mb-4 block text-[14px] text-text" htmlFor="delete-collection-confirm">
-            Type DELETE to confirm
-          </label>
-          <Input
-            id="delete-collection-confirm"
-            value={deleteConfirmText}
-            disabled={deleting}
-            onChange={(event) => setDeleteConfirmText(event.target.value)}
-            autoComplete="off"
-          />
+          <FormGroup
+            label="Type DELETE to confirm"
+            htmlFor="delete-collection-confirm"
+            className="mb-4"
+          >
+            <Input
+              id="delete-collection-confirm"
+              value={deleteConfirmText}
+              disabled={deleting}
+              onChange={(event) => setDeleteConfirmText(event.target.value)}
+              autoComplete="off"
+            />
+          </FormGroup>
 
           {actionError && <p className="mt-3 text-[14px] text-danger">{actionError}</p>}
 

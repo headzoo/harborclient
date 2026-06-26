@@ -2,6 +2,7 @@ import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { GitLogEntry, SourceControlStatus } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { useConfirm } from '#/renderer/src/hooks/useConfirm';
 import { Modal } from '#/renderer/src/components/Modal';
 import { Textarea } from '#/renderer/src/components/forms';
@@ -159,15 +160,14 @@ export function GitSourceControlPanel({
           </div>
         )}
 
-        <label className="flex flex-col gap-1">
-          <span className="text-[14px] font-medium text-text">Commit message</span>
+        <FormGroup label="Commit message">
           <Textarea
             className="min-h-[80px]"
             value={message}
             disabled={busy}
             onChange={(event) => setMessageDraft({ edited: true, value: event.target.value })}
           />
-        </label>
+        </FormGroup>
 
         <div className="flex gap-2">
           <Button

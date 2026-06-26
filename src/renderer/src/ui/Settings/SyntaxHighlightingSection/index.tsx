@@ -6,6 +6,7 @@ import { useAppDispatch } from '#/renderer/src/store/hooks';
 import { setGeneralSettingsState } from '#/renderer/src/store/slices/settingsSlice';
 import type { CodeEditorSetup, GeneralSettings } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { Input, Select } from '#/renderer/src/components/forms';
 import { DEFAULT_GENERAL_SETTINGS, settingsSectionMeta } from '../constants';
@@ -92,8 +93,7 @@ export function SyntaxHighlightingSection({ onClose }: Props): JSX.Element {
         <SettingsCloseButton onClose={onClose} />
       </PageHeader>
       <div className="flex flex-col gap-6">
-        <label className="flex flex-col gap-1">
-          <span className="text-[14px] font-medium text-text">Theme</span>
+        <FormGroup label="Theme">
           <Select
             value={generalSettings.codeEditorTheme}
             disabled={loading || saving}
@@ -107,18 +107,17 @@ export function SyntaxHighlightingSection({ onClose }: Props): JSX.Element {
               </option>
             ))}
           </Select>
-        </label>
+        </FormGroup>
 
         {SETUP_OPTIONS.map((option) => (
-          <label key={option.key} className="flex items-center gap-2">
+          <FormGroup key={option.key} label={option.label} layout="checkbox">
             <Input
               type="checkbox"
               checked={generalSettings.codeEditorSetup[option.key]}
               disabled={loading || saving}
               onChange={(event) => handleSetupChange(option.key, event.target.checked)}
             />
-            <span className="text-[14px] font-medium text-text">{option.label}</span>
-          </label>
+          </FormGroup>
         ))}
 
         <div className="flex items-center gap-3">

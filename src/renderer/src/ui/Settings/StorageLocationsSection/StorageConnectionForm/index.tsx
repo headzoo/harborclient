@@ -1,6 +1,7 @@
 import type { JSX } from 'react';
 import type { StorageConnection, StorageProvider } from '#/shared/types';
 import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { Input } from '#/renderer/src/components/forms';
 import { createBlankConnection, PROVIDER_OPTIONS } from '../../constants';
 import { FirestoreFields } from '../FirestoreFields';
@@ -70,8 +71,7 @@ export function StorageConnectionForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-medium text-text">Name</span>
+      <FormGroup label="Name">
         <Input
           type="text"
           value={connection.name}
@@ -79,7 +79,7 @@ export function StorageConnectionForm({
           placeholder="My database"
           onChange={(event) => handleNameChange(event.target.value)}
         />
-      </label>
+      </FormGroup>
 
       {isNew && (
         <div>

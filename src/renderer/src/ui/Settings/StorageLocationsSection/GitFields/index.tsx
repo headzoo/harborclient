@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import type { StorageConnection, GitSettings } from '#/shared/types';
 import { isGitHubRepositoryUrl } from '#/shared/gitUrl';
 import { Button } from '#/renderer/src/components/Button';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import {
   SegmentedTabPanel,
   SegmentedTabs,
@@ -226,10 +227,7 @@ export function GitFields({ connection, disabled = false, onChange }: Props): JS
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <label className="text-[14px] font-medium text-text" htmlFor={repoPathId}>
-          Repository path
-        </label>
+      <FormGroup label="Repository path" htmlFor={repoPathId}>
         <div className="flex gap-2">
           <Input
             id={repoPathId}
@@ -249,10 +247,12 @@ export function GitFields({ connection, disabled = false, onChange }: Props): JS
             Browse
           </Button>
         </div>
-      </div>
+      </FormGroup>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-medium text-text">Repository URL (HTTPS)</span>
+      <FormGroup
+        label="Repository URL (HTTPS)"
+        description="SSH remotes are not supported; use an HTTPS URL and a token or GitHub OAuth."
+      >
         <Input
           type="url"
           value={settings.url}
@@ -260,30 +260,25 @@ export function GitFields({ connection, disabled = false, onChange }: Props): JS
           placeholder="https://github.com/org/repo.git"
           onChange={(event) => updateSettings({ url: event.target.value })}
         />
-        <span className="text-[13px] text-muted">
-          SSH remotes are not supported; use an HTTPS URL and a token or GitHub OAuth.
-        </span>
-      </label>
+      </FormGroup>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-medium text-text">Branch</span>
+      <FormGroup label="Branch">
         <Input
           type="text"
           value={settings.branch}
           disabled={disabled}
           onChange={(event) => updateSettings({ branch: event.target.value })}
         />
-      </label>
+      </FormGroup>
 
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-medium text-text">HarborClient subdirectory</span>
+      <FormGroup label="HarborClient subdirectory">
         <Input
           type="text"
           value={settings.subdir}
           disabled={disabled}
           onChange={(event) => updateSettings({ subdir: event.target.value })}
         />
-      </label>
+      </FormGroup>
 
       <div className="flex flex-col gap-3 rounded border border-separator p-3">
         <span className="text-[14px] font-medium text-text">Authentication</span>
@@ -336,8 +331,18 @@ export function GitFields({ connection, disabled = false, onChange }: Props): JS
 
       <details className="rounded border border-separator p-3">
         <summary className="text-[14px] font-medium text-text cursor-pointer">Advanced</summary>
-        <label className="flex flex-col gap-1 mt-3" htmlFor={oauthClientIdId}>
-          <span className="text-[13px] text-muted">GitHub OAuth Client ID</span>
+        <FormGroup
+          label="GitHub OAuth Client ID"
+          htmlFor={oauthClientIdId}
+          labelTone="muted"
+          className="mt-3"
+          description={
+            <>
+              Use your organization&apos;s GitHub OAuth App (device flow enabled, <code>repo</code>{' '}
+              scope). Changing this after authorizing requires revoking and re-authorizing.
+            </>
+          }
+        >
           <Input
             id={oauthClientIdId}
             type="text"
@@ -346,11 +351,7 @@ export function GitFields({ connection, disabled = false, onChange }: Props): JS
             placeholder="Leave blank to use HarborClient's app"
             onChange={(event) => updateSettings({ oauthClientId: event.target.value })}
           />
-          <span className="text-[13px] text-muted">
-            Use your organization&apos;s GitHub OAuth App (device flow enabled, <code>repo</code>{' '}
-            scope). Changing this after authorizing requires revoking and re-authorizing.
-          </span>
-        </label>
+        </FormGroup>
       </details>
     </div>
   );

@@ -3,6 +3,7 @@ import type { PluginSource } from '#/shared/plugin/catalog';
 import { isHarborClientEndpoint } from '#/shared/plugin/catalog';
 import type { TeamHubPluginSource } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { Input } from '#/renderer/src/components/forms';
 import { parseDraftPluginSourceUrl } from './helpers';
 
@@ -150,9 +151,12 @@ export function SourceListSection({
                     }}
                   />
                   <div className="min-w-0 flex-1">
-                    <label htmlFor={checkboxId} className="block break-all text-[14px] text-text">
-                      {source.url}
-                    </label>
+                    <FormGroup
+                      label={source.url}
+                      htmlFor={checkboxId}
+                      layout="associated"
+                      labelClassName="block break-all text-[14px] text-text"
+                    />
                     {untrusted ? (
                       <span className="mt-1 inline-block rounded bg-danger/20 px-1.5 py-0.5 text-[14px] text-danger">
                         Untrusted source
@@ -191,9 +195,12 @@ export function SourceListSection({
                     readOnly
                   />
                   <div className="min-w-0 flex-1">
-                    <label htmlFor={checkboxId} className="block break-all text-[14px] text-text">
-                      {source.url}
-                    </label>
+                    <FormGroup
+                      label={source.url}
+                      htmlFor={checkboxId}
+                      layout="associated"
+                      labelClassName="block break-all text-[14px] text-text"
+                    />
                     <span className="mt-1 inline-block rounded bg-accent/15 px-1.5 py-0.5 text-[14px] text-text">
                       From {source.hubName}
                     </span>
@@ -213,39 +220,38 @@ export function SourceListSection({
       ) : null}
 
       <div>
-        <label htmlFor={addInputId} className="mb-1 block text-[14px] text-muted">
-          Add endpoint URL
-        </label>
-        <div className="flex flex-wrap gap-2">
-          <Input
-            id={addInputId}
-            type="url"
-            className="min-w-[min(100%,20rem)] flex-1"
-            placeholder="https://example.com/plugin_catalog.json"
-            value={draftUrl}
-            disabled={busy}
-            aria-invalid={addError ? true : undefined}
-            aria-describedby={
-              [addError ? addErrorId : null, pendingUntrustedUrl ? untrustedWarningId : null]
-                .filter(Boolean)
-                .join(' ') || undefined
-            }
-            onChange={(event) => {
-              setDraftUrl(event.target.value);
-              setAddError(null);
-              setPendingUntrustedUrl(null);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault();
-                handleAdd();
+        <FormGroup label="Add endpoint URL" htmlFor={addInputId} labelTone="muted">
+          <div className="flex flex-wrap gap-2">
+            <Input
+              id={addInputId}
+              type="url"
+              className="min-w-[min(100%,20rem)] flex-1"
+              placeholder="https://example.com/plugin_catalog.json"
+              value={draftUrl}
+              disabled={busy}
+              aria-invalid={addError ? true : undefined}
+              aria-describedby={
+                [addError ? addErrorId : null, pendingUntrustedUrl ? untrustedWarningId : null]
+                  .filter(Boolean)
+                  .join(' ') || undefined
               }
-            }}
-          />
-          <Button type="button" variant="secondary" disabled={busy} onClick={handleAdd}>
-            Add
-          </Button>
-        </div>
+              onChange={(event) => {
+                setDraftUrl(event.target.value);
+                setAddError(null);
+                setPendingUntrustedUrl(null);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  handleAdd();
+                }
+              }}
+            />
+            <Button type="button" variant="secondary" disabled={busy} onClick={handleAdd}>
+              Add
+            </Button>
+          </div>
+        </FormGroup>
         {addError ? (
           <p id={addErrorId} className="mt-2 text-[14px] text-danger" role="alert">
             {addError}

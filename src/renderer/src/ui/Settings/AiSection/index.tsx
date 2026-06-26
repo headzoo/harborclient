@@ -2,6 +2,7 @@ import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { AiSettings } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { Input } from '#/renderer/src/components/forms';
 import { DEFAULT_AI_SETTINGS, settingsSectionMeta } from '../constants';
@@ -95,8 +96,7 @@ export function AiSection({ onClose }: Props): JSX.Element {
         <SettingsCloseButton onClose={onClose} />
       </PageHeader>
       <div className="mb-6 flex flex-col gap-6">
-        <label className="flex flex-col gap-1" htmlFor="ai-openai-api-key">
-          <span className="text-[14px] font-medium text-text">OpenAI API key</span>
+        <FormGroup label="OpenAI API key" htmlFor="ai-openai-api-key">
           <Input
             id="ai-openai-api-key"
             type="password"
@@ -105,10 +105,9 @@ export function AiSection({ onClose }: Props): JSX.Element {
             autoComplete="off"
             onChange={(event) => handleFieldChange('openaiApiKey', event.target.value)}
           />
-        </label>
+        </FormGroup>
 
-        <label className="flex flex-col gap-1" htmlFor="ai-claude-api-key">
-          <span className="text-[14px] font-medium text-text">Claude API key</span>
+        <FormGroup label="Claude API key" htmlFor="ai-claude-api-key">
           <Input
             id="ai-claude-api-key"
             type="password"
@@ -117,10 +116,9 @@ export function AiSection({ onClose }: Props): JSX.Element {
             autoComplete="off"
             onChange={(event) => handleFieldChange('claudeApiKey', event.target.value)}
           />
-        </label>
+        </FormGroup>
 
-        <label className="flex flex-col gap-1" htmlFor="ai-gemini-api-key">
-          <span className="text-[14px] font-medium text-text">Google Gemini API key</span>
+        <FormGroup label="Google Gemini API key" htmlFor="ai-gemini-api-key">
           <Input
             id="ai-gemini-api-key"
             type="password"
@@ -129,7 +127,7 @@ export function AiSection({ onClose }: Props): JSX.Element {
             autoComplete="off"
             onChange={(event) => handleFieldChange('geminiApiKey', event.target.value)}
           />
-        </label>
+        </FormGroup>
 
         <p className="m-0 text-[14px] text-muted">
           Personal API keys are encrypted and stored locally on this machine. HarborClient uses the

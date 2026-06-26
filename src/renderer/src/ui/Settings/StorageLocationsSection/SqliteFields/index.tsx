@@ -1,5 +1,6 @@
 import type { JSX } from 'react';
 import type { SqliteSettings } from '#/shared/types';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { Input } from '#/renderer/src/components/forms';
 
 interface Props {
@@ -35,16 +36,14 @@ export function SqliteFields({ settings, disabled = false, onChange }: Props): J
 
   return (
     <div className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1">
-        <span className="text-[14px] font-medium text-text">Database filename</span>
+      <FormGroup label="Database filename" description="Stored in the application data directory.">
         <Input
           type="text"
           value={settings.dbFilename}
           disabled={disabled}
           onChange={(event) => handleFieldChange('dbFilename', event.target.value)}
         />
-        <p className="m-0 text-[14px] text-muted">Stored in the application data directory.</p>
-      </label>
+      </FormGroup>
     </div>
   );
 }

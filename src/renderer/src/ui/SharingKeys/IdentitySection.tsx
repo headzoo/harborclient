@@ -4,6 +4,7 @@ import type { SharingIdentity } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { Input, Textarea } from '#/renderer/src/components/forms';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { SharingKeysCloseButton } from './SharingKeysCloseButton';
 
 interface Props {
@@ -121,27 +122,24 @@ export function IdentitySection({ onClose }: Props): JSX.Element {
         </p>
       ) : identity ? (
         <>
-          <label
-            htmlFor="identity-fingerprint"
-            className="mb-1 block text-[14px] font-medium text-text"
-          >
-            Fingerprint
-          </label>
-          <Input
-            id="identity-fingerprint"
-            className="mb-4 w-full font-mono text-[14px]"
-            readOnly
-            value={identity.fingerprint}
-            onFocus={(event) => event.target.select()}
-          />
+          <FormGroup label="Fingerprint" htmlFor="identity-fingerprint">
+            <Input
+              id="identity-fingerprint"
+              className="mb-4 w-full font-mono text-[14px]"
+              readOnly
+              value={identity.fingerprint}
+              onFocus={(event) => event.target.select()}
+            />
+          </FormGroup>
 
-          <label className="mb-1 block text-[14px] font-medium text-text">Public key</label>
-          <Textarea
-            className="mb-4 min-h-28 w-full resize-y font-mono text-[14px]"
-            readOnly
-            value={identity.publicKeyPem}
-            onFocus={(event) => event.target.select()}
-          />
+          <FormGroup label="Public key">
+            <Textarea
+              className="mb-4 min-h-28 w-full resize-y font-mono text-[14px]"
+              readOnly
+              value={identity.publicKeyPem}
+              onFocus={(event) => event.target.select()}
+            />
+          </FormGroup>
 
           <div className="flex flex-wrap gap-2">
             <Button

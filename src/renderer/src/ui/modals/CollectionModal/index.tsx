@@ -22,6 +22,7 @@ import {
   SegmentedTabsGroup
 } from '#/renderer/src/components/SegmentedTabs';
 import { Button } from '#/renderer/src/components/Button';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { providerOptionLabel, useProviders } from '#/renderer/src/hooks/useProviders';
 import { Input, Select, Textarea } from '#/renderer/src/components/forms';
 import { Modal } from '#/renderer/src/components/Modal';
@@ -132,24 +133,23 @@ export function CollectionModal(): JSX.Element | null {
    */
   const providerField = (
     <div className="mt-3">
-      <label className="mb-1 block text-[14px] text-muted" htmlFor={providerSelectId}>
-        Storage location
-      </label>
-      <Select
-        id={providerSelectId}
-        className="w-full"
-        value={resolvedProviderId}
-        disabled={providerSelectDisabled}
-        onChange={(e) => dispatch(setCollectionModalProviderId(e.target.value))}
-      >
-        {providers.map((provider) => (
-          <option key={provider.id} value={provider.id}>
-            {provider.name || 'Untitled'} ({providerOptionLabel(provider)})
-          </option>
-        ))}
-      </Select>
-      {providersLoading && <p className="mb-0 mt-1 text-[14px] text-muted">Loading…</p>}
-      {providersError && <p className="mb-0 mt-1 text-[14px] text-danger">{providersError}</p>}
+      <FormGroup label="Storage location" htmlFor={providerSelectId} labelTone="muted">
+        <Select
+          id={providerSelectId}
+          className="w-full"
+          value={resolvedProviderId}
+          disabled={providerSelectDisabled}
+          onChange={(e) => dispatch(setCollectionModalProviderId(e.target.value))}
+        >
+          {providers.map((provider) => (
+            <option key={provider.id} value={provider.id}>
+              {provider.name || 'Untitled'} ({providerOptionLabel(provider)})
+            </option>
+          ))}
+        </Select>
+        {providersLoading && <p className="mb-0 mt-1 text-[14px] text-muted">Loading…</p>}
+        {providersError && <p className="mb-0 mt-1 text-[14px] text-danger">{providersError}</p>}
+      </FormGroup>
     </div>
   );
 

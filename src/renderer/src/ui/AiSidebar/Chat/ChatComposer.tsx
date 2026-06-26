@@ -11,6 +11,7 @@ import {
 } from '#/renderer/src/store/slices/aiChatSlice';
 import { sendChatMessage } from '#/renderer/src/store/thunks/aiChat';
 import { Select, Textarea } from '#/renderer/src/components/forms';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 
 interface Props {
   /**
@@ -109,8 +110,7 @@ export function ChatComposer({ chatId, aiSettings, selectedModel, sending }: Pro
         onKeyDown={handleKeyDown}
       />
       <div className="flex items-center justify-between gap-2">
-        <label className="flex min-w-0 flex-1 items-center gap-2" htmlFor="ai-chat-model">
-          <span className="shrink-0 text-[14px] text-muted">Model</span>
+        <FormGroup label="Model" htmlFor="ai-chat-model" layout="inline" labelTone="muted">
           <Select
             id="ai-chat-model"
             className="min-w-0 flex-1 cursor-pointer py-1 text-[14px]"
@@ -128,7 +128,7 @@ export function ChatComposer({ chatId, aiSettings, selectedModel, sending }: Pro
               </option>
             ))}
           </Select>
-        </label>
+        </FormGroup>
         <Button type="button" disabled={!canSend} onClick={() => void handleSend()}>
           Send
         </Button>

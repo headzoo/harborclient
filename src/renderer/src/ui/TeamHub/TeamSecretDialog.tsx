@@ -1,6 +1,7 @@
 import { useState, type JSX } from 'react';
 import { Textarea } from '#/renderer/src/components/forms';
 import { Button } from '#/renderer/src/components/Button';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { Modal } from '#/renderer/src/components/Modal';
 
 interface Props {
@@ -49,16 +50,15 @@ export function TeamSecretDialog({ title, description, secret, onClose }: Props)
       title={title}
       description={description}
     >
-      <label htmlFor="team-secret-value" className="mb-1 block text-[14px] font-medium text-text">
-        Token secret
-      </label>
-      <Textarea
-        id="team-secret-value"
-        readOnly
-        variant="surface"
-        className="h-24 resize-none font-mono text-[14px]"
-        value={secret}
-      />
+      <FormGroup label="Token secret" htmlFor="team-secret-value">
+        <Textarea
+          id="team-secret-value"
+          readOnly
+          variant="surface"
+          className="h-24 resize-none font-mono text-[14px]"
+          value={secret}
+        />
+      </FormGroup>
 
       <div className="mt-4 flex justify-end gap-2">
         <Button type="button" variant="secondary" onClick={handleCopy}>

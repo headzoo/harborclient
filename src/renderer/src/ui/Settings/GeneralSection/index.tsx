@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import type { GeneralSettings, ThemeSource } from '#/shared/types';
 import { formatPluginThemeValue } from '#/shared/plugin/types';
 import { Button } from '#/renderer/src/components/Button';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { applyThemePreference } from '#/renderer/src/plugins/themeRuntime';
 import { usePluginThemes } from '#/renderer/src/plugins/pluginHooks';
@@ -120,8 +121,7 @@ export function GeneralSection({ onClose }: Props): JSX.Element {
         <SettingsCloseButton onClose={onClose} />
       </PageHeader>
       <div className="mb-6 flex flex-col gap-6">
-        <label className="flex flex-col gap-1">
-          <span className="text-[14px] font-medium text-text">Theme</span>
+        <FormGroup label="Theme">
           <Select
             value={theme}
             disabled={loading || generalLoading || generalSaving}
@@ -133,10 +133,9 @@ export function GeneralSection({ onClose }: Props): JSX.Element {
               </option>
             ))}
           </Select>
-        </label>
+        </FormGroup>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-[14px] font-medium text-text">Request timeout (ms)</span>
+        <FormGroup label="Request timeout (ms)" description="Set to 0 to disable the limit.">
           <Input
             type="number"
             min={0}
@@ -146,11 +145,12 @@ export function GeneralSection({ onClose }: Props): JSX.Element {
               handleGeneralFieldChange('requestTimeoutMs', Number(event.target.value))
             }
           />
-          <p className="m-0 text-[14px] text-muted">Set to 0 to disable the limit.</p>
-        </label>
+        </FormGroup>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-[14px] font-medium text-text">Max response size (MB)</span>
+        <FormGroup
+          label="Max response size (MB)"
+          description="Set to 0 for no configurable limit (512 MB hard cap still applies)."
+        >
           <Input
             type="number"
             min={0}
@@ -160,20 +160,16 @@ export function GeneralSection({ onClose }: Props): JSX.Element {
               handleGeneralFieldChange('maxResponseSizeMb', Number(event.target.value))
             }
           />
-          <p className="m-0 text-[14px] text-muted">
-            Set to 0 for no configurable limit (512 MB hard cap still applies).
-          </p>
-        </label>
+        </FormGroup>
 
-        <label className="flex items-center gap-2">
+        <FormGroup label="SSL certificate verification" layout="checkbox">
           <Input
             type="checkbox"
             checked={generalSettings.verifySsl}
             disabled={generalLoading || generalSaving}
             onChange={(event) => handleGeneralFieldChange('verifySsl', event.target.checked)}
           />
-          <span className="text-[14px] font-medium text-text">SSL certificate verification</span>
-        </label>
+        </FormGroup>
       </div>
 
       <div className="flex items-center gap-3">

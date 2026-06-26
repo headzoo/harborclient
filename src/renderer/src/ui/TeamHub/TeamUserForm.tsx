@@ -7,6 +7,7 @@ import type {
   UpdateHubUserInput
 } from '#/shared/types';
 import { Input, Select } from '#/renderer/src/components/forms';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { AccessListInput } from '#/renderer/src/ui/TeamHub/AccessListInput';
 import {
   defaultCreateFormValues,
@@ -141,36 +142,34 @@ export function TeamUserForm(props: Props): JSX.Element {
       {optionsLoading && <p className="text-[14px] text-muted">Loading options…</p>}
 
       <div>
-        <label htmlFor="team-user-name" className="mb-1 block text-[14px] font-medium text-text">
-          Name
-        </label>
-        <Input
-          id="team-user-name"
-          type="text"
-          variant="surface"
-          disabled={fieldsDisabled}
-          aria-invalid={errors.name ? true : undefined}
-          {...register('name', {
-            required: 'Name is required.',
-            validate: (value) => value.trim().length > 0 || 'Name is required.'
-          })}
-        />
+        <FormGroup label="Name" htmlFor="team-user-name">
+          <Input
+            id="team-user-name"
+            type="text"
+            variant="surface"
+            disabled={fieldsDisabled}
+            aria-invalid={errors.name ? true : undefined}
+            {...register('name', {
+              required: 'Name is required.',
+              validate: (value) => value.trim().length > 0 || 'Name is required.'
+            })}
+          />
+        </FormGroup>
         {errors.name && <p className="mt-1 text-[14px] text-danger">{errors.name.message}</p>}
       </div>
 
       <div>
-        <label htmlFor="team-user-role" className="mb-1 block text-[14px] font-medium text-text">
-          Role
-        </label>
-        <Select
-          id="team-user-role"
-          variant="surface"
-          disabled={fieldsDisabled}
-          {...register('role')}
-        >
-          <option value="user">user</option>
-          <option value="admin">admin</option>
-        </Select>
+        <FormGroup label="Role" htmlFor="team-user-role">
+          <Select
+            id="team-user-role"
+            variant="surface"
+            disabled={fieldsDisabled}
+            {...register('role')}
+          >
+            <option value="user">user</option>
+            <option value="admin">admin</option>
+          </Select>
+        </FormGroup>
       </div>
 
       {!isAdminRole && (
@@ -207,7 +206,7 @@ export function TeamUserForm(props: Props): JSX.Element {
         </>
       )}
 
-      <div className="flex items-center gap-2">
+      <FormGroup label="LLM access" htmlFor="team-user-llm-access" layout="checkbox">
         <Input
           id="team-user-llm-access"
           type="checkbox"
@@ -215,10 +214,7 @@ export function TeamUserForm(props: Props): JSX.Element {
           disabled={fieldsDisabled || isAdminRole}
           {...register('llmAccess')}
         />
-        <label htmlFor="team-user-llm-access" className="text-[14px] font-medium text-text">
-          LLM access
-        </label>
-      </div>
+      </FormGroup>
 
       <AccessListInput
         control={control}
@@ -231,35 +227,31 @@ export function TeamUserForm(props: Props): JSX.Element {
       />
 
       <div>
-        <label
-          htmlFor="team-user-llm-monthly-limit"
-          className="mb-1 block text-[14px] font-medium text-text"
-        >
-          LLM monthly token limit
-        </label>
-        <Input
-          id="team-user-llm-monthly-limit"
-          type="number"
-          min={1}
-          variant="surface"
-          disabled={fieldsDisabled || isAdminRole}
-          placeholder="Leave blank for unlimited"
-          {...register('llmMonthlyTokenLimitText', {
-            validate: (value) => {
-              const trimmed = value.trim();
-              if (trimmed.length === 0) {
+        <FormGroup label="LLM monthly token limit" htmlFor="team-user-llm-monthly-limit">
+          <Input
+            id="team-user-llm-monthly-limit"
+            type="number"
+            min={1}
+            variant="surface"
+            disabled={fieldsDisabled || isAdminRole}
+            placeholder="Leave blank for unlimited"
+            {...register('llmMonthlyTokenLimitText', {
+              validate: (value) => {
+                const trimmed = value.trim();
+                if (trimmed.length === 0) {
+                  return true;
+                }
+
+                const parsed = Number(trimmed);
+                if (!Number.isInteger(parsed) || parsed <= 0) {
+                  return 'Monthly token limit must be a positive integer.';
+                }
+
                 return true;
               }
-
-              const parsed = Number(trimmed);
-              if (!Number.isInteger(parsed) || parsed <= 0) {
-                return 'Monthly token limit must be a positive integer.';
-              }
-
-              return true;
-            }
-          })}
-        />
+            })}
+          />
+        </FormGroup>
         {errors.llmMonthlyTokenLimitText && (
           <p className="mt-1 text-[14px] text-danger">{errors.llmMonthlyTokenLimitText.message}</p>
         )}

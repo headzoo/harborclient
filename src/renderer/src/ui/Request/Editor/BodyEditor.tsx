@@ -3,6 +3,7 @@ import type { BodyType, Variable } from '#/shared/types';
 import { parseFormParts, serializeFormParts } from '#/shared/formData';
 import { parseUrlEncodedParts, serializeUrlEncodedParts } from '#/shared/urlencoded';
 import { Input } from '#/renderer/src/components/forms';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { CodeEditor } from '#/renderer/src/components/CodeEditor';
 import { FormDataEditor } from '#/renderer/src/components/FormDataEditor';
 import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
@@ -61,10 +62,7 @@ export function BodyEditor({
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
         <span className="text-[14px] text-muted">Body type</span>
         {BODY_TYPE_OPTIONS.map(({ value, label }) => (
-          <label
-            key={value}
-            className="inline-flex cursor-pointer items-center gap-1.5 text-[14px] text-text app-no-drag"
-          >
+          <FormGroup key={value} label={label} layout="radio">
             <Input
               type="radio"
               name="body-type"
@@ -72,8 +70,7 @@ export function BodyEditor({
               checked={bodyType === value}
               onChange={() => update({ body_type: value })}
             />
-            {label}
-          </label>
+          </FormGroup>
         ))}
       </div>
       {bodyType === 'urlencoded' && (

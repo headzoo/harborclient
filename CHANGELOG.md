@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(form): introduce FormGroup component for consistent form layout. (`9708ab0`)
 - feat(modal): enhance modal components with new structure and features. (`c4509d7`)
 - feat(teamhub): refactor team hubs functionality and introduce new components. (`4d3e233`)
 - refactor(editor): improve layout and structure of the request editor component. (`0018bd2`)

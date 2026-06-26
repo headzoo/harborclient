@@ -3,6 +3,7 @@ import { useId } from 'react';
 import type { ProviderOption } from '#/renderer/src/hooks/useProviders';
 import { providerOptionLabel } from '#/renderer/src/hooks/useProviders';
 import { Button } from '#/renderer/src/components/Button';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { Input, Select } from '#/renderer/src/components/forms';
 
 interface Props {
@@ -49,53 +50,51 @@ export function GeneralSection({
   return (
     <div className="mb-6 flex flex-col gap-4">
       <div>
-        <label className="mb-1 block text-[14px] text-muted" htmlFor={nameId}>
-          Name
-        </label>
-        <Input
-          id={nameId}
-          className="w-full"
-          type="text"
-          value={name}
-          onChange={(e) => onNameChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') onSave();
-            if (e.key === 'Escape') onClose();
-          }}
-        />
+        <FormGroup label="Name" htmlFor={nameId} labelTone="muted">
+          <Input
+            id={nameId}
+            className="w-full"
+            type="text"
+            value={name}
+            onChange={(e) => onNameChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') onSave();
+              if (e.key === 'Escape') onClose();
+            }}
+          />
+        </FormGroup>
       </div>
 
       <div>
-        <label className="mb-1 block text-[14px] text-muted" htmlFor={providerId}>
-          Provider
-        </label>
-        <Select
-          id={providerId}
-          className="w-full"
-          value={connectionId}
-          disabled={providerSelectDisabled}
-          onChange={(e) => onConnectionIdChange(e.target.value)}
-        >
-          {providers.map((provider) => (
-            <option key={provider.id} value={provider.id}>
-              {provider.name || 'Untitled'} ({providerOptionLabel(provider)})
-            </option>
-          ))}
-        </Select>
-        {providersLoading && <p className="mb-0 mt-1 text-[14px] text-muted">Loading…</p>}
-        {providersError && (
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <p className="mb-0 text-[14px] text-danger">{providersError}</p>
-            <Button type="button" variant="secondary" onClick={onProvidersRetry}>
-              Retry
-            </Button>
-          </div>
-        )}
-        {!providersLoading && !providersError && (
-          <p className="mb-0 mt-1 text-[14px] text-muted">
-            Changing the provider moves this collection and all of its requests.
-          </p>
-        )}
+        <FormGroup label="Provider" htmlFor={providerId} labelTone="muted">
+          <Select
+            id={providerId}
+            className="w-full"
+            value={connectionId}
+            disabled={providerSelectDisabled}
+            onChange={(e) => onConnectionIdChange(e.target.value)}
+          >
+            {providers.map((provider) => (
+              <option key={provider.id} value={provider.id}>
+                {provider.name || 'Untitled'} ({providerOptionLabel(provider)})
+              </option>
+            ))}
+          </Select>
+          {providersLoading && <p className="mb-0 mt-1 text-[14px] text-muted">Loading…</p>}
+          {providersError && (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <p className="mb-0 text-[14px] text-danger">{providersError}</p>
+              <Button type="button" variant="secondary" onClick={onProvidersRetry}>
+                Retry
+              </Button>
+            </div>
+          )}
+          {!providersLoading && !providersError && (
+            <p className="mb-0 mt-1 text-[14px] text-muted">
+              Changing the provider moves this collection and all of its requests.
+            </p>
+          )}
+        </FormGroup>
       </div>
     </div>
   );

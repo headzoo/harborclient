@@ -7,6 +7,7 @@ import type {
   TeamHubAdminRequestSummary
 } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { Modal } from '#/renderer/src/components/Modal';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
@@ -228,9 +229,11 @@ export function TeamCollectionContentsView({
       </PageHeader>
 
       <div className="mb-4 rounded-md border border-separator px-3 py-3">
-        <label
-          className="flex cursor-pointer items-center gap-2 text-[14px] text-text"
+        <FormGroup
+          label="Protect from user deletion"
           htmlFor="collection-deletion-lock"
+          layout="checkbox"
+          className="cursor-pointer"
         >
           <input
             id="collection-deletion-lock"
@@ -240,8 +243,7 @@ export function TeamCollectionContentsView({
             disabled={locking}
             onChange={(event) => void handleDeletionLockedChange(event.target.checked)}
           />
-          Protect from user deletion
-        </label>
+        </FormGroup>
         {settingsError ? (
           <p className="mb-0 mt-2 text-[14px] text-danger">{settingsError}</p>
         ) : null}

@@ -5,6 +5,7 @@ import { Button } from '#/renderer/src/components/Button';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { useConfirm } from '#/renderer/src/hooks/useConfirm';
 import { Input, Textarea } from '#/renderer/src/components/forms';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { SharingKeysCloseButton } from './SharingKeysCloseButton';
 
 interface Props {
@@ -132,24 +133,26 @@ export function TrustedKeysSection({ onClose }: Props): JSX.Element {
       </PageHeader>
 
       <div className="mb-4 rounded-md border border-separator p-3">
-        <label className="mb-1 block text-[14px] font-medium text-text">Label</label>
-        <Input
-          className="mb-3 w-full"
-          type="text"
-          placeholder="e.g. Alex"
-          value={label}
-          disabled={busy}
-          onChange={(event) => setLabel(event.target.value)}
-        />
+        <FormGroup label="Label">
+          <Input
+            className="mb-3 w-full"
+            type="text"
+            placeholder="e.g. Alex"
+            value={label}
+            disabled={busy}
+            onChange={(event) => setLabel(event.target.value)}
+          />
+        </FormGroup>
 
-        <label className="mb-1 block text-[14px] font-medium text-text">Public key (PEM)</label>
-        <Textarea
-          className="mb-3 min-h-24 w-full resize-y font-mono text-[14px]"
-          placeholder="-----BEGIN PUBLIC KEY-----"
-          value={publicKeyPem}
-          disabled={busy}
-          onChange={(event) => setPublicKeyPem(event.target.value)}
-        />
+        <FormGroup label="Public key (PEM)">
+          <Textarea
+            className="mb-3 min-h-24 w-full resize-y font-mono text-[14px]"
+            placeholder="-----BEGIN PUBLIC KEY-----"
+            value={publicKeyPem}
+            disabled={busy}
+            onChange={(event) => setPublicKeyPem(event.target.value)}
+          />
+        </FormGroup>
 
         <div className="flex flex-wrap gap-2">
           <Button

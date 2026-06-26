@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import type { HubApiTokenRecord, HubUserRecord, TeamHub } from '#/shared/types';
 import { Input, Select } from '#/renderer/src/components/forms';
 import { Button } from '#/renderer/src/components/Button';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { Modal } from '#/renderer/src/components/Modal';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
@@ -240,36 +241,34 @@ export function TeamTokensView({ hub, onBack }: Props): JSX.Element {
           closeDisabled={creating}
           disableEscape={creating}
         >
-          <label htmlFor="team-token-user" className="mb-1 block text-[14px] font-medium text-text">
-            User
-          </label>
-          <Select
-            id="team-token-user"
-            variant="surface"
-            className="mb-4"
-            value={createUserId}
-            disabled={creating}
-            onChange={(event) => setCreateUserId(event.target.value)}
-          >
-            {users.map((user: HubUserRecord) => (
-              <option key={user.id} value={user.id}>
-                {user.name || user.id}
-              </option>
-            ))}
-          </Select>
+          <FormGroup label="User" htmlFor="team-token-user">
+            <Select
+              id="team-token-user"
+              variant="surface"
+              className="mb-4"
+              value={createUserId}
+              disabled={creating}
+              onChange={(event) => setCreateUserId(event.target.value)}
+            >
+              {users.map((user: HubUserRecord) => (
+                <option key={user.id} value={user.id}>
+                  {user.name || user.id}
+                </option>
+              ))}
+            </Select>
+          </FormGroup>
 
-          <label htmlFor="team-token-name" className="mb-1 block text-[14px] font-medium text-text">
-            Token name
-          </label>
-          <Input
-            id="team-token-name"
-            type="text"
-            variant="surface"
-            value={createTokenName}
-            disabled={creating}
-            autoComplete="off"
-            onChange={(event) => setCreateTokenName(event.target.value)}
-          />
+          <FormGroup label="Token name" htmlFor="team-token-name">
+            <Input
+              id="team-token-name"
+              type="text"
+              variant="surface"
+              value={createTokenName}
+              disabled={creating}
+              autoComplete="off"
+              onChange={(event) => setCreateTokenName(event.target.value)}
+            />
+          </FormGroup>
 
           {actionError && <p className="mt-4 text-[14px] text-danger">{actionError}</p>}
 
@@ -311,21 +310,17 @@ export function TeamTokensView({ hub, onBack }: Props): JSX.Element {
           closeDisabled={deleting}
           disableEscape={deleting}
         >
-          <label
-            htmlFor="team-token-delete-confirm"
-            className="mb-1 block text-[14px] font-medium text-text"
-          >
-            Confirmation
-          </label>
-          <Input
-            id="team-token-delete-confirm"
-            type="text"
-            variant="surface"
-            value={deleteConfirmText}
-            disabled={deleting}
-            autoComplete="off"
-            onChange={(event) => setDeleteConfirmText(event.target.value)}
-          />
+          <FormGroup label="Confirmation" htmlFor="team-token-delete-confirm">
+            <Input
+              id="team-token-delete-confirm"
+              type="text"
+              variant="surface"
+              value={deleteConfirmText}
+              disabled={deleting}
+              autoComplete="off"
+              onChange={(event) => setDeleteConfirmText(event.target.value)}
+            />
+          </FormGroup>
 
           {actionError && <p className="mt-4 text-[14px] text-danger">{actionError}</p>}
 

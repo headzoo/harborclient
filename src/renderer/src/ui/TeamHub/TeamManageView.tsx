@@ -8,6 +8,7 @@ import type {
   UpdateHubUserInput
 } from '#/shared/types';
 import { Input } from '#/renderer/src/components/forms';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { Button } from '#/renderer/src/components/Button';
 import { Modal } from '#/renderer/src/components/Modal';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
@@ -364,21 +365,17 @@ export function TeamManageView({ hub, onBack }: Props): JSX.Element {
           closeDisabled={deleting}
           disableEscape={deleting}
         >
-          <label
-            htmlFor="team-user-delete-confirm"
-            className="mb-1 block text-[14px] font-medium text-text"
-          >
-            Confirmation
-          </label>
-          <Input
-            id="team-user-delete-confirm"
-            type="text"
-            variant="surface"
-            value={deleteConfirmText}
-            disabled={deleting}
-            autoComplete="off"
-            onChange={(event) => setDeleteConfirmText(event.target.value)}
-          />
+          <FormGroup label="Confirmation" htmlFor="team-user-delete-confirm">
+            <Input
+              id="team-user-delete-confirm"
+              type="text"
+              variant="surface"
+              value={deleteConfirmText}
+              disabled={deleting}
+              autoComplete="off"
+              onChange={(event) => setDeleteConfirmText(event.target.value)}
+            />
+          </FormGroup>
 
           {actionError && <p className="mt-4 text-[14px] text-danger">{actionError}</p>}
 

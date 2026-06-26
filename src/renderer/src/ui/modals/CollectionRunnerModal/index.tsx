@@ -17,6 +17,7 @@ import {
 } from '#/renderer/src/store/selectors';
 import { runCollectionRequests } from '#/renderer/src/store/thunks/collectionRunner';
 import { Button } from '#/renderer/src/components/Button';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { Input, Select } from '#/renderer/src/components/forms';
 import { Modal } from '#/renderer/src/components/Modal';
 
@@ -160,8 +161,7 @@ export function CollectionRunnerModal(): JSX.Element | null {
               : `${orderedRequests.length} request${orderedRequests.length === 1 ? '' : 's'} will run in sidebar order.`}
           </p>
 
-          <label className="flex flex-col gap-1">
-            <span className="text-[14px] font-medium text-text">Delay between requests (ms)</span>
+          <FormGroup label="Delay between requests (ms)">
             <Input
               id="collection-runner-delay"
               type="number"
@@ -175,9 +175,9 @@ export function CollectionRunnerModal(): JSX.Element | null {
                 )
               }
             />
-          </label>
+          </FormGroup>
 
-          <label className="flex items-center gap-2">
+          <FormGroup label="Stop on failure" layout="checkbox">
             <Input
               id="collection-runner-stop-on-failure"
               type="checkbox"
@@ -186,12 +186,11 @@ export function CollectionRunnerModal(): JSX.Element | null {
                 dispatch(setCollectionRunnerConfig({ stopOnFailure: event.target.checked }))
               }
             />
-            <span className="text-[14px] font-medium text-text">Stop on failure</span>
-          </label>
+          </FormGroup>
 
           <fieldset className="m-0 space-y-2 border-none p-0">
             <legend className="mb-2 text-[14px] font-medium text-text">Environment</legend>
-            <label className="flex items-center gap-2">
+            <FormGroup label="Use active environment" layout="checkbox">
               <Input
                 type="radio"
                 name="collection-runner-environment-mode"
@@ -202,9 +201,8 @@ export function CollectionRunnerModal(): JSX.Element | null {
                   )
                 }
               />
-              <span className="text-[14px] text-text">Use active environment</span>
-            </label>
-            <label className="flex items-center gap-2">
+            </FormGroup>
+            <FormGroup label="Override environment" layout="checkbox">
               <Input
                 type="radio"
                 name="collection-runner-environment-mode"
@@ -218,8 +216,7 @@ export function CollectionRunnerModal(): JSX.Element | null {
                   )
                 }
               />
-              <span className="text-[14px] text-text">Override environment</span>
-            </label>
+            </FormGroup>
             {runner.environmentMode === 'override' && (
               <Select
                 id="collection-runner-environment"

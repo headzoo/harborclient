@@ -2,6 +2,7 @@ import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { GeneralSettings, ProxySettings } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
+import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { Input, Select } from '#/renderer/src/components/forms';
 import {
@@ -88,18 +89,16 @@ export function ProxySection({ onClose }: Props): JSX.Element {
         <SettingsCloseButton onClose={onClose} />
       </PageHeader>
       <div className="mb-6 flex flex-col gap-6">
-        <label className="flex items-center gap-2">
+        <FormGroup label="Use a proxy" layout="checkbox">
           <Input
             type="checkbox"
             checked={proxy.enabled}
             disabled={fieldsDisabled}
             onChange={(event) => handleProxyFieldChange('enabled', event.target.checked)}
           />
-          <span className="text-[14px] font-medium text-text">Use a proxy</span>
-        </label>
+        </FormGroup>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-[14px] font-medium text-text">Protocol</span>
+        <FormGroup label="Protocol">
           <Select
             value={proxy.protocol}
             disabled={proxyFieldsDisabled}
@@ -113,10 +112,9 @@ export function ProxySection({ onClose }: Props): JSX.Element {
               </option>
             ))}
           </Select>
-        </label>
+        </FormGroup>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-[14px] font-medium text-text">Host</span>
+        <FormGroup label="Host">
           <Input
             type="text"
             value={proxy.host}
@@ -124,10 +122,9 @@ export function ProxySection({ onClose }: Props): JSX.Element {
             placeholder="proxy.example.com"
             onChange={(event) => handleProxyFieldChange('host', event.target.value)}
           />
-        </label>
+        </FormGroup>
 
-        <label className="flex flex-col gap-1">
-          <span className="text-[14px] font-medium text-text">Port</span>
+        <FormGroup label="Port">
           <Input
             type="number"
             min={1}
@@ -136,22 +133,20 @@ export function ProxySection({ onClose }: Props): JSX.Element {
             disabled={proxyFieldsDisabled}
             onChange={(event) => handleProxyFieldChange('port', Number(event.target.value))}
           />
-        </label>
+        </FormGroup>
 
-        <label className="flex items-center gap-2">
+        <FormGroup label="Use basic authentication" layout="checkbox">
           <Input
             type="checkbox"
             checked={proxy.authEnabled}
             disabled={proxyFieldsDisabled}
             onChange={(event) => handleProxyFieldChange('authEnabled', event.target.checked)}
           />
-          <span className="text-[14px] font-medium text-text">Use basic authentication</span>
-        </label>
+        </FormGroup>
 
         {proxy.authEnabled && (
           <>
-            <label className="flex flex-col gap-1">
-              <span className="text-[14px] font-medium text-text">Username</span>
+            <FormGroup label="Username">
               <Input
                 type="text"
                 value={proxy.username}
@@ -159,10 +154,9 @@ export function ProxySection({ onClose }: Props): JSX.Element {
                 autoComplete="off"
                 onChange={(event) => handleProxyFieldChange('username', event.target.value)}
               />
-            </label>
+            </FormGroup>
 
-            <label className="flex flex-col gap-1">
-              <span className="text-[14px] font-medium text-text">Password</span>
+            <FormGroup label="Password">
               <Input
                 type="password"
                 value={proxy.password}
@@ -170,7 +164,7 @@ export function ProxySection({ onClose }: Props): JSX.Element {
                 autoComplete="off"
                 onChange={(event) => handleProxyFieldChange('password', event.target.value)}
               />
-            </label>
+            </FormGroup>
           </>
         )}
 
