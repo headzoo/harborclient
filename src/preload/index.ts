@@ -49,6 +49,7 @@ import type {
   SaveTextFileResult,
   TeamHub,
   TeamHubSessionScanResult,
+  ReloadConfigResponse,
   HubUserRecord,
   TeamHubAdminResourceOptions,
   UpdateHubUserInput,
@@ -700,6 +701,15 @@ function deleteTeamHub(id: string): Promise<TeamHub[]> {
  */
 function scanTeamHubSessions(): Promise<TeamHubSessionScanResult[]> {
   return ipcRenderer.invoke('teamHubs:scanSessions');
+}
+
+/**
+ * Re-reads reloadable config sections on a Team Hub using an admin token.
+ *
+ * @param hubId - Team hub connection id with an admin token.
+ */
+function reloadTeamHubConfig(hubId: string): Promise<ReloadConfigResponse> {
+  return ipcRenderer.invoke('teamHubs:reloadConfig', hubId);
 }
 
 /**
@@ -1613,6 +1623,7 @@ const api: Api = {
   saveTeamHub,
   deleteTeamHub,
   scanTeamHubSessions,
+  reloadTeamHubConfig,
   listTeamHubUsers,
   updateTeamHubUser,
   deleteTeamHubUser,

@@ -22,7 +22,8 @@ import {
   createAdminUserResponseSchema,
   createdApiTokenResponseSchema,
   listAdminTokensResponseSchema,
-  hubUserRecordSchema
+  hubUserRecordSchema,
+  reloadConfigResponseSchema
 } from '#/main/teamHub/schemas';
 import type {
   AdminResourceOption,
@@ -52,7 +53,8 @@ import type {
   UpdateCollectionInput,
   UpdateEnvironmentInput,
   UpdateHubUserInput,
-  UpdateRequestInput
+  UpdateRequestInput,
+  ReloadConfigResponse
 } from '#/main/teamHub/types';
 import type { ChatStepMessage, ChatStepResult, HubLlmModel } from '#/shared/types';
 
@@ -387,6 +389,32 @@ export class TeamHubClient implements ITeamHubClient {
   }
 
   /**
+   * Returns whether the Team Hub server has LLM support configured.
+   *
+   * Uses the admin models route for management tokens and the user route otherwise.
+   * A 503 response means LLM is not configured; any other successful response means
+   * configured.
+   *
+   * @param managementApi - When true, probes `GET /admin/llm/models`.
+   */
+  async probeLlmServiceEnabled(managementApi: boolean): Promise<boolean> {
+    const path = managementApi ? '/admin/llm/models' : '/llm/models';
+
+    try {
+      await this.request('GET', path, {
+        schema: listHubLlmModelsResponseSchema
+      });
+      return true;
+    } catch (error) {
+      if (error instanceof TeamHubClientError && error.status === 503) {
+        return false;
+      }
+
+      throw error;
+    }
+  }
+
+  /**
    * Loads collection, environment, and LLM model options for admin user forms.
    */
   async listAdminResourceOptions(): Promise<TeamHubAdminResourceOptions> {
@@ -397,6 +425,68 @@ export class TeamHubClient implements ITeamHubClient {
     ]);
 
     return { collections, environments, models };
+  }
+
+  /**
+   * Re-reads server.yaml on the Team Hub and applies reloadable config sections.
+   *
+   * Returns parsed bodies for both `200` and `400` responses. Only auth and
+   * transport failures throw {@link TeamHubClientError}.
+   */
+  async reloadConfig(): Promise<ReloadConfigResponse> {
+    const method = 'POST';
+    const path = '/admin/config/reload';
+
+    let response: Response;
+    try {
+      response = await fetch(this.buildUrl(path), {
+        method,
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${this.token}`
+        },
+        signal: AbortSignal.timeout(this.requestTimeoutMs)
+      });
+    } catch (err) {
+      const message =
+        err instanceof Error && err.name === 'TimeoutError'
+          ? `Request timed out after ${this.requestTimeoutMs} ms`
+          : err instanceof Error
+            ? err.message
+            : 'Unknown network error';
+      throw new TeamHubClientError(message, { status: 0, method, path });
+    }
+
+    if (response.status !== 200 && response.status !== 400) {
+      const message = await this.parseErrorMessage(response);
+      throw new TeamHubClientError(message, {
+        status: response.status,
+        method,
+        path
+      });
+    }
+
+    let json: unknown;
+    try {
+      json = await response.json();
+    } catch {
+      throw new TeamHubClientError('Response body is not valid JSON', {
+        status: response.status,
+        method,
+        path
+      });
+    }
+
+    const parsed = reloadConfigResponseSchema.safeParse(json);
+    if (!parsed.success) {
+      throw new TeamHubClientError('Response body failed validation', {
+        status: response.status,
+        method,
+        path
+      });
+    }
+
+    return parsed.data;
   }
 
   /**

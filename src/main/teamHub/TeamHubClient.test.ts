@@ -398,6 +398,80 @@ describe('TeamHubClient', () => {
     });
   });
 
+  describe('reloadConfig', () => {
+    it('sends bearer auth and parses a successful reload report', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            sections: [
+              { section: 'db', status: 'unchanged' },
+              { section: 'redis', status: 'unchanged' },
+              { section: 'llm', status: 'reloaded' },
+              { section: 'plugins', status: 'reloaded' },
+              { section: 'server', status: 'unchanged' }
+            ]
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        )
+      );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      const result = await client.reloadConfig();
+
+      expect(result.sections).toHaveLength(5);
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://127.0.0.1:8788/admin/config/reload',
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({
+            Authorization: 'Bearer hbk_test_token'
+          })
+        })
+      );
+    });
+
+    it('returns fatal reload errors from 400 responses without throwing', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            sections: [],
+            fatalError: 'Config file not found: /missing/server.yaml'
+          }),
+          {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        )
+      );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      const result = await client.reloadConfig();
+
+      expect(result).toEqual({
+        sections: [],
+        fatalError: 'Config file not found: /missing/server.yaml'
+      });
+    });
+
+    it('throws for forbidden responses', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: 'Forbidden' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      await expect(client.reloadConfig()).rejects.toBeInstanceOf(TeamHubClientError);
+    });
+  });
+
   describe('listAdminResourceOptions', () => {
     it('loads collections, environments, and models in parallel', async () => {
       const fetchMock = vi

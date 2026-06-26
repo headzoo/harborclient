@@ -1,10 +1,13 @@
 import { useEffect, useState, type JSX } from 'react';
-import type { TeamHub } from '#/shared/types';
+import toast from 'react-hot-toast';
+import type { TeamHub, TeamHubServiceFlags } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
-import { FaIcon } from '#/renderer/src/components/FaIcon';
-import { faCircleCheck } from '#/renderer/src/fontawesome';
+import { useAppDispatch } from '#/renderer/src/store/hooks';
+import { formatIpcErrorMessage, showAlert } from '#/renderer/src/ui/modals/dialogHelpers';
 import { createBlankTeamHub, validateTeamHubForm } from './constants';
 import { TeamHubForm } from './TeamHubForm';
+import { TeamHubServiceBadges } from './TeamHubServiceBadges';
+import { getReloadConfigAlertMessage } from './teamHubReloadHelpers';
 
 interface Props {
   /**
@@ -28,14 +31,14 @@ interface Props {
   reload: () => void;
 
   /**
-   * When true, shows the Manage team button.
-   */
-  showManageTeam: boolean;
-
-  /**
    * Hub ids whose tokens report management API capabilities.
    */
   adminHubIds: Set<string>;
+
+  /**
+   * Hub server service flags keyed by hub connection id.
+   */
+  serviceFlagsByHubId: Map<string, TeamHubServiceFlags>;
 
   /**
    * True while admin capability scanning is in flight.
@@ -43,14 +46,19 @@ interface Props {
   scanning: boolean;
 
   /**
-   * Opens the manage users view.
+   * Re-runs the hub service scan after config reload.
    */
-  onManageUsers: () => void;
+  onRescanServices: () => void;
 
   /**
-   * Opens the manage tokens view.
+   * Opens user management for an admin hub connection.
    */
-  onManageTokens: () => void;
+  onManageUsers: (hub: TeamHub) => void;
+
+  /**
+   * Opens token management for an admin hub connection.
+   */
+  onManageTokens: (hub: TeamHub) => void;
 }
 
 /**
@@ -61,14 +69,17 @@ export function TeamHubList({
   loading,
   bootstrapError,
   reload,
-  showManageTeam,
   adminHubIds,
+  serviceFlagsByHubId,
   scanning,
+  onRescanServices,
   onManageUsers,
   onManageTokens
 }: Props): JSX.Element {
+  const dispatch = useAppDispatch();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [reloadingHubId, setReloadingHubId] = useState<string | null>(null);
   const [editingHub, setEditingHub] = useState<TeamHub | null>(null);
   const [deletingHub, setDeletingHub] = useState<TeamHub | null>(null);
   const [isNew, setIsNew] = useState(false);
@@ -168,6 +179,33 @@ export function TeamHubList({
   };
 
   /**
+   * Reloads reloadable config sections on an admin-token hub connection.
+   *
+   * @param hub - Admin team hub connection to reload.
+   */
+  const handleReload = async (hub: TeamHub): Promise<void> => {
+    setError(null);
+    setSaved(false);
+    setReloadingHubId(hub.id);
+
+    try {
+      const result = await window.api.reloadTeamHubConfig(hub.id);
+      const alertMessage = getReloadConfigAlertMessage(result);
+      if (alertMessage) {
+        showAlert(dispatch, alertMessage, 'Config reload failed', { icon: 'warning' });
+        return;
+      }
+
+      toast.success('Config reloaded.');
+      onRescanServices();
+    } catch (err) {
+      setError(formatIpcErrorMessage(err, 'Failed to reload team hub config.'));
+    } finally {
+      setReloadingHubId(null);
+    }
+  };
+
+  /**
    * Deletes a team hub by id.
    *
    * @param id - Team hub id to delete.
@@ -193,22 +231,12 @@ export function TeamHubList({
       <div>
         <div className="mb-4 flex items-end justify-between gap-4">
           <div className="min-w-0">
-            <h2 className="m-0 mb-1 text-[14px] font-medium text-text">Team hubs</h2>
+            <h2 className="m-0 mb-1 text-[14px] font-medium text-text">Team Hub</h2>
             <p className="m-0 text-[14px] text-muted">
               Connect to HarborClient Team Hub instances for shared collections and environments.
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            {showManageTeam && (
-              <>
-                <Button type="button" variant="secondary" onClick={onManageUsers}>
-                  Manage users
-                </Button>
-                <Button type="button" variant="secondary" onClick={onManageTokens}>
-                  Manage tokens
-                </Button>
-              </>
-            )}
             <Button
               type="button"
               className="whitespace-nowrap"
@@ -243,18 +271,40 @@ export function TeamHubList({
                     <span className="truncate text-[14px] font-medium text-text">
                       {hub.name || 'Untitled'}
                     </span>
-                    {!scanning && adminHubIds.has(hub.id) && (
-                      <FaIcon
-                        icon={faCircleCheck}
-                        className="h-3.5 w-3.5 shrink-0 text-success"
-                        title="Admin token"
-                      />
-                    )}
                   </div>
                   <span className="truncate text-[14px] text-muted">{hub.baseUrl}</span>
+                  <TeamHubServiceBadges
+                    services={
+                      serviceFlagsByHubId.get(hub.id) ?? {
+                        storage: false,
+                        llm: false,
+                        pluginCatalog: false,
+                        admin: false
+                      }
+                    }
+                    scanning={scanning}
+                  />
                 </div>
 
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                  {!scanning && adminHubIds.has(hub.id) && (
+                    <>
+                      <Button type="button" variant="secondary" onClick={() => onManageUsers(hub)}>
+                        Manage users
+                      </Button>
+                      <Button type="button" variant="secondary" onClick={() => onManageTokens(hub)}>
+                        Manage tokens
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        disabled={reloadingHubId === hub.id}
+                        onClick={() => void handleReload(hub)}
+                      >
+                        {reloadingHubId === hub.id ? 'Reloading…' : 'Reload'}
+                      </Button>
+                    </>
+                  )}
                   <Button type="button" variant="secondary" onClick={() => handleEdit(hub)}>
                     Edit
                   </Button>

@@ -25,7 +25,8 @@ import type {
   CreatedHubUser,
   CreateHubTokenInput,
   CreatedHubToken,
-  UpdateRequestInput
+  UpdateRequestInput,
+  ReloadConfigResponse
 } from '#/main/teamHub/types';
 import type { HubLlmModel } from '#/shared/types';
 
@@ -109,6 +110,13 @@ export interface ITeamHubClient {
   listAdminLlmModels(): Promise<HubLlmModel[]>;
 
   /**
+   * Returns whether the Team Hub server has LLM support configured.
+   *
+   * @param managementApi - When true, probes `GET /admin/llm/models`.
+   */
+  probeLlmServiceEnabled(managementApi: boolean): Promise<boolean>;
+
+  /**
    * Returns plugin catalog and trusted-publisher URLs configured on this Team Hub.
    */
   getPluginSources(): Promise<PluginSourcesResponse>;
@@ -117,6 +125,14 @@ export interface ITeamHubClient {
    * Loads collection, environment, and LLM model options for admin user forms.
    */
   listAdminResourceOptions(): Promise<TeamHubAdminResourceOptions>;
+
+  /**
+   * Re-reads server.yaml on the Team Hub and applies reloadable config sections.
+   *
+   * Requires an admin-role bearer token. Returns a per-section report. A `400`
+   * response with `fatalError` is returned as a normal result, not thrown.
+   */
+  reloadConfig(): Promise<ReloadConfigResponse>;
 
   /**
    * Lists all collections visible to the authenticated token.

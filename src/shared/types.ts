@@ -1802,13 +1802,43 @@ export interface TeamHubPluginSourcesView {
 }
 
 /**
- * Result of probing a team hub token via `GET /auth/session`.
+ * Hub server services discovered during a team hub scan.
+ */
+export interface TeamHubServiceFlags {
+  /**
+   * When true, the hub server exposes collection storage routes.
+   */
+  storage: boolean;
+
+  /**
+   * When true, the hub server has LLM proxy support configured.
+   */
+  llm: boolean;
+
+  /**
+   * When true, the hub server publishes plugin catalog or trusted URLs.
+   */
+  pluginCatalog: boolean;
+
+  /**
+   * When true, this connection uses an admin token with management API access.
+   */
+  admin: boolean;
+}
+
+/**
+ * Result of probing a team hub connection for server services and token capabilities.
  */
 export interface TeamHubSessionScanResult {
   /**
    * Team hub connection id that was scanned.
    */
   hubId: string;
+
+  /**
+   * Hub server services discovered for this connection.
+   */
+  services: TeamHubServiceFlags;
 
   /**
    * When true, the hub token has management API capabilities.
@@ -1909,6 +1939,51 @@ export interface TeamHubAdminResourceOptions {
    * All hub-offered LLM models available when assigning model access.
    */
   models: HubLlmModel[];
+}
+
+/**
+ * Config section name reported by `POST /admin/config/reload`.
+ */
+export type ReloadConfigSectionName = 'db' | 'redis' | 'llm' | 'plugins' | 'server';
+
+/**
+ * Outcome for a single config section during reload.
+ */
+export type ReloadConfigSectionStatus = 'reloaded' | 'unchanged' | 'failed' | 'restart-required';
+
+/**
+ * Per-section reload outcome from `POST /admin/config/reload`.
+ */
+export interface ReloadConfigSectionResult {
+  /**
+   * Config section that was evaluated.
+   */
+  section: ReloadConfigSectionName;
+
+  /**
+   * Whether the section was applied, skipped, failed, or needs a process restart.
+   */
+  status: ReloadConfigSectionStatus;
+
+  /**
+   * Human-readable error when status is `failed` or `restart-required`.
+   */
+  error?: string;
+}
+
+/**
+ * Response body from `POST /admin/config/reload`.
+ */
+export interface ReloadConfigResponse {
+  /**
+   * Per-section reload outcomes when the config file parsed successfully.
+   */
+  sections: ReloadConfigSectionResult[];
+
+  /**
+   * When set, the config file could not be read or parsed; no sections were changed.
+   */
+  fatalError?: string;
 }
 
 /**
@@ -2784,6 +2859,13 @@ export interface Api {
    * @param hubId - Team hub connection id with an admin token.
    */
   listTeamHubAdminResourceOptions: (hubId: string) => Promise<TeamHubAdminResourceOptions>;
+
+  /**
+   * Re-reads reloadable config sections from the Team Hub server.
+   *
+   * @param hubId - Team hub connection id with an admin token.
+   */
+  reloadTeamHubConfig: (hubId: string) => Promise<ReloadConfigResponse>;
 
   /**
    * Re-reads collection data from a single provider (database or team hub).

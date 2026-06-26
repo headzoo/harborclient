@@ -28,14 +28,23 @@ Each token belongs to a Team Hub account with a **role** that determines what Ha
 
 | Token role         | HarborClient behavior                                                    |
 | ------------------ | ------------------------------------------------------------------------ |
-| **user** (default) | Syncs collections; no **Manage team** access                             |
-| **admin**          | Enables **Manage team**; does **not** sync collections (management-only) |
+| **user** (default) | Syncs collections; no admin management actions on the hub row            |
+| **admin**          | Shows **Manage users**, **Manage tokens**, and **Reload** on the hub row; does **not** sync collections (management-only) |
 
 HarborClient verifies connectivity when a hub is saved or mounted at launch. If the team hub is unreachable or the token is invalid, the hub is skipped and a warning is logged — other providers continue to work.
 
 ## Managing team hubs
 
-Open **File → Team Hub** to manage hub connections. The page lists every configured hub with its display name and URL.
+Open **File → Team Hub** to manage hub connections. The page lists every configured hub with its display name, URL, and service badges.
+
+Each hub row shows service badges indicating what the hub server provides for that connection. **Storage**, **LLM**, and **Plugin catalog** appear on every row; active badges use green styling and unavailable services appear muted. An **Admin** badge appears only on connections that use an admin token. HarborClient probes the hub after the list loads, so badges may appear muted briefly while scanning.
+
+| Badge              | Shown when | Active when                                                                 |
+| ------------------ | ---------- | --------------------------------------------------------------------------- |
+| **Storage**        | Always     | The hub is reachable and exposes collection storage                         |
+| **LLM**            | Always     | The hub has LLM proxy support configured in `server.yaml`                   |
+| **Plugin catalog** | Always     | The hub publishes plugin marketplace or trusted-publisher URLs              |
+| **Admin**          | Admin token connections only | This connection uses an admin token with management API access |
 
 ### Add a team hub
 
@@ -87,10 +96,19 @@ Admin tokens use the same **API token** field as regular hub connections — the
 | 3    | Enter a **Name**, **Team hub URL**, and paste the admin token into **API token** |
 | 4    | Click **Save**                                                                   |
 
-After save, HarborClient probes each hub with `GET /auth/session`. When the token reports `managementApi` capability:
+After save, HarborClient probes each hub. Admin-token connections show row actions for team administration:
 
-- The hub row shows a green check icon with tooltip **Admin token**
-- **Manage team** appears in the page header (when at least one admin hub is configured)
+- **Manage users** — list, create, edit, and delete user accounts on that hub
+- **Manage tokens** — list, create, and delete API bearer tokens for users on that hub
+- **Reload** — re-read `server.yaml` on the hub server (see [Reload hub config](#reload-hub-config))
+
+The **Admin** service badge appears on the same connections. User-token rows do not show these actions.
+
+### Reload hub config
+
+Admin-token connections show a **Reload** button on the hub row. Click it to call `POST /admin/config/reload` on the Team Hub server, which re-reads `server.yaml` and applies reloadable sections (database, Redis, LLM, plugins, and server settings).
+
+HarborClient refreshes cached plugin sources and re-scans service badges after a successful reload. If the config file cannot be parsed or individual sections fail, HarborClient shows an error dialog with the server report.
 
 ### Admin tokens and collections
 
@@ -100,18 +118,19 @@ Admin tokens cannot read or write collection data through HarborClient. The team
 
 ## Managing team users
 
-When at least one configured hub has an admin token, **File → Team Hub** shows a **Manage team** button. Use it to list, edit, and delete user accounts on the selected Team Hub server.
+Admin-token hub rows include **Manage users**. Click it to list, edit, and delete user accounts on that Team Hub connection. The page title and view header show the hub name and URL so it is clear which server you are managing.
 
-![Manage team](images/screenshots/team-hubs-users.png)
+![Manage users](images/screenshots/team-hubs-users.png)
 
-| Step | Action                                                                             |
-| ---- | ---------------------------------------------------------------------------------- |
-| 1    | Open **File → Team Hub**                                                           |
-| 2    | Click **Manage team**                                                              |
-| 3    | If multiple admin hubs exist, choose the target hub from the **Team hub** dropdown |
-| 4    | Review the user list (name, role badge, account id)                                |
+| Step | Action                                                        |
+| ---- | ------------------------------------------------------------- |
+| 1    | Open **File → Team Hub**                                      |
+| 2    | Click **Manage users** on the target admin hub row            |
+| 3    | Review the user list (name, role badge, account id)         |
 
 Click **Back** to return to the hub connection list.
+
+Use **Manage tokens** on the same row to create or revoke API bearer tokens for users on that hub.
 
 ### Edit a user
 
@@ -221,7 +240,7 @@ When your HarborClient Team Hub administrator enables LLM support, HarborClient 
 | ------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
 | **Model picker**   | Hub models are labeled **Team Hub** and preferred over personal keys for the same model id                                    |
 | **Tool calling**   | HarborClient still executes tools locally against your open requests and collections                                          |
-| **Access control** | Administrators grant LLM access and monthly token limits per user through **Manage team** in HarborClient or the team hub CLI |
+| **Access control** | Administrators grant LLM access and monthly token limits per user through **Manage users** in HarborClient or the team hub CLI |
 | **Fallback**       | Personal API keys in **Settings → AI** are used only for models your hubs do not offer                                        |
 
 See the [AI assistant](/ai) guide and the team hub [LLM proxy documentation](https://harborclient.github.io/team-hub/llm.html).

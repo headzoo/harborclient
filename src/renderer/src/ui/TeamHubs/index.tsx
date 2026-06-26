@@ -1,8 +1,9 @@
-import { useMemo, useState, type JSX } from 'react';
+import { useState, type JSX } from 'react';
+import type { TeamHub } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faXmark } from '#/renderer/src/fontawesome';
-import { useTeamHubAdminScan } from '#/renderer/src/hooks/useTeamHubAdminScan';
+import { useTeamHubServiceScan } from '#/renderer/src/hooks/useTeamHubServiceScan';
 import { useTeamHubs } from '#/renderer/src/hooks/useTeamHubs';
 import { TeamHubList } from './TeamHubList';
 import { TeamManageView } from './TeamManageView';
@@ -18,29 +19,70 @@ interface Props {
 }
 
 /**
+ * Returns the page title for the active Team Hub view.
+ *
+ * @param view - Active sub-view within Team Hub management.
+ * @param hub - Admin hub connection when managing users or tokens.
+ */
+function getPageTitle(view: TeamHubsView, hub: TeamHub | null): string {
+  if (view === 'manageUsers' && hub) {
+    return `Manage users — ${hub.name || hub.baseUrl}`;
+  }
+
+  if (view === 'manageTokens' && hub) {
+    return `Manage tokens — ${hub.name || hub.baseUrl}`;
+  }
+
+  return 'Team Hub';
+}
+
+/**
  * Full-area team hub management with list, add, edit, delete, and team admin flows.
  */
 export function TeamHubs({ onClose }: Props): JSX.Element {
   const [view, setView] = useState<TeamHubsView>('list');
+  const [activeAdminHub, setActiveAdminHub] = useState<TeamHub | null>(null);
   const { teamHubs, loading, error: bootstrapError, reload, reloadToken } = useTeamHubs();
-  const { adminHubIds, scanning } = useTeamHubAdminScan(
+  const { serviceFlagsByHubId, adminHubIds, scanning, rescanServices } = useTeamHubServiceScan(
     teamHubs,
     reloadToken,
     !loading && bootstrapError == null
   );
-  const adminHubs = useMemo(
-    () => teamHubs.filter((hub) => adminHubIds.has(hub.id)),
-    [adminHubIds, teamHubs]
-  );
-  const showManageTeam = !scanning && adminHubIds.size > 0;
 
-  const title =
-    view === 'list' ? 'Team Hubs' : view === 'manageUsers' ? 'Manage users' : 'Manage tokens';
+  /**
+   * Returns to the hub list and clears the active admin connection.
+   */
+  const handleBackToList = (): void => {
+    setActiveAdminHub(null);
+    setView('list');
+  };
+
+  /**
+   * Opens user management for the selected admin hub connection.
+   *
+   * @param hub - Admin team hub connection to manage.
+   */
+  const handleManageUsers = (hub: TeamHub): void => {
+    setActiveAdminHub(hub);
+    setView('manageUsers');
+  };
+
+  /**
+   * Opens token management for the selected admin hub connection.
+   *
+   * @param hub - Admin team hub connection to manage.
+   */
+  const handleManageTokens = (hub: TeamHub): void => {
+    setActiveAdminHub(hub);
+    setView('manageTokens');
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-center justify-between gap-4 border-b border-separator px-6 py-4">
-        <h1 className="m-0 text-[15px] font-semibold text-text">{title}</h1>
+        <h1 className="m-0 truncate text-[15px] font-semibold text-text">
+          {getPageTitle(view, activeAdminHub)}
+        </h1>
         <Button
           type="button"
           variant="icon"
@@ -60,17 +102,18 @@ export function TeamHubs({ onClose }: Props): JSX.Element {
             loading={loading}
             bootstrapError={bootstrapError}
             reload={reload}
-            showManageTeam={showManageTeam}
             adminHubIds={adminHubIds}
+            serviceFlagsByHubId={serviceFlagsByHubId}
             scanning={scanning}
-            onManageUsers={() => setView('manageUsers')}
-            onManageTokens={() => setView('manageTokens')}
+            onRescanServices={rescanServices}
+            onManageUsers={handleManageUsers}
+            onManageTokens={handleManageTokens}
           />
-        ) : view === 'manageUsers' ? (
-          <TeamManageView adminHubs={adminHubs} onBack={() => setView('list')} />
-        ) : (
-          <TeamTokensView adminHubs={adminHubs} onBack={() => setView('list')} />
-        )}
+        ) : view === 'manageUsers' && activeAdminHub ? (
+          <TeamManageView hub={activeAdminHub} onBack={handleBackToList} />
+        ) : view === 'manageTokens' && activeAdminHub ? (
+          <TeamTokensView hub={activeAdminHub} onBack={handleBackToList} />
+        ) : null}
       </div>
     </div>
   );

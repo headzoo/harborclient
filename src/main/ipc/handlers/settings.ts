@@ -249,6 +249,24 @@ export function registerSettingsHandlers(db: IStorage): void {
     return client.listAdminResourceOptions();
   });
 
+  // Re-reads reloadable Team Hub config sections using an admin token.
+  handle('teamHubs:reloadConfig', ipcArgSchemas.connectionId, async (_event, hubId) => {
+    const hub = listTeamHubs().find((entry) => entry.id === hubId);
+    if (!hub) {
+      throw new Error(`Unknown team hub: ${hubId}`);
+    }
+
+    const client = new TeamHubClient({ baseUrl: hub.baseUrl, token: hub.token });
+    const result = await client.reloadConfig();
+
+    await refreshTeamHubPluginSources().catch((err) => {
+      console.warn('Failed to refresh Team Hub plugin sources:', err);
+    });
+    clearTrustedKeysCache();
+
+    return result;
+  });
+
   // Creates or updates a team hub.
   handle('teamHubs:save', ipcArgSchemas.teamHub, async (_event, hub) => {
     const existingHubs = listTeamHubs();

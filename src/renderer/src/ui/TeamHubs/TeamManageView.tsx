@@ -1,4 +1,4 @@
-import { useMemo, useState, type JSX } from 'react';
+import { useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type {
   CreateHubUserInput,
@@ -7,8 +7,10 @@ import type {
   TeamHubAdminResourceOptions,
   UpdateHubUserInput
 } from '#/shared/types';
-import { Input, Select } from '#/renderer/src/components/forms';
+import { Input } from '#/renderer/src/components/forms';
 import { Button } from '#/renderer/src/components/Button';
+import { FaIcon } from '#/renderer/src/components/FaIcon';
+import { faAngleLeft } from '#/renderer/src/fontawesome';
 import { useTeamHubUsers } from '#/renderer/src/hooks/useTeamHubUsers';
 import { TeamSecretDialog } from '#/renderer/src/ui/TeamHubs/TeamSecretDialog';
 import { TeamUserForm } from '#/renderer/src/ui/TeamHubs/TeamUserForm';
@@ -18,9 +20,9 @@ const createFormId = 'team-user-create-form';
 
 interface Props {
   /**
-   * Team hub connections with admin tokens.
+   * Admin team hub connection whose users are being managed.
    */
-  adminHubs: TeamHub[];
+  hub: TeamHub;
 
   /**
    * Returns to the team hub list view.
@@ -29,25 +31,10 @@ interface Props {
 }
 
 /**
- * Sorts team hubs by display name for stable default selection.
- *
- * @param hubs - Admin hub connections to sort.
- * @returns Hubs ordered by name.
- */
-function sortHubsByName(hubs: TeamHub[]): TeamHub[] {
-  return [...hubs].sort((left, right) =>
-    (left.name || left.baseUrl).localeCompare(right.name || right.baseUrl)
-  );
-}
-
-/**
  * Team Hub user administration view for operator tokens.
  */
-export function TeamManageView({ adminHubs, onBack }: Props): JSX.Element {
-  const sortedHubs = useMemo(() => sortHubsByName(adminHubs), [adminHubs]);
-  const [selectedHubId, setSelectedHubId] = useState(sortedHubs[0]?.id ?? '');
-  const selectedHubIdOrNull = selectedHubId.length > 0 ? selectedHubId : null;
-  const { users, loading, error, reload } = useTeamHubUsers(selectedHubIdOrNull);
+export function TeamManageView({ hub, onBack }: Props): JSX.Element {
+  const { users, loading, error, reload } = useTeamHubUsers(hub.id);
   const [editingUser, setEditingUser] = useState<HubUserRecord | null>(null);
   const [creatingUser, setCreatingUser] = useState(false);
   const [createdSecret, setCreatedSecret] = useState<string | null>(null);
@@ -63,17 +50,11 @@ export function TeamManageView({ adminHubs, onBack }: Props): JSX.Element {
    * Loads autocomplete options for the selected hub.
    */
   const loadResourceOptions = (): void => {
-    if (selectedHubId.length === 0) {
-      setResourceOptions(null);
-      setOptionsLoading(false);
-      return;
-    }
-
     setResourceOptions(null);
     setOptionsLoading(true);
 
     void window.api
-      .listTeamHubAdminResourceOptions(selectedHubId)
+      .listTeamHubAdminResourceOptions(hub.id)
       .then((options) => {
         setResourceOptions(options);
       })
@@ -165,7 +146,7 @@ export function TeamManageView({ adminHubs, onBack }: Props): JSX.Element {
    * @param input - Partial user fields to apply.
    */
   const handleSaveUser = async (input: UpdateHubUserInput): Promise<void> => {
-    if (!selectedHubIdOrNull || !editingUser) {
+    if (!editingUser) {
       return;
     }
 
@@ -173,7 +154,7 @@ export function TeamManageView({ adminHubs, onBack }: Props): JSX.Element {
     setActionError(null);
 
     try {
-      await window.api.updateTeamHubUser(selectedHubIdOrNull, editingUser.id, input);
+      await window.api.updateTeamHubUser(hub.id, editingUser.id, input);
       setEditingUser(null);
       reload();
       toast.success('User updated.');
@@ -190,15 +171,11 @@ export function TeamManageView({ adminHubs, onBack }: Props): JSX.Element {
    * @param input - User fields for the new account.
    */
   const handleCreateUser = async (input: CreateHubUserInput): Promise<void> => {
-    if (!selectedHubIdOrNull) {
-      return;
-    }
-
     setSaving(true);
     setActionError(null);
 
     try {
-      const created = await window.api.createTeamHubUser(selectedHubIdOrNull, input);
+      const created = await window.api.createTeamHubUser(hub.id, input);
       setCreatingUser(false);
       setCreatedSecret(created.secret);
       reload();
@@ -214,7 +191,7 @@ export function TeamManageView({ adminHubs, onBack }: Props): JSX.Element {
    * Deletes the selected user after the operator confirms by typing DELETE.
    */
   const handleConfirmDelete = async (): Promise<void> => {
-    if (!selectedHubIdOrNull || !deletingUser || deleteConfirmText !== 'DELETE') {
+    if (!deletingUser || deleteConfirmText !== 'DELETE') {
       return;
     }
 
@@ -222,7 +199,7 @@ export function TeamManageView({ adminHubs, onBack }: Props): JSX.Element {
     setActionError(null);
 
     try {
-      await window.api.deleteTeamHubUser(selectedHubIdOrNull, deletingUser.id);
+      await window.api.deleteTeamHubUser(hub.id, deletingUser.id);
       setDeletingUser(null);
       setDeleteConfirmText('');
       reload();
@@ -239,38 +216,25 @@ export function TeamManageView({ adminHubs, onBack }: Props): JSX.Element {
       <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
           <h2 className="m-0 mb-1 text-[14px] font-medium text-text">Users</h2>
-          <p className="m-0 text-[14px] text-muted">Accounts on the selected Team Hub server.</p>
+          <p className="m-0 truncate text-[14px] text-muted">
+            {hub.name || 'Untitled'} · {hub.baseUrl}
+          </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Button type="button" onClick={handleCreateClick}>
             Create user
           </Button>
-          <Button type="button" variant="secondary" onClick={onBack}>
+          <Button
+            type="button"
+            variant="secondary"
+            className="inline-flex items-center gap-1.5"
+            onClick={onBack}
+          >
+            <FaIcon icon={faAngleLeft} className="h-3.5 w-3.5" aria-hidden />
             Back
           </Button>
         </div>
       </div>
-
-      {sortedHubs.length > 1 && (
-        <div className="mb-4">
-          <label htmlFor="team-manage-hub" className="mb-1 block text-[14px] font-medium text-text">
-            Team hub
-          </label>
-          <Select
-            id="team-manage-hub"
-            variant="surface"
-            className="max-w-md"
-            value={selectedHubId}
-            onChange={(event) => setSelectedHubId(event.target.value)}
-          >
-            {sortedHubs.map((hub) => (
-              <option key={hub.id} value={hub.id}>
-                {hub.name || hub.baseUrl}
-              </option>
-            ))}
-          </Select>
-        </div>
-      )}
 
       {loading ? (
         <p className="text-[14px] text-muted">Loading…</p>

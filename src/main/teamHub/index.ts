@@ -23,5 +23,7 @@ export type {
   UpdateCollectionInput,
   UpdateEnvironmentInput,
   UpdateHubUserInput,
-  UpdateRequestInput
+  UpdateRequestInput,
+  ReloadConfigResponse,
+  ReloadConfigSectionResult
 } from '#/main/teamHub/types';

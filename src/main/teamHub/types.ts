@@ -218,6 +218,51 @@ export interface TeamHubAdminResourceOptions {
 }
 
 /**
+ * Config section name reported by `POST /admin/config/reload`.
+ */
+export type ReloadConfigSectionName = 'db' | 'redis' | 'llm' | 'plugins' | 'server';
+
+/**
+ * Outcome for a single config section during reload.
+ */
+export type ReloadConfigSectionStatus = 'reloaded' | 'unchanged' | 'failed' | 'restart-required';
+
+/**
+ * Per-section reload outcome from `POST /admin/config/reload`.
+ */
+export interface ReloadConfigSectionResult {
+  /**
+   * Config section that was evaluated.
+   */
+  section: ReloadConfigSectionName;
+
+  /**
+   * Whether the section was applied, skipped, failed, or needs a process restart.
+   */
+  status: ReloadConfigSectionStatus;
+
+  /**
+   * Human-readable error when status is `failed` or `restart-required`.
+   */
+  error?: string;
+}
+
+/**
+ * Response body from `POST /admin/config/reload`.
+ */
+export interface ReloadConfigResponse {
+  /**
+   * Per-section reload outcomes when the config file parsed successfully.
+   */
+  sections: ReloadConfigSectionResult[];
+
+  /**
+   * When set, the config file could not be read or parsed; no sections were changed.
+   */
+  fatalError?: string;
+}
+
+/**
  * Partial fields accepted when updating a Team Hub user via management routes.
  */
 export interface UpdateHubUserInput {

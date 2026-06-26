@@ -38,13 +38,14 @@ Protected routes send `Authorization: Bearer hbk_...`. `checkHealth()` is the on
 
 ## API coverage
 
-| Area           | Methods                                                                                             |
-| -------------- | --------------------------------------------------------------------------------------------------- |
-| Health / auth  | `checkHealth`, `getSession`                                                                         |
-| Collections    | `listCollections`, `createCollection`, `updateCollection`, `deleteCollection`                       |
-| Environments   | `listEnvironments`, `createEnvironment`, `updateEnvironment`, `deleteEnvironment`                   |
-| Folders        | `listFolders`, `createFolder`, `renameFolder`, `deleteFolder`, `reorderFolders`                     |
-| Saved requests | `listRequests`, `createRequest`, `updateRequest`, `deleteRequest`, `reorderRequests`, `moveRequest` |
+| Area           | Methods                                                                                                                                                                                                                                                     |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Health / auth  | `checkHealth`, `getSession`                                                                                                                                                                                                                                 |
+| Admin          | `listAdminUsers`, `createAdminUser`, `updateAdminUser`, `deleteAdminUser`, `listAdminTokens`, `createAdminUserToken`, `deleteAdminToken`, `listAdminCollections`, `listAdminEnvironments`, `listAdminLlmModels`, `listAdminResourceOptions`, `reloadConfig` |
+| Collections    | `listCollections`, `createCollection`, `updateCollection`, `deleteCollection`                                                                                                                                                                               |
+| Environments   | `listEnvironments`, `createEnvironment`, `updateEnvironment`, `deleteEnvironment`                                                                                                                                                                           |
+| Folders        | `listFolders`, `createFolder`, `renameFolder`, `deleteFolder`, `reorderFolders`                                                                                                                                                                             |
+| Saved requests | `listRequests`, `createRequest`, `updateRequest`, `deleteRequest`, `reorderRequests`, `moveRequest`                                                                                                                                                         |
 
 See HarborClient Team Hub [API Endpoints](https://harborclient.github.io/team-hub/endpoints.html) for request and response shapes.
 

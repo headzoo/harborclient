@@ -3,32 +3,22 @@ import toast from 'react-hot-toast';
 import type { HubApiTokenRecord, HubUserRecord, TeamHub } from '#/shared/types';
 import { Input, Select } from '#/renderer/src/components/forms';
 import { Button } from '#/renderer/src/components/Button';
+import { FaIcon } from '#/renderer/src/components/FaIcon';
+import { faAngleLeft } from '#/renderer/src/fontawesome';
 import { useTeamHubTokens } from '#/renderer/src/hooks/useTeamHubTokens';
 import { useTeamHubUsers } from '#/renderer/src/hooks/useTeamHubUsers';
 import { TeamSecretDialog } from '#/renderer/src/ui/TeamHubs/TeamSecretDialog';
 
 interface Props {
   /**
-   * Team hub connections with admin tokens.
+   * Admin team hub connection whose API tokens are being managed.
    */
-  adminHubs: TeamHub[];
+  hub: TeamHub;
 
   /**
    * Returns to the team hub list view.
    */
   onBack: () => void;
-}
-
-/**
- * Sorts team hubs by display name for stable default selection.
- *
- * @param hubs - Admin hub connections to sort.
- * @returns Hubs ordered by name.
- */
-function sortHubsByName(hubs: TeamHub[]): TeamHub[] {
-  return [...hubs].sort((left, right) =>
-    (left.name || left.baseUrl).localeCompare(right.name || right.baseUrl)
-  );
 }
 
 /**
@@ -48,12 +38,9 @@ function formatOptionalTimestamp(value: string | null): string {
 /**
  * Team Hub API token administration view for operator tokens.
  */
-export function TeamTokensView({ adminHubs, onBack }: Props): JSX.Element {
-  const sortedHubs = useMemo(() => sortHubsByName(adminHubs), [adminHubs]);
-  const [selectedHubId, setSelectedHubId] = useState(sortedHubs[0]?.id ?? '');
-  const selectedHubIdOrNull = selectedHubId.length > 0 ? selectedHubId : null;
-  const { tokens, loading, error, reload } = useTeamHubTokens(selectedHubIdOrNull);
-  const { users } = useTeamHubUsers(selectedHubIdOrNull);
+export function TeamTokensView({ hub, onBack }: Props): JSX.Element {
+  const { tokens, loading, error, reload } = useTeamHubTokens(hub.id);
+  const { users } = useTeamHubUsers(hub.id);
   const userNamesById = useMemo(() => {
     const map = new Map<string, string>();
     for (const user of users) {
@@ -100,7 +87,7 @@ export function TeamTokensView({ adminHubs, onBack }: Props): JSX.Element {
    * Creates a new API token and shows the one-time secret.
    */
   const handleConfirmCreate = async (): Promise<void> => {
-    if (!selectedHubIdOrNull || createUserId.length === 0 || createTokenName.trim().length === 0) {
+    if (createUserId.length === 0 || createTokenName.trim().length === 0) {
       return;
     }
 
@@ -108,7 +95,7 @@ export function TeamTokensView({ adminHubs, onBack }: Props): JSX.Element {
     setActionError(null);
 
     try {
-      const created = await window.api.createTeamHubUserToken(selectedHubIdOrNull, createUserId, {
+      const created = await window.api.createTeamHubUserToken(hub.id, createUserId, {
         name: createTokenName.trim()
       });
       setCreatingToken(false);
@@ -152,7 +139,7 @@ export function TeamTokensView({ adminHubs, onBack }: Props): JSX.Element {
    * Permanently deletes the selected token after confirmation.
    */
   const handleConfirmDelete = async (): Promise<void> => {
-    if (!selectedHubIdOrNull || !deletingToken || deleteConfirmText !== 'DELETE') {
+    if (!deletingToken || deleteConfirmText !== 'DELETE') {
       return;
     }
 
@@ -160,7 +147,7 @@ export function TeamTokensView({ adminHubs, onBack }: Props): JSX.Element {
     setActionError(null);
 
     try {
-      await window.api.deleteTeamHubToken(selectedHubIdOrNull, deletingToken.id);
+      await window.api.deleteTeamHubToken(hub.id, deletingToken.id);
       setDeletingToken(null);
       setDeleteConfirmText('');
       reload();
@@ -177,40 +164,25 @@ export function TeamTokensView({ adminHubs, onBack }: Props): JSX.Element {
       <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
           <h2 className="m-0 mb-1 text-[14px] font-medium text-text">Tokens</h2>
-          <p className="m-0 text-[14px] text-muted">
-            API bearer tokens across all users on the selected Team Hub server.
+          <p className="m-0 truncate text-[14px] text-muted">
+            {hub.name || 'Untitled'} · {hub.baseUrl}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Button type="button" onClick={handleCreateClick} disabled={users.length === 0}>
             Create token
           </Button>
-          <Button type="button" variant="secondary" onClick={onBack}>
+          <Button
+            type="button"
+            variant="secondary"
+            className="inline-flex items-center gap-1.5"
+            onClick={onBack}
+          >
+            <FaIcon icon={faAngleLeft} className="h-3.5 w-3.5" aria-hidden />
             Back
           </Button>
         </div>
       </div>
-
-      {sortedHubs.length > 1 && (
-        <div className="mb-4">
-          <label htmlFor="team-tokens-hub" className="mb-1 block text-[14px] font-medium text-text">
-            Team hub
-          </label>
-          <Select
-            id="team-tokens-hub"
-            variant="surface"
-            className="max-w-md"
-            value={selectedHubId}
-            onChange={(event) => setSelectedHubId(event.target.value)}
-          >
-            {sortedHubs.map((hub) => (
-              <option key={hub.id} value={hub.id}>
-                {hub.name || hub.baseUrl}
-              </option>
-            ))}
-          </Select>
-        </div>
-      )}
 
       {loading ? (
         <p className="text-[14px] text-muted">Loading…</p>

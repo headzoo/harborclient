@@ -19,58 +19,159 @@ describe('scanTeamHubSessions', () => {
     token: 'hbk_admin_token'
   };
 
+  const emptyServices = {
+    storage: false,
+    llm: false,
+    pluginCatalog: false,
+    admin: false
+  };
+
+  const userServices = {
+    storage: true,
+    llm: true,
+    pluginCatalog: true,
+    admin: false
+  };
+
+  const adminServices = {
+    storage: true,
+    llm: true,
+    pluginCatalog: true,
+    admin: true
+  };
+
+  /**
+   * Builds a JSON response for mocked Team Hub fetch calls.
+   *
+   * @param body - Response JSON payload.
+   * @param status - HTTP status code.
+   */
+  function jsonResponse(body: unknown, status = 200): Response {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
   afterEach(() => {
     globalThis.fetch = originalFetch;
     vi.restoreAllMocks();
   });
 
-  it('returns management capability flags for each hub', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockImplementation((_input: RequestInfo | URL, init?: RequestInit) => {
-        const authorization = (init?.headers as Record<string, string> | undefined)?.Authorization;
+  it('returns service flags and management capability for each hub', async () => {
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const authorization = (init?.headers as Record<string, string> | undefined)?.Authorization;
 
-        if (authorization === `Bearer ${adminHub.token}`) {
+      if (url.endsWith('/health')) {
+        return Promise.resolve(jsonResponse({ status: 'ok', version: '1.0.0' }));
+      }
+
+      if (authorization === `Bearer ${adminHub.token}`) {
+        if (url.endsWith('/auth/session')) {
           return Promise.resolve(
-            new Response(
-              JSON.stringify({
-                user: { id: 'user-admin', name: 'ops', role: 'admin' },
-                token: { id: 'token-admin', prefix: 'hbk_admin' },
-                capabilities: { dataApi: false, managementApi: true, llm: false }
-              }),
-              { status: 200, headers: { 'Content-Type': 'application/json' } }
-            )
+            jsonResponse({
+              user: { id: 'user-admin', name: 'ops', role: 'admin' },
+              token: { id: 'token-admin', prefix: 'hbk_admin' },
+              capabilities: { dataApi: false, managementApi: true, llm: false }
+            })
           );
         }
 
+        if (url.endsWith('/admin/llm/models')) {
+          return Promise.resolve(jsonResponse({ models: [] }));
+        }
+
+        if (url.endsWith('/plugins/sources')) {
+          return Promise.resolve(
+            jsonResponse({
+              catalogs: ['https://harborclient.com/plugin_catalog.json'],
+              trusted: []
+            })
+          );
+        }
+      }
+
+      if (url.endsWith('/auth/session')) {
         return Promise.resolve(
-          new Response(
-            JSON.stringify({
-              user: { id: 'user-alice', name: 'alice', role: 'user' },
-              token: { id: 'token-user', prefix: 'hbk_user' },
-              capabilities: { dataApi: true, managementApi: false, llm: true }
-            }),
-            { status: 200, headers: { 'Content-Type': 'application/json' } }
-          )
+          jsonResponse({
+            user: { id: 'user-alice', name: 'alice', role: 'user' },
+            token: { id: 'token-user', prefix: 'hbk_user' },
+            capabilities: { dataApi: true, managementApi: false, llm: true }
+          })
         );
-      });
+      }
+
+      if (url.endsWith('/llm/models')) {
+        return Promise.resolve(
+          jsonResponse({
+            models: [{ id: 'gpt-4o', label: 'GPT-4o', provider: 'openai' }]
+          })
+        );
+      }
+
+      if (url.endsWith('/plugins/sources')) {
+        return Promise.resolve(
+          jsonResponse({
+            catalogs: ['https://harborclient.com/plugin_catalog.json'],
+            trusted: ['https://harborclient.com/plugins/trusted.json']
+          })
+        );
+      }
+
+      return Promise.resolve(jsonResponse({ error: 'Not found' }, 404));
+    });
     globalThis.fetch = fetchMock;
 
     const results = await scanTeamHubSessions([userHub, adminHub]);
 
     expect(results).toEqual([
-      { hubId: 'hub-user', managementApi: false },
-      { hubId: 'hub-admin', managementApi: true }
+      {
+        hubId: 'hub-user',
+        services: userServices,
+        managementApi: false
+      },
+      {
+        hubId: 'hub-admin',
+        services: adminServices,
+        managementApi: true
+      }
     ]);
   });
 
-  it('returns a non-throwing error result when a hub scan fails', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      })
-    );
+  it('marks LLM inactive when the models route returns 503', async () => {
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url.endsWith('/health')) {
+        return Promise.resolve(jsonResponse({ status: 'ok', version: '1.0.0' }));
+      }
+
+      if (url.endsWith('/auth/session')) {
+        return Promise.resolve(
+          jsonResponse({
+            user: { id: 'user-alice', name: 'alice', role: 'user' },
+            token: { id: 'token-user', prefix: 'hbk_user' },
+            capabilities: { dataApi: true, managementApi: false, llm: true }
+          })
+        );
+      }
+
+      if (url.endsWith('/llm/models')) {
+        return Promise.resolve(jsonResponse({ error: 'LLM disabled' }, 503));
+      }
+
+      if (url.endsWith('/plugins/sources')) {
+        return Promise.resolve(
+          jsonResponse({
+            catalogs: ['https://harborclient.com/plugin_catalog.json'],
+            trusted: []
+          })
+        );
+      }
+
+      return Promise.resolve(jsonResponse({ error: 'Not found' }, 404));
+    });
     globalThis.fetch = fetchMock;
 
     const results = await scanTeamHubSessions([userHub]);
@@ -78,6 +179,73 @@ describe('scanTeamHubSessions', () => {
     expect(results).toEqual([
       {
         hubId: 'hub-user',
+        services: {
+          storage: true,
+          admin: false,
+          llm: false,
+          pluginCatalog: true
+        },
+        managementApi: false
+      }
+    ]);
+  });
+
+  it('marks plugin catalog inactive when no source URLs are configured', async () => {
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input);
+
+      if (url.endsWith('/health')) {
+        return Promise.resolve(jsonResponse({ status: 'ok', version: '1.0.0' }));
+      }
+
+      if (url.endsWith('/auth/session')) {
+        return Promise.resolve(
+          jsonResponse({
+            user: { id: 'user-alice', name: 'alice', role: 'user' },
+            token: { id: 'token-user', prefix: 'hbk_user' },
+            capabilities: { dataApi: true, managementApi: false, llm: true }
+          })
+        );
+      }
+
+      if (url.endsWith('/llm/models')) {
+        return Promise.resolve(jsonResponse({ models: [] }));
+      }
+
+      if (url.endsWith('/plugins/sources')) {
+        return Promise.resolve(jsonResponse({ catalogs: [], trusted: [] }));
+      }
+
+      return Promise.resolve(jsonResponse({ error: 'Not found' }, 404));
+    });
+    globalThis.fetch = fetchMock;
+
+    const results = await scanTeamHubSessions([userHub]);
+
+    expect(results).toEqual([
+      {
+        hubId: 'hub-user',
+        services: {
+          storage: true,
+          admin: false,
+          llm: true,
+          pluginCatalog: false
+        },
+        managementApi: false
+      }
+    ]);
+  });
+
+  it('returns a non-throwing error result when a hub scan fails', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ error: 'Unauthorized' }, 401));
+    globalThis.fetch = fetchMock;
+
+    const results = await scanTeamHubSessions([userHub]);
+
+    expect(results).toEqual([
+      {
+        hubId: 'hub-user',
+        services: emptyServices,
         managementApi: false,
         error: 'Unauthorized'
       }
