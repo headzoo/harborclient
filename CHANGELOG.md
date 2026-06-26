@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(menu): update AI sidebar label and add report issue option. (`21ea80a`)
 - feat(drafts): synchronize draft URLs with enabled parameters. (`5298bac`)
 - feat(seed): add --seed flag to ensure HarborClient Echo collection exists. (`38db945`)
 

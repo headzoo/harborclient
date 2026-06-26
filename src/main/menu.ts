@@ -130,7 +130,7 @@ export function buildMenu(
           click: () => sendMenuAction(window, 'toggle-sidebar')
         },
         {
-          label: 'AI',
+          label: 'Agent Chat',
           type: 'checkbox',
           checked: aiSidebarVisible,
           accelerator: acceleratorFor(accelerators, 'toggle-ai-sidebar'),
@@ -155,6 +155,11 @@ export function buildMenu(
         {
           label: 'Check for Updates...',
           click: () => sendMenuAction(window, 'check-for-updates')
+        },
+        {
+          label: 'Report Issue',
+          click: () =>
+            void shell.openExternal('https://github.com/harborclient/harborclient/issues')
         },
         {
           label: 'About',

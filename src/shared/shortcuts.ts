@@ -164,7 +164,7 @@ export const SHORTCUT_DEFS: ShortcutDef[] = [
   },
   {
     id: 'toggle-ai-sidebar',
-    label: 'Toggle AI sidebar',
+    label: 'Toggle agent chat',
     defaultAccelerator: 'CmdOrCtrl+Shift+B',
     kind: 'action',
     actionId: 'toggle-ai-sidebar'

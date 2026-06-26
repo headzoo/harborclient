@@ -233,8 +233,8 @@ export function Footer({
             className={footerIconButton(aiSidebarOpen)}
             onClick={onToggleAiSidebar}
             aria-pressed={aiSidebarOpen}
-            aria-label={aiSidebarOpen ? 'Hide AI sidebar' : 'Show AI sidebar'}
-            title={aiSidebarOpen ? 'Hide AI sidebar' : 'Show AI sidebar'}
+            aria-label={aiSidebarOpen ? 'Hide agent chat' : 'Show agent chat'}
+            title={aiSidebarOpen ? 'Hide agent chat' : 'Show agent chat'}
           >
             <FaIcon icon={faRobot} className="h-4 w-4" />
           </button>

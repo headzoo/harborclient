@@ -49,7 +49,7 @@ export function TeamHubServiceBadges({ services, scanning }: Props): JSX.Element
   const badges: ServiceBadge[] = [
     { label: 'Storage', active: services.storage },
     { label: 'LLM', active: services.llm },
-    { label: 'Plugin catalog', active: services.pluginCatalog }
+    { label: 'Plugins', active: services.pluginCatalog }
   ];
 
   if (services.admin) {
