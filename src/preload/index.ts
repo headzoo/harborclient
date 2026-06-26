@@ -893,6 +893,45 @@ function syncProvider(connectionId: string): Promise<void> {
 }
 
 /**
+ * Lists collections on a mounted provider that are not yet in the sidebar registry.
+ *
+ * @param connectionId - Storage connection id to scan.
+ */
+function listUnregisteredCollections(
+  connectionId: string
+): Promise<import('#/shared/types').DiscoveredCollection[]> {
+  return ipcRenderer.invoke('providers:listUnregisteredCollections', connectionId);
+}
+
+/**
+ * Registers selected provider collections in the sidebar registry.
+ *
+ * @param connectionId - Storage connection id that owns the collections.
+ * @param providerCollectionIds - Provider-local collection ids to add.
+ */
+function registerDiscoveredCollections(
+  connectionId: string,
+  providerCollectionIds: number[]
+): Promise<import('#/shared/types').RegisterDiscoveredCollectionsResult> {
+  return ipcRenderer.invoke(
+    'providers:registerDiscoveredCollections',
+    connectionId,
+    providerCollectionIds
+  );
+}
+
+/**
+ * Records that the user skipped collection discovery for a storage connection.
+ *
+ * @param connectionId - Storage connection id to mark.
+ */
+function markCollectionDiscoverySkipped(
+  connectionId: string
+): Promise<import('#/shared/types').StorageConnection[]> {
+  return ipcRenderer.invoke('providers:markCollectionDiscoverySkipped', connectionId);
+}
+
+/**
  * Returns source-control status for each mounted git connection.
  */
 function listGitStatuses(): Promise<Record<string, import('#/shared/types').SourceControlStatus>> {
@@ -1723,6 +1762,9 @@ const api: Api = {
   updateTeamHubCollectionDeletionLocked,
   updateTeamHubEnvironmentDeletionLocked,
   syncProvider,
+  listUnregisteredCollections,
+  registerDiscoveredCollections,
+  markCollectionDiscoverySkipped,
   listGitStatuses,
   onGitWorkingTreeChanged,
   onGitOAuthFinished,

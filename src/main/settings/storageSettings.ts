@@ -219,18 +219,55 @@ function normalizeConnectionName(name: string): string {
 function normalizeConnection(conn: StorageConnection): StorageConnection {
   const name = normalizeConnectionName(conn.name);
   const id = conn.id.trim() || randomUUID();
+  const discoverySkipped =
+    conn.collectionDiscoverySkipped === true
+      ? ({ collectionDiscoverySkipped: true as const } satisfies Pick<
+          StorageConnection,
+          'collectionDiscoverySkipped'
+        >)
+      : {};
 
   switch (conn.type) {
     case 'sqlite':
-      return { id, name, type: 'sqlite', settings: normalizeSqliteSettings(conn.settings) };
+      return {
+        id,
+        name,
+        type: 'sqlite',
+        settings: normalizeSqliteSettings(conn.settings),
+        ...discoverySkipped
+      };
     case 'firestore':
-      return { id, name, type: 'firestore', settings: normalizeFirestoreSettings(conn.settings) };
+      return {
+        id,
+        name,
+        type: 'firestore',
+        settings: normalizeFirestoreSettings(conn.settings),
+        ...discoverySkipped
+      };
     case 'mysql':
-      return { id, name, type: 'mysql', settings: normalizeMySqlSettings(conn.settings) };
+      return {
+        id,
+        name,
+        type: 'mysql',
+        settings: normalizeMySqlSettings(conn.settings),
+        ...discoverySkipped
+      };
     case 'postgres':
-      return { id, name, type: 'postgres', settings: normalizePostgresSettings(conn.settings) };
+      return {
+        id,
+        name,
+        type: 'postgres',
+        settings: normalizePostgresSettings(conn.settings),
+        ...discoverySkipped
+      };
     case 'git':
-      return { id, name, type: 'git', settings: normalizeGitSettings(conn.settings) };
+      return {
+        id,
+        name,
+        type: 'git',
+        settings: normalizeGitSettings(conn.settings),
+        ...discoverySkipped
+      };
   }
 }
 

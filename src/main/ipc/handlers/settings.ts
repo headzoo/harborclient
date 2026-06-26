@@ -156,13 +156,14 @@ export function registerSettingsHandlers(db: IStorage): void {
 
   // Creates or updates a database connection.
   handle('storageConnections:save', ipcArgSchemas.storageConnection, async (_event, conn) => {
+    const isNew = !listStorageConnections().some((item) => item.id === conn.id);
     const connections = saveStorageConnection(conn);
     const saved = connections.find((item) => item.id === conn.id);
 
     if (saved && db instanceof RoutingStorage && isStorageConnectionConfigured(saved)) {
       const slot = getSlotForConnection(saved.id);
       if (slot != null) {
-        await db.mountStorageConnection(saved);
+        await db.mountStorageConnection(saved, { reconcileGit: !isNew });
       }
     }
 
@@ -439,6 +440,45 @@ export function registerSettingsHandlers(db: IStorage): void {
       await db.syncProvider(connectionId);
     }
   });
+
+  // Lists collections on a mounted provider that are not yet in the sidebar registry.
+  handle(
+    'providers:listUnregisteredCollections',
+    ipcArgSchemas.providerListUnregisteredCollections,
+    async (_event, connectionId) => {
+      if (!(db instanceof RoutingStorage)) {
+        return [];
+      }
+      return db.listUnregisteredCollections(connectionId);
+    }
+  );
+
+  // Registers selected provider collections in the sidebar registry.
+  handle(
+    'providers:registerDiscoveredCollections',
+    ipcArgSchemas.providerRegisterDiscoveredCollections,
+    async (_event, connectionId, providerCollectionIds) => {
+      if (!(db instanceof RoutingStorage)) {
+        return { added: 0 };
+      }
+      const added = await db.registerDiscoveredCollections(connectionId, providerCollectionIds);
+      return { added };
+    }
+  );
+
+  // Records that the user skipped collection discovery for a storage connection.
+  handle(
+    'providers:markCollectionDiscoverySkipped',
+    ipcArgSchemas.providerMarkCollectionDiscoverySkipped,
+    (_event, connectionId) => {
+      const connections = listStorageConnections();
+      const connection = connections.find((item) => item.id === connectionId);
+      if (!connection) {
+        throw new Error(`Unknown database connection: ${connectionId}`);
+      }
+      return saveStorageConnection({ ...connection, collectionDiscoverySkipped: true });
+    }
+  );
 
   // Deletes a team hub by id.
   handle('teamHubs:delete', ipcArgSchemas.connectionId, async (_event, id) => {

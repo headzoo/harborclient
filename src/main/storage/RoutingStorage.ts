@@ -27,6 +27,7 @@ import type {
   AuthConfig,
   Collection,
   CollectionExport,
+  DiscoveredCollection,
   StorageConnection,
   Environment,
   Folder,
@@ -906,6 +907,9 @@ export class RoutingStorage implements IStorage {
       if (connection.type !== 'git' || !router.byConnectionId.has(connection.id)) {
         continue;
       }
+      if (connection.collectionDiscoverySkipped) {
+        continue;
+      }
       try {
         await router.reconcileGitRegistry(connection.id);
       } catch (err) {
@@ -939,8 +943,12 @@ export class RoutingStorage implements IStorage {
    * saving git settings before restart).
    *
    * @param connection - Saved database connection configuration.
+   * @param options - Optional mount behavior overrides.
    */
-  async mountStorageConnection(connection: StorageConnection): Promise<void> {
+  async mountStorageConnection(
+    connection: StorageConnection,
+    options: { reconcileGit?: boolean } = {}
+  ): Promise<void> {
     if (!isStorageConnectionConfigured(connection)) {
       return;
     }
@@ -963,9 +971,88 @@ export class RoutingStorage implements IStorage {
     const db = await createStorageInstance(connection, this.userDataPath);
     this.mount(slot, { id: connection.id, name: connection.name, type: connection.type }, db);
 
-    if (connection.type === 'git') {
+    const reconcileGit = options.reconcileGit ?? true;
+    if (connection.type === 'git' && reconcileGit) {
       await this.reconcileGitRegistry(connection.id);
     }
+  }
+
+  /**
+   * Lists collections on a mounted provider that are not yet registered in the sidebar.
+   *
+   * @param connectionId - Storage connection id to scan.
+   * @returns Provider collections missing from the local registry.
+   */
+  async listUnregisteredCollections(connectionId: string): Promise<DiscoveredCollection[]> {
+    const backend = this.requireBackendByConnectionId(connectionId);
+    const records = await this.listProviderCollections(backend);
+    const registered = new Set(
+      this.database
+        .listRegistry()
+        .filter((entry) => entry.connectionId === connectionId)
+        .map((entry) => entry.providerCollectionId)
+    );
+
+    return records
+      .filter((record) => !registered.has(record.id))
+      .map((record) => ({
+        providerCollectionId: record.id,
+        name: record.name,
+        uuid: record.uuid
+      }));
+  }
+
+  /**
+   * Registers selected provider collections in the sidebar registry.
+   *
+   * @param connectionId - Storage connection id that owns the collections.
+   * @param providerCollectionIds - Provider-local collection ids to add.
+   * @returns Number of collections added to the registry.
+   */
+  async registerDiscoveredCollections(
+    connectionId: string,
+    providerCollectionIds: readonly number[]
+  ): Promise<number> {
+    const backend = this.requireBackendByConnectionId(connectionId);
+    const records = await this.listProviderCollections(backend);
+    const byId = new Map(records.map((record) => [record.id, record]));
+    const registered = new Set(
+      this.database
+        .listRegistry()
+        .filter((entry) => entry.connectionId === connectionId)
+        .map((entry) => entry.providerCollectionId)
+    );
+
+    let added = 0;
+    for (const providerCollectionId of providerCollectionIds) {
+      if (registered.has(providerCollectionId)) continue;
+      const record = byId.get(providerCollectionId);
+      if (!record) continue;
+
+      this.database.addRegistryEntry({
+        name: record.name,
+        connectionId,
+        providerCollectionId: record.id,
+        collectionUuid: record.uuid
+      });
+      registered.add(providerCollectionId);
+      added += 1;
+    }
+
+    return added;
+  }
+
+  /**
+   * Reads collections from a mounted provider, reloading git working trees first.
+   *
+   * @param backend - Mounted provider backend.
+   * @returns Collections stored on the provider.
+   */
+  private async listProviderCollections(backend: MountedBackend): Promise<Collection[]> {
+    if (backend.connectionType === 'git' && backend.db instanceof GitStorage) {
+      await backend.db.reloadFromDisk();
+    }
+    return backend.db.listCollections();
   }
 
   /**

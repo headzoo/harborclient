@@ -1,15 +1,19 @@
 import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
-import type { StorageConnection } from '#/shared/types';
+import type { DiscoveredCollection, StorageConnection } from '#/shared/types';
 import { useStorageConnections } from '#/renderer/src/hooks/useStorageConnections';
+import { useAppDispatch } from '#/renderer/src/store/hooks';
+import { refreshCollections } from '#/renderer/src/store/thunks/collections';
 import { Button } from '#/renderer/src/components/Button';
 import { createBlankConnection, providerLabel } from './constants';
+import { DiscoverCollectionsModal } from './DiscoverCollectionsModal';
 import { StorageConnectionForm } from './StorageConnectionForm';
 
 /**
  * Database settings with a list of named connections.
  */
 export function StorageLocationsSection(): JSX.Element {
+  const dispatch = useAppDispatch();
   const {
     connections,
     primaryConnectionId: activeId,
@@ -22,6 +26,11 @@ export function StorageLocationsSection(): JSX.Element {
   const [deletingConnection, setDeletingConnection] = useState<StorageConnection | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [discoveryPrompt, setDiscoveryPrompt] = useState<{
+    connectionId: string;
+    connectionName: string;
+    collections: DiscoveredCollection[];
+  } | null>(null);
 
   /**
    * Closes edit or delete modals when Escape is pressed.
@@ -79,13 +88,14 @@ export function StorageLocationsSection(): JSX.Element {
   };
 
   /**
-   * Persists the connection being edited.
+   * Persists the connection being edited and prompts to import existing collections when new.
    */
   const handleSave = async (): Promise<void> => {
     if (!editingConnection) return;
 
     setSaving(true);
     setError(null);
+    const savingNew = isNew;
 
     try {
       const payload: StorageConnection = isNew
@@ -95,12 +105,75 @@ export function StorageLocationsSection(): JSX.Element {
       reloadConnections();
       setEditingConnection(null);
       setIsNew(false);
+
+      if (savingNew) {
+        try {
+          const discovered = await window.api.listUnregisteredCollections(payload.id);
+          if (discovered.length > 0) {
+            setDiscoveryPrompt({
+              connectionId: payload.id,
+              connectionName: payload.name,
+              collections: discovered
+            });
+            return;
+          }
+        } catch (discoverErr) {
+          setError(
+            discoverErr instanceof Error
+              ? discoverErr.message
+              : 'Could not scan for existing collections.'
+          );
+        }
+      }
+
       toast.success('Settings saved.');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setSaving(false);
     }
+  };
+
+  /**
+   * Closes the collection discovery prompt after a successful action.
+   */
+  const closeDiscoveryPrompt = (): void => {
+    setDiscoveryPrompt(null);
+    setSaving(false);
+    toast.success('Settings saved.');
+  };
+
+  /**
+   * Registers selected discovered collections and refreshes the sidebar.
+   *
+   * @param providerCollectionIds - Provider-local collection ids to add.
+   */
+  const handleDiscoveryConfirm = async (providerCollectionIds: number[]): Promise<void> => {
+    if (!discoveryPrompt) return;
+
+    const result = await window.api.registerDiscoveredCollections(
+      discoveryPrompt.connectionId,
+      providerCollectionIds
+    );
+    await dispatch(refreshCollections());
+    closeDiscoveryPrompt();
+
+    if (result.added > 0) {
+      toast.success(
+        `Added ${result.added} collection${result.added === 1 ? '' : 's'} to the sidebar.`
+      );
+    }
+  };
+
+  /**
+   * Records that the user skipped importing discovered collections.
+   */
+  const handleDiscoverySkip = async (): Promise<void> => {
+    if (!discoveryPrompt) return;
+
+    await window.api.markCollectionDiscoverySkipped(discoveryPrompt.connectionId);
+    reloadConnections();
+    closeDiscoveryPrompt();
   };
 
   /**
@@ -285,6 +358,16 @@ export function StorageLocationsSection(): JSX.Element {
             </div>
           </div>
         </div>
+      )}
+
+      {discoveryPrompt && (
+        <DiscoverCollectionsModal
+          connectionName={discoveryPrompt.connectionName}
+          collections={discoveryPrompt.collections}
+          onConfirm={handleDiscoveryConfirm}
+          onSkip={handleDiscoverySkip}
+          onClose={() => void handleDiscoverySkip()}
+        />
       )}
 
       {deletingConnection && (

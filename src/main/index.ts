@@ -1,4 +1,14 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, screen, shell } from 'electron';
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  Menu,
+  nativeTheme,
+  screen,
+  shell,
+  type App
+} from 'electron';
 import { join } from 'path';
 import { RoutingStorage } from '#/main/storage';
 import { initLocalDatabase } from '#/main/storage/localDatabaseInstance';
@@ -296,6 +306,20 @@ if (process.platform === 'linux' && isDev) {
 }
 
 /**
+ * Aligns Electron's Linux app_id / WM_CLASS with the installed .desktop entry.
+ *
+ * Scoped npm package names can drift from `desktopName`; explicit setting keeps
+ * taskbar and dock icons matched to `harborclient.desktop`.
+ */
+function applyLinuxDesktopIdentity(): void {
+  if (process.platform !== 'linux') {
+    return;
+  }
+  // Runtime API exists on Linux; upstream @types/electron does not declare it yet.
+  (app as App & { setDesktopName: (desktopName: string) => void }).setDesktopName('harborclient');
+}
+
+/**
  * Resolves the app icon path for dev and packaged builds.
  */
 function resolveAppIcon(): string {
@@ -533,6 +557,7 @@ ipcMain.on('app:close-decision', (_event, ...raw) => {
 
 app.whenReady().then(async () => {
   logVerbose('app ready: verbose logging enabled');
+  applyLinuxDesktopIdentity();
   await createSplashWindow();
   const splashStartedAt = Date.now();
 

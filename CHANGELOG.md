@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(collections): enhance storage connection management with discovery features. (`41f1a32`)
+
 ## 1.8.16 - 2026-06-26
 
 - feat(storage): add default content seeding during storage creation. (`64d0651`)

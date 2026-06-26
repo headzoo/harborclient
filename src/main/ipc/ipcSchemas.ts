@@ -266,34 +266,35 @@ const gitSettings = z.object({
   auth: gitAuthMethod
 });
 
+const storageConnectionCommon = {
+  id: connectionId,
+  name: z.string(),
+  collectionDiscoverySkipped: z.boolean().optional()
+};
+
 export const storageConnection = z.discriminatedUnion('type', [
   z.object({
-    id: connectionId,
-    name: z.string(),
+    ...storageConnectionCommon,
     type: z.literal('sqlite'),
     settings: sqliteSettings
   }),
   z.object({
-    id: connectionId,
-    name: z.string(),
+    ...storageConnectionCommon,
     type: z.literal('firestore'),
     settings: firestoreSettings
   }),
   z.object({
-    id: connectionId,
-    name: z.string(),
+    ...storageConnectionCommon,
     type: z.literal('mysql'),
     settings: mySqlSettings
   }),
   z.object({
-    id: connectionId,
-    name: z.string(),
+    ...storageConnectionCommon,
     type: z.literal('postgres'),
     settings: postgresSettings
   }),
   z.object({
-    id: connectionId,
-    name: z.string(),
+    ...storageConnectionCommon,
     type: z.literal('git'),
     settings: gitSettings
   })
@@ -467,6 +468,12 @@ export const ipcArgSchemas = {
   teamHubCollectionDeletionLocked: z.tuple([connectionId, z.string().min(1), z.boolean()]),
   teamHubEnvironmentDeletionLocked: z.tuple([connectionId, z.string().min(1), z.boolean()]),
   providerSync: z.tuple([connectionId]),
+  providerListUnregisteredCollections: z.tuple([connectionId]),
+  providerRegisterDiscoveredCollections: z.tuple([
+    connectionId,
+    z.array(z.number().int().positive())
+  ]),
+  providerMarkCollectionDiscoverySkipped: z.tuple([connectionId]),
   setEditorTab: z.tuple([storageKey, editorTab]),
   sidebarExpansionSet: z.tuple([sidebarExpansion]),
   panelLayoutSet: z.tuple([panelLayout]),

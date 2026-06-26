@@ -1739,6 +1739,41 @@ export interface StorageConnectionBase {
    * User-defined display name.
    */
   name: string;
+
+  /**
+   * When true, startup git reconcile skips auto-adding sidebar entries for this provider.
+   */
+  collectionDiscoverySkipped?: boolean;
+}
+
+/**
+ * A collection found on a provider that is not yet registered in the sidebar.
+ */
+export interface DiscoveredCollection {
+  /**
+   * Provider-local collection id.
+   */
+  providerCollectionId: number;
+
+  /**
+   * Display name from the provider.
+   */
+  name: string;
+
+  /**
+   * Stable collection uuid when available from the provider.
+   */
+  uuid: string;
+}
+
+/**
+ * Result of registering selected discovered collections.
+ */
+export interface RegisterDiscoveredCollectionsResult {
+  /**
+   * Number of collections added to the sidebar registry.
+   */
+  added: number;
 }
 
 /**
@@ -3039,6 +3074,31 @@ export interface Api {
    * @param connectionId - Provider connection id to sync.
    */
   syncProvider: (connectionId: string) => Promise<void>;
+
+  /**
+   * Lists collections on a mounted provider that are not yet in the sidebar registry.
+   *
+   * @param connectionId - Storage connection id to scan.
+   */
+  listUnregisteredCollections: (connectionId: string) => Promise<DiscoveredCollection[]>;
+
+  /**
+   * Registers selected provider collections in the sidebar registry.
+   *
+   * @param connectionId - Storage connection id that owns the collections.
+   * @param providerCollectionIds - Provider-local collection ids to add.
+   */
+  registerDiscoveredCollections: (
+    connectionId: string,
+    providerCollectionIds: number[]
+  ) => Promise<RegisterDiscoveredCollectionsResult>;
+
+  /**
+   * Records that the user skipped collection discovery for a storage connection.
+   *
+   * @param connectionId - Storage connection id to mark.
+   */
+  markCollectionDiscoverySkipped: (connectionId: string) => Promise<StorageConnection[]>;
 
   /**
    * Returns source-control status for each mounted git-backed connection.

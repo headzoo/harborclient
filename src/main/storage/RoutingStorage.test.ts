@@ -7,6 +7,7 @@ import { defaultAuth } from '#/shared/auth';
 import { decodeGlobalId, ID_OFFSET } from '#/main/storage/idNamespace';
 import { LocalDatabase } from '#/main/storage/LocalDatabase';
 import { RoutingStorage } from '#/main/storage/RoutingStorage';
+import { GitStorage } from '#/main/storage/GitStorage';
 import { SqliteStorage } from '#/main/storage/SqliteStorage';
 import { TeamHubStorage } from '#/main/storage/TeamHubStorage';
 import { TeamHubIdMap } from '#/main/storage/TeamHubIdMap';
@@ -1005,5 +1006,100 @@ describeSqlite('RoutingStorage.create', () => {
     warnSpy.mockRestore();
     await router.close();
     rmSync(rootDir, { recursive: true, force: true });
+  });
+});
+
+describeSqlite('RoutingStorage collection discovery', () => {
+  it('lists only unregistered collections on a provider', async () => {
+    const { router, backendB } = await createRoutingFixture();
+    await backendB.createCollection('Existing A');
+    await backendB.createCollection('Existing B');
+
+    const unregistered = await router.listUnregisteredCollections(CONN_B.id);
+    expect(unregistered).toHaveLength(2);
+    expect(unregistered.map((collection) => collection.name).sort()).toEqual([
+      'Existing A',
+      'Existing B'
+    ]);
+  });
+
+  it('excludes collections already in the registry', async () => {
+    const { router, database, backendB } = await createRoutingFixture();
+    const registered = await backendB.createCollection('Registered');
+    database.addRegistryEntry({
+      name: registered.name,
+      connectionId: CONN_B.id,
+      providerCollectionId: registered.id,
+      collectionUuid: registered.uuid
+    });
+    await backendB.createCollection('Unregistered');
+
+    const unregistered = await router.listUnregisteredCollections(CONN_B.id);
+    expect(unregistered).toHaveLength(1);
+    expect(unregistered[0]?.name).toBe('Unregistered');
+  });
+
+  it('registers only selected discovered collections', async () => {
+    const { router, backendB } = await createRoutingFixture();
+    const first = await backendB.createCollection('Alpha');
+    await backendB.createCollection('Beta');
+
+    const added = await router.registerDiscoveredCollections(CONN_B.id, [first.id]);
+    expect(added).toBe(1);
+
+    const listed = await router.listCollections();
+    expect(listed.some((collection) => collection.name === 'Alpha')).toBe(true);
+    expect(listed.some((collection) => collection.name === 'Beta')).toBe(false);
+
+    const remaining = await router.listUnregisteredCollections(CONN_B.id);
+    expect(remaining).toHaveLength(1);
+    expect(remaining[0]?.name).toBe('Beta');
+  });
+
+  it('skips git reconcile at startup when collectionDiscoverySkipped is set', async () => {
+    const rootDir = mkdtempSync(join(tmpdir(), 'harborclient-routing-git-skip-'));
+    const repoPath = mkdtempSync(join(tmpdir(), 'harborclient-routing-git-repo-'));
+    mkdirSync(join(repoPath, '.harborclient'), { recursive: true });
+
+    const database = new LocalDatabase(rootDir);
+    await database.init();
+
+    const gitConnection: StorageConnection = {
+      id: 'git-skip',
+      name: 'Git Skip',
+      type: 'git',
+      collectionDiscoverySkipped: true,
+      settings: {
+        repoPath,
+        url: 'https://github.com/example/repo.git',
+        branch: 'main',
+        subdir: '.harborclient',
+        auth: { kind: 'pat', username: 'token' }
+      }
+    };
+
+    const gitDb = new GitStorage(gitConnection.id, gitConnection.settings, rootDir);
+    await gitDb.init();
+    await gitDb.createCollection('On Disk');
+    await gitDb.close();
+
+    const reconcileSpy = vi.spyOn(RoutingStorage.prototype, 'reconcileGitRegistry');
+
+    const router = await RoutingStorage.create(
+      database,
+      gitConnection.id,
+      [gitConnection],
+      [],
+      { [gitConnection.id]: 0 },
+      rootDir
+    );
+
+    expect(reconcileSpy).not.toHaveBeenCalled();
+    expect(database.listRegistry()).toHaveLength(0);
+
+    reconcileSpy.mockRestore();
+    await router.close();
+    rmSync(rootDir, { recursive: true, force: true });
+    rmSync(repoPath, { recursive: true, force: true });
   });
 });
