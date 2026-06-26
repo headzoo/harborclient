@@ -1,217 +1,10 @@
 import 'ses';
 import { transform } from 'esbuild';
 import type { ScriptRunInput, ScriptRunResult } from '#/shared/types';
-import { resolveDynamicVariable, VARIABLE_TOKEN_PATTERN } from '#/shared/dynamicVariables';
+import { createScriptApi } from '#/main/scripting/scriptApi';
 
 /** esbuild target for lowering modern user script syntax before compartment execution. */
 const SCRIPT_TRANSPILE_TARGET = 'es2020';
-
-const BOOTSTRAP = `
-// hc API surface — keep autocomplete in hcCompletions.ts in sync with this bootstrap.
-const ctx = JSON.parse(__CONTEXT__);
-const state = {
-  request: ctx.request,
-  variables: Object.assign({}, ctx.variables),
-  variableSets: {},
-  collectionVariableSets: {},
-  environmentVariableSets: {},
-  globalVariableSets: {},
-  collectionHeaders: ctx.collection && ctx.collection.headers ? ctx.collection.headers : [],
-  tests: [],
-  logs: [],
-  phase: ctx.phase
-};
-
-function makeHeaderApi(getRows) {
-  return {
-    get: function(key) {
-      const k = String(key).toLowerCase();
-      const row = getRows().find(function(h) {
-        return h.enabled && h.key.trim().toLowerCase() === k;
-      });
-      return row ? row.value : undefined;
-    },
-    upsert: function(key, value) {
-      const k = String(key);
-      const v = String(value);
-      const rows = getRows();
-      const existing = rows.find(function(h) {
-        return h.enabled && h.key.trim().toLowerCase() === k.toLowerCase();
-      });
-      if (existing) {
-        existing.value = v;
-      } else {
-        rows.push({ key: k, value: v, enabled: true });
-      }
-    },
-    toObject: function() {
-      const map = {};
-      for (const h of getRows()) {
-        if (h.enabled && h.key.trim()) {
-          map[h.key.trim()] = h.value;
-        }
-      }
-      return map;
-    }
-  };
-}
-
-function makeExpect(actual) {
-  return {
-    to: {
-      equal: function(expected) {
-        if (actual !== expected) {
-          throw new Error(
-            'Expected ' + JSON.stringify(expected) + ' but got ' + JSON.stringify(actual)
-          );
-        }
-      },
-      eql: function(expected) {
-        if (JSON.stringify(actual) !== JSON.stringify(expected)) {
-          throw new Error(
-            'Expected ' + JSON.stringify(expected) + ' but got ' + JSON.stringify(actual)
-          );
-        }
-      },
-      include: function(substr) {
-        if (typeof actual !== 'string' || actual.indexOf(substr) === -1) {
-          throw new Error(
-            'Expected ' + JSON.stringify(actual) + ' to include ' + JSON.stringify(substr)
-          );
-        }
-      }
-    },
-    be: {
-      ok: function() {
-        if (!actual) {
-          throw new Error('Expected truthy value but got ' + JSON.stringify(actual));
-        }
-      }
-    }
-  };
-}
-
-const hc = {
-  request: {
-    get method() { return state.request.method; },
-    set method(v) { state.request.method = String(v); },
-    get url() { return state.request.url; },
-    set url(v) { state.request.url = String(v); },
-    get body() { return state.request.body; },
-    set body(v) { state.request.body = String(v); },
-    headers: makeHeaderApi(function() { return state.request.headers; })
-  },
-  variables: {
-    get: function(k) {
-      if (Object.prototype.hasOwnProperty.call(state.variableSets, k)) {
-        return state.variableSets[k];
-      }
-      return state.variables[k];
-    },
-    set: function(k, v) {
-      state.variableSets[k] = String(v);
-    },
-    replaceIn: function(template) {
-      const text = String(template);
-      const pattern = new RegExp(__HC_VARIABLE_PATTERN__, 'g');
-      return text.replace(pattern, function(match, key) {
-        if (Object.prototype.hasOwnProperty.call(state.variableSets, key)) {
-          return state.variableSets[key];
-        }
-        if (Object.prototype.hasOwnProperty.call(state.variables, key)) {
-          return state.variables[key];
-        }
-        const dynamic = __hcResolveDynamic__(key);
-        return dynamic !== undefined ? dynamic : match;
-      });
-    }
-  },
-  collection: {
-    get id() { return ctx.collection ? ctx.collection.id : null; },
-    get name() { return ctx.collection ? ctx.collection.name : ''; },
-    variables: {
-      get: function(k) {
-        if (Object.prototype.hasOwnProperty.call(state.collectionVariableSets, k)) {
-          return state.collectionVariableSets[k];
-        }
-        return state.variables[k];
-      },
-      set: function(k, v) {
-        state.collectionVariableSets[k] = String(v);
-      }
-    },
-    headers: makeHeaderApi(function() { return state.collectionHeaders; })
-  },
-  environment: {
-    get name() { return ctx.environment ? ctx.environment.name : ''; },
-    variables: {
-      get: function(k) {
-        if (Object.prototype.hasOwnProperty.call(state.environmentVariableSets, k)) {
-          return state.environmentVariableSets[k];
-        }
-        return state.variables[k];
-      },
-      set: function(k, v) {
-        state.environmentVariableSets[k] = String(v);
-      }
-    }
-  },
-  globals: {
-    get: function(k) {
-      if (Object.prototype.hasOwnProperty.call(state.globalVariableSets, k)) {
-        return state.globalVariableSets[k];
-      }
-      return state.variables[k];
-    },
-    set: function(k, v) {
-      state.globalVariableSets[k] = String(v);
-    }
-  },
-  test: function(name, fn) {
-    try {
-      fn();
-      state.tests.push({ name: String(name), passed: true });
-    } catch (err) {
-      state.tests.push({
-        name: String(name),
-        passed: false,
-        error: String(err && err.message ? err.message : err)
-      });
-    }
-  },
-  expect: function(actual) {
-    return makeExpect(actual);
-  }
-};
-
-if (ctx.response) {
-  const resp = ctx.response;
-  hc.response = {
-    get code() { return resp.status; },
-    get status() { return resp.statusText; },
-    get headers() { return resp.headers; },
-    get responseTime() { return resp.timeMs; },
-    text: function() { return resp.body; },
-    json: function() { return JSON.parse(resp.body); }
-  };
-}
-
-const console = {
-  log: function() {
-    const args = Array.prototype.slice.call(arguments);
-    state.logs.push(
-      args.map(function(a) { return typeof a === 'string' ? a : JSON.stringify(a); }).join(' ')
-    );
-  },
-  error: function() {
-    const args = Array.prototype.slice.call(arguments);
-    state.logs.push(
-      '[error] ' +
-        args.map(function(a) { return typeof a === 'string' ? a : JSON.stringify(a); }).join(' ')
-    );
-  }
-};
-`;
 
 /**
  * Builds the passthrough result returned when a script is empty or on failure.
@@ -289,7 +82,7 @@ export function formatEsbuildError(err: unknown): string {
  * resolved or enabled.
  *
  * @param source - Raw user-authored script source.
- * @returns Transpiled script source safe to concatenate with the hc bootstrap.
+ * @returns Transpiled script source safe to evaluate in the hc compartment.
  * @throws esbuild transform errors when the source is invalid.
  */
 async function transpileUserScript(source: string): Promise<string> {
@@ -305,10 +98,10 @@ async function transpileUserScript(source: string): Promise<string> {
  * Runs a pre/post script inside a SES Compartment with the hc API.
  *
  * User source is transpiled with esbuild before execution so modern JavaScript
- * syntax is supported. The compartment receives only the hc bootstrap globals;
- * Node globals such as `require` and `process` are intentionally not passed
- * through. Callers in production should run this inside a locked-down
- * utilityProcess; unit tests call it directly without `lockdown()`.
+ * syntax is supported. The compartment receives hc and console globals built by
+ * {@link createScriptApi}; Node globals such as `require` and `process` are
+ * intentionally not passed through. Callers in production should run this inside
+ * a locked-down utilityProcess; unit tests call it directly without `lockdown()`.
  *
  * @param input - Script source, phase, request/response context, and variables.
  * @returns Mutated request, variable sets, tests, and logs from the sandbox.
@@ -319,15 +112,6 @@ export async function evaluateScript(input: ScriptRunInput): Promise<ScriptRunRe
   if (!input.script.trim()) {
     return passthrough;
   }
-
-  const contextPayload = JSON.stringify({
-    phase: input.phase,
-    request: input.request,
-    response: input.response,
-    variables: input.variables,
-    collection: input.collection,
-    environment: input.environment
-  });
 
   let compiledScript: string;
   try {
@@ -340,39 +124,18 @@ export async function evaluateScript(input: ScriptRunInput): Promise<ScriptRunRe
   }
 
   try {
+    const api = createScriptApi(input);
     const compartment = new Compartment({
       globals: {
-        __CONTEXT__: contextPayload,
+        hc: api.hc,
+        console: api.console,
         Date,
-        Math,
-        __HC_VARIABLE_PATTERN__: VARIABLE_TOKEN_PATTERN.source,
-        __hcResolveDynamic__: (key: string) => resolveDynamicVariable(key)
+        Math
       },
       __options__: true
     });
-    const fullScript = `${BOOTSTRAP}\n${compiledScript}\nJSON.stringify(state);`;
-    const resultJson = compartment.evaluate(fullScript);
-    const state = JSON.parse(String(resultJson)) as {
-      request: ScriptRunResult['request'];
-      variableSets: Record<string, string>;
-      collectionVariableSets: Record<string, string>;
-      environmentVariableSets: Record<string, string>;
-      globalVariableSets: Record<string, string>;
-      collectionHeaders: ScriptRunResult['collectionHeaders'];
-      tests: ScriptRunResult['tests'];
-      logs: string[];
-    };
-
-    return {
-      request: state.request,
-      variableSets: state.variableSets ?? {},
-      collectionVariableSets: state.collectionVariableSets ?? {},
-      environmentVariableSets: state.environmentVariableSets ?? {},
-      globalVariableSets: state.globalVariableSets ?? {},
-      collectionHeaders: state.collectionHeaders ?? [],
-      tests: state.tests ?? [],
-      logs: state.logs ?? []
-    };
+    compartment.evaluate(compiledScript);
+    return api.readResult();
   } catch (err) {
     const rawMessage =
       err && typeof err === 'object' && 'message' in err

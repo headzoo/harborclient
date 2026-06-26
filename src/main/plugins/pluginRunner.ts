@@ -1,4 +1,6 @@
 import 'ses';
+import { createScriptContext } from '#/main/plugins/pluginScriptContext';
+import type { ScriptRunContextInput } from '#/main/scripting/scriptApi';
 import type {
   PluginHttpRequest,
   PluginHttpResponse,
@@ -141,6 +143,9 @@ function createMainPluginContext(state: PluginState): Record<string, unknown> {
         subscriptions.push(disposable);
         return disposable;
       }
+    },
+    scripts: {
+      createContext: (init?: Partial<ScriptRunContextInput>) => createScriptContext(init)
     }
   };
 }

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(scripting): integrate script context creation and clean up script evaluator. (`c9c18e7`)
 - feat(globals): introduce app-wide global variables management. (`f9c8fc7`)
 
 ## 1.8.19 - 2026-06-26
