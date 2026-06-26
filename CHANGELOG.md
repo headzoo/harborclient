@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.8.16 - 2026-06-26
+
 - feat(storage): add default content seeding during storage creation. (`64d0651`)
 
 ## 1.8.15 - 2026-06-26
