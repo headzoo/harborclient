@@ -38,7 +38,7 @@ export function CollectionModal(): JSX.Element | null {
     primaryProviderId,
     loading: providersLoading,
     error: providersError
-  } = useProviders();
+  } = useProviders([], { excludeAdminTeamHubs: true });
   const providerSelectId = useId();
 
   /**

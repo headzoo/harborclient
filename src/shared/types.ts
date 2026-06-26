@@ -147,6 +147,11 @@ export interface Environment {
    * ISO 8601 timestamp when the environment was created.
    */
   created_at: string;
+
+  /**
+   * When true on a team hub environment, non-admin users cannot delete it on the server.
+   */
+  deletion_locked?: boolean;
 }
 
 /**
@@ -197,6 +202,11 @@ export interface Collection {
    * ISO 8601 timestamp when the collection was created.
    */
   created_at: string;
+
+  /**
+   * When true on a team hub collection, non-admin users cannot delete it on the server.
+   */
+  deletion_locked?: boolean;
 
   /**
    * Id of the database connection that stores this collection.
@@ -1919,6 +1929,31 @@ export interface AdminResourceOption {
    * Human-readable label shown in autocomplete suggestions.
    */
   name: string;
+
+  /**
+   * When true, non-admin users cannot delete this resource on the hub.
+   */
+  deletionLocked: boolean;
+}
+
+/**
+ * Admin configuration returned by entity configuration routes.
+ */
+export interface AdminEntityConfig {
+  /**
+   * Stable resource identifier.
+   */
+  id: string;
+
+  /**
+   * Human-readable label.
+   */
+  name: string;
+
+  /**
+   * When true, non-admin users cannot delete this resource on the hub.
+   */
+  deletionLocked: boolean;
 }
 
 /**
@@ -2859,6 +2894,48 @@ export interface Api {
    * @param hubId - Team hub connection id with an admin token.
    */
   listTeamHubAdminResourceOptions: (hubId: string) => Promise<TeamHubAdminResourceOptions>;
+
+  /**
+   * Deletes a hub collection using an admin token.
+   *
+   * @param hubId - Team hub connection id with an admin token.
+   * @param collectionId - Server collection UUID.
+   */
+  deleteTeamHubCollection: (hubId: string, collectionId: string) => Promise<void>;
+
+  /**
+   * Deletes a hub environment using an admin token.
+   *
+   * @param hubId - Team hub connection id with an admin token.
+   * @param environmentId - Server environment UUID.
+   */
+  deleteTeamHubEnvironment: (hubId: string, environmentId: string) => Promise<void>;
+
+  /**
+   * Updates whether non-admin users may delete a hub collection.
+   *
+   * @param hubId - Team hub connection id with an admin token.
+   * @param collectionId - Server collection UUID.
+   * @param deletionLocked - When true, user-role tokens cannot delete the collection.
+   */
+  updateTeamHubCollectionDeletionLocked: (
+    hubId: string,
+    collectionId: string,
+    deletionLocked: boolean
+  ) => Promise<AdminEntityConfig>;
+
+  /**
+   * Updates whether non-admin users may delete a hub environment.
+   *
+   * @param hubId - Team hub connection id with an admin token.
+   * @param environmentId - Server environment UUID.
+   * @param deletionLocked - When true, user-role tokens cannot delete the environment.
+   */
+  updateTeamHubEnvironmentDeletionLocked: (
+    hubId: string,
+    environmentId: string,
+    deletionLocked: boolean
+  ) => Promise<AdminEntityConfig>;
 
   /**
    * Re-reads reloadable config sections from the Team Hub server.

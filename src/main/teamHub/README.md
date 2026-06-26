@@ -29,23 +29,24 @@ const client = new TeamHubClient({
 const health = await client.checkHealth();
 const session = await client.getSession();
 if (session.capabilities.managementApi) {
-  // show admin UI
+  // show admin UI; listCollections() and listEnvironments() return full catalogs
 }
 const collections = await client.listCollections();
+const environments = await client.listEnvironments();
 ```
 
 Protected routes send `Authorization: Bearer hbk_...`. `checkHealth()` is the only method that omits the token; `getSession()` requires a valid bearer token. Failed requests throw `TeamHubClientError` with `status`, `method`, and `path`.
 
 ## API coverage
 
-| Area           | Methods                                                                                                                                                                                                                                                     |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Health / auth  | `checkHealth`, `getSession`                                                                                                                                                                                                                                 |
-| Admin          | `listAdminUsers`, `createAdminUser`, `updateAdminUser`, `deleteAdminUser`, `listAdminTokens`, `createAdminUserToken`, `deleteAdminToken`, `listAdminCollections`, `listAdminEnvironments`, `listAdminLlmModels`, `listAdminResourceOptions`, `reloadConfig` |
-| Collections    | `listCollections`, `createCollection`, `updateCollection`, `deleteCollection`                                                                                                                                                                               |
-| Environments   | `listEnvironments`, `createEnvironment`, `updateEnvironment`, `deleteEnvironment`                                                                                                                                                                           |
-| Folders        | `listFolders`, `createFolder`, `renameFolder`, `deleteFolder`, `reorderFolders`                                                                                                                                                                             |
-| Saved requests | `listRequests`, `createRequest`, `updateRequest`, `deleteRequest`, `reorderRequests`, `moveRequest`                                                                                                                                                         |
+| Area           | Methods                                                                                                                                                                                                                                                                                                                                                                                       |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Health / auth  | `checkHealth`, `getSession`                                                                                                                                                                                                                                                                                                                                                                   |
+| Admin          | `listAdminUsers`, `createAdminUser`, `updateAdminUser`, `deleteAdminUser`, `listAdminTokens`, `createAdminUserToken`, `deleteAdminToken`, `listAdminCollections`, `listAdminEnvironments`, `listAdminLlmModels`, `listAdminResourceOptions`, `deleteAdminCollection`, `deleteAdminEnvironment`, `updateAdminCollectionDeletionLocked`, `updateAdminEnvironmentDeletionLocked`, `reloadConfig` |
+| Collections    | `listCollections`, `createCollection`, `updateCollection`, `deleteCollection`                                                                                                                                                                                                                                                                                                                 |
+| Environments   | `listEnvironments`, `createEnvironment`, `updateEnvironment`, `deleteEnvironment`                                                                                                                                                                                                                                                                                                             |
+| Folders        | `listFolders`, `createFolder`, `renameFolder`, `deleteFolder`, `reorderFolders`                                                                                                                                                                                                                                                                                                               |
+| Saved requests | `listRequests`, `createRequest`, `updateRequest`, `deleteRequest`, `reorderRequests`, `moveRequest`                                                                                                                                                                                                                                                                                           |
 
 See HarborClient Team Hub [API Endpoints](https://harborclient.github.io/team-hub/endpoints.html) for request and response shapes.
 

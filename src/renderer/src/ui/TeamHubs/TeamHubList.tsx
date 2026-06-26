@@ -59,6 +59,11 @@ interface Props {
    * Opens token management for an admin hub connection.
    */
   onManageTokens: (hub: TeamHub) => void;
+
+  /**
+   * Opens collection management for an admin hub connection.
+   */
+  onManageCollections: (hub: TeamHub) => void;
 }
 
 /**
@@ -74,11 +79,11 @@ export function TeamHubList({
   scanning,
   onRescanServices,
   onManageUsers,
-  onManageTokens
+  onManageTokens,
+  onManageCollections
 }: Props): JSX.Element {
   const dispatch = useAppDispatch();
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [reloadingHubId, setReloadingHubId] = useState<string | null>(null);
   const [editingHub, setEditingHub] = useState<TeamHub | null>(null);
   const [deletingHub, setDeletingHub] = useState<TeamHub | null>(null);
@@ -118,7 +123,6 @@ export function TeamHubList({
    */
   const handleAdd = (): void => {
     setError(null);
-    setSaved(false);
     setFieldErrors({});
     setIsNew(true);
     setEditingHub(createBlankTeamHub());
@@ -131,7 +135,6 @@ export function TeamHubList({
    */
   const handleEdit = (hub: TeamHub): void => {
     setError(null);
-    setSaved(false);
     setFieldErrors({});
     setIsNew(false);
     setEditingHub({ ...hub });
@@ -160,7 +163,6 @@ export function TeamHubList({
     }
 
     setSaving(true);
-    setSaved(false);
     setError(null);
     setFieldErrors({});
 
@@ -170,7 +172,7 @@ export function TeamHubList({
       reload();
       setEditingHub(null);
       setIsNew(false);
-      setSaved(true);
+      toast.success('Team hub saved.');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -185,7 +187,6 @@ export function TeamHubList({
    */
   const handleReload = async (hub: TeamHub): Promise<void> => {
     setError(null);
-    setSaved(false);
     setReloadingHubId(hub.id);
 
     try {
@@ -212,7 +213,6 @@ export function TeamHubList({
    */
   const handleDelete = async (id: string): Promise<void> => {
     setError(null);
-    setSaved(false);
     setDeletingHub(null);
 
     try {
@@ -298,6 +298,13 @@ export function TeamHubList({
                       <Button
                         type="button"
                         variant="secondary"
+                        onClick={() => onManageCollections(hub)}
+                      >
+                        Manage collections
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
                         disabled={reloadingHubId === hub.id}
                         onClick={() => void handleReload(hub)}
                       >
@@ -320,7 +327,6 @@ export function TeamHubList({
         {error && !editingHub && !deletingHub && (
           <p className="mt-3 text-[14px] text-danger">{error}</p>
         )}
-        {saved && <p className="mt-3 text-[14px] text-success">Team hub saved.</p>}
       </div>
 
       {editingHub && (

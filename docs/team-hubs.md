@@ -56,7 +56,7 @@ Each hub row shows service badges indicating what the hub server provides for th
 | 4    | Enter the **API token**                                           |
 | 5    | Click **Save**                                                    |
 
-On success, HarborClient shows **Team hub saved.**, mounts the hub, and runs an additive sync so collections already on the team hub appear in the sidebar.
+On success, HarborClient shows a **Team hub saved.** toast, mounts the hub, and runs an additive sync so collections already on the team hub appear in the sidebar.
 
 ### Edit a team hub
 
@@ -100,6 +100,7 @@ After save, HarborClient probes each hub. Admin-token connections show row actio
 
 - **Manage users** — list, create, edit, and delete user accounts on that hub
 - **Manage tokens** — list, create, and delete API bearer tokens for users on that hub
+- **Manage collections** — list hub collections, delete them on the server, and mark collections as protected from user deletion
 - **Reload** — re-read `server.yaml` on the hub server (see [Reload hub config](#reload-hub-config))
 
 The **Admin** service badge appears on the same connections. User-token rows do not show these actions.
@@ -131,6 +132,19 @@ Admin-token hub rows include **Manage users**. Click it to list, edit, and delet
 Click **Back** to return to the hub connection list.
 
 Use **Manage tokens** on the same row to create or revoke API bearer tokens for users on that hub.
+
+Use **Manage collections** on the same row to list collections on the hub, delete them on the server, or toggle **Protect from user deletion** so non-admin users can only remove the collection from their own sidebar.
+
+### Manage collections
+
+Admin-token hub rows include **Manage collections**. Click it to list every collection on that Team Hub connection.
+
+| Action | Behavior |
+| ------ | -------- |
+| **Protect from user deletion** | When enabled, user-token deletes remove the collection from that user's sidebar only; the server copy stays available to teammates |
+| **Delete** | Permanently deletes the collection on the team hub (type `DELETE` to confirm) |
+
+Click **Back** to return to the hub connection list.
 
 ### Edit a user
 
@@ -178,7 +192,7 @@ When you create or move a collection, pick the provider that should store its da
 | **Create new collection**       | Sidebar **+** or **File → New Collection** → **Add collection** → **Create new** → choose **Provider** |
 | **Move an existing collection** | **Collection Settings → General → Provider** → **Save**                                                |
 
-The provider dropdown lists SQLite, Firestore, MySQL, PostgreSQL, and any configured team hubs. Team hubs are labeled **(Team Hub)**.
+The provider dropdown lists SQLite, Firestore, MySQL, PostgreSQL, and configured **user-token** team hubs. Team hubs are labeled **(Team Hub)**. Admin-token team hub connections are for Team Hub management only (**File → Team Hub**) and do not appear in collection provider dropdowns because they cannot store collection data.
 
 The **active storage location** (set in [Settings → Storage Locations](/settings#storage-locations)) is the default provider for new collections when you do not choose another one.
 
@@ -213,9 +227,17 @@ Choose a team hub as the target **Provider** and save. HarborClient creates the 
 
 ### Delete a hub-backed collection
 
-Choose **Delete** from the collection row menu. When the collection is stored on a team hub, HarborClient asks you to confirm that **team members will lose access** to the collection on the team hub. Confirming deletes the collection on HarborClient Team Hub and removes it from your sidebar.
+Choose **Delete** from the collection row menu.
 
-Deleting a collection from a SQLite or remote-storage provider does not show this team-access warning — only hub-backed collections affect shared server data.
+| Collection state | What happens |
+| ---------------- | ------------ |
+| **Not protected, and you created the collection** | HarborClient asks you to confirm that team members will lose access on the team hub. Confirming deletes the collection on HarborClient Team Hub and removes it from your sidebar. |
+| **Protected from user deletion** | HarborClient asks whether to remove the collection from your sidebar only. Confirming removes it locally; the collection stays on the team hub for other members and will not reappear in your sidebar after sync. |
+| **You did not create the collection** (and it is not protected) | HarborClient removes the collection from your sidebar only; the server copy remains for the creator and other members. |
+
+Administrators enable protection under **File → Team Hub → Manage collections** on an admin-token connection.
+
+Deleting a collection from a SQLite or remote-storage provider does not show the team-hub warnings — only hub-backed collections affect shared server data.
 
 ## Team hubs vs other sharing options
 

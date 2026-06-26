@@ -249,6 +249,66 @@ export function registerSettingsHandlers(db: IStorage): void {
     return client.listAdminResourceOptions();
   });
 
+  // Deletes a hub collection using an admin token.
+  handle(
+    'teamHubs:deleteCollection',
+    ipcArgSchemas.teamHubCollectionDelete,
+    async (_event, hubId, collectionId) => {
+      const hub = listTeamHubs().find((entry) => entry.id === hubId);
+      if (!hub) {
+        throw new Error(`Unknown team hub: ${hubId}`);
+      }
+
+      const client = new TeamHubClient({ baseUrl: hub.baseUrl, token: hub.token });
+      await client.deleteAdminCollection(collectionId);
+    }
+  );
+
+  // Deletes a hub environment using an admin token.
+  handle(
+    'teamHubs:deleteEnvironment',
+    ipcArgSchemas.teamHubEnvironmentDelete,
+    async (_event, hubId, environmentId) => {
+      const hub = listTeamHubs().find((entry) => entry.id === hubId);
+      if (!hub) {
+        throw new Error(`Unknown team hub: ${hubId}`);
+      }
+
+      const client = new TeamHubClient({ baseUrl: hub.baseUrl, token: hub.token });
+      await client.deleteAdminEnvironment(environmentId);
+    }
+  );
+
+  // Updates whether non-admin users may delete a hub collection.
+  handle(
+    'teamHubs:updateCollectionDeletionLocked',
+    ipcArgSchemas.teamHubCollectionDeletionLocked,
+    async (_event, hubId, collectionId, deletionLocked) => {
+      const hub = listTeamHubs().find((entry) => entry.id === hubId);
+      if (!hub) {
+        throw new Error(`Unknown team hub: ${hubId}`);
+      }
+
+      const client = new TeamHubClient({ baseUrl: hub.baseUrl, token: hub.token });
+      return client.updateAdminCollectionDeletionLocked(collectionId, deletionLocked);
+    }
+  );
+
+  // Updates whether non-admin users may delete a hub environment.
+  handle(
+    'teamHubs:updateEnvironmentDeletionLocked',
+    ipcArgSchemas.teamHubEnvironmentDeletionLocked,
+    async (_event, hubId, environmentId, deletionLocked) => {
+      const hub = listTeamHubs().find((entry) => entry.id === hubId);
+      if (!hub) {
+        throw new Error(`Unknown team hub: ${hubId}`);
+      }
+
+      const client = new TeamHubClient({ baseUrl: hub.baseUrl, token: hub.token });
+      return client.updateAdminEnvironmentDeletionLocked(environmentId, deletionLocked);
+    }
+  );
+
   // Re-reads reloadable Team Hub config sections using an admin token.
   handle('teamHubs:reloadConfig', ipcArgSchemas.connectionId, async (_event, hubId) => {
     const hub = listTeamHubs().find((entry) => entry.id === hubId);

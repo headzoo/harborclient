@@ -17,7 +17,13 @@ import { trimRequiredName } from '#/main/storage/trimRequiredName';
 import { resolveImportUuid } from '#/main/storage/uuid';
 import type { IStorage } from '#/main/storage/IStorage';
 import type { TeamHubClient } from '#/main/teamHub/TeamHubClient';
-import type { CollectionRecord, FolderRecord, SavedRequestRecord } from '#/main/teamHub/types';
+import { toTeamHubAuth, type TeamHubAuthConfig } from '#/main/teamHub/auth';
+import type {
+  CollectionRecord,
+  EnvironmentRecord,
+  FolderRecord,
+  SavedRequestRecord
+} from '#/main/teamHub/types';
 import { defaultAuth, normalizeAuth } from '#/shared/auth';
 import type {
   AuthConfig,
@@ -47,7 +53,25 @@ function serverToCollection(record: CollectionRecord, localId: number): Collecti
     auth: normalizeAuth(record.auth),
     pre_request_script: record.preRequestScript,
     post_request_script: record.postRequestScript,
-    created_at: record.createdAt
+    created_at: record.createdAt,
+    deletion_locked: record.deletionLocked
+  };
+}
+
+/**
+ * Maps a server environment record to the local {@link Environment} shape.
+ *
+ * @param record - Environment payload from HarborClient Server.
+ * @param localId - Numeric id assigned by {@link TeamHubIdMap}.
+ */
+function serverToEnvironment(record: EnvironmentRecord, localId: number): Environment {
+  return {
+    id: localId,
+    uuid: record.id,
+    name: record.name,
+    variables: record.variables.map(normalizeVariable),
+    created_at: record.createdAt,
+    deletion_locked: record.deletionLocked
   };
 }
 
@@ -120,7 +144,7 @@ function toServerRequestBody(
   url: string;
   headers: KeyValue[];
   params: KeyValue[];
-  auth: AuthConfig;
+  auth: TeamHubAuthConfig;
   body: string;
   bodyType: SaveRequestInput['body_type'];
   preRequestScript: string;
@@ -134,7 +158,7 @@ function toServerRequestBody(
     url: input.url,
     headers: input.headers,
     params: input.params,
-    auth: input.auth,
+    auth: toTeamHubAuth(input.auth),
     body: input.body,
     bodyType: input.body_type,
     preRequestScript: input.pre_request_script ?? '',
@@ -227,7 +251,7 @@ export class TeamHubStorage implements IStorage {
       headers,
       preRequestScript,
       postRequestScript,
-      auth
+      auth: toTeamHubAuth(auth)
     });
     return serverToCollection(record, id);
   }
@@ -244,10 +268,13 @@ export class TeamHubStorage implements IStorage {
   }
 
   /**
-   * Environments are stored in the local registry for team hub collections.
+   * Lists all environments from the server with ids translated to numeric form.
    */
   async listEnvironments(): Promise<Environment[]> {
-    return [];
+    const records = await this.client.listEnvironments();
+    return records.map((record) =>
+      serverToEnvironment(record, this.idMap.toLocalId('environment', record.id))
+    );
   }
 
   /**

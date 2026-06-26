@@ -19,6 +19,7 @@ import {
   listAdminUsersResponseSchema,
   listAdminCollectionsResponseSchema,
   listAdminEnvironmentsResponseSchema,
+  adminEntityConfigSchema,
   createAdminUserResponseSchema,
   createdApiTokenResponseSchema,
   listAdminTokensResponseSchema,
@@ -27,6 +28,7 @@ import {
 } from '#/main/teamHub/schemas';
 import type {
   AdminResourceOption,
+  AdminEntityConfig,
   CollectionRecord,
   CreateCollectionInput,
   CreateEnvironmentInput,
@@ -369,6 +371,58 @@ export class TeamHubClient implements ITeamHubClient {
   }
 
   /**
+   * Deletes a collection via the admin management API.
+   *
+   * @param id - Collection UUID.
+   */
+  async deleteAdminCollection(id: string): Promise<void> {
+    await this.request('DELETE', `/admin/collections/${id}`);
+  }
+
+  /**
+   * Deletes an environment via the admin management API.
+   *
+   * @param id - Environment UUID.
+   */
+  async deleteAdminEnvironment(id: string): Promise<void> {
+    await this.request('DELETE', `/admin/environments/${id}`);
+  }
+
+  /**
+   * Updates whether non-admin users may delete a collection.
+   *
+   * @param id - Collection UUID.
+   * @param deletionLocked - When true, user-role tokens cannot delete the collection.
+   */
+  async updateAdminCollectionDeletionLocked(
+    id: string,
+    deletionLocked: boolean
+  ): Promise<AdminEntityConfig> {
+    const result = await this.request('PUT', `/admin/collections/${id}`, {
+      body: { deletionLocked },
+      schema: adminEntityConfigSchema
+    });
+    return result as AdminEntityConfig;
+  }
+
+  /**
+   * Updates whether non-admin users may delete an environment.
+   *
+   * @param id - Environment UUID.
+   * @param deletionLocked - When true, user-role tokens cannot delete the environment.
+   */
+  async updateAdminEnvironmentDeletionLocked(
+    id: string,
+    deletionLocked: boolean
+  ): Promise<AdminEntityConfig> {
+    const result = await this.request('PUT', `/admin/environments/${id}`, {
+      body: { deletionLocked },
+      schema: adminEntityConfigSchema
+    });
+    return result as AdminEntityConfig;
+  }
+
+  /**
    * Lists all hub-offered LLM models for admin user management.
    *
    * Returns an empty list when LLM support is not configured on the hub.
@@ -491,6 +545,9 @@ export class TeamHubClient implements ITeamHubClient {
 
   /**
    * Lists all collections visible to the authenticated token.
+   *
+   * Admin tokens receive the full catalog from `GET /collections`; create, update,
+   * and delete remain forbidden on the server.
    */
   async listCollections(): Promise<CollectionRecord[]> {
     const result = await this.request('GET', '/collections', {
@@ -537,6 +594,9 @@ export class TeamHubClient implements ITeamHubClient {
 
   /**
    * Lists all environments visible to the authenticated token.
+   *
+   * Admin tokens receive the full catalog from `GET /environments`; create, update,
+   * and delete remain forbidden on the server.
    */
   async listEnvironments(): Promise<EnvironmentRecord[]> {
     const result = await this.request('GET', '/environments', {

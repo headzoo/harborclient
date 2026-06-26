@@ -17,6 +17,7 @@ import type {
   ProviderDescriptor,
   RoutingInternals
 } from '#/main/storage/routingInternals';
+import { isTeamHubCollectionDeleteForbiddenError } from '#/main/teamHub/isTeamHubCollectionDeleteForbiddenError';
 import { logVerbose } from '#/main/logger';
 import { isStorageConnectionConfigured } from '#/main/settings/storageSettings';
 import { getSlotForConnection } from '#/main/settings/storageSlots';
@@ -293,12 +294,71 @@ export class RoutingStorage implements IStorage {
 
   /**
    * Deletes a collection from its provider and the registry.
+   *
+   * Team hub collections marked deletion-locked, or those the token cannot delete
+   * on the server, are removed locally only so the server copy stays available.
    */
   async deleteCollection(id: number): Promise<void> {
     const entry = this.requireEntry(id);
     const backend = this.requireBackendByConnectionId(entry.connectionId);
+
+    if (backend.connectionType === 'team-hub' && backend.db instanceof TeamHubStorage) {
+      const hubDb = backend.db;
+      const serverCollections = await hubDb.listCollections();
+      const record = serverCollections.find((item) => item.id === entry.providerCollectionId);
+      if (record?.deletion_locked) {
+        this.removeTeamHubCollectionFromSidebar(
+          hubDb,
+          entry.connectionId,
+          entry.providerCollectionId,
+          id
+        );
+        return;
+      }
+
+      try {
+        await hubDb.deleteCollection(entry.providerCollectionId);
+      } catch (err) {
+        if (isTeamHubCollectionDeleteForbiddenError(err)) {
+          this.removeTeamHubCollectionFromSidebar(
+            hubDb,
+            entry.connectionId,
+            entry.providerCollectionId,
+            id
+          );
+          return;
+        }
+        throw err;
+      }
+
+      this.database.deleteRegistryEntry(id);
+      return;
+    }
+
     await backend.db.deleteCollection(entry.providerCollectionId);
     this.database.deleteRegistryEntry(id);
+  }
+
+  /**
+   * Removes a hub-backed collection from the local sidebar without deleting it on the server.
+   *
+   * @param hubDb - Team hub storage backend for the collection.
+   * @param hubId - Team hub connection id.
+   * @param providerCollectionId - Provider-local collection id.
+   * @param registryEntryId - Global registry entry id.
+   */
+  private removeTeamHubCollectionFromSidebar(
+    hubDb: TeamHubStorage,
+    hubId: string,
+    providerCollectionId: number,
+    registryEntryId: number
+  ): void {
+    const serverId = hubDb.getServerCollectionId(providerCollectionId);
+    if (serverId) {
+      addDetachedServerId(this.database, hubId, serverId);
+    }
+    hubDb.forgetLocalCollection(providerCollectionId);
+    this.database.deleteRegistryEntry(registryEntryId);
   }
 
   /**
@@ -1148,6 +1208,7 @@ export class RoutingStorage implements IStorage {
       pre_request_script: record?.pre_request_script ?? '',
       post_request_script: record?.post_request_script ?? '',
       created_at: record?.created_at ?? entry.created_at,
+      deletion_locked: record?.deletion_locked,
       connectionId: entry.connectionId
     };
   }

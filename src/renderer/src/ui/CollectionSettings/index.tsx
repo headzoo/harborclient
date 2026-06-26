@@ -102,7 +102,10 @@ function CollectionSettingsForm({
     loading: providersLoading,
     error: providersError,
     reload: reloadProviders
-  } = useProviders([collection.connectionId]);
+  } = useProviders([collection.connectionId], {
+    excludeAdminTeamHubs: true,
+    retainConnectionId: collection.connectionId
+  });
 
   const resolvedConnectionId = connectionId || collection.connectionId || primaryProviderId;
 

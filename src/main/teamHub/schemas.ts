@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { TeamHubAuthConfig } from '#/main/teamHub/auth';
 import type {
   CollectionRecord,
   EnvironmentRecord,
@@ -8,7 +9,21 @@ import type {
   SavedRequestRecord,
   SessionResponse
 } from '#/main/teamHub/types';
-import { authConfig, bodyType, httpMethod, keyValue, variable } from '#/main/schemas/common';
+import { bodyType, httpMethod, keyValue, variable } from '#/main/schemas/common';
+
+/**
+ * Authorization settings returned by Team Hub entity routes.
+ */
+export const teamHubAuthConfigSchema = z.object({
+  type: z.enum(['none', 'basic', 'bearer']),
+  basic: z.object({
+    username: z.string(),
+    password: z.string()
+  }),
+  bearer: z.object({
+    token: z.string()
+  })
+}) satisfies z.ZodType<TeamHubAuthConfig>;
 
 /**
  * Standard error body returned by HarborClient Server API routes.
@@ -23,6 +38,13 @@ export const errorResponseSchema = z.object({
 export const timestampSchema = z.iso.datetime();
 
 /**
+ * Parses deletion lock flags from Team Hub responses.
+ *
+ * Older hub versions omit this field; treat missing values as unlocked.
+ */
+export const deletionLockedSchema = z.boolean().optional().default(false);
+
+/**
  * JSON shape for a persisted collection record.
  */
 export const collectionRecordSchema = z.object({
@@ -30,10 +52,11 @@ export const collectionRecordSchema = z.object({
   name: z.string(),
   variables: z.array(variable),
   headers: z.array(keyValue),
-  auth: authConfig,
+  auth: teamHubAuthConfigSchema,
   preRequestScript: z.string(),
   postRequestScript: z.string(),
-  createdAt: timestampSchema
+  createdAt: timestampSchema,
+  deletionLocked: deletionLockedSchema
 }) satisfies z.ZodType<CollectionRecord>;
 
 /**
@@ -43,7 +66,8 @@ export const environmentRecordSchema = z.object({
   id: z.string(),
   name: z.string(),
   variables: z.array(variable),
-  createdAt: timestampSchema
+  createdAt: timestampSchema,
+  deletionLocked: deletionLockedSchema
 }) satisfies z.ZodType<EnvironmentRecord>;
 
 /**
@@ -68,7 +92,7 @@ export const savedRequestRecordSchema = z.object({
   url: z.string(),
   headers: z.array(keyValue),
   params: z.array(keyValue),
-  auth: authConfig,
+  auth: teamHubAuthConfigSchema,
   body: z.string(),
   bodyType: bodyType,
   preRequestScript: z.string(),
@@ -136,7 +160,31 @@ export const listAdminUsersResponseSchema = z.object({
  */
 export const adminResourceOptionSchema = z.object({
   id: z.string(),
-  name: z.string()
+  name: z.string(),
+  deletionLocked: deletionLockedSchema
+});
+
+/**
+ * Response body schema for admin entity configuration updates.
+ */
+export const adminEntityConfigSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  deletionLocked: deletionLockedSchema
+});
+
+/**
+ * Request body schema for `PUT /admin/collections/:id`.
+ */
+export const updateAdminCollectionBodySchema = z.object({
+  deletionLocked: z.boolean()
+});
+
+/**
+ * Request body schema for `PUT /admin/environments/:id`.
+ */
+export const updateAdminEnvironmentBodySchema = z.object({
+  deletionLocked: z.boolean()
 });
 
 /**

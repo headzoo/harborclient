@@ -27,6 +27,21 @@ export interface ProviderOption {
 }
 
 /**
+ * Options for {@link useProviders} that control which team hubs appear in the list.
+ */
+export interface UseProvidersOptions {
+  /**
+   * When true, omits admin-token team hubs because they cannot store collections.
+   */
+  excludeAdminTeamHubs?: boolean;
+
+  /**
+   * Provider id to keep in the list even when it is an admin hub (current collection provider).
+   */
+  retainConnectionId?: string;
+}
+
+/**
  * Loaded provider list and bootstrap state from IPC.
  */
 export interface ProvidersState {
@@ -76,12 +91,77 @@ export function providerOptionLabel(provider: ProviderOption): string {
 }
 
 /**
+ * Removes admin-token team hubs from a provider list for collection pickers.
+ *
+ * @param providers - Full merged provider list from IPC.
+ * @param adminHubIds - Hub connection ids whose tokens report management API access.
+ * @param retainConnectionId - Optional provider id to keep even when it is an admin hub.
+ * @returns Filtered provider options safe to show in collection provider dropdowns.
+ */
+export function filterCollectionProviders(
+  providers: ProviderOption[],
+  adminHubIds: ReadonlySet<string>,
+  retainConnectionId?: string
+): ProviderOption[] {
+  return providers.filter(
+    (provider) =>
+      provider.kind !== 'team-hub' ||
+      !adminHubIds.has(provider.id) ||
+      provider.id === retainConnectionId
+  );
+}
+
+/**
+ * Builds admin hub ids from session scan results.
+ *
+ * @param scanResults - Session scan results from IPC, or undefined when the scan failed.
+ * @returns Hub ids whose tokens report management API access.
+ */
+function adminHubIdsFromScanResults(
+  scanResults: Awaited<ReturnType<typeof window.api.scanTeamHubSessions>> | undefined
+): Set<string> {
+  const adminHubIds = new Set<string>();
+  if (scanResults === undefined) {
+    return adminHubIds;
+  }
+
+  for (const result of scanResults) {
+    if (result.managementApi) {
+      adminHubIds.add(result.hubId);
+    }
+  }
+
+  return adminHubIds;
+}
+
+/**
+ * Resolves the default provider id from a filtered provider list.
+ *
+ * @param providers - Provider options after optional admin-hub filtering.
+ * @param activeDatabaseId - Active storage connection id from settings.
+ * @returns Provider id to use when none is chosen explicitly.
+ */
+function resolvePrimaryProviderId(providers: ProviderOption[], activeDatabaseId: string): string {
+  return (
+    providers.find((provider) => provider.id === activeDatabaseId)?.id ??
+    providers.find((provider) => provider.kind === 'database')?.id ??
+    providers[0]?.id ??
+    ''
+  );
+}
+
+/**
  * Loads database connections and team hubs via IPC and merges them into one provider list.
  *
  * @param deps - Optional effect dependencies; when they change the hook refetches.
+ * @param options - Optional filtering for collection provider pickers.
  * @returns Provider list, primary id, loading/error flags, and a reload callback.
  */
-export function useProviders(deps: readonly unknown[] = []): ProvidersState {
+export function useProviders(
+  deps: readonly unknown[] = [],
+  options: UseProvidersOptions = {}
+): ProvidersState {
+  const { excludeAdminTeamHubs = false, retainConnectionId } = options;
   const [providers, setProviders] = useState<ProviderOption[]>([]);
   const [primaryProviderId, setPrimaryProviderId] = useState('');
   const [loading, setLoading] = useState(true);
@@ -96,7 +176,8 @@ export function useProviders(deps: readonly unknown[] = []): ProvidersState {
   }, []);
 
   /**
-   * Fetches database connections, team hubs, and the active database id.
+   * Fetches database connections, team hubs, the active database id, and optionally
+   * admin capability scan results for collection provider filtering.
    */
   useEffect(() => {
     let cancelled = false;
@@ -109,12 +190,15 @@ export function useProviders(deps: readonly unknown[] = []): ProvidersState {
         return Promise.all([
           window.api.listStorageConnections(),
           window.api.listTeamHubs(),
-          window.api.getActiveStorageId()
+          window.api.getActiveStorageId(),
+          excludeAdminTeamHubs
+            ? window.api.scanTeamHubSessions().catch((): undefined => undefined)
+            : Promise.resolve(undefined)
         ]);
       })
       .then((result) => {
         if (cancelled || result === undefined) return;
-        const [connections, hubs, activeDatabaseId] = result;
+        const [connections, hubs, activeDatabaseId, scanResults] = result;
         const merged: ProviderOption[] = [
           ...connections.map((connection) => ({
             id: connection.id,
@@ -128,13 +212,15 @@ export function useProviders(deps: readonly unknown[] = []): ProvidersState {
             kind: 'team-hub' as const
           }))
         ];
-        setProviders(merged);
-        const activeProvider =
-          merged.find((provider) => provider.id === activeDatabaseId)?.id ??
-          merged.find((provider) => provider.kind === 'database')?.id ??
-          merged[0]?.id ??
-          '';
-        setPrimaryProviderId(activeProvider);
+        const visibleProviders = excludeAdminTeamHubs
+          ? filterCollectionProviders(
+              merged,
+              adminHubIdsFromScanResults(scanResults),
+              retainConnectionId
+            )
+          : merged;
+        setProviders(visibleProviders);
+        setPrimaryProviderId(resolvePrimaryProviderId(visibleProviders, activeDatabaseId));
         setLoading(false);
       })
       .catch((err: unknown) => {
@@ -147,7 +233,7 @@ export function useProviders(deps: readonly unknown[] = []): ProvidersState {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- caller supplies intentional refetch keys
-  }, [reloadToken, ...deps]);
+  }, [excludeAdminTeamHubs, retainConnectionId, reloadToken, ...deps]);
 
   return { providers, primaryProviderId, loading, error, reload };
 }

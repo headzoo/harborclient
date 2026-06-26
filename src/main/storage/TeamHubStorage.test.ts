@@ -61,6 +61,30 @@ describeSqlite('TeamHubStorage', () => {
     expect(db.getServerCollectionId(collection.id)).toBe(serverId);
   });
 
+  it('maps server environment fields and ids when listing environments', async () => {
+    const serverId = '770e8400-e29b-41d4-a716-446655440010';
+    const db = createStorage({
+      listEnvironments: vi.fn().mockResolvedValue([
+        {
+          id: serverId,
+          name: 'Production',
+          variables: [
+            { key: 'host', value: 'https://api.example.com', defaultValue: '', share: true }
+          ],
+          createdAt: '2026-01-02T00:00:00.000Z'
+        }
+      ])
+    });
+
+    const [environment] = await db.listEnvironments();
+    expect(environment.id).toBe(1);
+    expect(environment.name).toBe('Production');
+    expect(environment.variables).toEqual([
+      { key: 'host', value: 'https://api.example.com', defaultValue: '', share: true }
+    ]);
+    expect(environment.uuid).toBe(serverId);
+  });
+
   it('translates create and update collection calls to server UUIDs', async () => {
     const serverId = '660e8400-e29b-41d4-a716-446655440001';
     const createCollection = vi.fn().mockResolvedValue({
@@ -103,7 +127,11 @@ describeSqlite('TeamHubStorage', () => {
       headers: [],
       preRequestScript: 'pre',
       postRequestScript: 'post',
-      auth: defaultAuth()
+      auth: {
+        type: 'none',
+        basic: { username: '', password: '' },
+        bearer: { token: '' }
+      }
     });
     expect(updated.name).toBe('Renamed');
   });

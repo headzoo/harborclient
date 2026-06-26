@@ -430,16 +430,22 @@ export function Sidebar({
                     const collection = collections.find((item) => item.id === id);
                     if (collection && isTeamHubProvider(providers, collection.connectionId)) {
                       const confirmed = await showConfirm(dispatch, {
-                        title: 'Delete collection',
-                        message:
-                          'Delete this collection from the team hub? Team members will lose access to it on the server.',
-                        confirmLabel: 'Delete',
+                        title: collection.deletion_locked
+                          ? 'Remove collection'
+                          : 'Delete collection',
+                        message: collection.deletion_locked
+                          ? 'Remove this collection from your sidebar only? It will stay on the team hub for other members.'
+                          : 'Delete this collection from the team hub? Team members will lose access to it on the server.',
+                        confirmLabel: collection.deletion_locked ? 'Remove' : 'Delete',
                         variant: 'danger'
                       });
                       if (!confirmed) return;
                     }
                     try {
                       await dispatch(deleteCollection(id)).unwrap();
+                      if (collection?.deletion_locked) {
+                        toast.success('Collection removed from sidebar.');
+                      }
                     } catch (err) {
                       showAlert(dispatch, formatErrorMessage(err, 'Failed to delete collection'));
                     }

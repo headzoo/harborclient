@@ -1,4 +1,5 @@
 import type {
+  AdminEntityConfig,
   AdminResourceOption,
   CollectionRecord,
   CreateCollectionInput,
@@ -105,6 +106,42 @@ export interface ITeamHubClient {
   listAdminEnvironments(): Promise<AdminResourceOption[]>;
 
   /**
+   * Deletes a collection via the admin management API.
+   *
+   * @param id - Collection UUID.
+   */
+  deleteAdminCollection(id: string): Promise<void>;
+
+  /**
+   * Deletes an environment via the admin management API.
+   *
+   * @param id - Environment UUID.
+   */
+  deleteAdminEnvironment(id: string): Promise<void>;
+
+  /**
+   * Updates whether non-admin users may delete a collection.
+   *
+   * @param id - Collection UUID.
+   * @param deletionLocked - When true, user-role tokens cannot delete the collection.
+   */
+  updateAdminCollectionDeletionLocked(
+    id: string,
+    deletionLocked: boolean
+  ): Promise<AdminEntityConfig>;
+
+  /**
+   * Updates whether non-admin users may delete an environment.
+   *
+   * @param id - Environment UUID.
+   * @param deletionLocked - When true, user-role tokens cannot delete the environment.
+   */
+  updateAdminEnvironmentDeletionLocked(
+    id: string,
+    deletionLocked: boolean
+  ): Promise<AdminEntityConfig>;
+
+  /**
    * Lists all hub-offered LLM models for admin user management.
    */
   listAdminLlmModels(): Promise<HubLlmModel[]>;
@@ -136,6 +173,9 @@ export interface ITeamHubClient {
 
   /**
    * Lists all collections visible to the authenticated token.
+   *
+   * Admin tokens receive the full catalog from `GET /collections`; create, update,
+   * and delete remain forbidden on the server.
    */
   listCollections(): Promise<CollectionRecord[]>;
 
@@ -163,6 +203,9 @@ export interface ITeamHubClient {
 
   /**
    * Lists all environments visible to the authenticated token.
+   *
+   * Admin tokens receive the full catalog from `GET /environments`; create, update,
+   * and delete remain forbidden on the server.
    */
   listEnvironments(): Promise<EnvironmentRecord[]>;
 

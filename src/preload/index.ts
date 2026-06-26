@@ -800,6 +800,66 @@ function listTeamHubAdminResourceOptions(hubId: string): Promise<TeamHubAdminRes
 }
 
 /**
+ * Deletes a hub collection using an admin token via IPC.
+ *
+ * @param hubId - Team hub connection id with an admin token.
+ * @param collectionId - Server collection UUID.
+ */
+function deleteTeamHubCollection(hubId: string, collectionId: string): Promise<void> {
+  return ipcRenderer.invoke('teamHubs:deleteCollection', hubId, collectionId);
+}
+
+/**
+ * Deletes a hub environment using an admin token via IPC.
+ *
+ * @param hubId - Team hub connection id with an admin token.
+ * @param environmentId - Server environment UUID.
+ */
+function deleteTeamHubEnvironment(hubId: string, environmentId: string): Promise<void> {
+  return ipcRenderer.invoke('teamHubs:deleteEnvironment', hubId, environmentId);
+}
+
+/**
+ * Updates whether non-admin users may delete a hub collection via IPC.
+ *
+ * @param hubId - Team hub connection id with an admin token.
+ * @param collectionId - Server collection UUID.
+ * @param deletionLocked - When true, user-role tokens cannot delete the collection.
+ */
+function updateTeamHubCollectionDeletionLocked(
+  hubId: string,
+  collectionId: string,
+  deletionLocked: boolean
+): Promise<import('#/shared/types').AdminEntityConfig> {
+  return ipcRenderer.invoke(
+    'teamHubs:updateCollectionDeletionLocked',
+    hubId,
+    collectionId,
+    deletionLocked
+  );
+}
+
+/**
+ * Updates whether non-admin users may delete a hub environment via IPC.
+ *
+ * @param hubId - Team hub connection id with an admin token.
+ * @param environmentId - Server environment UUID.
+ * @param deletionLocked - When true, user-role tokens cannot delete the environment.
+ */
+function updateTeamHubEnvironmentDeletionLocked(
+  hubId: string,
+  environmentId: string,
+  deletionLocked: boolean
+): Promise<import('#/shared/types').AdminEntityConfig> {
+  return ipcRenderer.invoke(
+    'teamHubs:updateEnvironmentDeletionLocked',
+    hubId,
+    environmentId,
+    deletionLocked
+  );
+}
+
+/**
  * Re-reads collection data from a single provider via IPC.
  *
  * @param connectionId - Provider connection id to sync.
@@ -1632,6 +1692,10 @@ const api: Api = {
   createTeamHubUserToken,
   deleteTeamHubToken,
   listTeamHubAdminResourceOptions,
+  deleteTeamHubCollection,
+  deleteTeamHubEnvironment,
+  updateTeamHubCollectionDeletionLocked,
+  updateTeamHubEnvironmentDeletionLocked,
   syncProvider,
   listGitStatuses,
   onGitWorkingTreeChanged,

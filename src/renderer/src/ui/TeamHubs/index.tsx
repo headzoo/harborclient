@@ -5,11 +5,12 @@ import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faXmark } from '#/renderer/src/fontawesome';
 import { useTeamHubServiceScan } from '#/renderer/src/hooks/useTeamHubServiceScan';
 import { useTeamHubs } from '#/renderer/src/hooks/useTeamHubs';
+import { TeamCollectionsView } from './TeamCollectionsView';
 import { TeamHubList } from './TeamHubList';
 import { TeamManageView } from './TeamManageView';
 import { TeamTokensView } from './TeamTokensView';
 
-type TeamHubsView = 'list' | 'manageUsers' | 'manageTokens';
+type TeamHubsView = 'list' | 'manageUsers' | 'manageTokens' | 'manageCollections';
 
 interface Props {
   /**
@@ -31,6 +32,10 @@ function getPageTitle(view: TeamHubsView, hub: TeamHub | null): string {
 
   if (view === 'manageTokens' && hub) {
     return `Manage tokens — ${hub.name || hub.baseUrl}`;
+  }
+
+  if (view === 'manageCollections' && hub) {
+    return `Manage collections — ${hub.name || hub.baseUrl}`;
   }
 
   return 'Team Hub';
@@ -77,6 +82,16 @@ export function TeamHubs({ onClose }: Props): JSX.Element {
     setView('manageTokens');
   };
 
+  /**
+   * Opens collection management for the selected admin hub connection.
+   *
+   * @param hub - Admin team hub connection to manage.
+   */
+  const handleManageCollections = (hub: TeamHub): void => {
+    setActiveAdminHub(hub);
+    setView('manageCollections');
+  };
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-center justify-between gap-4 border-b border-separator px-6 py-4">
@@ -108,11 +123,14 @@ export function TeamHubs({ onClose }: Props): JSX.Element {
             onRescanServices={rescanServices}
             onManageUsers={handleManageUsers}
             onManageTokens={handleManageTokens}
+            onManageCollections={handleManageCollections}
           />
         ) : view === 'manageUsers' && activeAdminHub ? (
           <TeamManageView hub={activeAdminHub} onBack={handleBackToList} />
         ) : view === 'manageTokens' && activeAdminHub ? (
           <TeamTokensView hub={activeAdminHub} onBack={handleBackToList} />
+        ) : view === 'manageCollections' && activeAdminHub ? (
+          <TeamCollectionsView hub={activeAdminHub} onBack={handleBackToList} />
         ) : null}
       </div>
     </div>

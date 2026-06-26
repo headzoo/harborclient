@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TeamHubClient } from '#/main/teamHub/TeamHubClient';
 import { TeamHubClientError } from '#/main/teamHub/TeamHubClientError';
-import { defaultAuth } from '#/shared/auth';
 
 describe('TeamHubClient', () => {
   const originalFetch = globalThis.fetch;
@@ -477,16 +476,26 @@ describe('TeamHubClient', () => {
       const fetchMock = vi
         .fn()
         .mockResolvedValueOnce(
-          new Response(JSON.stringify({ collections: [{ id: 'c-1', name: 'Shared API' }] }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
+          new Response(
+            JSON.stringify({
+              collections: [{ id: 'c-1', name: 'Shared API', deletionLocked: false }]
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
         )
         .mockResolvedValueOnce(
-          new Response(JSON.stringify({ environments: [{ id: 'e-1', name: 'Production' }] }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          })
+          new Response(
+            JSON.stringify({
+              environments: [{ id: 'e-1', name: 'Production', deletionLocked: false }]
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
         )
         .mockResolvedValueOnce(
           new Response(
@@ -505,8 +514,8 @@ describe('TeamHubClient', () => {
       const options = await client.listAdminResourceOptions();
 
       expect(options).toEqual({
-        collections: [{ id: 'c-1', name: 'Shared API' }],
-        environments: [{ id: 'e-1', name: 'Production' }],
+        collections: [{ id: 'c-1', name: 'Shared API', deletionLocked: false }],
+        environments: [{ id: 'e-1', name: 'Production', deletionLocked: false }],
         models: [{ id: 'gpt-4o', label: 'GPT-4o', provider: 'openai' }]
       });
       expect(fetchMock).toHaveBeenCalledTimes(3);
@@ -546,16 +555,21 @@ describe('TeamHubClient', () => {
   });
 
   describe('listCollections', () => {
-    it('sends bearer auth and parses the collections list', async () => {
+    it('sends bearer auth and parses the full collections list', async () => {
       const collection = {
         id: '550e8400-e29b-41d4-a716-446655440000',
         name: 'Shared API',
         variables: [],
         headers: [],
-        auth: defaultAuth(),
+        auth: {
+          type: 'none' as const,
+          basic: { username: '', password: '' },
+          bearer: { token: '' }
+        },
         preRequestScript: '',
         postRequestScript: '',
-        createdAt: '2026-01-01T00:00:00.000Z'
+        createdAt: '2026-01-01T00:00:00.000Z',
+        deletionLocked: false
       };
 
       const fetchMock = vi.fn().mockResolvedValue(
@@ -578,6 +592,96 @@ describe('TeamHubClient', () => {
             Authorization: `Bearer ${token}`,
             Accept: 'application/json'
           })
+        })
+      );
+    });
+  });
+
+  describe('listEnvironments', () => {
+    it('sends bearer auth and parses the full environments list', async () => {
+      const environment = {
+        id: '660e8400-e29b-41d4-a716-446655440002',
+        name: 'Production',
+        variables: [
+          { key: 'host', value: 'https://api.example.com', defaultValue: '', share: true }
+        ],
+        createdAt: '2026-01-02T00:00:00.000Z',
+        deletionLocked: false
+      };
+
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ environments: [environment] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      const environments = await client.listEnvironments();
+
+      expect(environments).toEqual([environment]);
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://127.0.0.1:8788/environments',
+        expect.objectContaining({
+          method: 'GET',
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json'
+          })
+        })
+      );
+    });
+  });
+
+  describe('createCollection', () => {
+    it('parses Team Hub create responses without oauth2 auth', async () => {
+      const collection = {
+        id: '660e8400-e29b-41d4-a716-446655440001',
+        name: 'Moved API',
+        variables: [],
+        headers: [],
+        auth: {
+          type: 'none' as const,
+          basic: { username: '', password: '' },
+          bearer: { token: '' }
+        },
+        preRequestScript: '',
+        postRequestScript: '',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+        createdByUserId: 'user-1',
+        updatedByUserId: 'user-1',
+        deletionLocked: false
+      };
+
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(collection), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      const created = await client.createCollection({ name: 'Moved API' });
+
+      expect(created).toEqual({
+        id: collection.id,
+        name: collection.name,
+        variables: collection.variables,
+        headers: collection.headers,
+        auth: collection.auth,
+        preRequestScript: collection.preRequestScript,
+        postRequestScript: collection.postRequestScript,
+        createdAt: collection.createdAt,
+        deletionLocked: collection.deletionLocked
+      });
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://127.0.0.1:8788/collections',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ name: 'Moved API' })
         })
       );
     });
@@ -644,6 +748,108 @@ describe('TeamHubClient', () => {
             systemPrompt: 'System',
             tools: []
           })
+        })
+      );
+    });
+  });
+
+  describe('deleteAdminCollection', () => {
+    it('resolves without a body for 204 responses', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      await expect(
+        client.deleteAdminCollection('550e8400-e29b-41d4-a716-446655440000')
+      ).resolves.toBeUndefined();
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://127.0.0.1:8788/admin/collections/550e8400-e29b-41d4-a716-446655440000',
+        expect.objectContaining({
+          method: 'DELETE',
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${token}`
+          })
+        })
+      );
+    });
+  });
+
+  describe('deleteAdminEnvironment', () => {
+    it('resolves without a body for 204 responses', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      await expect(
+        client.deleteAdminEnvironment('660e8400-e29b-41d4-a716-446655440002')
+      ).resolves.toBeUndefined();
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://127.0.0.1:8788/admin/environments/660e8400-e29b-41d4-a716-446655440002',
+        expect.objectContaining({
+          method: 'DELETE',
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${token}`
+          })
+        })
+      );
+    });
+  });
+
+  describe('updateAdminCollectionDeletionLocked', () => {
+    it('sends the lock flag and parses the updated config', async () => {
+      const config = {
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        name: 'Shared API',
+        deletionLocked: true
+      };
+
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(config), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      const result = await client.updateAdminCollectionDeletionLocked(config.id, true);
+
+      expect(result).toEqual(config);
+      expect(fetchMock).toHaveBeenCalledWith(
+        `http://127.0.0.1:8788/admin/collections/${config.id}`,
+        expect.objectContaining({
+          method: 'PUT',
+          body: JSON.stringify({ deletionLocked: true })
+        })
+      );
+    });
+  });
+
+  describe('updateAdminEnvironmentDeletionLocked', () => {
+    it('sends the lock flag and parses the updated config', async () => {
+      const config = {
+        id: '660e8400-e29b-41d4-a716-446655440002',
+        name: 'Production',
+        deletionLocked: false
+      };
+
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(config), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      const result = await client.updateAdminEnvironmentDeletionLocked(config.id, false);
+
+      expect(result).toEqual(config);
+      expect(fetchMock).toHaveBeenCalledWith(
+        `http://127.0.0.1:8788/admin/environments/${config.id}`,
+        expect.objectContaining({
+          method: 'PUT',
+          body: JSON.stringify({ deletionLocked: false })
         })
       );
     });

@@ -5,7 +5,7 @@ import { dirname } from 'path';
 /**
  * Entity kinds stored in the team hub id map.
  */
-export type TeamHubEntityType = 'collection' | 'folder' | 'request';
+export type TeamHubEntityType = 'collection' | 'environment' | 'folder' | 'request';
 
 /**
  * Persistent bidirectional map between HarborClient Server UUIDs and local numeric ids.
@@ -55,7 +55,7 @@ export class TeamHubIdMap {
   /**
    * Maps a server UUID to a stable local numeric id, inserting on first sight.
    *
-   * @param entityType - Entity kind (`collection`, `folder`, or `request`).
+   * @param entityType - Entity kind (`collection`, `environment`, `folder`, or `request`).
    * @param serverId - Server-side UUID string.
    * @returns Local numeric id for use with {@link IStorage}.
    */
@@ -77,7 +77,7 @@ export class TeamHubIdMap {
   /**
    * Looks up a local numeric id for a server UUID without inserting a new mapping.
    *
-   * @param entityType - Entity kind (`collection`, `folder`, or `request`).
+   * @param entityType - Entity kind (`collection`, `environment`, `folder`, or `request`).
    * @param serverId - Server-side UUID string.
    * @returns Local numeric id when mapped, otherwise undefined.
    */
@@ -91,7 +91,7 @@ export class TeamHubIdMap {
   /**
    * Resolves a local numeric id back to the server UUID.
    *
-   * @param entityType - Entity kind (`collection`, `folder`, or `request`).
+   * @param entityType - Entity kind (`collection`, `environment`, `folder`, or `request`).
    * @param localId - Local numeric id from {@link toLocalId}.
    * @returns Server UUID, or undefined when the local id is unknown.
    */
@@ -105,7 +105,7 @@ export class TeamHubIdMap {
   /**
    * Removes a server UUID mapping so a detached collection is not reused accidentally.
    *
-   * @param entityType - Entity kind (`collection`, `folder`, or `request`).
+   * @param entityType - Entity kind (`collection`, `environment`, `folder`, or `request`).
    * @param serverId - Server-side UUID string to forget.
    */
   forget(entityType: TeamHubEntityType, serverId: string): void {

@@ -11,6 +11,8 @@ import { SqliteStorage } from '#/main/storage/SqliteStorage';
 import { TeamHubStorage } from '#/main/storage/TeamHubStorage';
 import { TeamHubIdMap } from '#/main/storage/TeamHubIdMap';
 import type { TeamHubClient } from '#/main/teamHub/TeamHubClient';
+import { TeamHubClientError } from '#/main/teamHub/TeamHubClientError';
+import { detachedSettingKey } from '#/main/storage/teamHubDetached';
 import { baseRequestInput } from '#/test/istorageContract';
 import { describeSqlite } from '#/test/nativeModules';
 
@@ -61,7 +63,8 @@ const SERVER_COLLECTION_RECORD = {
   },
   preRequestScript: '',
   postRequestScript: '',
-  createdAt: '2026-01-01T00:00:00.000Z'
+  createdAt: '2026-01-01T00:00:00.000Z',
+  deletionLocked: false
 };
 
 const cleanups: Array<() => void | Promise<void>> = [];
@@ -647,6 +650,148 @@ describeSqlite('RoutingStorage syncTeamHub', () => {
     expect(database.listRegistry()).toHaveLength(1);
     expect(database.listRegistry()[0]?.name).toBe('Team API');
     expect(database.listRegistry()[0]?.connectionId).toBe(HUB_A.id);
+  });
+});
+
+describeSqlite('RoutingStorage deleteCollection team hub', () => {
+  it('removes locked hub collections locally without calling remote delete', async () => {
+    const lockedRecord = {
+      ...SERVER_COLLECTION_RECORD,
+      deletionLocked: true
+    };
+    const listCollections = vi
+      .fn()
+      .mockResolvedValueOnce([lockedRecord])
+      .mockResolvedValueOnce([lockedRecord]);
+    const deleteCollection = vi.fn().mockResolvedValue(undefined);
+    const { router, database, hubDb } = await createRoutingFixtureWithHub({
+      listCollections,
+      deleteCollection
+    });
+
+    const idMap = (hubDb as unknown as { idMap: TeamHubIdMap }).idMap;
+    const localId = idMap.toLocalId('collection', SERVER_COLLECTION_RECORD.id);
+    const globalId = database.addRegistryEntry({
+      name: 'Team API',
+      connectionId: HUB_A.id,
+      providerCollectionId: localId
+    }).id;
+
+    await router.deleteCollection(globalId);
+
+    expect(deleteCollection).not.toHaveBeenCalled();
+    expect(database.listRegistry()).toEqual([]);
+    expect(hubDb.getServerCollectionId(localId)).toBeUndefined();
+
+    const detached = JSON.parse(
+      database.getSetting(detachedSettingKey(HUB_A.id)) ?? '[]'
+    ) as string[];
+    expect(detached).toContain(SERVER_COLLECTION_RECORD.id);
+  });
+
+  it('deletes unlocked hub collections on the server', async () => {
+    const listCollections = vi.fn().mockResolvedValue([SERVER_COLLECTION_RECORD]);
+    const deleteCollection = vi.fn().mockResolvedValue(undefined);
+    const { router, database, hubDb } = await createRoutingFixtureWithHub({
+      listCollections,
+      deleteCollection
+    });
+
+    const idMap = (hubDb as unknown as { idMap: TeamHubIdMap }).idMap;
+    const localId = idMap.toLocalId('collection', SERVER_COLLECTION_RECORD.id);
+    const globalId = database.addRegistryEntry({
+      name: 'Team API',
+      connectionId: HUB_A.id,
+      providerCollectionId: localId
+    }).id;
+
+    await router.deleteCollection(globalId);
+
+    expect(deleteCollection).toHaveBeenCalledTimes(1);
+    expect(database.listRegistry()).toEqual([]);
+  });
+
+  it('removes unlocked hub collections locally when the server rejects delete with 403', async () => {
+    const listCollections = vi.fn().mockResolvedValue([SERVER_COLLECTION_RECORD]);
+    const deleteCollection = vi.fn().mockRejectedValue(
+      new TeamHubClientError('Forbidden', {
+        status: 403,
+        method: 'DELETE',
+        path: `/collections/${SERVER_COLLECTION_RECORD.id}`
+      })
+    );
+    const { router, database, hubDb } = await createRoutingFixtureWithHub({
+      listCollections,
+      deleteCollection
+    });
+
+    const idMap = (hubDb as unknown as { idMap: TeamHubIdMap }).idMap;
+    const localId = idMap.toLocalId('collection', SERVER_COLLECTION_RECORD.id);
+    const globalId = database.addRegistryEntry({
+      name: 'Team API',
+      connectionId: HUB_A.id,
+      providerCollectionId: localId
+    }).id;
+
+    await router.deleteCollection(globalId);
+
+    expect(deleteCollection).toHaveBeenCalledTimes(1);
+    expect(database.listRegistry()).toEqual([]);
+    expect(hubDb.getServerCollectionId(localId)).toBeUndefined();
+
+    const detached = JSON.parse(
+      database.getSetting(detachedSettingKey(HUB_A.id)) ?? '[]'
+    ) as string[];
+    expect(detached).toContain(SERVER_COLLECTION_RECORD.id);
+  });
+
+  it('propagates non-403 hub delete failures without removing the registry entry', async () => {
+    const listCollections = vi.fn().mockResolvedValue([SERVER_COLLECTION_RECORD]);
+    const deleteCollection = vi.fn().mockRejectedValue(
+      new TeamHubClientError('Internal Server Error', {
+        status: 500,
+        method: 'DELETE',
+        path: `/collections/${SERVER_COLLECTION_RECORD.id}`
+      })
+    );
+    const { router, database, hubDb } = await createRoutingFixtureWithHub({
+      listCollections,
+      deleteCollection
+    });
+
+    const idMap = (hubDb as unknown as { idMap: TeamHubIdMap }).idMap;
+    const localId = idMap.toLocalId('collection', SERVER_COLLECTION_RECORD.id);
+    const globalId = database.addRegistryEntry({
+      name: 'Team API',
+      connectionId: HUB_A.id,
+      providerCollectionId: localId
+    }).id;
+
+    await expect(router.deleteCollection(globalId)).rejects.toMatchObject({
+      status: 500
+    });
+    expect(database.listRegistry()).toHaveLength(1);
+    expect(hubDb.getServerCollectionId(localId)).toBe(SERVER_COLLECTION_RECORD.id);
+  });
+
+  it('includes deletion_locked when listing hub-backed collections', async () => {
+    const lockedRecord = {
+      ...SERVER_COLLECTION_RECORD,
+      deletionLocked: true
+    };
+    const listCollections = vi.fn().mockResolvedValue([lockedRecord]);
+    const { router, database, hubDb } = await createRoutingFixtureWithHub({ listCollections });
+
+    const idMap = (hubDb as unknown as { idMap: TeamHubIdMap }).idMap;
+    const localId = idMap.toLocalId('collection', SERVER_COLLECTION_RECORD.id);
+    database.addRegistryEntry({
+      name: 'Team API',
+      connectionId: HUB_A.id,
+      providerCollectionId: localId
+    });
+
+    const [collection] = await router.listCollections();
+    expect(collection?.deletion_locked).toBe(true);
   });
 });
 

@@ -1,11 +1,5 @@
-import type {
-  AuthConfig,
-  BodyType,
-  HttpMethod,
-  HubLlmModel,
-  KeyValue,
-  Variable
-} from '#/shared/types';
+import type { BodyType, HttpMethod, HubLlmModel, KeyValue, Variable } from '#/shared/types';
+import type { TeamHubAuthConfig } from '#/main/teamHub/auth';
 
 /**
  * Response body from `GET /plugins/sources`.
@@ -195,6 +189,31 @@ export interface AdminResourceOption {
    * Human-readable label shown in autocomplete suggestions.
    */
   name: string;
+
+  /**
+   * When true, non-admin users cannot delete this resource on the hub.
+   */
+  deletionLocked: boolean;
+}
+
+/**
+ * Admin configuration returned by entity configuration routes.
+ */
+export interface AdminEntityConfig {
+  /**
+   * Stable resource identifier.
+   */
+  id: string;
+
+  /**
+   * Human-readable label.
+   */
+  name: string;
+
+  /**
+   * When true, non-admin users cannot delete this resource on the hub.
+   */
+  deletionLocked: boolean;
 }
 
 /**
@@ -454,7 +473,7 @@ export interface CollectionRecord {
   /**
    * Default authorization settings for requests in this collection.
    */
-  auth: AuthConfig;
+  auth: TeamHubAuthConfig;
 
   /**
    * JavaScript run before each request in this collection.
@@ -470,6 +489,11 @@ export interface CollectionRecord {
    * ISO 8601 timestamp when the collection was created.
    */
   createdAt: string;
+
+  /**
+   * When true, non-admin users cannot delete this collection on the hub.
+   */
+  deletionLocked: boolean;
 }
 
 /**
@@ -514,7 +538,7 @@ export interface UpdateCollectionInput {
   /**
    * Default authorization settings.
    */
-  auth: AuthConfig;
+  auth: TeamHubAuthConfig;
 }
 
 /**
@@ -540,6 +564,11 @@ export interface EnvironmentRecord {
    * ISO 8601 timestamp when the environment was created.
    */
   createdAt: string;
+
+  /**
+   * When true, non-admin users cannot delete this environment on the hub.
+   */
+  deletionLocked: boolean;
 }
 
 /**
@@ -669,7 +698,7 @@ export interface SavedRequestRecord {
   /**
    * Authorization settings for this request.
    */
-  auth: AuthConfig;
+  auth: TeamHubAuthConfig;
 
   /**
    * Request body content.
@@ -749,7 +778,7 @@ export interface CreateRequestInput {
   /**
    * Authorization settings.
    */
-  auth: AuthConfig;
+  auth: TeamHubAuthConfig;
 
   /**
    * Request body content.
