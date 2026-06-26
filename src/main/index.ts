@@ -12,7 +12,11 @@ import {
 import { join } from 'path';
 import { RoutingStorage } from '#/main/storage';
 import { initLocalDatabase } from '#/main/storage/localDatabaseInstance';
-import { seedDefaultContentIfNeeded } from '#/main/storage/seedDefaultContent';
+import {
+  seedDefaultContentIfNeeded,
+  isSeedFlagEnabled,
+  seedEchoCollectionIfMissing
+} from '#/main/storage/seedDefaultContent';
 import { createStorageInstance } from '#/main/storage/createStorageInstance';
 import { registerIpcHandlers } from '#/main/ipc';
 import { ipcArgSchemas } from '#/main/ipc/ipcSchemas';
@@ -220,6 +224,19 @@ async function createStorage(): Promise<RoutingStorage> {
     logVerbose('createStorage: default content seed complete');
   } catch (err) {
     console.warn('Default content seed failed; continuing startup without seed:', err);
+  }
+
+  if (isSeedFlagEnabled()) {
+    try {
+      const created = await seedEchoCollectionIfMissing(router);
+      logVerbose(
+        created
+          ? 'createStorage: --seed imported HarborClient Echo collection'
+          : 'createStorage: --seed skipped; HarborClient Echo already exists'
+      );
+    } catch (err) {
+      console.warn('--seed failed; continuing startup without seed:', err);
+    }
   }
 
   return router;

@@ -89,6 +89,22 @@ pnpm dev -- -v
 pnpm dev -- -vv
 ```
 
+## Seed collection
+
+Pass `--seed` on startup to ensure the **HarborClient Echo** sample collection exists. The flag is idempotent: it imports the collection only when it is missing.
+
+**Packaged build:**
+
+```bash
+./HarborClient --seed
+```
+
+**Development:**
+
+```bash
+pnpm dev -- --seed
+```
+
 ## What's next
 
 - [Making requests](/requests) — build, send, and inspect HTTP requests.

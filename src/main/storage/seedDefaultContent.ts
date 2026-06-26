@@ -8,7 +8,8 @@ import type { CollectionExport, ExportedRequest } from '#/shared/types';
  */
 export const DEFAULT_ECHO_COLLECTION_SEEDED_KEY = 'defaultEchoCollectionSeeded';
 
-const DEFAULT_ECHO_COLLECTION_UUID = 'a0000000-0000-4000-8000-000000000001';
+/** Stable UUID for the default HarborClient Echo sample collection. */
+export const DEFAULT_ECHO_COLLECTION_UUID = 'a0000000-0000-4000-8000-000000000001';
 const DEFAULT_ECHO_GET_UUID = 'a0000000-0000-4000-8000-000000000002';
 const DEFAULT_ECHO_POST_UUID = 'a0000000-0000-4000-8000-000000000003';
 const DEFAULT_ECHO_PUT_UUID = 'a0000000-0000-4000-8000-000000000004';
@@ -119,4 +120,30 @@ export async function seedDefaultContentIfNeeded(
 
   await router.importCollectionData(buildDefaultEchoCollectionExport());
   database.setSetting(DEFAULT_ECHO_COLLECTION_SEEDED_KEY, '1');
+}
+
+/**
+ * Reads `process.argv` for `--seed` so the flag works in both dev and packaged builds.
+ *
+ * @param argv - Process argv including Electron flags.
+ * @returns True when explicit echo seeding was requested on the command line.
+ */
+export function isSeedFlagEnabled(argv: string[] = process.argv): boolean {
+  return argv.includes('--seed');
+}
+
+/**
+ * Imports the HarborClient Echo collection when no registry entry exists for its UUID.
+ *
+ * @param router - Initialized routing storage with a mounted default data backend.
+ * @returns True when a new collection was imported, false when it already existed.
+ */
+export async function seedEchoCollectionIfMissing(router: RoutingStorage): Promise<boolean> {
+  const existing = await router.findCollectionByUuid(DEFAULT_ECHO_COLLECTION_UUID);
+  if (existing) {
+    return false;
+  }
+
+  await router.importCollectionData(buildDefaultEchoCollectionExport());
+  return true;
 }

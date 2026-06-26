@@ -21,6 +21,8 @@ pnpm dev
 
 Use `pnpm dev -- -v` for verbose startup and diagnostic logging, or `pnpm dev -- -vv` to also log each outbound HTTP request (method, URL, request headers, and body). Response headers and response bodies are not logged.
 
+Use `pnpm dev -- --seed` to ensure the HarborClient Echo sample collection exists (creates it only when missing).
+
 ## About HarborClient
 
 **HarborClient** is a free, open-source desktop API client for macOS, Windows, and Linux. It gives you a familiar Postman-style workspace—collections, environments, request scripts, and a tabbed editor—while keeping your work on your machine or on storage you control. There are no accounts, subscriptions, or required cloud sync.

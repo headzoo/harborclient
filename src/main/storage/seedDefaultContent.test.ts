@@ -9,7 +9,10 @@ import { SqliteStorage } from '#/main/storage/SqliteStorage';
 import {
   buildDefaultEchoCollectionExport,
   DEFAULT_ECHO_COLLECTION_SEEDED_KEY,
-  seedDefaultContentIfNeeded
+  DEFAULT_ECHO_COLLECTION_UUID,
+  isSeedFlagEnabled,
+  seedDefaultContentIfNeeded,
+  seedEchoCollectionIfMissing
 } from '#/main/storage/seedDefaultContent';
 import type { SqliteSettings, StorageConnection } from '#/shared/types';
 import { describeSqlite } from '#/test/nativeModules';
@@ -144,5 +147,55 @@ describeSqlite('seedDefaultContentIfNeeded', () => {
     const collections = await router.listCollections();
     expect(collections).toHaveLength(1);
     expect(collections[0]?.name).toBe('Existing');
+  });
+});
+
+describe('isSeedFlagEnabled', () => {
+  it('returns true when --seed is present', () => {
+    expect(isSeedFlagEnabled(['electron', '--seed'])).toBe(true);
+  });
+
+  it('returns false when --seed is absent', () => {
+    expect(isSeedFlagEnabled(['electron', '--verbose'])).toBe(false);
+  });
+});
+
+describeSqlite('seedEchoCollectionIfMissing', () => {
+  it('imports the echo collection on an empty database', async () => {
+    const { router } = await createSeedFixture();
+
+    const created = await seedEchoCollectionIfMissing(router);
+
+    expect(created).toBe(true);
+    const collections = await router.listCollections();
+    expect(collections).toHaveLength(1);
+    expect(collections[0]?.name).toBe('HarborClient Echo');
+    expect(collections[0]?.uuid).toBe(DEFAULT_ECHO_COLLECTION_UUID);
+  });
+
+  it('skips import when the echo collection already exists', async () => {
+    const { router } = await createSeedFixture();
+
+    expect(await seedEchoCollectionIfMissing(router)).toBe(true);
+    expect(await seedEchoCollectionIfMissing(router)).toBe(false);
+
+    const collections = await router.listCollections();
+    expect(collections).toHaveLength(1);
+  });
+
+  it('imports echo alongside existing collections', async () => {
+    const { router } = await createSeedFixture();
+
+    await router.createCollection('Existing');
+
+    const created = await seedEchoCollectionIfMissing(router);
+
+    expect(created).toBe(true);
+    const collections = await router.listCollections();
+    expect(collections).toHaveLength(2);
+    expect(collections.map((collection) => collection.name).sort()).toEqual([
+      'Existing',
+      'HarborClient Echo'
+    ]);
   });
 });

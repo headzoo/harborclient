@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(seed): add --seed flag to ensure HarborClient Echo collection exists. (`38db945`)
 - feat(collections): enhance storage connection management with discovery features. (`41f1a32`)
 
 ## 1.8.16 - 2026-06-26
