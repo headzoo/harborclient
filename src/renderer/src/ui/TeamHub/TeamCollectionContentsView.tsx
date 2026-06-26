@@ -11,6 +11,7 @@ import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { Modal, ModalFooter } from '#/renderer/src/components/Modal';
 import { BackButton } from '#/renderer/src/components/BackButton';
+import { faUsers } from '#/renderer/src/fontawesome';
 import { AsyncListState } from '#/renderer/src/components/AsyncListState';
 import { FieldError } from '#/renderer/src/components/FieldError';
 import { ResourceList, ResourceListRow } from '#/renderer/src/components/ResourceList';
@@ -218,6 +219,7 @@ export function TeamCollectionContentsView({
     <div>
       <PageHeader
         title={collection.name}
+        icon={faUsers}
         description={`${hub.name || 'Untitled'} · ${hub.baseUrl}`}
       >
         <BackButton onClick={onBack} />

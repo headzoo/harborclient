@@ -7,6 +7,7 @@ import { Button } from '#/renderer/src/components/Button';
 import { Modal, ModalFormLayout } from '#/renderer/src/components/Modal';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { BackButton } from '#/renderer/src/components/BackButton';
+import { faUsers } from '#/renderer/src/fontawesome';
 import { AsyncListState } from '#/renderer/src/components/AsyncListState';
 import {
   ResourceList,
@@ -104,7 +105,11 @@ export function TeamCollectionsView({ hub, onBack }: Props): JSX.Element {
 
   return (
     <div>
-      <PageHeader title="Collections" description={`${hub.name || 'Untitled'} · ${hub.baseUrl}`}>
+      <PageHeader
+        title="Collections"
+        icon={faUsers}
+        description={`${hub.name || 'Untitled'} · ${hub.baseUrl}`}
+      >
         <BackButton onClick={onBack} />
       </PageHeader>
 

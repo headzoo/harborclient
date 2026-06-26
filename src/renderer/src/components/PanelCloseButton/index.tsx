@@ -1,5 +1,7 @@
 import type { JSX } from 'react';
 import { Button } from '#/renderer/src/components/Button';
+import { FaIcon } from '#/renderer/src/components/FaIcon';
+import { faXmark } from '#/renderer/src/fontawesome';
 
 interface Props {
   /**
@@ -8,12 +10,12 @@ interface Props {
   onClose: () => void;
 
   /**
-   * Visible button label.
+   * Default accessible name when `ariaLabel` is not provided.
    */
   label?: string;
 
   /**
-   * Accessible name when it should differ from the visible label.
+   * Accessible name when it should differ from `label`.
    */
   ariaLabel?: string;
 
@@ -24,12 +26,12 @@ interface Props {
 }
 
 /**
- * Text Close control for settings headers and full-page panels.
+ * Secondary icon close control for settings headers and full-page panels.
  *
  * @param onClose - Close handler.
- * @param label - Visible button text; defaults to "Close".
+ * @param label - Default accessible name; defaults to "Close".
  * @param ariaLabel - Accessible name override.
- * @param className - Extra classes appended after the shrink preset.
+ * @param className - Extra classes appended after the layout preset.
  */
 export function PanelCloseButton({
   onClose,
@@ -37,12 +39,18 @@ export function PanelCloseButton({
   ariaLabel,
   className
 }: Props): JSX.Element {
-  const base = 'shrink-0 whitespace-nowrap';
+  const base = 'inline-flex shrink-0 items-center justify-center py-2';
   const classes = className ? `${base} ${className}` : base;
 
   return (
-    <Button type="button" className={classes} aria-label={ariaLabel ?? label} onClick={onClose}>
-      {label}
+    <Button
+      type="button"
+      variant="secondary"
+      className={classes}
+      aria-label={ariaLabel ?? label}
+      onClick={onClose}
+    >
+      <FaIcon icon={faXmark} className="h-4 w-4" />
     </Button>
   );
 }

@@ -7,6 +7,7 @@ import { FieldError } from '#/renderer/src/components/FieldError';
 import { Modal, ModalFooter, ModalFormLayout } from '#/renderer/src/components/Modal';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { PanelCloseButton } from '#/renderer/src/components/PanelCloseButton';
+import { faUsers } from '#/renderer/src/fontawesome';
 import {
   ResourceList,
   ResourceListPrimary,
@@ -250,6 +251,7 @@ export function TeamHubList({
       <div>
         <PageHeader
           title="Team Hub"
+          icon={faUsers}
           description="Connect to HarborClient Team Hub instances for shared collections and environments."
         >
           <Button

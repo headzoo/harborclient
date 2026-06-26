@@ -14,6 +14,7 @@ import { Modal, ModalFormLayout } from '#/renderer/src/components/Modal';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { BackButton } from '#/renderer/src/components/BackButton';
 import { Badge } from '#/renderer/src/components/Badge';
+import { faUsers } from '#/renderer/src/fontawesome';
 import { AsyncListState } from '#/renderer/src/components/AsyncListState';
 import {
   ResourceList,
@@ -228,7 +229,11 @@ export function TeamManageView({ hub, onBack }: Props): JSX.Element {
 
   return (
     <div>
-      <PageHeader title="Users" description={`${hub.name || 'Untitled'} · ${hub.baseUrl}`}>
+      <PageHeader
+        title="Users"
+        icon={faUsers}
+        description={`${hub.name || 'Untitled'} · ${hub.baseUrl}`}
+      >
         <Button type="button" className="shrink-0 whitespace-nowrap" onClick={handleCreateClick}>
           Create user
         </Button>

@@ -9,7 +9,7 @@ interface Props {
 }
 
 /**
- * Primary Close control for settings section headers.
+ * Secondary icon close control for settings section headers.
  */
 export function SettingsCloseButton({ onClose }: Props): JSX.Element {
   return <PanelCloseButton onClose={onClose} ariaLabel="Close settings" />;

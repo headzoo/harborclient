@@ -7,6 +7,7 @@ import { FormGroup } from '#/renderer/src/components/FormGroup';
 import { Modal, ModalFormLayout } from '#/renderer/src/components/Modal';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { BackButton } from '#/renderer/src/components/BackButton';
+import { faUsers } from '#/renderer/src/fontawesome';
 import { AsyncListState } from '#/renderer/src/components/AsyncListState';
 import {
   ResourceList,
@@ -170,7 +171,11 @@ export function TeamTokensView({ hub, onBack }: Props): JSX.Element {
 
   return (
     <div>
-      <PageHeader title="Tokens" description={`${hub.name || 'Untitled'} · ${hub.baseUrl}`}>
+      <PageHeader
+        title="Tokens"
+        icon={faUsers}
+        description={`${hub.name || 'Untitled'} · ${hub.baseUrl}`}
+      >
         <Button
           type="button"
           className="shrink-0 whitespace-nowrap"

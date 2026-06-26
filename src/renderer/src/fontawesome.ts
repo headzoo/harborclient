@@ -21,6 +21,7 @@ import {
   faServer,
   faStore,
   faTableColumns,
+  faUsers,
   faWindowMaximize,
   faXmark
 } from '@fortawesome/free-solid-svg-icons';
@@ -48,6 +49,7 @@ library.add(
   faPuzzlePiece,
   faServer,
   faStore,
+  faUsers,
   faWindowMaximize
 );
 config.autoAddCss = false;
@@ -74,6 +76,7 @@ export {
   faServer,
   faStore,
   faTableColumns,
+  faUsers,
   faWindowMaximize,
   faXmark
 };
