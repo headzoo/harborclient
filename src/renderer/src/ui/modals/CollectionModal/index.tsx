@@ -133,7 +133,7 @@ export function CollectionModal(): JSX.Element | null {
   const providerField = (
     <div className="mt-3">
       <label className="mb-1 block text-[14px] text-muted" htmlFor={providerSelectId}>
-        Provider
+        Storage location
       </label>
       <Select
         id={providerSelectId}
