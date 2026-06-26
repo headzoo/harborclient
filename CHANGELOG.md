@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.8.14 - 2026-06-26
+
 - feat(team-hubs): enhance Team Hub management with reload functionality and service flags. (`803b9bb`)
 
 ## 1.8.13 - 2026-06-25
