@@ -461,6 +461,8 @@ export const ipcArgSchemas = {
   teamHubTokenCreate: z.tuple([connectionId, connectionId, createHubTokenInput]),
   teamHubTokenDelete: z.tuple([connectionId, connectionId]),
   teamHubCollectionDelete: z.tuple([connectionId, z.string().min(1)]),
+  teamHubCollectionContents: z.tuple([connectionId, z.string().min(1)]),
+  teamHubRequestDelete: z.tuple([connectionId, z.string().min(1)]),
   teamHubEnvironmentDelete: z.tuple([connectionId, z.string().min(1)]),
   teamHubCollectionDeletionLocked: z.tuple([connectionId, z.string().min(1), z.boolean()]),
   teamHubEnvironmentDeletionLocked: z.tuple([connectionId, z.string().min(1), z.boolean()]),

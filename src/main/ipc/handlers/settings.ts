@@ -20,8 +20,11 @@ import {
 import { deleteTeamHub, listTeamHubs, saveTeamHub } from '#/main/settings/teamHubSettings';
 import { refreshTeamHubPluginSources } from '#/main/settings/teamHubPluginSources';
 import { clearTrustedKeysCache } from '#/main/plugins/pluginSignature';
+import { resyncUserTeamHubsSharingServer } from '#/main/settings/teamHubCollectionResync';
 import { scanTeamHubSessions } from '#/main/settings/teamHubSessionScan';
 import { TeamHubClient } from '#/main/teamHub/TeamHubClient';
+import type { FolderRecord, SavedRequestRecord } from '#/main/teamHub/types';
+import type { TeamHubAdminCollectionContents } from '#/shared/types';
 import { getAiSettings, setAiSettings } from '#/main/settings/aiSettings';
 import { getGeneralSettings, setGeneralSettings } from '#/main/settings/generalSettings';
 import {
@@ -44,6 +47,34 @@ import {
   validateShortcuts
 } from '#/main/settings/shortcutSettings';
 import type { ThemeSource } from '#/shared/types';
+
+/**
+ * Maps server folder and request records to renderer-facing admin summaries.
+ *
+ * @param folders - Folder records from the admin collection inspection API.
+ * @param requests - Saved request records from the admin collection inspection API.
+ * @returns Summaries suitable for the Manage collections request list UI.
+ */
+function mapTeamHubAdminCollectionContents(
+  folders: FolderRecord[],
+  requests: SavedRequestRecord[]
+): TeamHubAdminCollectionContents {
+  return {
+    folders: folders.map((folder) => ({
+      id: folder.id,
+      name: folder.name,
+      sortOrder: folder.sortOrder
+    })),
+    requests: requests.map((request) => ({
+      id: request.id,
+      name: request.name,
+      method: request.method,
+      url: request.url,
+      folderId: request.folderId,
+      sortOrder: request.sortOrder
+    }))
+  };
+}
 
 const THEME_SETTING_KEY = 'theme';
 
@@ -171,7 +202,13 @@ export function registerSettingsHandlers(db: IStorage): void {
       }
 
       const client = new TeamHubClient({ baseUrl: hub.baseUrl, token: hub.token });
-      return client.updateAdminUser(userId, input);
+      const updated = await client.updateAdminUser(userId, input);
+
+      if (db instanceof RoutingStorage) {
+        await resyncUserTeamHubsSharingServer(db, hubId, listTeamHubs());
+      }
+
+      return updated;
     }
   );
 
@@ -194,7 +231,13 @@ export function registerSettingsHandlers(db: IStorage): void {
     }
 
     const client = new TeamHubClient({ baseUrl: hub.baseUrl, token: hub.token });
-    return client.createAdminUser(input);
+    const created = await client.createAdminUser(input);
+
+    if (db instanceof RoutingStorage) {
+      await resyncUserTeamHubsSharingServer(db, hubId, listTeamHubs());
+    }
+
+    return created;
   });
 
   // Lists Team Hub API tokens using an admin token on the given hub connection.
@@ -249,6 +292,25 @@ export function registerSettingsHandlers(db: IStorage): void {
     return client.listAdminResourceOptions();
   });
 
+  // Loads folders and saved requests for admin collection inspection.
+  handle(
+    'teamHubs:listAdminCollectionContents',
+    ipcArgSchemas.teamHubCollectionContents,
+    async (_event, hubId, collectionId) => {
+      const hub = listTeamHubs().find((entry) => entry.id === hubId);
+      if (!hub) {
+        throw new Error(`Unknown team hub: ${hubId}`);
+      }
+
+      const client = new TeamHubClient({ baseUrl: hub.baseUrl, token: hub.token });
+      const [folders, requests] = await Promise.all([
+        client.listAdminCollectionFolders(collectionId),
+        client.listAdminCollectionRequests(collectionId)
+      ]);
+      return mapTeamHubAdminCollectionContents(folders, requests);
+    }
+  );
+
   // Deletes a hub collection using an admin token.
   handle(
     'teamHubs:deleteCollection',
@@ -261,6 +323,21 @@ export function registerSettingsHandlers(db: IStorage): void {
 
       const client = new TeamHubClient({ baseUrl: hub.baseUrl, token: hub.token });
       await client.deleteAdminCollection(collectionId);
+    }
+  );
+
+  // Deletes a saved request on a hub collection using an admin token.
+  handle(
+    'teamHubs:deleteRequest',
+    ipcArgSchemas.teamHubRequestDelete,
+    async (_event, hubId, requestId) => {
+      const hub = listTeamHubs().find((entry) => entry.id === hubId);
+      if (!hub) {
+        throw new Error(`Unknown team hub: ${hubId}`);
+      }
+
+      const client = new TeamHubClient({ baseUrl: hub.baseUrl, token: hub.token });
+      await client.deleteAdminRequest(requestId);
     }
   );
 

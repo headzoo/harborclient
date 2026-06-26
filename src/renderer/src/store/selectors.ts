@@ -8,6 +8,11 @@ import { defaultDraft } from '#/renderer/src/store/drafts';
  */
 export const selectCollections = (state: RootState): Collection[] => state.collections.collections;
 /**
+ * Returns whether the collections list has been loaded at least once.
+ */
+export const selectCollectionsListed = (state: RootState): boolean =>
+  state.collections.collectionsListed;
+/**
  * Returns cached requests keyed by collection id.
  */
 export const selectRequestsByCollection = (

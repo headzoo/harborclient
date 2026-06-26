@@ -12,6 +12,7 @@ import { TeamHubStorage } from '#/main/storage/TeamHubStorage';
 import { TeamHubIdMap } from '#/main/storage/TeamHubIdMap';
 import type { TeamHubClient } from '#/main/teamHub/TeamHubClient';
 import { TeamHubClientError } from '#/main/teamHub/TeamHubClientError';
+import type { SessionResponse } from '#/main/teamHub/types';
 import { detachedSettingKey } from '#/main/storage/teamHubDetached';
 import { baseRequestInput } from '#/test/istorageContract';
 import { describeSqlite } from '#/test/nativeModules';
@@ -68,6 +69,39 @@ const SERVER_COLLECTION_RECORD = {
 };
 
 const cleanups: Array<() => void | Promise<void>> = [];
+
+/**
+ * Default user-token session mock for team hub client tests.
+ *
+ * @param managementApi - When true, simulates an admin-token connection.
+ */
+function userTeamHubSessionMock(managementApi = false): SessionResponse {
+  return {
+    user: {
+      id: 'user-1',
+      name: 'User',
+      role: managementApi ? 'admin' : 'user'
+    },
+    token: { id: 'token-1', prefix: 'hbk_test' },
+    capabilities: {
+      dataApi: !managementApi,
+      managementApi,
+      llm: false
+    }
+  };
+}
+
+/**
+ * Merges default team hub client mocks with test-specific overrides.
+ *
+ * @param client - Partial TeamHubClient mock.
+ */
+function withDefaultTeamHubClient(client: Partial<TeamHubClient>): Partial<TeamHubClient> {
+  return {
+    getSession: vi.fn().mockResolvedValue(userTeamHubSessionMock(false)),
+    ...client
+  };
+}
 
 /**
  * Builds a routing database fixture with mounted backends for tests.
@@ -149,7 +183,7 @@ async function createRoutingFixtureWithHub(client: Partial<TeamHubClient>): Prom
   const backendA = new SqliteStorage(backendADir, CONN_A.settings as SqliteSettings);
   await backendA.init();
 
-  const hubDb = createTeamHubStorage(client);
+  const hubDb = createTeamHubStorage(withDefaultTeamHubClient(client));
 
   const router = new RoutingStorage(database, CONN_A.id, rootDir);
   router.mount(0, CONN_A, backendA);
@@ -206,14 +240,9 @@ describeSqlite('RoutingStorage collections', () => {
   });
 
   it('listCollections records warnings when a provider read fails', async () => {
-    const { router, database, backendA } = await createRoutingFixture();
+    const { router, backendA } = await createRoutingFixture();
     await router.createCollection('Healthy');
-
-    database.addRegistryEntry({
-      name: 'Remote',
-      connectionId: CONN_B.id,
-      providerCollectionId: 99
-    });
+    await router.createCollectionInProvider('Remote', CONN_B.id);
 
     vi.spyOn(backendA, 'listCollections').mockRejectedValueOnce(new Error('Connection refused'));
 
@@ -602,6 +631,63 @@ describeSqlite('RoutingStorage syncProvider', () => {
   });
 });
 
+describeSqlite('RoutingStorage listCollections pruning', () => {
+  it('removes hub registry entries when the remote provider returns an empty list', async () => {
+    const staleServerId = '660e8400-e29b-41d4-a716-446655440001';
+    const listCollections = vi.fn().mockResolvedValue([]);
+    const { router, database, hubDb } = await createRoutingFixtureWithHub({ listCollections });
+
+    const idMap = (hubDb as unknown as { idMap: TeamHubIdMap }).idMap;
+    const localId = idMap.toLocalId('collection', staleServerId);
+
+    database.addRegistryEntry({
+      name: 'Pintail',
+      connectionId: HUB_A.id,
+      providerCollectionId: localId
+    });
+
+    const collections = await router.listCollections();
+
+    expect(database.listRegistry()).toEqual([]);
+    expect(collections).toEqual([]);
+    expect(hubDb.getServerCollectionId(localId)).toBeUndefined();
+  });
+
+  it('keeps registry entries when the remote provider cannot be reached', async () => {
+    const listCollections = vi.fn().mockRejectedValue(new Error('Connection refused'));
+    const { router, database } = await createRoutingFixtureWithHub({ listCollections });
+
+    database.addRegistryEntry({
+      name: 'Pintail',
+      connectionId: HUB_A.id,
+      providerCollectionId: 1
+    });
+
+    const collections = await router.listCollections();
+
+    expect(database.listRegistry()).toHaveLength(1);
+    expect(database.listRegistry()[0]?.name).toBe('Pintail');
+    expect(collections).toHaveLength(1);
+    expect(collections[0]?.name).toBe('Pintail');
+  });
+
+  it('does not return pruned collections in the list result', async () => {
+    const listCollections = vi.fn().mockResolvedValue([]);
+    const { router, database } = await createRoutingFixtureWithHub({ listCollections });
+
+    const registryId = database.addRegistryEntry({
+      name: 'Ghost',
+      connectionId: HUB_A.id,
+      providerCollectionId: 99
+    }).id;
+
+    const collections = await router.listCollections();
+
+    expect(collections.some((item) => item.id === registryId)).toBe(false);
+    expect(database.getRegistryEntry(registryId)).toBeUndefined();
+  });
+});
+
 describeSqlite('RoutingStorage syncTeamHub', () => {
   it('removes registry entries for collections deleted on the server', async () => {
     const staleServerId = '660e8400-e29b-41d4-a716-446655440001';
@@ -650,6 +736,41 @@ describeSqlite('RoutingStorage syncTeamHub', () => {
     expect(database.listRegistry()).toHaveLength(1);
     expect(database.listRegistry()[0]?.name).toBe('Team API');
     expect(database.listRegistry()[0]?.connectionId).toBe(HUB_A.id);
+  });
+
+  it('skips collection import for admin-token team hub connections', async () => {
+    const listCollections = vi.fn().mockResolvedValue([SERVER_COLLECTION_RECORD]);
+    const { router, database } = await createRoutingFixtureWithHub({
+      getSession: vi.fn().mockResolvedValue(userTeamHubSessionMock(true)),
+      listCollections
+    });
+
+    await router.syncTeamHub(HUB_A.id);
+
+    expect(database.listRegistry()).toEqual([]);
+    expect(listCollections).not.toHaveBeenCalled();
+  });
+
+  it('purges stale sidebar entries when syncing an admin-token team hub', async () => {
+    const listCollections = vi.fn().mockResolvedValue([SERVER_COLLECTION_RECORD]);
+    const { router, database, hubDb } = await createRoutingFixtureWithHub({
+      getSession: vi.fn().mockResolvedValue(userTeamHubSessionMock(true)),
+      listCollections
+    });
+
+    const idMap = (hubDb as unknown as { idMap: TeamHubIdMap }).idMap;
+    const localId = idMap.toLocalId('collection', SERVER_COLLECTION_RECORD.id);
+    database.addRegistryEntry({
+      name: 'Team API',
+      connectionId: HUB_A.id,
+      providerCollectionId: localId
+    });
+
+    await router.syncTeamHub(HUB_A.id);
+
+    expect(database.listRegistry()).toEqual([]);
+    expect(hubDb.getServerCollectionId(localId)).toBeUndefined();
+    expect(listCollections).not.toHaveBeenCalled();
   });
 });
 

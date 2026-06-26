@@ -127,10 +127,11 @@ export default function App(): JSX.Element {
    */
   useEffect(() => {
     if (activeCollectionId == null) return;
+    if (!collections.some((collection) => collection.id === activeCollectionId)) return;
     if (foldersByCollection[activeCollectionId] === undefined) {
       void dispatch(refreshCollectionContents(activeCollectionId));
     }
-  }, [activeCollectionId, foldersByCollection, dispatch]);
+  }, [activeCollectionId, collections, foldersByCollection, dispatch]);
 
   const activeCollection =
     activeCollectionId != null

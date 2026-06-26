@@ -1,4 +1,6 @@
-import { type JSX, type ReactNode } from 'react';
+import { useMemo, type JSX, type ReactNode } from 'react';
+import { useAppSelector } from '#/renderer/src/store/hooks';
+import { selectCollections, selectCollectionsListed } from '#/renderer/src/store/selectors';
 import { SidebarExpansionContext } from '#/renderer/src/ui/Sidebar/sidebarExpansionContext';
 import { usePersistedSidebarExpansion } from '#/renderer/src/ui/Sidebar/usePersistedSidebarExpansion';
 
@@ -21,7 +23,18 @@ export function SidebarExpansionProvider({
   onExpandCollection,
   children
 }: ProviderProps): JSX.Element {
-  const value = usePersistedSidebarExpansion({ onExpandCollection });
+  const collections = useAppSelector(selectCollections);
+  const collectionsListed = useAppSelector(selectCollectionsListed);
+  const validCollectionIds = useMemo(
+    () => new Set(collections.map((collection) => collection.id)),
+    [collections]
+  );
+
+  const value = usePersistedSidebarExpansion({
+    onExpandCollection,
+    validCollectionIds,
+    collectionsListed
+  });
 
   return (
     <SidebarExpansionContext.Provider value={value}>{children}</SidebarExpansionContext.Provider>

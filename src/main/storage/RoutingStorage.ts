@@ -210,6 +210,9 @@ export class RoutingStorage implements IStorage {
 
   /**
    * Lists all collections from the registry, hydrating data from each provider.
+   *
+   * When a provider is reachable, registry entries whose collection no longer
+   * exists remotely are pruned before results are returned.
    */
   async listCollections(): Promise<Collection[]> {
     this.listCollectionWarnings = [];
@@ -227,10 +230,29 @@ export class RoutingStorage implements IStorage {
         continue;
       }
       try {
+        if (backend.connectionType === 'team-hub' && backend.db instanceof TeamHubStorage) {
+          const hubDb = backend.db;
+          if (await hubDb.hasManagementApi()) {
+            this.purgeTeamHubSidebarCollections(connectionId, hubDb);
+            continue;
+          }
+        }
+
         const records = await backend.db.listCollections();
         recordsByConnection.set(
           connectionId,
           new Map(records.map((record) => [record.id, record]))
+        );
+
+        const hubDb =
+          backend.connectionType === 'team-hub' && backend.db instanceof TeamHubStorage
+            ? backend.db
+            : undefined;
+        this.pruneOrphanRegistryEntries(
+          connectionId,
+          new Set(records.map((record) => record.id)),
+          hubDb,
+          backend.connectionName
         );
       } catch (err) {
         console.warn(`Failed to read collections from "${backend.connectionName}":`, err);
@@ -240,7 +262,7 @@ export class RoutingStorage implements IStorage {
       }
     }
 
-    return entries.map((entry) => {
+    return this.database.listRegistry().map((entry) => {
       const record = recordsByConnection.get(entry.connectionId)?.get(entry.providerCollectionId);
       return this.buildCollection(entry, record);
     });
@@ -969,7 +991,13 @@ export class RoutingStorage implements IStorage {
       await this.reconcileGitRegistry(connectionId);
       return;
     }
-    await backend.db.listCollections();
+    const records = await backend.db.listCollections();
+    this.pruneOrphanRegistryEntries(
+      connectionId,
+      new Set(records.map((record) => record.id)),
+      undefined,
+      backend.connectionName
+    );
   }
 
   /**
@@ -1055,16 +1083,22 @@ export class RoutingStorage implements IStorage {
       throw new Error(`Team hub backend for "${hubId}" is unavailable.`);
     }
 
+    if (await hubDb.hasManagementApi()) {
+      this.purgeTeamHubSidebarCollections(hubId, hubDb);
+      logVerbose(
+        `Skipped collection sync for admin team hub "${backend.connectionName}"; sidebar entries were cleared.`
+      );
+      return;
+    }
+
     const detached = readDetachedServerIds(this.database, hubId);
     const serverCollections = await hubDb.listCollections();
     const entries = this.database.listRegistry().filter((entry) => entry.connectionId === hubId);
     const registeredProviderIds = new Set(entries.map((entry) => entry.providerCollectionId));
-    const serverIdsByProviderId = new Map<number, string>();
 
     for (const record of serverCollections) {
       const serverId = hubDb.getServerCollectionId(record.id);
       if (!serverId) continue;
-      serverIdsByProviderId.set(record.id, serverId);
 
       if (detached.has(serverId)) continue;
       if (registeredProviderIds.has(record.id)) continue;
@@ -1077,15 +1111,55 @@ export class RoutingStorage implements IStorage {
       });
     }
 
-    for (const entry of entries) {
-      const serverId = serverIdsByProviderId.get(entry.providerCollectionId);
-      if (serverId) continue;
+    this.pruneOrphanRegistryEntries(
+      hubId,
+      new Set(serverCollections.map((record) => record.id)),
+      hubDb,
+      backend.connectionName
+    );
+  }
 
-      hubDb.forgetLocalCollection(entry.providerCollectionId);
+  /**
+   * Removes registry entries for a connection when their provider collection id
+   * is absent from a successful remote listing.
+   *
+   * @param connectionId - Database or team hub connection id.
+   * @param remoteProviderIds - Provider-local collection ids returned by the remote store.
+   * @param hubDb - Team hub backend when pruning hub-backed entries (clears id map entries).
+   * @param connectionName - Display name used in verbose logs.
+   */
+  private pruneOrphanRegistryEntries(
+    connectionId: string,
+    remoteProviderIds: ReadonlySet<number>,
+    hubDb: TeamHubStorage | undefined,
+    connectionName: string
+  ): void {
+    const entries = this.database
+      .listRegistry()
+      .filter((entry) => entry.connectionId === connectionId);
+
+    for (const entry of entries) {
+      if (remoteProviderIds.has(entry.providerCollectionId)) continue;
+
+      hubDb?.forgetLocalCollection(entry.providerCollectionId);
       this.database.deleteRegistryEntry(entry.id);
       logVerbose(
-        `Removed registry entry for collection "${entry.name}" on team hub "${backend.connectionName}" because it no longer exists on the server.`
+        `Removed registry entry for collection "${entry.name}" on "${connectionName}" because it no longer exists on the remote provider.`
       );
+    }
+  }
+
+  /**
+   * Removes all sidebar registry entries for a team hub without deleting server data.
+   *
+   * @param hubId - Team hub connection id.
+   * @param hubDb - Team hub storage backend for the connection.
+   */
+  private purgeTeamHubSidebarCollections(hubId: string, hubDb: TeamHubStorage): void {
+    for (const entry of this.database.listRegistry()) {
+      if (entry.connectionId !== hubId) continue;
+      hubDb.forgetLocalCollection(entry.providerCollectionId);
+      this.database.deleteRegistryEntry(entry.id);
     }
   }
 

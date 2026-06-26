@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import type { TeamHub, TeamHubServiceFlags } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
 import { useAppDispatch } from '#/renderer/src/store/hooks';
+import { refreshCollections } from '#/renderer/src/store/thunks/collections';
 import { formatIpcErrorMessage, showAlert } from '#/renderer/src/ui/modals/dialogHelpers';
 import { createBlankTeamHub, validateTeamHubForm } from './constants';
 import { TeamHubForm } from './TeamHubForm';
@@ -170,6 +171,7 @@ export function TeamHubList({
       const payload: TeamHub = isNew ? { ...editingHub, id: crypto.randomUUID() } : editingHub;
       await window.api.saveTeamHub(payload);
       reload();
+      await dispatch(refreshCollections());
       setEditingHub(null);
       setIsNew(false);
       toast.success('Team hub saved.');
@@ -218,6 +220,7 @@ export function TeamHubList({
     try {
       await window.api.deleteTeamHub(id);
       reload();
+      await dispatch(refreshCollections());
       if (editingHub?.id === id) {
         handleCancelEdit();
       }

@@ -173,6 +173,24 @@ describe('refreshCollections', () => {
 
     expect(store.getState().collections.collections[0]?.name).toBe('Fresh');
   });
+
+  it('clears a stale selected collection id and selects the first remaining collection', async () => {
+    listCollectionsMock.mockResolvedValueOnce({
+      collections: [sampleCollection(3, 'Only')],
+      warnings: []
+    });
+
+    const { store } = await import('#/renderer/src/store/redux');
+    const { setSelectedCollectionId } =
+      await import('#/renderer/src/store/slices/collectionsSlice');
+    const { refreshCollections } = await import('#/renderer/src/store/thunks/collections');
+
+    store.dispatch(setSelectedCollectionId(2));
+
+    await store.dispatch(refreshCollections());
+
+    expect(store.getState().collections.selectedCollectionId).toBe(3);
+  });
 });
 
 describe('updateCollection', () => {

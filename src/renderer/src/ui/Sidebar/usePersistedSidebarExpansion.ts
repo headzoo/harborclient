@@ -14,6 +14,16 @@ interface Options {
    * Loads requests and folders when a collection is expanded.
    */
   onExpandCollection: (id: number) => void;
+
+  /**
+   * Global collection ids that still exist after the latest sidebar refresh.
+   */
+  validCollectionIds: ReadonlySet<number>;
+
+  /**
+   * True after the first collections list has been loaded from the main process.
+   */
+  collectionsListed: boolean;
 }
 
 interface Result {
@@ -130,7 +140,11 @@ export function advanceSidebarExpansionPersistGate(
 /**
  * Loads and persists sidebar section, collection, and folder expansion via electron-store.
  */
-export function usePersistedSidebarExpansion({ onExpandCollection }: Options): Result {
+export function usePersistedSidebarExpansion({
+  onExpandCollection,
+  validCollectionIds,
+  collectionsListed
+}: Options): Result {
   const defaults = defaultSidebarExpansion();
   const [loaded, setLoaded] = useState(false);
   const [collectionsSectionExpanded, setCollectionsSectionExpanded] = useState(
@@ -141,41 +155,38 @@ export function usePersistedSidebarExpansion({ onExpandCollection }: Options): R
   );
   const [expandedCollectionIds, setExpandedCollectionIds] = useState<Set<number>>(new Set());
   const [expandedFolderIds, setExpandedFolderIds] = useState<Set<number>>(new Set());
-  const hydratedRef = useRef(false);
+  const restoredRef = useRef(false);
   const skipPersistRef = useRef(true);
 
   /**
-   * Loads persisted expansion once on mount.
+   * Restores persisted expansion after collections are listed so stale collection
+   * ids are filtered before contents are loaded.
    */
   useEffect(() => {
+    if (!collectionsListed || restoredRef.current) return;
+    restoredRef.current = true;
+
     let cancelled = false;
 
     void window.api.getSidebarExpansion().then((stored) => {
       if (cancelled) return;
 
+      const validExpanded = stored.collectionIds.filter((id) => validCollectionIds.has(id));
       setCollectionsSectionExpanded(stored.sections.collections);
       setEnvironmentsSectionExpanded(stored.sections.environments);
-      setExpandedCollectionIds(new Set(stored.collectionIds));
+      setExpandedCollectionIds(new Set(validExpanded));
       setExpandedFolderIds(new Set(stored.folderIds));
       setLoaded(true);
+
+      for (const id of validExpanded) {
+        onExpandCollection(id);
+      }
     });
 
     return () => {
       cancelled = true;
     };
-  }, []);
-
-  /**
-   * Loads collection contents once for restored expanded collections.
-   */
-  useEffect(() => {
-    if (!loaded || hydratedRef.current) return;
-    hydratedRef.current = true;
-
-    for (const id of expandedCollectionIds) {
-      onExpandCollection(id);
-    }
-  }, [loaded, expandedCollectionIds, onExpandCollection]);
+  }, [collectionsListed, validCollectionIds, onExpandCollection]);
 
   /**
    * Persists expansion changes after the initial load completes.

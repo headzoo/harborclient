@@ -4,8 +4,9 @@ import type { AdminResourceOption, TeamHub } from '#/shared/types';
 import { Input } from '#/renderer/src/components/forms';
 import { Button } from '#/renderer/src/components/Button';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
-import { faAngleLeft } from '#/renderer/src/fontawesome';
+import { faAngleLeft, faChevronRight } from '#/renderer/src/fontawesome';
 import { useTeamHubAdminCollections } from '#/renderer/src/hooks/useTeamHubAdminCollections';
+import { TeamCollectionContentsView } from '#/renderer/src/ui/TeamHubs/TeamCollectionContentsView';
 
 interface Props {
   /**
@@ -24,6 +25,7 @@ interface Props {
  */
 export function TeamCollectionsView({ hub, onBack }: Props): JSX.Element {
   const { collections, loading, error, reload } = useTeamHubAdminCollections(hub.id);
+  const [selectedCollection, setSelectedCollection] = useState<AdminResourceOption | null>(null);
   const [deletingCollection, setDeletingCollection] = useState<AdminResourceOption | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
@@ -104,6 +106,16 @@ export function TeamCollectionsView({ hub, onBack }: Props): JSX.Element {
     }
   };
 
+  if (selectedCollection) {
+    return (
+      <TeamCollectionContentsView
+        hub={hub}
+        collection={selectedCollection}
+        onBack={() => setSelectedCollection(null)}
+      />
+    );
+  }
+
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
@@ -144,15 +156,29 @@ export function TeamCollectionsView({ hub, onBack }: Props): JSX.Element {
               key={collection.id}
               className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-separator px-3 py-2"
             >
-              <div className="min-w-0">
-                <span className="block truncate text-[14px] font-medium text-text">
-                  {collection.name}
-                </span>
-                <span className="block truncate text-[14px] text-muted">{collection.id}</span>
-              </div>
+              <button
+                type="button"
+                className="flex min-w-0 flex-1 items-center gap-2 rounded-md border-0 bg-transparent p-0 text-left hover:text-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                onClick={() => setSelectedCollection(collection)}
+              >
+                <div className="min-w-0">
+                  <span className="block truncate text-[14px] font-medium text-text">
+                    {collection.name}
+                  </span>
+                  <span className="block truncate text-[14px] text-muted">{collection.id}</span>
+                </div>
+                <FaIcon
+                  icon={faChevronRight}
+                  className="h-3.5 w-3.5 shrink-0 text-muted"
+                  aria-hidden
+                />
+              </button>
 
               <div className="flex shrink-0 flex-wrap items-center gap-3">
-                <label className="flex cursor-pointer items-center gap-2 text-[14px] text-text">
+                <label
+                  className="flex cursor-pointer items-center gap-2 text-[14px] text-text"
+                  onClick={(event) => event.stopPropagation()}
+                >
                   <input
                     type="checkbox"
                     className="h-4 w-4 shrink-0"
@@ -167,7 +193,10 @@ export function TeamCollectionsView({ hub, onBack }: Props): JSX.Element {
                 <Button
                   type="button"
                   variant="secondaryDanger"
-                  onClick={() => handleDeleteClick(collection)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleDeleteClick(collection);
+                  }}
                 >
                   Delete
                 </Button>

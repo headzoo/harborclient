@@ -1977,6 +1977,76 @@ export interface TeamHubAdminResourceOptions {
 }
 
 /**
+ * Folder metadata returned by admin collection inspection routes.
+ */
+export interface TeamHubAdminFolderSummary {
+  /**
+   * Folder UUID.
+   */
+  id: string;
+
+  /**
+   * Display name shown in the collection tree.
+   */
+  name: string;
+
+  /**
+   * Zero-based sort order within the collection.
+   */
+  sortOrder: number;
+}
+
+/**
+ * Saved request metadata returned by admin collection inspection routes.
+ */
+export interface TeamHubAdminRequestSummary {
+  /**
+   * Saved request UUID.
+   */
+  id: string;
+
+  /**
+   * Display name shown in the collection tree.
+   */
+  name: string;
+
+  /**
+   * HTTP method for the saved request.
+   */
+  method: HttpMethod;
+
+  /**
+   * Request URL template or absolute URL.
+   */
+  url: string;
+
+  /**
+   * Parent folder UUID, or null when at the collection root.
+   */
+  folderId: string | null;
+
+  /**
+   * Zero-based sort order within the folder or collection root.
+   */
+  sortOrder: number;
+}
+
+/**
+ * Folders and requests in a hub collection for admin inspection.
+ */
+export interface TeamHubAdminCollectionContents {
+  /**
+   * Folders in the collection ordered by sort order.
+   */
+  folders: TeamHubAdminFolderSummary[];
+
+  /**
+   * Saved requests in the collection.
+   */
+  requests: TeamHubAdminRequestSummary[];
+}
+
+/**
  * Config section name reported by `POST /admin/config/reload`.
  */
 export type ReloadConfigSectionName = 'db' | 'redis' | 'llm' | 'plugins' | 'server';
@@ -2896,12 +2966,31 @@ export interface Api {
   listTeamHubAdminResourceOptions: (hubId: string) => Promise<TeamHubAdminResourceOptions>;
 
   /**
+   * Loads folders and saved requests in a hub collection for admin inspection.
+   *
+   * @param hubId - Team hub connection id with an admin token.
+   * @param collectionId - Server collection UUID.
+   */
+  listTeamHubAdminCollectionContents: (
+    hubId: string,
+    collectionId: string
+  ) => Promise<TeamHubAdminCollectionContents>;
+
+  /**
    * Deletes a hub collection using an admin token.
    *
    * @param hubId - Team hub connection id with an admin token.
    * @param collectionId - Server collection UUID.
    */
   deleteTeamHubCollection: (hubId: string, collectionId: string) => Promise<void>;
+
+  /**
+   * Deletes a saved request on a hub collection using an admin token.
+   *
+   * @param hubId - Team hub connection id with an admin token.
+   * @param requestId - Server saved request UUID.
+   */
+  deleteTeamHubRequest: (hubId: string, requestId: string) => Promise<void>;
 
   /**
    * Deletes a hub environment using an admin token.

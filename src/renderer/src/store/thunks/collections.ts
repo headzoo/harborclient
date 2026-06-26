@@ -45,7 +45,12 @@ export const refreshCollections = createAsyncThunk<Collection[], void, ThunkApiC
     }
     dispatch(setCollections(collections));
     const selectedId = getState().collections.selectedCollectionId;
-    if (collections.length > 0 && !selectedId) {
+    const selectedStillExists =
+      selectedId != null && collections.some((collection) => collection.id === selectedId);
+    if (selectedId != null && !selectedStillExists) {
+      dispatch(setSelectedCollectionId(null));
+    }
+    if (collections.length > 0 && (selectedId == null || !selectedStillExists)) {
       dispatch(setSelectedCollectionId(collections[0].id));
     }
     return collections;

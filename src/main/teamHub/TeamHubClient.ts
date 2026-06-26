@@ -371,6 +371,30 @@ export class TeamHubClient implements ITeamHubClient {
   }
 
   /**
+   * Lists folders in a collection for operator inspection.
+   *
+   * @param collectionId - Parent collection UUID.
+   */
+  async listAdminCollectionFolders(collectionId: string): Promise<FolderRecord[]> {
+    const result = await this.request('GET', `/admin/collections/${collectionId}/folders`, {
+      schema: listFoldersResponseSchema
+    });
+    return (result as { folders: FolderRecord[] }).folders;
+  }
+
+  /**
+   * Lists saved requests in a collection for operator inspection.
+   *
+   * @param collectionId - Parent collection UUID.
+   */
+  async listAdminCollectionRequests(collectionId: string): Promise<SavedRequestRecord[]> {
+    const result = await this.request('GET', `/admin/collections/${collectionId}/requests`, {
+      schema: listRequestsResponseSchema
+    });
+    return (result as { requests: SavedRequestRecord[] }).requests;
+  }
+
+  /**
    * Deletes a collection via the admin management API.
    *
    * @param id - Collection UUID.
@@ -386,6 +410,15 @@ export class TeamHubClient implements ITeamHubClient {
    */
   async deleteAdminEnvironment(id: string): Promise<void> {
     await this.request('DELETE', `/admin/environments/${id}`);
+  }
+
+  /**
+   * Deletes a saved request via the admin management API.
+   *
+   * @param id - Saved request UUID.
+   */
+  async deleteAdminRequest(id: string): Promise<void> {
+    await this.request('DELETE', `/admin/requests/${id}`);
   }
 
   /**

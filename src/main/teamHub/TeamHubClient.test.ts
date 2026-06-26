@@ -753,6 +753,103 @@ describe('TeamHubClient', () => {
     });
   });
 
+  describe('listAdminCollectionFolders', () => {
+    it('fetches folders for operator inspection', async () => {
+      const collectionId = '550e8400-e29b-41d4-a716-446655440000';
+      const folder = {
+        id: '660e8400-e29b-41d4-a716-446655440001',
+        collectionId,
+        name: 'Auth',
+        sortOrder: 0,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z'
+      };
+
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ folders: [folder] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      const folders = await client.listAdminCollectionFolders(collectionId);
+
+      expect(folders).toEqual([
+        expect.objectContaining({
+          id: folder.id,
+          name: folder.name,
+          sortOrder: folder.sortOrder,
+          collectionId: folder.collectionId
+        })
+      ]);
+      expect(fetchMock).toHaveBeenCalledWith(
+        `http://127.0.0.1:8788/admin/collections/${collectionId}/folders`,
+        expect.objectContaining({
+          method: 'GET',
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${token}`
+          })
+        })
+      );
+    });
+  });
+
+  describe('listAdminCollectionRequests', () => {
+    it('fetches requests for operator inspection', async () => {
+      const collectionId = '550e8400-e29b-41d4-a716-446655440000';
+      const savedRequest = {
+        id: '770e8400-e29b-41d4-a716-446655440002',
+        collectionId,
+        name: 'Get health',
+        method: 'GET',
+        url: '/health',
+        headers: [],
+        params: [],
+        auth: { type: 'none', basic: { username: '', password: '' }, bearer: { token: '' } },
+        body: '',
+        bodyType: 'none',
+        preRequestScript: '',
+        postRequestScript: '',
+        comment: '',
+        folderId: null,
+        sortOrder: 0,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z'
+      };
+
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ requests: [savedRequest] }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        })
+      );
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      const requests = await client.listAdminCollectionRequests(collectionId);
+
+      expect(requests).toEqual([
+        expect.objectContaining({
+          id: savedRequest.id,
+          name: savedRequest.name,
+          method: savedRequest.method,
+          url: savedRequest.url
+        })
+      ]);
+      expect(fetchMock).toHaveBeenCalledWith(
+        `http://127.0.0.1:8788/admin/collections/${collectionId}/requests`,
+        expect.objectContaining({
+          method: 'GET',
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${token}`
+          })
+        })
+      );
+    });
+  });
+
   describe('deleteAdminCollection', () => {
     it('resolves without a body for 204 responses', async () => {
       const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
@@ -785,6 +882,27 @@ describe('TeamHubClient', () => {
       ).resolves.toBeUndefined();
       expect(fetchMock).toHaveBeenCalledWith(
         'http://127.0.0.1:8788/admin/environments/660e8400-e29b-41d4-a716-446655440002',
+        expect.objectContaining({
+          method: 'DELETE',
+          headers: expect.objectContaining({
+            Authorization: `Bearer ${token}`
+          })
+        })
+      );
+    });
+  });
+
+  describe('deleteAdminRequest', () => {
+    it('resolves without a body for 204 responses', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
+      globalThis.fetch = fetchMock;
+
+      const client = createClient();
+      await expect(
+        client.deleteAdminRequest('770e8400-e29b-41d4-a716-446655440002')
+      ).resolves.toBeUndefined();
+      expect(fetchMock).toHaveBeenCalledWith(
+        'http://127.0.0.1:8788/admin/requests/770e8400-e29b-41d4-a716-446655440002',
         expect.objectContaining({
           method: 'DELETE',
           headers: expect.objectContaining({

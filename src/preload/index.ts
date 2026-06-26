@@ -52,6 +52,7 @@ import type {
   ReloadConfigResponse,
   HubUserRecord,
   TeamHubAdminResourceOptions,
+  TeamHubAdminCollectionContents,
   UpdateHubUserInput,
   CreateHubUserInput,
   CreatedHubUser,
@@ -800,6 +801,19 @@ function listTeamHubAdminResourceOptions(hubId: string): Promise<TeamHubAdminRes
 }
 
 /**
+ * Loads folders and saved requests in a hub collection for admin inspection via IPC.
+ *
+ * @param hubId - Team hub connection id with an admin token.
+ * @param collectionId - Server collection UUID.
+ */
+function listTeamHubAdminCollectionContents(
+  hubId: string,
+  collectionId: string
+): Promise<TeamHubAdminCollectionContents> {
+  return ipcRenderer.invoke('teamHubs:listAdminCollectionContents', hubId, collectionId);
+}
+
+/**
  * Deletes a hub collection using an admin token via IPC.
  *
  * @param hubId - Team hub connection id with an admin token.
@@ -807,6 +821,16 @@ function listTeamHubAdminResourceOptions(hubId: string): Promise<TeamHubAdminRes
  */
 function deleteTeamHubCollection(hubId: string, collectionId: string): Promise<void> {
   return ipcRenderer.invoke('teamHubs:deleteCollection', hubId, collectionId);
+}
+
+/**
+ * Deletes a saved request on a hub collection using an admin token via IPC.
+ *
+ * @param hubId - Team hub connection id with an admin token.
+ * @param requestId - Server saved request UUID.
+ */
+function deleteTeamHubRequest(hubId: string, requestId: string): Promise<void> {
+  return ipcRenderer.invoke('teamHubs:deleteRequest', hubId, requestId);
 }
 
 /**
@@ -1692,7 +1716,9 @@ const api: Api = {
   createTeamHubUserToken,
   deleteTeamHubToken,
   listTeamHubAdminResourceOptions,
+  listTeamHubAdminCollectionContents,
   deleteTeamHubCollection,
+  deleteTeamHubRequest,
   deleteTeamHubEnvironment,
   updateTeamHubCollectionDeletionLocked,
   updateTeamHubEnvironmentDeletionLocked,

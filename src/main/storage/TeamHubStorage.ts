@@ -189,6 +189,14 @@ export class TeamHubStorage implements IStorage {
   }
 
   /**
+   * Returns whether the hub token has management API access (admin role).
+   */
+  async hasManagementApi(): Promise<boolean> {
+    const session = await this.client.getSession();
+    return session.capabilities.managementApi;
+  }
+
+  /**
    * Returns the server UUID for a mapped local collection id.
    *
    * @param localCollectionId - Provider-local collection id from the id map.

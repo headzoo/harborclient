@@ -65,7 +65,12 @@ export const runSync = createAsyncThunk<void, void, ThunkApiConfig>(
     await dispatch(refreshCollections());
     await dispatch(refreshEnvironments());
 
-    const cachedCollectionIds = Object.keys(getState().collections.foldersByCollection).map(Number);
+    const validCollectionIds = new Set(
+      getState().collections.collections.map((collection) => collection.id)
+    );
+    const cachedCollectionIds = Object.keys(getState().collections.foldersByCollection)
+      .map(Number)
+      .filter((collectionId) => validCollectionIds.has(collectionId));
     for (const collectionId of cachedCollectionIds) {
       await dispatch(refreshCollectionContents(collectionId));
     }

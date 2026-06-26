@@ -106,6 +106,20 @@ export interface ITeamHubClient {
   listAdminEnvironments(): Promise<AdminResourceOption[]>;
 
   /**
+   * Lists folders in a collection for operator inspection.
+   *
+   * @param collectionId - Parent collection UUID.
+   */
+  listAdminCollectionFolders(collectionId: string): Promise<FolderRecord[]>;
+
+  /**
+   * Lists saved requests in a collection for operator inspection.
+   *
+   * @param collectionId - Parent collection UUID.
+   */
+  listAdminCollectionRequests(collectionId: string): Promise<SavedRequestRecord[]>;
+
+  /**
    * Deletes a collection via the admin management API.
    *
    * @param id - Collection UUID.
@@ -118,6 +132,13 @@ export interface ITeamHubClient {
    * @param id - Environment UUID.
    */
   deleteAdminEnvironment(id: string): Promise<void>;
+
+  /**
+   * Deletes a saved request via the admin management API.
+   *
+   * @param id - Saved request UUID.
+   */
+  deleteAdminRequest(id: string): Promise<void>;
 
   /**
    * Updates whether non-admin users may delete a collection.

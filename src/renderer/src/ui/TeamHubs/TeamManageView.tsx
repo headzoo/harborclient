@@ -12,6 +12,8 @@ import { Button } from '#/renderer/src/components/Button';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { faAngleLeft } from '#/renderer/src/fontawesome';
 import { useTeamHubUsers } from '#/renderer/src/hooks/useTeamHubUsers';
+import { useAppDispatch } from '#/renderer/src/store/hooks';
+import { refreshCollections } from '#/renderer/src/store/thunks/collections';
 import { TeamSecretDialog } from '#/renderer/src/ui/TeamHubs/TeamSecretDialog';
 import { TeamUserForm } from '#/renderer/src/ui/TeamHubs/TeamUserForm';
 
@@ -34,6 +36,7 @@ interface Props {
  * Team Hub user administration view for operator tokens.
  */
 export function TeamManageView({ hub, onBack }: Props): JSX.Element {
+  const dispatch = useAppDispatch();
   const { users, loading, error, reload } = useTeamHubUsers(hub.id);
   const [editingUser, setEditingUser] = useState<HubUserRecord | null>(null);
   const [creatingUser, setCreatingUser] = useState(false);
@@ -157,6 +160,7 @@ export function TeamManageView({ hub, onBack }: Props): JSX.Element {
       await window.api.updateTeamHubUser(hub.id, editingUser.id, input);
       setEditingUser(null);
       reload();
+      await dispatch(refreshCollections());
       toast.success('User updated.');
     } catch (err: unknown) {
       setActionError(err instanceof Error ? err.message : String(err));
@@ -179,6 +183,7 @@ export function TeamManageView({ hub, onBack }: Props): JSX.Element {
       setCreatingUser(false);
       setCreatedSecret(created.secret);
       reload();
+      await dispatch(refreshCollections());
       toast.success('User created.');
     } catch (err: unknown) {
       setActionError(err instanceof Error ? err.message : String(err));

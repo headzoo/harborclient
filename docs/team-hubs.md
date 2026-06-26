@@ -113,7 +113,9 @@ HarborClient refreshes cached plugin sources and re-scans service badges after a
 
 ### Admin tokens and collections
 
-Admin tokens cannot read or write collection data through HarborClient. The team hub API returns an empty collection list for admin tokens by design so the connection can still mount without errors.
+Admin tokens cannot read or write collection data through HarborClient for daily API work. HarborClient **does not import collections** into the sidebar for admin-token connections, even when the Team Hub server returns a catalog on `GET /collections`. On app launch or hub save, any sidebar entries previously tied to an admin connection are removed automatically.
+
+Use **Manage collections** on an admin hub row when you need to inspect or delete collections on the server.
 
 **Recommended pattern:** configure one hub connection with a **user** token for daily work (collections and requests) and a separate connection with an **admin** token for team administration. You can also keep an admin connection and use it only when managing users.
 
@@ -141,10 +143,12 @@ Admin-token hub rows include **Manage collections**. Click it to list every coll
 
 | Action | Behavior |
 | ------ | -------- |
+| **View requests** | Click a collection row to inspect its saved requests grouped by folder |
+| **Delete request** | Permanently deletes an individual saved request on the team hub |
 | **Protect from user deletion** | When enabled, user-token deletes remove the collection from that user's sidebar only; the server copy stays available to teammates |
 | **Delete** | Permanently deletes the collection on the team hub (type `DELETE` to confirm) |
 
-Click **Back** to return to the hub connection list.
+Click **Back** from the request list to return to the collection list. Click **Back** from the collection list to return to the hub connection list.
 
 ### Edit a user
 
@@ -202,8 +206,11 @@ HarborClient syncs collections from each reachable hub:
 
 - **On app launch** — after hubs are mounted, new team hub collections are added to the sidebar
 - **When you save a hub** — immediately after add or edit
+- **When you create or update a server user** — user-token hub connections on the same server re-sync and the sidebar refreshes automatically
 
-Sync is **additive**: collections on the team hub that are not yet in your sidebar are registered automatically. When the hub is **reachable**, collections deleted on the server are removed from your sidebar on the next sync (app launch, hub save, or manual storage sync). When the hub is **offline or unreachable**, existing sidebar entries are kept until the hub can be contacted again.
+Sync is **additive**: collections on the team hub that are not yet in your sidebar are registered automatically. When the hub is **reachable**, collections deleted on the server are removed from your sidebar on the next sync (app launch, hub save, manual storage sync, or sidebar refresh). When the hub is **offline or unreachable**, existing sidebar entries are kept until the hub can be contacted again.
+
+You do not need to restart HarborClient after saving a user-token hub connection or changing a server user's collection access.
 
 There is **no background polling** or live sync. Changes made by teammates appear when HarborClient reloads data — for example, after restarting the app or when a hub is saved again.
 

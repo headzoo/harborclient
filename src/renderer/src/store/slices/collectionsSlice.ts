@@ -7,6 +7,8 @@ export interface CollectionsState {
   requestsByCollection: Record<number, SavedRequest[]>;
   selectedCollectionId: number | null;
   selectedFolderId: number | null;
+  /** True after the first successful collections list from the main process. */
+  collectionsListed: boolean;
 }
 
 const initialState: CollectionsState = {
@@ -14,7 +16,8 @@ const initialState: CollectionsState = {
   foldersByCollection: {},
   requestsByCollection: {},
   selectedCollectionId: null,
-  selectedFolderId: null
+  selectedFolderId: null,
+  collectionsListed: false
 };
 
 const collectionsSlice = createSlice({
@@ -43,6 +46,7 @@ const collectionsSlice = createSlice({
      */
     setCollections(state, action: PayloadAction<Collection[]>) {
       state.collections = action.payload;
+      state.collectionsListed = true;
     },
     /**
      * Caches saved requests for one collection id.
