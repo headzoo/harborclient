@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(storage): add default content seeding during storage creation. (`64d0651`)
+
 ## 1.8.15 - 2026-06-26
 
 - feat(team-hubs): enhance admin collection management and synchronization. (`3b855d6`)

@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, screen, shell }
 import { join } from 'path';
 import { RoutingStorage } from '#/main/storage';
 import { initLocalDatabase } from '#/main/storage/localDatabaseInstance';
+import { seedDefaultContentIfNeeded } from '#/main/storage/seedDefaultContent';
 import { createStorageInstance } from '#/main/storage/createStorageInstance';
 import { registerIpcHandlers } from '#/main/ipc';
 import { ipcArgSchemas } from '#/main/ipc/ipcSchemas';
@@ -202,6 +203,13 @@ async function createStorage(): Promise<RoutingStorage> {
     logVerbose('createStorage: collection registry migration complete');
   } catch (err) {
     console.warn('Storage metadata migration failed; continuing startup without migration:', err);
+  }
+
+  try {
+    await seedDefaultContentIfNeeded(router, database);
+    logVerbose('createStorage: default content seed complete');
+  } catch (err) {
+    console.warn('Default content seed failed; continuing startup without seed:', err);
   }
 
   return router;
