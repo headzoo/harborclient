@@ -138,7 +138,7 @@ export function TeamCollectionsView({ hub, onBack }: Props): JSX.Element {
                   </Button>
                   <Button
                     type="button"
-                    variant="secondaryDanger"
+                    variant="primaryDanger"
                     onClick={() => handleDeleteClick(collection)}
                   >
                     Delete
@@ -173,7 +173,7 @@ export function TeamCollectionsView({ hub, onBack }: Props): JSX.Element {
             actions={
               <Button
                 type="button"
-                variant="secondaryDanger"
+                variant="primaryDanger"
                 disabled={deleting || deleteConfirmText !== 'DELETE'}
                 onClick={() => void handleConfirmDelete()}
               >

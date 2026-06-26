@@ -134,7 +134,7 @@ export function IdentitySection({ onClose }: Props): JSX.Element {
 
           <FormGroup label="Public key">
             <Textarea
-              className="mb-4 min-h-28 w-full resize-y font-mono text-[14px]"
+              className="mb-4 min-h-56 w-full resize-y font-mono text-[14px]"
               readOnly
               value={identity.publicKeyPem}
               onFocus={(event) => event.target.select()}

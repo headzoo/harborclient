@@ -1,6 +1,7 @@
 import { BrowserWindow, dialog } from 'electron';
 import type { PluginManager } from '#/main/plugins/PluginManager';
 import { fetchPluginCatalog } from '#/main/plugins/pluginCatalog';
+import { fetchPluginPreviewFromGit } from '#/main/plugins/gitPluginPreview';
 import { clearTrustedKeysCache } from '#/main/plugins/pluginSignature';
 import { getPluginSources, setPluginSources } from '#/main/settings/pluginSourcesSettings';
 import { refreshTeamHubPluginSources } from '#/main/settings/teamHubPluginSources';
@@ -199,6 +200,10 @@ export function registerPluginHandlers(pluginManager: PluginManager): void {
 
   handle('plugins:installFromGit', ipcArgSchemas.pluginInstallFromGit, (_event, url, ref) =>
     pluginManager.installFromGit(url, ref)
+  );
+
+  handle('plugins:previewFromGit', ipcArgSchemas.pluginPreviewFromGit, (_event, url, ref) =>
+    fetchPluginPreviewFromGit(url, ref)
   );
 
   handle('plugins:updateFromGit', ipcArgSchemas.pluginId, (_event, pluginId) =>

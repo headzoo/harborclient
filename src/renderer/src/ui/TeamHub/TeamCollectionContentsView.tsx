@@ -287,7 +287,7 @@ export function TeamCollectionContentsView({
                     actions={
                       <Button
                         type="button"
-                        variant="secondaryDanger"
+                        variant="primaryDanger"
                         onClick={() => handleDeleteClick(request)}
                       >
                         Delete
@@ -323,7 +323,7 @@ export function TeamCollectionContentsView({
           <ModalFooter>
             <Button
               type="button"
-              variant="secondaryDanger"
+              variant="primaryDanger"
               disabled={deleting}
               onClick={() => void handleConfirmDelete()}
             >

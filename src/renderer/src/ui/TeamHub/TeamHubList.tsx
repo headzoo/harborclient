@@ -329,7 +329,11 @@ export function TeamHubList({
                     <Button type="button" variant="secondary" onClick={() => handleEdit(hub)}>
                       Edit
                     </Button>
-                    <Button type="button" variant="secondary" onClick={() => setDeletingHub(hub)}>
+                    <Button
+                      type="button"
+                      variant="primaryDanger"
+                      onClick={() => setDeletingHub(hub)}
+                    >
                       Delete
                     </Button>
                   </>
@@ -387,7 +391,7 @@ export function TeamHubList({
           <ModalFooter>
             <Button
               type="button"
-              variant="secondaryDanger"
+              variant="primaryDanger"
               onClick={() => void handleDelete(deletingHub.id)}
             >
               Delete

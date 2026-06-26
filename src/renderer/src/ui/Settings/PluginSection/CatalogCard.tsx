@@ -53,9 +53,11 @@ export function CatalogCard({ entry, onOpen }: Props): JSX.Element {
       )}
 
       <div className="flex flex-1 flex-col gap-1.5 p-3">
-        <h3 className="m-0 truncate text-[14px] font-semibold text-text">{entry.name}</h3>
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 className="m-0 min-w-0 truncate text-[14px] font-semibold text-text">{entry.name}</h3>
+          <span className="shrink-0 text-[14px] text-muted">{entry.version}</span>
+        </div>
         <p className="m-0 line-clamp-3 text-[14px] text-text">{entry.summary}</p>
-        <p className="m-0 text-[14px] text-muted">{entry.version}</p>
         <div className="mt-auto flex flex-wrap gap-1.5 pt-1.5">
           {entry.categories.map((category) => (
             <span key={category} className="rounded bg-accent/15 px-2 py-0.5 text-[14px] text-text">

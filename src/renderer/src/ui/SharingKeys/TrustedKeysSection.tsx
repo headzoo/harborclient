@@ -191,7 +191,7 @@ export function TrustedKeysSection({ onClose }: Props): JSX.Element {
               actions={
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="primaryDanger"
                   className="shrink-0"
                   onClick={() => handleDeleteClick(key)}
                 >

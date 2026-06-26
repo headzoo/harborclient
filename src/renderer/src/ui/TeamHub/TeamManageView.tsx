@@ -263,7 +263,11 @@ export function TeamManageView({ hub, onBack }: Props): JSX.Element {
                   <Button type="button" variant="secondary" onClick={() => handleEdit(user)}>
                     Edit
                   </Button>
-                  <Button type="button" variant="secondary" onClick={() => handleDeleteClick(user)}>
+                  <Button
+                    type="button"
+                    variant="primaryDanger"
+                    onClick={() => handleDeleteClick(user)}
+                  >
                     Delete
                   </Button>
                 </>
@@ -367,7 +371,7 @@ export function TeamManageView({ hub, onBack }: Props): JSX.Element {
             actions={
               <Button
                 type="button"
-                variant="secondaryDanger"
+                variant="primaryDanger"
                 disabled={deleting || deleteConfirmText !== 'DELETE'}
                 onClick={() => void handleConfirmDelete()}
               >

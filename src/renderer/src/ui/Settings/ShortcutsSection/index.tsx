@@ -258,7 +258,7 @@ export function ShortcutsSection({ onClose }: Props): JSX.Element {
             </p>
             <Button
               type="button"
-              variant="secondaryDanger"
+              variant="primaryDanger"
               disabled={restoring}
               onClick={() => void handleRestoreDefaults()}
             >

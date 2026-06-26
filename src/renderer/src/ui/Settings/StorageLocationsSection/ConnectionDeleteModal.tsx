@@ -54,7 +54,7 @@ export function ConnectionDeleteModal({
       }
     >
       <ModalFooter>
-        <Button type="button" variant="secondaryDanger" onClick={() => void onConfirm()}>
+        <Button type="button" variant="primaryDanger" onClick={() => void onConfirm()}>
           Delete
         </Button>
       </ModalFooter>

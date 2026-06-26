@@ -1,7 +1,7 @@
 import type { JSX } from 'react';
-import { faAngleLeft } from '@fortawesome/free-solid-svg-icons';
 import { Button } from '#/renderer/src/components/Button';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
+import { faAngleLeft } from '#/renderer/src/fontawesome';
 
 interface Props {
   /**
@@ -10,9 +10,14 @@ interface Props {
   onClick: () => void;
 
   /**
-   * Visible button label.
+   * Default accessible name when `ariaLabel` is not provided.
    */
   label?: string;
+
+  /**
+   * Accessible name when it should differ from `label`.
+   */
+  ariaLabel?: string;
 
   /**
    * Additional Tailwind classes merged onto the button element.
@@ -21,21 +26,28 @@ interface Props {
 }
 
 /**
- * Primary navigation control that returns to the previous Team Hub or settings view.
+ * Secondary icon back control for nested panel headers.
+ *
+ * Matches {@link PanelCloseButton} styling with a left-angle icon instead of close.
  *
  * @param onClick - Back navigation handler.
- * @param label - Visible label; defaults to "Back".
- * @param className - Extra classes appended after the preset.
+ * @param label - Default accessible name; defaults to "Back".
+ * @param ariaLabel - Accessible name override.
+ * @param className - Extra classes appended after the layout preset.
  */
-export function BackButton({ onClick, label = 'Back', className }: Props): JSX.Element {
-  const buttonClassName = className
-    ? `inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap ${className}`
-    : 'inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap';
+export function BackButton({ onClick, label = 'Back', ariaLabel, className }: Props): JSX.Element {
+  const base = 'inline-flex shrink-0 items-center justify-center py-2';
+  const classes = className ? `${base} ${className}` : base;
 
   return (
-    <Button type="button" className={buttonClassName} onClick={onClick}>
-      <FaIcon icon={faAngleLeft} />
-      {label}
+    <Button
+      type="button"
+      variant="secondary"
+      className={classes}
+      aria-label={ariaLabel ?? label}
+      onClick={onClick}
+    >
+      <FaIcon icon={faAngleLeft} className="h-4 w-4" />
     </Button>
   );
 }

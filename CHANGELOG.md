@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(plugins): add plugin preview functionality from GitHub repositories. (`63e9a26`)
 - feat(ui): enhance user interface with new icons and improved button components. (`328b03e`)
 - feat(ui): introduce new components for enhanced user experience and accessibility. (`0b5ddfa`)
 - refactor(sharing-keys): streamline sharing keys components and enhance accessibility. (`0915d36`)

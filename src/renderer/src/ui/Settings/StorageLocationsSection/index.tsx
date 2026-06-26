@@ -270,13 +270,6 @@ export function StorageLocationsSection({ onClose }: Props): JSX.Element {
                     </div>
                   }
                   secondary={providerLabel(connection.type)}
-                  meta={
-                    isLastSqlite ? (
-                      <p className="mb-0 mt-1 text-[14px] text-muted">
-                        At least one SQLite connection must remain.
-                      </p>
-                    ) : undefined
-                  }
                   actions={
                     <>
                       {!isActive && (
@@ -297,7 +290,7 @@ export function StorageLocationsSection({ onClose }: Props): JSX.Element {
                       </Button>
                       <Button
                         type="button"
-                        variant="secondary"
+                        variant="primaryDanger"
                         disabled={cannotDelete}
                         onClick={() => setDeletingConnection(connection)}
                       >

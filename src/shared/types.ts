@@ -5,6 +5,7 @@ import type {
   PluginEntryKind,
   PluginFsPickFileOptions,
   PluginFsSaveFileOptions,
+  PluginGitPreview,
   PluginInfo,
   SerializableMenuContribution
 } from '#/shared/plugin/types';
@@ -18,6 +19,7 @@ export type {
   PluginEntryKind,
   PluginFsPickFileOptions,
   PluginFsSaveFileOptions,
+  PluginGitPreview,
   PluginInfo,
   PluginPermission,
   SerializableMenuContribution
@@ -3471,6 +3473,14 @@ export interface Api {
    * @param ref - Optional branch or tag to clone.
    */
   installPluginFromGit: (url: string, ref?: string) => Promise<PluginInfo>;
+
+  /**
+   * Fetches manifest and preview assets from a public git repository without installing.
+   *
+   * @param url - Public https (or http) repository URL.
+   * @param ref - Optional branch or tag to read.
+   */
+  previewPluginFromGit: (url: string, ref?: string) => Promise<PluginGitPreview>;
 
   /**
    * Re-clones a git-installed plugin from its stored origin.

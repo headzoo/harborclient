@@ -151,6 +151,15 @@ export interface PluginAssetResult {
 }
 
 /**
+ * Remote plugin metadata fetched from a git repository for marketplace preview.
+ */
+export interface PluginGitPreview {
+  manifest: PluginManifest;
+  descriptionMarkdown?: string;
+  screenshotSrc?: string;
+}
+
+/**
  * Registered settings section exposed to the Settings UI.
  */
 export interface RegisteredSettingsSection {

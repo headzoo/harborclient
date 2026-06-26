@@ -1,6 +1,8 @@
+import { faCaretRight } from '@fortawesome/free-solid-svg-icons';
 import type { JSX } from 'react';
 import type { HttpMethod, Variable } from '#/shared/types';
 import { Button } from '#/renderer/src/components/Button';
+import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { MethodSelect } from '#/renderer/src/components/MethodSelect';
 import { VariableInput } from '#/renderer/src/components/VariableInput';
 import { fieldFrame } from '#/renderer/src/components/forms';
@@ -94,8 +96,15 @@ export function UrlBar({
           {action.title}
         </Button>
       ))}
-      <Button onClick={onSend} disabled={sending}>
-        {sending ? 'Sending…' : 'Send'}
+      <Button onClick={onSend} disabled={sending} className="inline-flex items-center gap-1.5">
+        {sending ? (
+          'Sending…'
+        ) : (
+          <>
+            Send
+            <FaIcon icon={faCaretRight} className="h-3.5 w-3.5" />
+          </>
+        )}
       </Button>
     </div>
   );

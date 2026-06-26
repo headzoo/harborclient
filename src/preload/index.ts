@@ -34,6 +34,7 @@ import type {
   PluginEntryKind,
   PluginFsPickFileOptions,
   PluginFsSaveFileOptions,
+  PluginGitPreview,
   PluginInfo,
   PluginCatalog,
   PluginSourcesSettings,
@@ -1437,6 +1438,16 @@ function installPluginFromGit(url: string, ref?: string): Promise<PluginInfo> {
 }
 
 /**
+ * Fetches manifest and preview assets from a public git repository without installing.
+ *
+ * @param url - Public https (or http) repository URL.
+ * @param ref - Optional branch or tag to read.
+ */
+function previewPluginFromGit(url: string, ref?: string): Promise<PluginGitPreview> {
+  return ipcRenderer.invoke('plugins:previewFromGit', url, ref);
+}
+
+/**
  * Re-clones a git-installed plugin from its stored origin.
  *
  * @param pluginId - Plugin manifest id.
@@ -1820,6 +1831,7 @@ const api: Api = {
   installPlugin,
   installPluginFromPath,
   installPluginFromGit,
+  previewPluginFromGit,
   updatePluginFromGit,
   uninstallPlugin,
   setPluginEnabled,

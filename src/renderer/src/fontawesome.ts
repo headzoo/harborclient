@@ -2,6 +2,7 @@ import { config, library } from '@fortawesome/fontawesome-svg-core';
 import {
   faAngleLeft,
   faBars,
+  faCaretRight,
   faChevronDown,
   faChevronRight,
   faCircleCheck,
@@ -31,6 +32,7 @@ library.add(
   faXmark,
   faPlus,
   faBars,
+  faCaretRight,
   faTableColumns,
   faChevronDown,
   faChevronRight,
@@ -57,6 +59,7 @@ config.autoAddCss = false;
 export {
   faAngleLeft,
   faBars,
+  faCaretRight,
   faChevronDown,
   faChevronRight,
   faCircleCheck,

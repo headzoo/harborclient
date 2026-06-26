@@ -29,14 +29,18 @@ import {
   showConfirm,
   formatIpcErrorMessage
 } from '#/renderer/src/ui/modals/dialogHelpers';
+import type { PluginGitPreview } from '#/shared/plugin/types';
 import { findInstalledCatalogPlugin, isManagedInstall, stopRowActivation } from './helpers';
 import { CatalogCard } from './CatalogCard';
-import { CatalogDetailModal } from './CatalogDetailModal';
-import { DetailModal } from './DetailModal';
 import { EnableModal } from './EnableModal';
 import { ErrorMessages } from './ErrorMessages';
 import { GitInstallModal } from './GitInstallModal';
 import { InstallModal } from './InstallModal';
+import { PluginDetailModal } from './PluginDetailModal';
+import {
+  loadInstalledPluginScreenshotSrc,
+  resolveCatalogPluginScreenshotSrc
+} from './resolvePluginScreenshot';
 import { SourcesModal } from './SourcesModal';
 import { TableExternalLink } from './TableExternalLink';
 import type { SourceKind } from './types';
@@ -61,6 +65,11 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [catalogActionBusyId, setCatalogActionBusyId] = useState<string | null>(null);
   const [catalogDetailEntry, setCatalogDetailEntry] = useState<PluginCatalogEntry | null>(null);
+  const [catalogPreview, setCatalogPreview] = useState<PluginGitPreview | null>(null);
+  const [catalogPreviewLoadState, setCatalogPreviewLoadState] = useState<
+    'idle' | 'loading' | 'loaded' | 'error'
+  >('idle');
+  const [catalogPreviewError, setCatalogPreviewError] = useState<string | null>(null);
   const [catalogSearchQuery, setCatalogSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +79,7 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
   const [descriptionLoadState, setDescriptionLoadState] = useState<
     'idle' | 'loading' | 'loaded' | 'error'
   >('idle');
+  const [detailScreenshotSrc, setDetailScreenshotSrc] = useState<string | undefined>(undefined);
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [showGitInstallModal, setShowGitInstallModal] = useState(false);
   const [gitInstallUrl, setGitInstallUrl] = useState('');
@@ -293,6 +303,73 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
   }, [detailPlugin]);
 
   /**
+   * Maps loaded marketplace catalog entries by plugin id for screenshot lookup.
+   */
+  const catalogById = useMemo(() => {
+    if (!catalog?.plugins.length) {
+      return new Map<string, PluginCatalogEntry>();
+    }
+    return new Map(catalog.plugins.map((entry) => [entry.id, entry]));
+  }, [catalog]);
+
+  /**
+   * Loads the installed plugin screenshot when the detail modal opens.
+   */
+  useEffect(() => {
+    let active = true;
+    if (!detailPlugin) {
+      return () => {
+        active = false;
+      };
+    }
+
+    void loadInstalledPluginScreenshotSrc(
+      detailPlugin,
+      catalogById.get(detailPlugin.id)?.screenshot
+    ).then((screenshotSrc) => {
+      if (active) {
+        setDetailScreenshotSrc(screenshotSrc);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [detailPlugin, catalogById]);
+
+  /**
+   * Fetches remote manifest preview data when a marketplace detail modal opens.
+   */
+  useEffect(() => {
+    let active = true;
+    if (!catalogDetailEntry) {
+      return () => {
+        active = false;
+      };
+    }
+
+    void window.api
+      .previewPluginFromGit(catalogDetailEntry.repoUrl, catalogDetailEntry.ref)
+      .then((preview) => {
+        if (active) {
+          setCatalogPreview(preview);
+          setCatalogPreviewLoadState('loaded');
+        }
+      })
+      .catch((err) => {
+        if (active) {
+          setCatalogPreview(null);
+          setCatalogPreviewLoadState('error');
+          setCatalogPreviewError(err instanceof Error ? err.message : String(err));
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [catalogDetailEntry]);
+
+  /**
    * Loads the marketplace catalog from harborclient.com.
    */
   const loadCatalog = useCallback(async (): Promise<void> => {
@@ -316,6 +393,9 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
       const next = !current;
       if (!next) {
         setCatalogDetailEntry(null);
+        setCatalogPreview(null);
+        setCatalogPreviewLoadState('idle');
+        setCatalogPreviewError(null);
         setCatalogSearchQuery('');
       }
       if (next && !catalog && !catalogLoading) {
@@ -326,20 +406,13 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
   };
 
   /**
-   * Opens the marketplace detail modal for one catalog listing.
-   *
-   * @param entry - Catalog row to inspect.
-   */
-  const openCatalogDetail = (entry: PluginCatalogEntry): void => {
-    setCatalogError(null);
-    setCatalogDetailEntry(entry);
-  };
-
-  /**
    * Closes the marketplace detail modal.
    */
   const closeCatalogDetail = (): void => {
     setCatalogDetailEntry(null);
+    setCatalogPreview(null);
+    setCatalogPreviewLoadState('idle');
+    setCatalogPreviewError(null);
     setCatalogError(null);
   };
 
@@ -371,6 +444,7 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
   const openDetail = (plugin: PluginInfo): void => {
     setDescriptionMarkdown('');
     setDescriptionLoadState(plugin.manifest.description ? 'loading' : 'idle');
+    setDetailScreenshotSrc(undefined);
     setDetailPlugin(plugin);
   };
 
@@ -381,6 +455,25 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
     setDetailPlugin(null);
     setDescriptionMarkdown('');
     setDescriptionLoadState('idle');
+    setDetailScreenshotSrc(undefined);
+  };
+
+  /**
+   * Opens the marketplace detail modal for one catalog listing.
+   *
+   * @param entry - Catalog row to inspect.
+   */
+  const openCatalogDetail = (entry: PluginCatalogEntry): void => {
+    const installed = findInstalledCatalogPlugin(plugins, entry.id);
+    if (installed) {
+      openDetail(installed);
+      return;
+    }
+    setCatalogError(null);
+    setCatalogPreview(null);
+    setCatalogPreviewLoadState('loading');
+    setCatalogPreviewError(null);
+    setCatalogDetailEntry(entry);
   };
 
   /**
@@ -647,6 +740,7 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
       >
         <Button
           type="button"
+          variant={showBrowse ? 'secondary' : 'primary'}
           aria-pressed={showBrowse}
           className="inline-flex items-center gap-1.5"
           onClick={toggleBrowseView}
@@ -724,7 +818,7 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
                     <th scope="col" className="px-3 py-2 font-medium text-text">
                       Plugin
                     </th>
-                    <th scope="col" className="px-3 py-2 font-medium text-text">
+                    <th scope="col" className="px-3 py-2 text-center font-medium text-text">
                       Version
                     </th>
                     <th scope="col" className="px-3 py-2 font-medium text-text">
@@ -751,16 +845,9 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
                         onClick={() => openDetail(plugin)}
                         onKeyDown={(event) => handleRowKeyDown(event, plugin)}
                       >
-                        <td className="px-3 py-2 align-top">
+                        <td className="px-3 py-2 align-middle">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className="font-medium text-text">{plugin.name}</span>
-                            {plugin.signature?.status === 'verified' ? (
-                              <FaIcon
-                                icon={faCircleCheck}
-                                className="h-3.5 w-3.5 shrink-0 text-success"
-                                title={`Verified publisher: ${plugin.signature.author ?? plugin.manifest.author ?? 'unknown'}`}
-                              />
-                            ) : null}
                             {plugin.signature?.status === 'invalid' ? (
                               <span className="rounded bg-danger/20 px-1.5 py-0.5 text-[14px] text-danger">
                                 Invalid signature
@@ -797,16 +884,27 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
                           <div className="text-[14px] text-muted">{plugin.id}</div>
                           <ErrorMessages plugin={plugin} />
                         </td>
-                        <td className="px-3 py-2 align-top text-text">{plugin.version}</td>
-                        <td className="px-3 py-2 align-top text-text">
-                          {plugin.manifest.author ? (
-                            plugin.manifest.author
-                          ) : (
-                            <span className="text-muted">—</span>
-                          )}
+                        <td className="px-3 py-2 text-center align-middle text-text">
+                          {plugin.version}
+                        </td>
+                        <td className="px-3 py-2 align-middle text-text">
+                          <div className="flex items-center gap-2">
+                            {plugin.manifest.author ? (
+                              plugin.manifest.author
+                            ) : (
+                              <span className="text-muted">—</span>
+                            )}
+                            {plugin.signature?.status === 'verified' ? (
+                              <FaIcon
+                                icon={faCircleCheck}
+                                className="h-3.5 w-3.5 shrink-0 text-success"
+                                title={`Verified publisher: ${plugin.signature.author ?? plugin.manifest.author ?? 'unknown'}`}
+                              />
+                            ) : null}
+                          </div>
                         </td>
                         <td
-                          className="w-0 whitespace-nowrap px-3 py-2 align-top"
+                          className="w-0 whitespace-nowrap px-3 py-2 align-middle"
                           onClick={stopRowActivation}
                           onMouseDown={stopRowActivation}
                         >
@@ -912,8 +1010,13 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
       )}
 
       {catalogDetailEntry ? (
-        <CatalogDetailModal
+        <PluginDetailModal
+          mode="catalog"
           entry={catalogDetailEntry}
+          preview={catalogPreview}
+          previewLoadState={catalogPreviewLoadState}
+          previewError={catalogPreviewError}
+          screenshotSrc={resolveCatalogPluginScreenshotSrc(catalogDetailEntry, catalogPreview)}
           installed={findInstalledCatalogPlugin(plugins, catalogDetailEntry.id)}
           actionBusy={catalogActionBusyId === catalogDetailEntry.id}
           onClose={closeCatalogDetail}
@@ -928,10 +1031,12 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
       ) : null}
 
       {detailPlugin ? (
-        <DetailModal
+        <PluginDetailModal
+          mode="installed"
           plugin={detailPlugin}
           descriptionMarkdown={descriptionMarkdown}
           descriptionLoadState={descriptionLoadState}
+          screenshotSrc={detailScreenshotSrc}
           onClose={closeDetail}
         />
       ) : null}

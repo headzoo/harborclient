@@ -1,0 +1,321 @@
+import type { JSX } from 'react';
+import type { PluginCatalogEntry } from '#/shared/plugin/catalog';
+import type { PluginGitPreview, PluginInfo, PluginManifest } from '#/shared/plugin/types';
+import { Button } from '#/renderer/src/components/Button';
+import { FaIcon } from '#/renderer/src/components/FaIcon';
+import { Modal } from '#/renderer/src/components/Modal';
+import { Spinner } from '#/renderer/src/components/Spinner';
+import { faCircleCheck } from '#/renderer/src/fontawesome';
+import { PERMISSION_LABELS } from './constants';
+import { ErrorMessages } from './ErrorMessages';
+import { PluginReadmeMarkdown } from './PluginReadmeMarkdown';
+
+interface InstalledProps {
+  /**
+   * Read-only detail view for an installed plugin row.
+   */
+  mode: 'installed';
+
+  /**
+   * Installed plugin metadata and runtime state.
+   */
+  plugin: PluginInfo;
+
+  /**
+   * Loaded Markdown description body.
+   */
+  descriptionMarkdown: string;
+
+  /**
+   * Whether the description asset is loading, ready, or failed.
+   */
+  descriptionLoadState: 'idle' | 'loading' | 'loaded' | 'error';
+
+  /**
+   * Screenshot URL or data URL when available.
+   */
+  screenshotSrc?: string;
+}
+
+interface CatalogProps {
+  /**
+   * Marketplace preview for a plugin that is not installed yet.
+   */
+  mode: 'catalog';
+
+  /**
+   * Marketplace listing being inspected.
+   */
+  entry: PluginCatalogEntry;
+
+  /**
+   * Remote manifest preview fetched from the plugin repository.
+   */
+  preview: PluginGitPreview | null;
+
+  /**
+   * Whether the remote preview is loading, ready, or failed.
+   */
+  previewLoadState: 'idle' | 'loading' | 'loaded' | 'error';
+
+  /**
+   * Error message when the remote preview could not be loaded.
+   */
+  previewError: string | null;
+
+  /**
+   * Screenshot URL or data URL when available.
+   */
+  screenshotSrc?: string;
+
+  /**
+   * Installed plugin row when this catalog id is already present.
+   */
+  installed: PluginInfo | undefined;
+
+  /**
+   * Whether an install or update action is in progress for this listing.
+   */
+  actionBusy: boolean;
+
+  /**
+   * Installs the plugin from its git repository URL.
+   */
+  onInstall: () => void;
+
+  /**
+   * Re-clones an installed git plugin from its stored origin.
+   */
+  onUpdate: () => void;
+}
+
+type Props = (InstalledProps | CatalogProps) & {
+  /**
+   * Closes the detail dialog.
+   */
+  onClose: () => void;
+};
+
+/**
+ * Returns manifest fields used by both installed and catalog detail views.
+ *
+ * @param manifest - Parsed plugin manifest.
+ * @param fallbackAuthor - Catalog author when manifest omits author.
+ */
+function manifestDetails(
+  manifest: PluginManifest,
+  fallbackAuthor?: string
+): {
+  author: string;
+  homepage?: string;
+  bugsUrl?: string;
+  permissions: PluginManifest['permissions'];
+  hasDescription: boolean;
+} {
+  return {
+    author: manifest.author ?? fallbackAuthor ?? '—',
+    homepage: manifest.homepage,
+    bugsUrl: manifest.bugs?.url,
+    permissions: manifest.permissions,
+    hasDescription: Boolean(manifest.description)
+  };
+}
+
+/**
+ * Read-only plugin detail modal shared by installed plugins and marketplace previews.
+ */
+export function PluginDetailModal(props: Props): JSX.Element {
+  const { onClose } = props;
+  const isInstalled = props.mode === 'installed';
+  const plugin = isInstalled ? props.plugin : props.installed;
+  const manifest = isInstalled ? props.plugin.manifest : props.preview?.manifest;
+  const entry = props.mode === 'catalog' ? props.entry : undefined;
+  const title = isInstalled ? props.plugin.name : (entry?.name ?? 'Plugin');
+  const version = isInstalled
+    ? props.plugin.version
+    : (plugin?.version ?? entry?.version ?? props.preview?.manifest.version ?? '—');
+  const repoUrl = isInstalled ? props.plugin.repoUrl : entry?.repoUrl;
+  const repoRef = isInstalled ? props.plugin.repoRef : entry?.ref;
+  const screenshotSrc = props.screenshotSrc;
+  const details = manifest
+    ? manifestDetails(manifest, entry?.author)
+    : entry
+      ? {
+          author: entry.author,
+          homepage: entry.homepage,
+          bugsUrl: undefined,
+          permissions: [] as PluginManifest['permissions'],
+          hasDescription: false
+        }
+      : null;
+  const descriptionMarkdown = isInstalled
+    ? props.descriptionMarkdown
+    : (props.preview?.descriptionMarkdown ?? '');
+  const descriptionLoadState = isInstalled
+    ? props.descriptionLoadState
+    : props.previewLoadState === 'loading'
+      ? 'loading'
+      : props.previewLoadState === 'error'
+        ? 'error'
+        : props.previewLoadState === 'loaded' && descriptionMarkdown
+          ? 'loaded'
+          : props.previewLoadState === 'loaded' && details?.hasDescription
+            ? 'error'
+            : 'idle';
+  const showDescriptionSection = isInstalled
+    ? Boolean(props.plugin.manifest.description) ||
+      descriptionMarkdown.length > 0 ||
+      descriptionLoadState === 'loading' ||
+      descriptionLoadState === 'error'
+    : props.previewLoadState === 'loading' ||
+      Boolean(details?.hasDescription) ||
+      descriptionMarkdown.length > 0 ||
+      (descriptionLoadState === 'error' && Boolean(details?.hasDescription));
+  const closeDisabled = props.mode === 'catalog' ? props.actionBusy : false;
+
+  return (
+    <Modal
+      onClose={onClose}
+      className="w-[min(46.2rem,calc(100vw-2rem))]"
+      labelledBy="plugin-detail-title"
+      title={
+        <>
+          {title}
+          {isInstalled && props.plugin.signature?.status === 'verified' ? (
+            <FaIcon
+              icon={faCircleCheck}
+              className="h-3.5 w-3.5 shrink-0 text-success"
+              title={`Verified publisher: ${props.plugin.signature.author ?? props.plugin.manifest.author ?? 'unknown'}`}
+            />
+          ) : null}
+        </>
+      }
+      closeDisabled={closeDisabled}
+      disableEscape={closeDisabled}
+    >
+      {screenshotSrc ? (
+        <img
+          src={screenshotSrc}
+          alt=""
+          className="mb-4 aspect-video w-full rounded-md border border-separator object-cover object-top"
+        />
+      ) : null}
+
+      {props.mode === 'catalog' && props.previewError ? (
+        <p className="m-0 mb-4 text-[14px] text-danger" role="alert">
+          {props.previewError}
+        </p>
+      ) : null}
+
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[14px]">
+        <dt className="text-muted">Version</dt>
+        <dd className="m-0 text-text">{version}</dd>
+        <dt className="text-muted">Publisher</dt>
+        <dd className="m-0 text-text">{details?.author ?? '—'}</dd>
+        {isInstalled && props.plugin.source === 'unpacked' ? (
+          <>
+            <dt className="text-muted">Source</dt>
+            <dd className="m-0 break-all text-text">{props.plugin.path}</dd>
+          </>
+        ) : null}
+        {repoUrl ? (
+          <>
+            <dt className="text-muted">Repository</dt>
+            <dd className="m-0 break-all text-text">
+              <a href={repoUrl} target="_blank" rel="noreferrer" className="text-accent">
+                {repoUrl}
+              </a>
+              {repoRef ? <span className="text-muted">{` (${repoRef})`}</span> : null}
+            </dd>
+          </>
+        ) : null}
+      </dl>
+
+      <div className="mt-3 flex flex-wrap gap-3 text-[14px]">
+        {details?.homepage ? (
+          <a href={details.homepage} target="_blank" rel="noreferrer" className="text-accent">
+            Website
+          </a>
+        ) : null}
+        {details?.bugsUrl ? (
+          <a href={details.bugsUrl} target="_blank" rel="noreferrer" className="text-accent">
+            Report issue
+          </a>
+        ) : null}
+      </div>
+
+      {isInstalled ? <ErrorMessages plugin={props.plugin} /> : null}
+
+      {details && details.permissions.length > 0 ? (
+        <div className="mt-4 border-t border-separator pt-4">
+          <h3 className="m-0 mb-2 text-[14px] font-medium text-text">Permissions</h3>
+          <ul className="m-0 list-disc pl-5 text-[14px] text-text">
+            {details.permissions.map((permission) => (
+              <li key={permission}>{PERMISSION_LABELS[permission] ?? permission}</li>
+            ))}
+          </ul>
+        </div>
+      ) : props.mode === 'catalog' &&
+        props.previewLoadState === 'loaded' &&
+        !details?.permissions.length ? (
+        <div className="mt-4 border-t border-separator pt-4">
+          <h3 className="m-0 mb-2 text-[14px] font-medium text-text">Permissions</h3>
+          <p className="m-0 text-[14px] text-muted">No permissions declared.</p>
+        </div>
+      ) : null}
+
+      {showDescriptionSection ? (
+        <div className="mt-4 border-t border-separator pt-4">
+          {descriptionLoadState === 'loading' ? (
+            <div
+              className="flex items-center gap-2 text-[14px] text-muted"
+              role="status"
+              aria-label="Loading description"
+            >
+              <span aria-hidden="true">
+                <Spinner size="sm" />
+              </span>
+              <span>Loading description…</span>
+            </div>
+          ) : descriptionLoadState === 'error' ? (
+            <p className="m-0 text-[14px] text-danger" role="alert">
+              Could not load the plugin description.
+            </p>
+          ) : descriptionMarkdown ? (
+            <PluginReadmeMarkdown content={descriptionMarkdown} />
+          ) : null}
+        </div>
+      ) : null}
+
+      {props.mode === 'catalog' ? (
+        <div className="mt-4 flex flex-wrap justify-end gap-2">
+          {props.installed ? (
+            props.installed.source === 'git' ? (
+              <Button
+                type="button"
+                disabled={props.actionBusy}
+                aria-label={`Update ${props.entry.name}`}
+                onClick={props.onUpdate}
+              >
+                {props.actionBusy ? 'Updating…' : 'Update'}
+              </Button>
+            ) : (
+              <Button type="button" disabled aria-label={`${props.entry.name} is installed`}>
+                Installed
+              </Button>
+            )
+          ) : (
+            <Button
+              type="button"
+              disabled={props.actionBusy}
+              aria-label={`Install ${props.entry.name}`}
+              onClick={props.onInstall}
+            >
+              {props.actionBusy ? 'Installing…' : 'Install'}
+            </Button>
+          )}
+        </div>
+      ) : null}
+    </Modal>
+  );
+}

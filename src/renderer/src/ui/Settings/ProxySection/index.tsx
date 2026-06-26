@@ -167,10 +167,6 @@ export function ProxySection({ onClose }: Props): JSX.Element {
             </FormGroup>
           </>
         )}
-
-        <p className="m-0 text-[14px] text-muted">
-          When enabled, every outbound request is routed through this proxy server.
-        </p>
       </div>
 
       <div className="flex items-center gap-3">

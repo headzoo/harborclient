@@ -166,7 +166,7 @@ export function SourceListSection({
                 </div>
                 <Button
                   type="button"
-                  variant="secondary"
+                  variant="primaryDanger"
                   disabled={busy}
                   aria-label={`Remove ${source.url}`}
                   onClick={() => onRemove(index)}

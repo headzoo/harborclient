@@ -50,7 +50,7 @@ export function OAuthAuthPanel({
         <p className="m-0 text-[13px] text-text" role="status">
           Authorized with GitHub.
         </p>
-        <Button variant="secondaryDanger" disabled={disabled} onClick={onRevoke}>
+        <Button variant="primaryDanger" disabled={disabled} onClick={onRevoke}>
           Revoke GitHub authorization
         </Button>
       </div>
