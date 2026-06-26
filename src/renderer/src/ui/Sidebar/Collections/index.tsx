@@ -32,6 +32,7 @@ import type {
   SavedRequest,
   SourceControlStatus
 } from '#/shared/types';
+import type { SidebarSearchFilter } from '#/shared/sidebarSearch';
 import { FaIcon } from '#/renderer/src/components/FaIcon';
 import { RowActionsMenu } from '#/renderer/src/components/RowActionsMenu';
 import { buildReorderMenuGroup } from '#/renderer/src/components/rowActionsMenuHelpers';
@@ -266,6 +267,11 @@ interface Props {
    * Exports a saved request to a JSON file.
    */
   onExportRequest: (req: SavedRequest) => Promise<void> | void;
+
+  /**
+   * Visibility filter from sidebar search, or null when search is inactive.
+   */
+  searchFilter?: SidebarSearchFilter | null;
 }
 
 /**
@@ -310,9 +316,11 @@ export function Collections({
   onLoadRequest,
   onDeleteRequest,
   onDuplicateRequest,
-  onExportRequest
+  onExportRequest,
+  searchFilter = null
 }: Props): JSX.Element {
   const confirm = useConfirm();
+  const searchActive = searchFilter != null;
   const pluginContextMenuItems = usePluginContextMenuItems();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [activeDragKind, setActiveDragKind] = useState<DragKind | null>(null);
@@ -405,8 +413,15 @@ export function Collections({
    * @param folderId The folder id to get the requests for.
    * @returns The requests for the folder.
    */
-  const getFolderRequests = (collectionId: number, folderId: number): SavedRequest[] =>
-    (requestsByCollection[collectionId] ?? []).filter((req) => req.folder_id === folderId);
+  const getFolderRequests = (collectionId: number, folderId: number): SavedRequest[] => {
+    const requests = (requestsByCollection[collectionId] ?? []).filter(
+      (req) => req.folder_id === folderId
+    );
+    if (searchFilter == null) {
+      return requests;
+    }
+    return requests.filter((req) => searchFilter.requestIds.has(req.id));
+  };
 
   /**
    * Moves a collection one position up or down in the sidebar list.
@@ -471,24 +486,40 @@ export function Collections({
   /**
    * Precomputes per-collection folder and root-request groupings for rendering.
    */
-  const collectionTrees = useMemo(
-    () =>
-      collections.map((collection) => {
-        const folders = foldersByCollection[collection.id] ?? [];
-        const rootRequests = (requestsByCollection[collection.id] ?? []).filter(
-          (req) => req.folder_id == null
-        );
-        return { collection, folders, rootRequests };
-      }),
-    [collections, foldersByCollection, requestsByCollection]
-  );
+  const collectionTrees = useMemo(() => {
+    const trees = collections.map((collection) => {
+      const folders = foldersByCollection[collection.id] ?? [];
+      let rootRequests = (requestsByCollection[collection.id] ?? []).filter(
+        (req) => req.folder_id == null
+      );
+
+      if (searchFilter != null) {
+        rootRequests = rootRequests.filter((req) => searchFilter.requestIds.has(req.id));
+      }
+
+      return {
+        collection,
+        folders:
+          searchFilter == null
+            ? folders
+            : folders.filter((folder) => searchFilter.folderIds.has(folder.id)),
+        rootRequests
+      };
+    });
+
+    if (searchFilter == null) {
+      return trees;
+    }
+
+    return trees.filter(({ collection }) => searchFilter.collectionIds.has(collection.id));
+  }, [collections, foldersByCollection, requestsByCollection, searchFilter]);
 
   /**
    * Stable sortable ids for top-level collection rows.
    */
   const collectionIds = useMemo(
-    () => collections.map((collection) => collectionDragId(collection.id)),
-    [collections]
+    () => collectionTrees.map(({ collection }) => collectionDragId(collection.id)),
+    [collectionTrees]
   );
 
   /**
@@ -674,10 +705,18 @@ export function Collections({
         {collections.length === 0 && (
           <div className="px-2 py-1.5 text-[14px] text-muted">No collections yet</div>
         )}
+        {searchActive && collections.length > 0 && collectionTrees.length === 0 && (
+          <div className="px-2 py-1.5 text-[14px] text-muted">
+            No matching collections or requests
+          </div>
+        )}
 
         <SortableContext items={collectionIds} strategy={verticalListSortingStrategy}>
           {collectionTrees.map(({ collection, folders, rootRequests }, collectionIndex) => {
-            const expanded = expandedCollectionIds.has(collection.id);
+            const expanded =
+              searchActive && searchFilter != null
+                ? searchFilter.collectionIds.has(collection.id)
+                : expandedCollectionIds.has(collection.id);
             const selected = selectedCollectionId === collection.id;
             const loaded =
               requestsByCollection[collection.id] != null &&
@@ -707,6 +746,7 @@ export function Collections({
                   id={collectionDragId(collection.id)}
                   className={sourceRow(selected)}
                   dragHandleLabel={`Reorder collection "${collection.name}"`}
+                  disabled={searchActive}
                 >
                   <button
                     type="button"
@@ -857,6 +897,7 @@ export function Collections({
 
                       <DropZone
                         id={dropRootId(collection.id)}
+                        disabled={searchActive}
                         className={
                           [
                             rootDropHighlight,
@@ -900,6 +941,7 @@ export function Collections({
                                 onDeleteRequest={onDeleteRequest}
                                 onDuplicateRequest={onDuplicateRequest}
                                 onExportRequest={onExportRequest}
+                                dragDisabled={searchActive}
                               />
                             ))}
                           </div>
@@ -908,7 +950,10 @@ export function Collections({
 
                       <SortableContext items={folderIds} strategy={verticalListSortingStrategy}>
                         {folders.map((folder, folderIndex) => {
-                          const folderExpanded = expandedFolderIds.has(folder.id);
+                          const folderExpanded =
+                            searchActive && searchFilter != null
+                              ? searchFilter.folderIds.has(folder.id)
+                              : expandedFolderIds.has(folder.id);
                           const folderRequests = getFolderRequests(collection.id, folder.id);
                           const folderRequestIds = folderRequests.map((req) =>
                             requestDragId(req.id)
@@ -923,11 +968,12 @@ export function Collections({
                               data-sidebar-folder-id={folder.id}
                               className={folderHighlighted ? dropTargetHighlightClass : undefined}
                             >
-                              <DropZone id={dropFolderId(folder.id)}>
+                              <DropZone id={dropFolderId(folder.id)} disabled={searchActive}>
                                 <SortableRow
                                   id={folderDragId(folder.id)}
                                   className={sourceRow(folderSelected)}
                                   dragHandleLabel={`Reorder folder "${folder.name}"`}
+                                  disabled={searchActive}
                                 >
                                   <button
                                     type="button"
@@ -1055,6 +1101,7 @@ export function Collections({
                                         onDeleteRequest={onDeleteRequest}
                                         onDuplicateRequest={onDuplicateRequest}
                                         onExportRequest={onExportRequest}
+                                        dragDisabled={searchActive}
                                       />
                                     ))}
                                   </SortableContext>

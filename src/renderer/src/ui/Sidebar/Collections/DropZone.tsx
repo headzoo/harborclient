@@ -16,13 +16,23 @@ interface Props {
    * Drop zone contents.
    */
   children: ReactNode;
+
+  /**
+   * When true, renders a plain container without droppable registration.
+   */
+  disabled?: boolean;
 }
 
 /**
  * Registers a droppable container for request drag-and-drop within a collection tree.
  */
-export function DropZone({ id, className, children }: Props): JSX.Element {
-  const { setNodeRef } = useDroppable({ id });
+export function DropZone({ id, className, children, disabled = false }: Props): JSX.Element {
+  const { setNodeRef } = useDroppable({ id, disabled });
+
+  if (disabled) {
+    return <div className={className}>{children}</div>;
+  }
+
   return (
     <div ref={setNodeRef} className={className}>
       {children}

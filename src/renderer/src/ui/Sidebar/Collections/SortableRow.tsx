@@ -24,13 +24,24 @@ interface Props {
    * Row contents, typically label and action controls.
    */
   children: ReactNode;
+
+  /**
+   * When true, renders a static row without drag-and-drop behavior.
+   */
+  disabled?: boolean;
 }
 
 /**
  * Wraps a sidebar row with dnd-kit sortable drag behavior, a dedicated drag
  * handle for pointer and keyboard reordering, and opacity feedback while dragging.
  */
-export function SortableRow({ id, className, dragHandleLabel, children }: Props): JSX.Element {
+export function SortableRow({
+  id,
+  className,
+  dragHandleLabel,
+  children,
+  disabled = false
+}: Props): JSX.Element {
   const {
     attributes,
     listeners,
@@ -39,7 +50,17 @@ export function SortableRow({ id, className, dragHandleLabel, children }: Props)
     transform,
     transition,
     isDragging
-  } = useSortable({ id });
+  } = useSortable({ id, disabled });
+
+  if (disabled) {
+    return (
+      <div className={`group ${className}`}>
+        <span className="inline-flex h-5 w-5 shrink-0" aria-hidden="true" />
+        {children}
+      </div>
+    );
+  }
+
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,

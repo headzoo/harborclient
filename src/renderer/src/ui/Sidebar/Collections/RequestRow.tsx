@@ -68,6 +68,11 @@ interface Props {
    * Exports the saved request to a JSON file.
    */
   onExportRequest: (req: SavedRequest) => Promise<void> | void;
+
+  /**
+   * When true, renders the row without drag-and-drop reordering.
+   */
+  dragDisabled?: boolean;
 }
 
 /**
@@ -85,7 +90,8 @@ export function RequestRow({
   onLoadRequest,
   onDeleteRequest,
   onDuplicateRequest,
-  onExportRequest
+  onExportRequest,
+  dragDisabled = false
 }: Props): JSX.Element {
   const confirm = useConfirm();
   const pluginContextMenuItems = usePluginContextMenuItems();
@@ -100,6 +106,7 @@ export function RequestRow({
       id={requestDragId(req.id)}
       className={sourceRow(activeRequestId === req.id)}
       dragHandleLabel={`Reorder request "${req.name}"`}
+      disabled={dragDisabled}
     >
       <button
         type="button"

@@ -70,7 +70,9 @@ import { Collections } from './Collections';
 import { GitSourceControlPanel } from '#/renderer/src/ui/modals/GitSourceControlPanel';
 import { Environments } from './Environments';
 import { Section } from './Section';
+import { SidebarSearch } from './SidebarSearch';
 import { useSidebarExpansion } from './useSidebarExpansion';
+import { useSidebarSearch } from './useSidebarSearch';
 
 interface Props {
   /**
@@ -146,6 +148,8 @@ export function Sidebar({
     environmentsSectionExpanded,
     toggleCollectionsSection,
     toggleEnvironmentsSection,
+    setCollectionsSectionExpanded,
+    setEnvironmentsSectionExpanded,
     expandedCollectionIds,
     expandedFolderIds,
     setExpandedCollectionIds,
@@ -153,6 +157,37 @@ export function Sidebar({
     revealCollection,
     revealFolder
   } = useSidebarExpansion();
+
+  const { searchQuery, setSearchQuery, searchFilter, searchLoading } = useSidebarSearch({
+    collections,
+    foldersByCollection,
+    requestsByCollection,
+    environments,
+    collectionsSectionExpanded,
+    environmentsSectionExpanded,
+    setCollectionsSectionExpanded,
+    setEnvironmentsSectionExpanded,
+    expandedCollectionIds,
+    expandedFolderIds,
+    setExpandedCollectionIds,
+    setExpandedFolderIds
+  });
+
+  /**
+   * Environments visible for the current sidebar search filter.
+   */
+  const visibleEnvironments = useMemo(() => {
+    if (searchFilter == null) {
+      return environments;
+    }
+    return environments.filter((environment) => searchFilter.environmentIds.has(environment.id));
+  }, [environments, searchFilter]);
+
+  /**
+   * True when search is active but no environments matched the query.
+   */
+  const environmentsSearchNoMatches =
+    searchFilter != null && environments.length > 0 && visibleEnvironments.length === 0;
 
   /**
    * Loads folders and requests when a collection chevron is expanded.
@@ -372,6 +407,8 @@ export function Sidebar({
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto px-2 pb-3">
+            <SidebarSearch value={searchQuery} onChange={setSearchQuery} loading={searchLoading} />
+
             <nav aria-label="Collections">
               <Section
                 title="Collections"
@@ -384,6 +421,7 @@ export function Sidebar({
                   collections={collections}
                   foldersByCollection={foldersByCollection}
                   requestsByCollection={requestsByCollection}
+                  searchFilter={searchFilter}
                   selectedCollectionId={selectedCollectionId}
                   selectedFolderId={selectedFolderId}
                   primaryConnectionId={primaryConnectionId}
@@ -576,8 +614,10 @@ export function Sidebar({
                 addLabel="Add Environment"
               >
                 <Environments
-                  environments={environments}
+                  environments={visibleEnvironments}
                   activeEnvironmentId={activeEnvironmentId}
+                  searchActive={searchFilter != null}
+                  noMatches={environmentsSearchNoMatches}
                   onSelectEnvironment={(id) => dispatch(setActiveEnvironmentId(id))}
                   onConfigureEnvironment={onConfigureEnvironment}
                   onDeleteEnvironment={async (id) => {

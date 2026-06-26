@@ -63,6 +63,16 @@ interface Props {
    * Persists a new environment order after drag-and-drop or menu moves.
    */
   onReorderEnvironments: (orderedEnvironmentIds: number[]) => Promise<void> | void;
+
+  /**
+   * When true, renders rows without drag-and-drop reordering.
+   */
+  searchActive?: boolean;
+
+  /**
+   * When true, shows a no-match message instead of an empty list.
+   */
+  noMatches?: boolean;
 }
 
 /**
@@ -95,7 +105,9 @@ export function Environments({
   onDeleteEnvironment,
   onExportEnvironment,
   onDuplicateEnvironment,
-  onReorderEnvironments
+  onReorderEnvironments,
+  searchActive = false,
+  noMatches = false
 }: Props): JSX.Element {
   const confirm = useConfirm();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -175,7 +187,10 @@ export function Environments({
       onDragCancel={() => setActiveDragEnvironment(null)}
     >
       <div className="flex flex-col gap-0.5">
-        {environments.length === 0 && (
+        {noMatches && (
+          <div className="px-2 py-1.5 text-[14px] text-muted">No matching environments</div>
+        )}
+        {!noMatches && environments.length === 0 && (
           <div className="px-2 py-1.5 text-[14px] text-muted">No environments yet</div>
         )}
 
@@ -189,6 +204,7 @@ export function Environments({
                 id={environmentDragId(environment.id)}
                 className={sourceRow(selected)}
                 dragHandleLabel={`Reorder environment "${environment.name}"`}
+                disabled={searchActive}
               >
                 <button
                   type="button"

@@ -58,6 +58,11 @@ interface Result {
   setCollectionsSectionExpanded: Dispatch<SetStateAction<boolean>>;
 
   /**
+   * Sets the Environments section expanded state explicitly.
+   */
+  setEnvironmentsSectionExpanded: Dispatch<SetStateAction<boolean>>;
+
+  /**
    * Collection ids whose request trees are expanded.
    */
   expandedCollectionIds: Set<number>;
@@ -279,6 +284,7 @@ export function usePersistedSidebarExpansion({
     toggleCollectionsSection,
     toggleEnvironmentsSection,
     setCollectionsSectionExpanded,
+    setEnvironmentsSectionExpanded,
     expandedCollectionIds,
     expandedFolderIds,
     setExpandedCollectionIds,
