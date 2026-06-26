@@ -58,7 +58,7 @@ import { Sidebar } from '#/renderer/src/ui/Sidebar';
 import { SidebarExpansionProvider } from '#/renderer/src/ui/Sidebar/SidebarExpansionProvider';
 import { Request } from '#/renderer/src/ui/Request';
 import { TitleBar } from '#/renderer/src/ui/TitleBar';
-import { BusyIndicator } from '#/renderer/src/ui/shared/BusyIndicator';
+import { BusyIndicator } from '#/renderer/src/components/BusyIndicator';
 import { Footer } from '#/renderer/src/ui/Footer';
 import { PluginHost } from '#/renderer/src/plugins/PluginHost';
 import { applyThemeAttribute } from '#/renderer/src/theme';

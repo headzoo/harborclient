@@ -5,7 +5,6 @@ import { Button } from '#/renderer/src/components/Button';
 import { PageHeader } from '#/renderer/src/components/PageHeader';
 import { Input, Textarea } from '#/renderer/src/components/forms';
 import { FormGroup } from '#/renderer/src/components/FormGroup';
-import { SharingKeysCloseButton } from './SharingKeysCloseButton';
 
 interface Props {
   /**
@@ -113,7 +112,14 @@ export function IdentitySection({ onClose }: Props): JSX.Element {
         title="My identity"
         description="Your key pair signs share tokens you send and decrypts tokens addressed to you. Share your public key so collaborators can trust and encrypt to you."
       >
-        <SharingKeysCloseButton onClose={onClose} />
+        <Button
+          type="button"
+          className="shrink-0 whitespace-nowrap"
+          aria-label="Close sharing keys"
+          onClick={onClose}
+        >
+          Close
+        </Button>
       </PageHeader>
 
       {loading ? (

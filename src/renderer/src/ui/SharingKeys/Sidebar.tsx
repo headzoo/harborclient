@@ -20,7 +20,7 @@ interface Props {
 /**
  * Narrow sidebar navigation for sharing key management sections.
  */
-export function SharingKeysSidebar({ section, onSectionChange }: Props): JSX.Element {
+export function Sidebar({ section, onSectionChange }: Props): JSX.Element {
   return (
     <nav
       className="flex w-[180px] shrink-0 flex-col gap-0.5 border-r border-separator bg-sidebar px-2 py-3"

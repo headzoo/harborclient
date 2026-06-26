@@ -98,7 +98,7 @@ detailed audit of known gaps and proposed fixes.
   not hand-roll one-off overlays.
 - Announce important status changes (loading, sending, errors) with
   `role="status"` or `aria-live="polite"`. Follow the pattern in
-  [`BusyIndicator`](src/renderer/src/ui/shared/BusyIndicator.tsx).
+  [`BusyIndicator`](src/renderer/src/components/BusyIndicator/index.tsx).
 - Expose selection and expansion state with `aria-current`, `aria-selected`, and
   `aria-expanded` — not color or background alone.
 

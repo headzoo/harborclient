@@ -1,5 +1,5 @@
 import { useState, type JSX } from 'react';
-import { SharingKeysSidebar } from './SharingKeysSidebar';
+import { Sidebar } from './Sidebar';
 import { IdentitySection } from './IdentitySection';
 import { TrustedKeysSection } from './TrustedKeysSection';
 import type { SharingKeysSection } from './types';
@@ -20,7 +20,7 @@ export function SharingKeys({ onClose }: Props): JSX.Element {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex min-h-0 flex-1">
-        <SharingKeysSidebar section={section} onSectionChange={setSection} />
+        <Sidebar section={section} onSectionChange={setSection} />
 
         <div className="flex-1 overflow-y-auto p-6">
           {section === 'identity' && <IdentitySection onClose={onClose} />}
