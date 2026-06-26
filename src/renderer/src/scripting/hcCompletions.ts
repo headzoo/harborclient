@@ -26,6 +26,7 @@ const HC_ROOT: HcCompletionOption[] = [
   { label: 'variables', type: 'property', detail: 'Get/set ephemeral variables' },
   { label: 'collection', type: 'property', detail: 'Collection metadata, variables, and headers' },
   { label: 'environment', type: 'property', detail: 'Environment metadata and variables' },
+  { label: 'globals', type: 'property', detail: 'Get/set app-wide global variables' },
   { label: 'test', type: 'function', detail: '(name, fn) => void' },
   { label: 'expect', type: 'function', detail: '(actual) => Expect' },
   { label: 'response', type: 'property', detail: 'Post-request response (post scripts only)' }
@@ -91,6 +92,7 @@ const GROUPS: Record<string, HcCompletionOption[]> = {
   'hc.collection.headers': HC_REQUEST_HEADERS,
   'hc.environment': HC_ENVIRONMENT,
   'hc.environment.variables': HC_VARIABLES,
+  'hc.globals': HC_VARIABLES,
   'hc.response': HC_RESPONSE,
   console: CONSOLE
 };

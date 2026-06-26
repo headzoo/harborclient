@@ -2,7 +2,7 @@
 
 HarborClient application settings control appearance, HTTP request defaults, and the storage connections where collections, requests, and environments are stored. Open settings from **File → Settings** or **Cmd/Ctrl+,**.
 
-The settings panel has a sidebar with eight sections: **General**, **Storage Locations**, **Plugins**, **Shortcuts**, **Syntax highlighting**, **Proxy**, **AI**, and **Backup & Restore**. General covers appearance and request defaults; Storage Locations manages the named storage connections that hold your data; Plugins installs and manages extension packages; Shortcuts lets you customize keyboard shortcuts; Syntax highlighting controls the code editor; Proxy configures a global HTTP proxy for outbound requests; AI stores API keys for the built-in assistant; Backup & Restore exports or replaces all local HarborClient data from a single backup file.
+The settings panel has a sidebar with nine sections: **General**, **Globals**, **Storage Locations**, **Plugins**, **Shortcuts**, **Syntax highlighting**, **Proxy**, **AI**, and **Backup & Restore**. General covers appearance and request defaults; Globals manages app-wide variables; Storage Locations manages the named storage connections that hold your data; Plugins installs and manages extension packages; Shortcuts lets you customize keyboard shortcuts; Syntax highlighting controls the code editor; Proxy configures a global HTTP proxy for outbound requests; AI stores API keys for the built-in assistant; Backup & Restore exports or replaces all local HarborClient data from a single backup file.
 
 Appearance, request defaults, and connection definitions are stored in electron-store on your machine. Collections, requests, and environments live in the storage connections you configure.
 
@@ -33,6 +33,14 @@ Control how HarborClient sends requests and handles responses:
 | **SSL certificate verification** | When enabled, reject requests with invalid TLS certificates. |
 
 Click **Save** to apply request defaults.
+
+## Globals
+
+The **Globals** section manages app-wide variables available in every request. Use the same key/value/default/share table as collection and environment variables. Reference globals in URLs, headers, params, body, and scripts with `{{key}}` syntax.
+
+Global variables have the **lowest precedence** in the variable chain. Collection and environment variables override globals when they define the same key. Values set with `hc.globals.set` in a pre- or post-request script are persisted to globals after the send completes. See [Environments — Precedence](/environments#precedence) and [Request scripts — hc.globals](/request-scripts#hcglobals).
+
+Click **Save** to apply global variable changes.
 
 ## Shortcuts
 

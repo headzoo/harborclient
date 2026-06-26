@@ -1,6 +1,6 @@
 import type { Variable } from '#/shared/types';
 
-export type VariableScope = 'collection' | 'environment';
+export type VariableScope = 'global' | 'collection' | 'environment';
 
 export interface ResolvedVariable {
   key: string;
@@ -10,15 +10,28 @@ export interface ResolvedVariable {
 }
 
 /**
- * Resolves collection and environment variables with scope and override info.
- * Environment wins on duplicate keys.
+ * Resolves global, collection, and environment variables with scope and override info.
+ * Precedence: environment overrides collection overrides global.
  */
 export function resolveScopedVariables(
+  globalVars: Variable[],
   collectionVars: Variable[],
   envVars: Variable[]
 ): ResolvedVariable[] {
+  const collectionKeys = new Set(collectionVars.map((v) => v.key.trim()).filter(Boolean));
   const envKeys = new Set(envVars.map((v) => v.key.trim()).filter(Boolean));
   const rows: ResolvedVariable[] = [];
+
+  for (const variable of globalVars) {
+    const key = variable.key.trim();
+    if (!key) continue;
+    rows.push({
+      key,
+      value: variable.value !== '' ? variable.value : variable.defaultValue,
+      scope: 'global',
+      overridden: collectionKeys.has(key) || envKeys.has(key)
+    });
+  }
 
   for (const variable of collectionVars) {
     const key = variable.key.trim();
@@ -46,7 +59,7 @@ export function resolveScopedVariables(
 }
 
 /**
- * Count of variables that are in effect (not overridden by environment).
+ * Count of variables that are in effect (not overridden by a higher-precedence scope).
  */
 export function effectiveCount(rows: ResolvedVariable[]): number {
   return rows.filter((row) => !row.overridden).length;

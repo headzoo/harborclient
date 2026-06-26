@@ -56,6 +56,7 @@ describe('createHcCompletionSource', () => {
       'collection',
       'environment',
       'expect',
+      'globals',
       'request',
       'test',
       'variables'
@@ -70,6 +71,7 @@ describe('createHcCompletionSource', () => {
       'collection',
       'environment',
       'expect',
+      'globals',
       'request',
       'response',
       'test',
@@ -108,6 +110,13 @@ describe('createHcCompletionSource', () => {
   it('lists environment variable helpers', async () => {
     const source = createHcCompletionSource('pre', variables);
     const result = await complete(source, mockContext('hc.environment.variables.'));
+
+    expect(labels(result!.options).sort()).toEqual(['get', 'replaceIn', 'set']);
+  });
+
+  it('lists global variable helpers', async () => {
+    const source = createHcCompletionSource('pre', variables);
+    const result = await complete(source, mockContext('hc.globals.'));
 
     expect(labels(result!.options).sort()).toEqual(['get', 'replaceIn', 'set']);
   });

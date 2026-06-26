@@ -62,7 +62,8 @@ export function VariablesPanel({
       <div className="min-h-0 flex-1 overflow-auto">
         {variables.length === 0 ? (
           <EmptyState variant="centered" className="h-full">
-            No variables in scope. Add variables to the active collection or environment.
+            No variables in scope. Add variables in Settings → Globals, or to the active collection
+            or environment.
           </EmptyState>
         ) : (
           variables.map((variable) => (

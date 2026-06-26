@@ -82,6 +82,7 @@ export default function App(): JSX.Element {
   const showConsole = useAppSelector(selectShowConsole);
   const showVariables = useAppSelector(selectShowVariables);
   const foldersByCollection = useAppSelector(selectFoldersByCollection);
+  const globalVariables = useAppSelector((state) => state.settings.general.globalVariables);
 
   useMenuActions();
   usePersistedPanelLayout();
@@ -266,6 +267,7 @@ export default function App(): JSX.Element {
           onClear={() => dispatch(clearConsole())}
           variablesOpen={showVariables}
           onToggleVariables={() => dispatch(toggleVariables())}
+          globalVariables={globalVariables}
           collectionVariables={activeCollection?.variables ?? []}
           environmentVariables={activeEnvironment?.variables ?? []}
           collectionName={activeCollection?.name}

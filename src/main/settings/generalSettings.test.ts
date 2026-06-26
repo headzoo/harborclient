@@ -82,4 +82,26 @@ describe('generalSettings', () => {
       password: ''
     });
   });
+
+  it('normalizes stored global variables', () => {
+    setGeneralSettings({
+      ...DEFAULT_GENERAL_SETTINGS,
+      globalVariables: [
+        { key: 'baseUrl', value: 'https://api.example.com', defaultValue: '', share: false }
+      ]
+    });
+
+    expect(getGeneralSettings().globalVariables).toEqual([
+      { key: 'baseUrl', value: 'https://api.example.com', defaultValue: '', share: false }
+    ]);
+  });
+
+  it('returns empty globalVariables when stored value is invalid', () => {
+    settingsStore.general = JSON.stringify({
+      ...DEFAULT_GENERAL_SETTINGS,
+      globalVariables: 'not-an-array'
+    });
+
+    expect(getGeneralSettings().globalVariables).toEqual([]);
+  });
 });

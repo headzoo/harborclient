@@ -24,6 +24,7 @@ describe('evaluateScript', () => {
       variableSets: {},
       collectionVariableSets: {},
       environmentVariableSets: {},
+      globalVariableSets: {},
       collectionHeaders: [],
       tests: [],
       logs: []
@@ -273,6 +274,30 @@ describe('evaluateScript', () => {
     expect(result.error).toBeUndefined();
     expect(result.logs).toContain('');
     expect(result.environmentVariableSets).toEqual({ token: 'ephemeral' });
+  });
+
+  it('sets global variables via hc.globals', async () => {
+    const { evaluateScript } = await import('#/main/scripting/scriptEvaluator');
+    const result = await evaluateScript({
+      phase: 'pre',
+      script: `
+        hc.globals.set('baseUrl', 'https://api.example.com');
+        console.log(hc.globals.get('host'));
+      `,
+      request: {
+        method: 'GET',
+        url: 'https://example.com',
+        headers: [],
+        params: [],
+        body: '',
+        bodyType: 'none'
+      },
+      variables: { host: 'example.com' }
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.globalVariableSets).toEqual({ baseUrl: 'https://api.example.com' });
+    expect(result.logs).toContain('example.com');
   });
 
   it('runs post script tests against response', async () => {

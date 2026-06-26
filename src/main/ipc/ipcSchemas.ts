@@ -199,7 +199,8 @@ export const generalSettings = z.object({
     authEnabled: z.boolean(),
     username: z.string(),
     password: z.string()
-  })
+  }),
+  globalVariables: z.array(variable)
 }) satisfies z.ZodType<GeneralSettings>;
 
 /**

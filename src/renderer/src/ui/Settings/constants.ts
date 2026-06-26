@@ -18,6 +18,7 @@ import {
   faDatabase,
   faFloppyDisk,
   faGear,
+  faGlobe,
   faKeyboard,
   faPuzzlePiece,
   faRobot,
@@ -57,7 +58,8 @@ export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
   verifySsl: true,
   codeEditorTheme: 'default',
   codeEditorSetup: { ...DEFAULT_CODE_EDITOR_SETUP },
-  proxy: { ...DEFAULT_PROXY_SETTINGS }
+  proxy: { ...DEFAULT_PROXY_SETTINGS },
+  globalVariables: []
 };
 
 /**
@@ -151,6 +153,7 @@ export const SETTINGS_SECTIONS: Array<{
   icon: IconDefinition;
 }> = [
   { value: 'general', label: 'General', icon: faGear },
+  { value: 'globals', label: 'Globals', icon: faGlobe },
   { value: 'storage', label: 'Storage Locations', icon: faDatabase },
   { value: 'plugins', label: 'Plugins', icon: faPuzzlePiece },
   { value: 'shortcuts', label: 'Shortcuts', icon: faKeyboard },

@@ -7,6 +7,7 @@ import { BackupRestoreSection } from './BackupRestoreSection';
 import { StorageLocationsSection } from './StorageLocationsSection';
 import { GeneralSection } from './GeneralSection';
 import { PluginsSection } from './PluginSection';
+import { GlobalsSection } from './GlobalsSection';
 import { ProxySection } from './ProxySection';
 import { ShortcutsSection } from './ShortcutsSection';
 import { SyntaxHighlightingSection } from './SyntaxHighlightingSection';
@@ -47,6 +48,7 @@ function SettingsPanel({
   if (section === 'syntax') return <SyntaxHighlightingSection onClose={onClose} />;
   if (section === 'shortcuts') return <ShortcutsSection onClose={onClose} />;
   if (section === 'proxy') return <ProxySection onClose={onClose} />;
+  if (section === 'globals') return <GlobalsSection onClose={onClose} />;
   if (section === 'storage') return <StorageLocationsSection onClose={onClose} />;
   if (section === 'ai') return <AiSection onClose={onClose} />;
   if (section === 'backup-restore') return <BackupRestoreSection onClose={onClose} />;

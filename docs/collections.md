@@ -118,7 +118,7 @@ Each variable has four fields:
 
 Collection variables support `{{key}}` syntax in URLs, headers, params, body, and scripts. When Value is empty, HarborClient uses Default instead.
 
-At send time, collection variables are loaded first; active [environment](/environments) variables override collection variables when both define the same key. See [Environments](/environments) for details.
+At send time, [global](/settings#globals) variables are loaded first; collection variables are applied on top; active [environment](/environments) variables override both when they define the same key. See [Environments](/environments) for details.
 
 ### Headers
 

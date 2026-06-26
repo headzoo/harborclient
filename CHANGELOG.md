@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(globals): introduce app-wide global variables management. (`f9c8fc7`)
+
 ## 1.8.19 - 2026-06-26
 
 - feat(plugins): add plugin preview functionality from GitHub repositories. (`63e9a26`)

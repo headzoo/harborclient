@@ -15,6 +15,7 @@ const state = {
   variableSets: {},
   collectionVariableSets: {},
   environmentVariableSets: {},
+  globalVariableSets: {},
   collectionHeaders: ctx.collection && ctx.collection.headers ? ctx.collection.headers : [],
   tests: [],
   logs: [],
@@ -155,6 +156,17 @@ const hc = {
       }
     }
   },
+  globals: {
+    get: function(k) {
+      if (Object.prototype.hasOwnProperty.call(state.globalVariableSets, k)) {
+        return state.globalVariableSets[k];
+      }
+      return state.variables[k];
+    },
+    set: function(k, v) {
+      state.globalVariableSets[k] = String(v);
+    }
+  },
   test: function(name, fn) {
     try {
       fn();
@@ -213,6 +225,7 @@ export function buildScriptPassthrough(input: ScriptRunInput): ScriptRunResult {
     variableSets: {},
     collectionVariableSets: {},
     environmentVariableSets: {},
+    globalVariableSets: {},
     collectionHeaders: input.collection?.headers ?? [],
     tests: [],
     logs: []
@@ -344,6 +357,7 @@ export async function evaluateScript(input: ScriptRunInput): Promise<ScriptRunRe
       variableSets: Record<string, string>;
       collectionVariableSets: Record<string, string>;
       environmentVariableSets: Record<string, string>;
+      globalVariableSets: Record<string, string>;
       collectionHeaders: ScriptRunResult['collectionHeaders'];
       tests: ScriptRunResult['tests'];
       logs: string[];
@@ -354,6 +368,7 @@ export async function evaluateScript(input: ScriptRunInput): Promise<ScriptRunRe
       variableSets: state.variableSets ?? {},
       collectionVariableSets: state.collectionVariableSets ?? {},
       environmentVariableSets: state.environmentVariableSets ?? {},
+      globalVariableSets: state.globalVariableSets ?? {},
       collectionHeaders: state.collectionHeaders ?? [],
       tests: state.tests ?? [],
       logs: state.logs ?? []

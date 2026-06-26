@@ -17,7 +17,8 @@ export const defaultGeneralSettings: GeneralSettings = {
     authEnabled: false,
     username: '',
     password: ''
-  }
+  },
+  globalVariables: []
 };
 
 export interface SettingsState {

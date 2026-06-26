@@ -53,6 +53,11 @@ interface Props {
   onToggleVariables: () => void;
 
   /**
+   * Variables from app-wide global settings.
+   */
+  globalVariables: Variable[];
+
+  /**
    * Variables from the active collection.
    */
   collectionVariables: Variable[];
@@ -104,6 +109,7 @@ export function Footer({
   onClear,
   variablesOpen,
   onToggleVariables,
+  globalVariables,
   collectionVariables,
   environmentVariables,
   collectionName,
@@ -122,8 +128,8 @@ export function Footer({
    * Merges collection and environment variables for the footer variables panel.
    */
   const resolvedVariables = useMemo(
-    () => resolveScopedVariables(collectionVariables, environmentVariables),
-    [collectionVariables, environmentVariables]
+    () => resolveScopedVariables(globalVariables, collectionVariables, environmentVariables),
+    [globalVariables, collectionVariables, environmentVariables]
   );
   const variableCount = effectiveCount(resolvedVariables);
 

@@ -955,6 +955,10 @@ export interface ScriptRunResult {
    * Values set via hc.environment.variables.set; persisted to the active environment after send.
    */
   environmentVariableSets: Record<string, string>;
+  /**
+   * Values set via hc.globals.set; persisted to app global variables after send.
+   */
+  globalVariableSets: Record<string, string>;
   tests: ScriptTestResult[];
   logs: string[];
   error?: string;
@@ -1169,6 +1173,11 @@ export interface GeneralSettings {
    * Global HTTP proxy applied to every outbound request.
    */
   proxy: ProxySettings;
+
+  /**
+   * App-wide variables for {{key}} substitution; lowest precedence in the variable chain.
+   */
+  globalVariables: Variable[];
 }
 
 /**
@@ -1180,6 +1189,7 @@ export type SettingsSection =
   | 'storage'
   | 'shortcuts'
   | 'proxy'
+  | 'globals'
   | 'ai'
   | 'backup-restore'
   | 'plugins'

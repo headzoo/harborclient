@@ -27,6 +27,7 @@ import {
   mergeVariableSets,
   substituteWithMap
 } from '#/renderer/src/scripting/scriptOrchestration';
+import { saveGlobalVariables } from '#/renderer/src/store/thunks/settings';
 import { cloneDraft, draftFromSaved, isTabDirty } from '#/renderer/src/store/drafts';
 import { setSelectedCollectionId } from '#/renderer/src/store/slices/collectionsSlice';
 import { addConsoleEntry } from '#/renderer/src/store/slices/consoleSlice';
@@ -322,11 +323,14 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
     const environment = activeEnvironmentId
       ? state.environments.environments.find((env) => env.id === activeEnvironmentId)
       : undefined;
+    const globalVariables = state.settings.general.globalVariables;
 
     let runtimeVars = {
+      ...buildRuntimeVars(globalVariables),
       ...buildRuntimeVars(collection?.variables ?? []),
       ...buildRuntimeVars(environment?.variables ?? [])
     };
+    let globalVarSets: Record<string, string> = {};
     let collectionVarSets: Record<string, string> = {};
     let envVarSets: Record<string, string> = {};
     let collectionHeaderRows: KeyValue[] = collection
@@ -387,8 +391,10 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
 
         scriptRequest = applyScriptRequestMutations(scriptRequest, result);
         runtimeVars = mergeVariableSets(runtimeVars, result.variableSets);
+        runtimeVars = mergeVariableSets(runtimeVars, result.globalVariableSets);
         runtimeVars = mergeVariableSets(runtimeVars, result.collectionVariableSets);
         runtimeVars = mergeVariableSets(runtimeVars, result.environmentVariableSets);
+        globalVarSets = { ...globalVarSets, ...result.globalVariableSets };
         collectionVarSets = { ...collectionVarSets, ...result.collectionVariableSets };
         envVarSets = { ...envVarSets, ...result.environmentVariableSets };
         collectionHeaderRows = result.collectionHeaders;
@@ -522,6 +528,20 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
         } catch (err) {
           persistErrors.push(
             err instanceof Error ? err.message : 'Failed to save environment changes from script'
+          );
+        }
+      }
+
+      if (Object.keys(globalVarSets).length > 0) {
+        try {
+          await dispatch(
+            saveGlobalVariables(applyCollectionVariableSets(globalVariables, globalVarSets))
+          ).unwrap();
+        } catch (err) {
+          persistErrors.push(
+            err instanceof Error
+              ? err.message
+              : 'Failed to save global variable changes from script'
           );
         }
       }

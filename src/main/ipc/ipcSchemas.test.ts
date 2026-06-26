@@ -221,7 +221,8 @@ describe('generalSettings', () => {
       authEnabled: false,
       username: '',
       password: ''
-    }
+    },
+    globalVariables: []
   };
 
   it('parses generalSettings with numeric timeout and boolean verifySsl', () => {

@@ -60,20 +60,21 @@ Dynamic placeholders are highlighted in the request editor. Hover a token to see
 
 ## Precedence
 
-At send time, HarborClient builds a runtime variable map from the active collection and the active environment. Collection variables are loaded first; environment variables are applied on top. When both define the same key, the **environment wins**.
+At send time, HarborClient builds a runtime variable map from global variables, the active collection, and the active environment. Global variables are loaded first; collection variables are applied on top; environment variables are applied last. When multiple scopes define the same key, **environment wins**, then collection, then global.
 
-Values set with `hc.variables.set` in a pre- or post-request script override both collection and environment variables for the remainder of that send. Dynamic variables (`{{$name}}`) resolve after static variables when no runtime value is defined for that key. See [Request scripts](/request-scripts) for script execution order and the `hc.variables` API.
+Values set with `hc.variables.set` in a pre- or post-request script override global, collection, and environment variables for the remainder of that send. Dynamic variables (`{{$name}}`) resolve after static variables when no runtime value is defined for that key. See [Request scripts](/request-scripts) for script execution order and the `hc.variables` API.
 
 ```mermaid
 flowchart LR
-  CollectionVars[collection.variables] --> Runtime[runtimeVars]
+  GlobalVars[globalVariables] --> Runtime[runtimeVars]
+  CollectionVars[collection.variables] --> Runtime
   EnvVars[environment.variables] --> Runtime
   Runtime --> Substitute["URL / headers / body / scripts"]
   ScriptSet["hc.variables.set"] --> Substitute
   DynamicVars["{{$dynamic}}"] --> Substitute
 ```
 
-The request editor highlights `{{variable}}` tokens using the merged set of collection and environment variables, with environment values shown when keys overlap.
+The request editor highlights `{{variable}}` tokens using the merged set of global, collection, and environment variables, with higher-precedence scopes shown when keys overlap.
 
 ## Storage
 

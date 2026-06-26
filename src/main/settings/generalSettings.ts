@@ -1,11 +1,12 @@
 import { getLocalDatabase } from '#/main/storage/localDatabaseInstance';
+import { normalizeVariable } from '#/main/storage/collectionVariables';
 import { parseJson } from '#/shared/parseJson';
 import {
   DEFAULT_CODE_EDITOR_SETUP,
   normalizeCodeEditorSetup,
   normalizeCodeEditorTheme
 } from '#/shared/codeEditorSettings';
-import type { GeneralSettings, ProxyProtocol, ProxySettings } from '#/shared/types';
+import type { GeneralSettings, ProxyProtocol, ProxySettings, Variable } from '#/shared/types';
 
 /**
  * Absolute ceiling for the configurable max response size setting (MB).
@@ -28,7 +29,8 @@ export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
   verifySsl: true,
   codeEditorTheme: 'default',
   codeEditorSetup: { ...DEFAULT_CODE_EDITOR_SETUP },
-  proxy: { ...DEFAULT_PROXY_SETTINGS }
+  proxy: { ...DEFAULT_PROXY_SETTINGS },
+  globalVariables: []
 };
 
 const STORE_KEY = 'general';
@@ -90,6 +92,19 @@ function normalizeProxySettings(input: Partial<ProxySettings> | undefined): Prox
 }
 
 /**
+ * Normalizes stored global variable rows with defaults for invalid entries.
+ *
+ * @param input - Raw global variable list from storage or user input.
+ * @returns Normalized variable rows.
+ */
+function normalizeGlobalVariables(input: unknown): Variable[] {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+  return input.map((entry) => normalizeVariable(entry as Partial<Variable>));
+}
+
+/**
  * Normalizes a general settings object with defaults for invalid fields.
  *
  * @param input - Raw settings from storage or user input.
@@ -111,7 +126,8 @@ function normalizeSettings(input: Partial<GeneralSettings>): GeneralSettings {
     verifySsl: input.verifySsl !== false,
     codeEditorTheme: normalizeCodeEditorTheme(input.codeEditorTheme),
     codeEditorSetup: normalizeCodeEditorSetup(input.codeEditorSetup),
-    proxy: normalizeProxySettings(input.proxy)
+    proxy: normalizeProxySettings(input.proxy),
+    globalVariables: normalizeGlobalVariables(input.globalVariables)
   };
 }
 

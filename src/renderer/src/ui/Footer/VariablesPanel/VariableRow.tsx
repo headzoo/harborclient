@@ -10,9 +10,14 @@ interface Props {
  */
 export function VariableRow({ variable }: Props): JSX.Element {
   const { key, value, scope, overridden } = variable;
-  const scopeLabel = scope === 'environment' ? 'Environment' : 'Collection';
+  const scopeLabel =
+    scope === 'environment' ? 'Environment' : scope === 'collection' ? 'Collection' : 'Global';
   const scopeBadgeClass =
-    scope === 'environment' ? 'bg-accent/15 text-accent' : 'bg-selection text-muted';
+    scope === 'environment'
+      ? 'bg-accent/15 text-accent'
+      : scope === 'collection'
+        ? 'bg-selection text-muted'
+        : 'bg-control text-muted';
 
   return (
     <div

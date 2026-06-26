@@ -97,6 +97,7 @@ describe('applyScriptRequestMutations', () => {
       variableSets: {},
       collectionVariableSets: {},
       environmentVariableSets: {},
+      globalVariableSets: {},
       collectionHeaders: [],
       tests: [],
       logs: []

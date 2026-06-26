@@ -230,6 +230,32 @@ var headers = hc.collection.headers.toObject();
 console.log(headers['Content-Type']);
 ```
 
+### hc.globals
+
+Get and set app-wide global variables. Values set with `hc.globals.set` are persisted to **Settings → Globals** after the send completes (unlike `hc.variables.set`, which is ephemeral).
+
+Global variables can be referenced elsewhere with `{{key}}` syntax in URLs, headers, params, body, and script source.
+
+#### hc.globals.get(key)
+
+**Signature:** `(key: string) => string | undefined`
+
+Returns the value set during this send (via `hc.globals.set`) if present; otherwise returns the merged runtime variable value (global, collection, and environment). Returns `undefined` if the key is not set.
+
+```javascript
+var baseUrl = hc.globals.get('baseUrl');
+```
+
+#### hc.globals.set(key, value)
+
+**Signature:** `(key: string, value: string) => void`
+
+Sets a global variable for the remainder of this send and persists it to app settings when the send completes. Values are coerced to strings. New keys are added with an empty default and `share: false`.
+
+```javascript
+hc.globals.set('baseUrl', 'https://api.example.com');
+```
+
 ### hc.environment
 
 Read and write variables on the active environment. When no environment is selected, `hc.environment.name` is an empty string and variable sets apply to the current send only (they are not persisted).
@@ -422,6 +448,7 @@ After each script runs, HarborClient applies these changes:
 | `hc.collection.variables.set` | Yes (via `{{key}}` substitution) | Yes (collection variables) |
 | `hc.collection.headers.upsert` | Yes (collection headers on send) | Yes (collection headers) |
 | `hc.environment.variables.set` | Yes (via `{{key}}` substitution) | Yes (active environment variables) |
+| `hc.globals.set` | Yes (via `{{key}}` substitution) | Yes (app global variables) |
 | `hc.test` results | N/A | Shown in response viewer |
 | `console.log` / `console.error` | N/A | Shown in send console |
 
@@ -432,18 +459,24 @@ Variable resolution order for `hc.variables.get`:
 1. Value set with `hc.variables.set` during this send
 2. Active environment variable value (or default if the value is empty)
 3. Collection variable value (or default if the value is empty)
+4. Global variable value (or default if the value is empty)
 
 Variable resolution order for `hc.collection.variables.get`:
 
 1. Value set with `hc.collection.variables.set` during this send
-2. Merged runtime variable value (collection and environment, same order as above)
+2. Merged runtime variable value (global, collection, and environment, same order as above)
 
 Variable resolution order for `hc.environment.variables.get`:
 
 1. Value set with `hc.environment.variables.set` during this send
-2. Merged runtime variable value (collection and environment, same order as above)
+2. Merged runtime variable value (global, collection, and environment, same order as above)
 
-See [Environments](/environments) for how collection and environment variables are merged at send time.
+Variable resolution order for `hc.globals.get`:
+
+1. Value set with `hc.globals.set` during this send
+2. Merged runtime variable value (global, collection, and environment, same order as above)
+
+See [Environments](/environments) for how global, collection, and environment variables are merged at send time.
 
 ## Sandbox limits
 
@@ -514,9 +547,9 @@ After import, open each script and rewrite it against the `hc` API described abo
 | `pm.variables.replaceIn(template)` | `hc.variables.replaceIn(template)` | Resolves `{{key}}`, runtime vars, and dynamic `{{$name}}` tokens |
 | `pm.environment.get(key)` / `pm.environment.set(key, value)` | `hc.environment.variables.get(key)` / `hc.environment.variables.set(key, value)` | Persists to the active environment when one is selected |
 | `pm.collectionVariables.get(key)` / `pm.collectionVariables.set(key, value)` | `hc.collection.variables.get(key)` / `hc.collection.variables.set(key, value)` | Persists to the collection after the send |
-| `pm.globals.get(key)` / `pm.globals.set(key, value)` | `hc.variables.set(key, value)` or `hc.environment.variables.set(key, value)` | HarborClient has no workspace globals; use session variables or environment variables |
+| `pm.globals.get(key)` / `pm.globals.set(key, value)` | `hc.globals.get(key)` / `hc.globals.set(key, value)` | Persists to app global variables after the send |
 | `postman.setEnvironmentVariable(key, value)` | `hc.environment.variables.set(key, value)` | Legacy Postman alias |
-| `postman.setGlobalVariable(key, value)` | `hc.variables.set(key, value)` | Legacy Postman alias; session only in HarborClient |
+| `postman.setGlobalVariable(key, value)` | `hc.globals.set(key, value)` | Legacy Postman alias; persists to globals after the send |
 | `pm.request.method` | `hc.request.method` | Get/set |
 | `pm.request.url` | `hc.request.url` | Get/set |
 | `pm.request.body` (raw mode) | `hc.request.body` | Get/set as text |

@@ -52,10 +52,18 @@ interface CloseTabPrompt {
 }
 
 /**
- * Merges collection and environment variables; environment wins on duplicate keys.
+ * Merges global, collection, and environment variables; higher scopes win on duplicate keys.
  */
-function mergeVariables(collectionVars: Variable[], envVars: Variable[]): Variable[] {
+function mergeVariables(
+  globalVars: Variable[],
+  collectionVars: Variable[],
+  envVars: Variable[]
+): Variable[] {
   const map = new Map<string, Variable>();
+  for (const variable of globalVars) {
+    const key = variable.key.trim();
+    if (key) map.set(key, variable);
+  }
   for (const variable of collectionVars) {
     const key = variable.key.trim();
     if (key) map.set(key, variable);
@@ -110,13 +118,19 @@ export function Request({ onEditVariables }: Props): JSX.Element {
     activeEnvironmentId != null
       ? environments.find((env) => env.id === activeEnvironmentId)
       : undefined;
+  const globalVariables = useAppSelector((state) => state.settings.general.globalVariables);
 
   /**
-   * Merges collection and environment variables; environment wins on duplicate keys.
+   * Merges global, collection, and environment variables for editor substitution.
    */
   const activeVariables = useMemo(
-    () => mergeVariables(activeCollection?.variables ?? [], activeEnvironment?.variables ?? []),
-    [activeCollection, activeEnvironment]
+    () =>
+      mergeVariables(
+        globalVariables,
+        activeCollection?.variables ?? [],
+        activeEnvironment?.variables ?? []
+      ),
+    [globalVariables, activeCollection, activeEnvironment]
   );
 
   /**
