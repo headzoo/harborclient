@@ -1,4 +1,4 @@
-import { SegmentedTabs, SegmentedTabsGroup } from '@harborclient/sdk/ui-react';
+import { SegmentedTabs, SegmentedTabsGroup } from '@harborclient/sdk/components';
 import { useMemo, type JSX } from 'react';
 import type { KeyValue, Variable } from '#/shared/types';
 import { applyParamsToUrl, mergeParamsFromUrl } from '#/shared/queryParams';

@@ -1,4 +1,4 @@
-import { PageHeader } from '@harborclient/sdk/ui-react';
+import { PageHeader } from '@harborclient/sdk/components';
 import { useMemo, useState, type JSX } from 'react';
 
 import { faPuzzlePiece } from '#/renderer/src/fontawesome';

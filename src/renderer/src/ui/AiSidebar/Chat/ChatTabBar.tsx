@@ -1,4 +1,4 @@
-import { FaIcon, resolveTabListKeyAction } from '@harborclient/sdk/ui-react';
+import { FaIcon, resolveTabListKeyAction } from '@harborclient/sdk/components';
 import { useMemo, type JSX, type KeyboardEvent } from 'react';
 import type { AiSettings } from '#/shared/types';
 

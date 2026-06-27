@@ -1,4 +1,4 @@
-import { FaIcon } from '@harborclient/sdk/ui-react';
+import { FaIcon } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 
 import { faMinus, faWindowMaximize, faXmark } from '#/renderer/src/fontawesome';

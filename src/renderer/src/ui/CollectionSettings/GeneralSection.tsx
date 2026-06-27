@@ -1,4 +1,4 @@
-import { ErrorRetry, FormGroup, Input, LoadingMessage, Select } from '@harborclient/sdk/ui-react';
+import { ErrorRetry, FormGroup, Input, LoadingMessage, Select } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 import { useId } from 'react';
 import type { ProviderOption } from '#/renderer/src/hooks/useProviders';

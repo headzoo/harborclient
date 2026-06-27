@@ -1,4 +1,4 @@
-import { Button, FaIcon, Modal, Spinner } from '@harborclient/sdk/ui-react';
+import { Button, FaIcon, Modal, Spinner } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 import type { PluginCatalogEntry } from '#/shared/plugin/catalog';
 import type { PluginGitPreview, PluginInfo, PluginManifest } from '#/shared/plugin/types';

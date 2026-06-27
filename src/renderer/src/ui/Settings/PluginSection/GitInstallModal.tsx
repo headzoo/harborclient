@@ -5,7 +5,7 @@ import {
   Modal,
   ModalFormLayout,
   FieldError
-} from '@harborclient/sdk/ui-react';
+} from '@harborclient/sdk/components';
 import type { JSX, KeyboardEvent } from 'react';
 
 interface Props {

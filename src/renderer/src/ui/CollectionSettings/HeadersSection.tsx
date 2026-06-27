@@ -1,4 +1,4 @@
-import { KeyValueEditor } from '@harborclient/sdk/ui-react';
+import { KeyValueEditor } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 import type { KeyValue, Variable } from '#/shared/types';
 

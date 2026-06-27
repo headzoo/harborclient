@@ -1,4 +1,4 @@
-import { VariableTable, cleanVariables, Button, PageHeader } from '@harborclient/sdk/ui-react';
+import { VariableTable, cleanVariables, Button, PageHeader } from '@harborclient/sdk/components';
 import { useMemo, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { Variable } from '#/shared/types';

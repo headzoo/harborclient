@@ -1,4 +1,4 @@
-import { BusyIndicator, CodeEditorConfigProvider } from '@harborclient/sdk/ui-react';
+import { BusyIndicator, CodeEditorConfigProvider } from '@harborclient/sdk/components';
 import { useCallback, useEffect, type JSX } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import type { Collection, Environment } from '#/shared/types';

@@ -1,4 +1,4 @@
-import { FaIcon } from '@harborclient/sdk/ui-react';
+import { FaIcon } from '@harborclient/sdk/components';
 import { sourceRow } from '#/renderer/src/ui/shared/classes';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import type { JSX } from 'react';

@@ -1,4 +1,4 @@
-import { Select } from '@harborclient/sdk/ui-react';
+import { Select } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 import type { Environment } from '#/shared/types';
 

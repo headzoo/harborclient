@@ -1,4 +1,4 @@
-import { Resizable, EmptyState } from '@harborclient/sdk/ui-react';
+import { Resizable, EmptyState } from '@harborclient/sdk/components';
 import { type JSX } from 'react';
 
 import type { ResolvedVariable } from './resolve';

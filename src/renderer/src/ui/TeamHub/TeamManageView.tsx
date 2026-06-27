@@ -21,7 +21,7 @@ import {
   ResourceList,
   ResourceListPrimary,
   ResourceListRow
-} from '@harborclient/sdk/ui-react';
+} from '@harborclient/sdk/components';
 import { faUsers } from '#/renderer/src/fontawesome';
 import { useTeamHubUsers } from '#/renderer/src/hooks/useTeamHubUsers';
 import { useAppDispatch } from '#/renderer/src/store/hooks';

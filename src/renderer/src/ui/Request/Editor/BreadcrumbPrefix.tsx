@@ -1,4 +1,4 @@
-import { FaIcon } from '@harborclient/sdk/ui-react';
+import { FaIcon } from '@harborclient/sdk/components';
 import type { JSX, MouseEvent } from 'react';
 
 import { faChevronRight } from '#/renderer/src/fontawesome';

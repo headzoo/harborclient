@@ -1,4 +1,4 @@
-import { Spinner, TabCloseButton } from '@harborclient/sdk/ui-react';
+import { Spinner, TabCloseButton } from '@harborclient/sdk/components';
 import { METHOD_CLASSES, requestTabItem } from '#/renderer/src/ui/shared/classes';
 import type { JSX, KeyboardEvent } from 'react';
 import type { RequestTab } from '#/renderer/src/store/drafts';

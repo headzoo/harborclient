@@ -1,4 +1,4 @@
-import { ResizeHandle, useResizable } from '@harborclient/sdk/ui-react';
+import { ResizeHandle, useResizable } from '@harborclient/sdk/components';
 import { useEffect, useState, type JSX } from 'react';
 import type { AiSettings, HubLlmModelGroup } from '#/shared/types';
 import { hasAvailableAiModels } from '#/shared/aiModels';

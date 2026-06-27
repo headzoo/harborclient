@@ -17,7 +17,7 @@ import {
   PageHeader,
   ResourceList,
   ResourceListRow
-} from '@harborclient/sdk/ui-react';
+} from '@harborclient/sdk/components';
 import { faUsers } from '#/renderer/src/fontawesome';
 import { useTeamHubAdminCollectionContents } from '#/renderer/src/hooks/useTeamHubAdminCollectionContents';
 import { METHOD_CLASSES } from '#/renderer/src/ui/shared/classes';

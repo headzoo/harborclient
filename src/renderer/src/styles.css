@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-@source "../../../node_modules/@harborclient/sdk/dist/ui-react";
+@source "../../../node_modules/@harborclient/sdk/dist/components";
 
 @theme {
   --color-surface: var(--mac-surface);

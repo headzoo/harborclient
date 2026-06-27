@@ -6,7 +6,7 @@ import {
   Select,
   CodeEditor,
   CODE_EDITOR_THEME_OPTIONS
-} from '@harborclient/sdk/ui-react';
+} from '@harborclient/sdk/components';
 import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 

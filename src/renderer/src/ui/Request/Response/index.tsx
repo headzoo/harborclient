@@ -4,7 +4,7 @@ import {
   SegmentedTabPanel,
   SegmentedTabsGroup,
   CodeEditor
-} from '@harborclient/sdk/ui-react';
+} from '@harborclient/sdk/components';
 import { statusDotClass } from '#/renderer/src/ui/shared/classes';
 import { useMemo, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';

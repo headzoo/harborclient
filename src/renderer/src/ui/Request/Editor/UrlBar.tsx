@@ -4,7 +4,7 @@ import {
   MethodSelect,
   VariableInput,
   fieldFrame
-} from '@harborclient/sdk/ui-react';
+} from '@harborclient/sdk/components';
 import { faCaretRight } from '@fortawesome/free-solid-svg-icons';
 import type { JSX } from 'react';
 import type { HttpMethod, Variable } from '#/shared/types';

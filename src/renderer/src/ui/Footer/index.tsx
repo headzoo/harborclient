@@ -1,4 +1,4 @@
-import { FooterButton, FooterIcon, segmentGroup } from '@harborclient/sdk/ui-react';
+import { FooterButton, FooterIcon, segmentGroup } from '@harborclient/sdk/components';
 import { useMemo, type JSX } from 'react';
 import type { Variable } from '#/shared/types';
 import type { ConsoleEntry } from '#/renderer/src/store';

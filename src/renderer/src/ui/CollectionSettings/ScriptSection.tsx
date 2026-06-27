@@ -1,4 +1,4 @@
-import { CodeEditor } from '@harborclient/sdk/ui-react';
+import { CodeEditor } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 import type { Variable } from '#/shared/types';
 import { createHcCompletionSource } from '#/renderer/src/scripting/hcCompletions';

@@ -5,7 +5,7 @@ import {
   VariableInput,
   fieldFrame,
   CodeEditor
-} from '@harborclient/sdk/ui-react';
+} from '@harborclient/sdk/components';
 import { useState, type JSX } from 'react';
 import type { AuthConfig, AuthType, Variable } from '#/shared/types';
 import { buildOAuthAuthHeaderValue } from '#/shared/auth';

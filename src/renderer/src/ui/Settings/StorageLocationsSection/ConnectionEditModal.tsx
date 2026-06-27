@@ -1,4 +1,4 @@
-import { Button, Modal, ModalFormLayout, FieldError } from '@harborclient/sdk/ui-react';
+import { Button, Modal, ModalFormLayout, FieldError } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 import type { StorageConnection } from '#/shared/types';
 

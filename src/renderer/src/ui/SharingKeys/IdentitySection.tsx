@@ -5,7 +5,7 @@ import {
   Input,
   Textarea,
   FormGroup
-} from '@harborclient/sdk/ui-react';
+} from '@harborclient/sdk/components';
 import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { SharingIdentity } from '#/shared/types';

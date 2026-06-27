@@ -16,10 +16,10 @@ import {
   selectRequestsByCollection
 } from '#/renderer/src/store/selectors';
 import { runCollectionRequests } from '#/renderer/src/store/thunks/collectionRunner';
-import { Button } from '@harborclient/sdk/ui-react';
-import { FormGroup } from '@harborclient/sdk/ui-react';
-import { Input, Select } from '@harborclient/sdk/ui-react';
-import { Modal, ModalFooter } from '@harborclient/sdk/ui-react';
+import { Button } from '@harborclient/sdk/components';
+import { FormGroup } from '@harborclient/sdk/components';
+import { Input, Select } from '@harborclient/sdk/components';
+import { Modal, ModalFooter } from '@harborclient/sdk/components';
 
 /**
  * Returns a human-readable label for a collection runner result row.

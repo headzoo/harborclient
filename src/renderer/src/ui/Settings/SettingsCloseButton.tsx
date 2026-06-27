@@ -1,4 +1,4 @@
-import { PanelCloseButton } from '@harborclient/sdk/ui-react';
+import { PanelCloseButton } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 
 interface Props {

@@ -1,4 +1,4 @@
-import { TabCloseButton } from '@harborclient/sdk/ui-react';
+import { TabCloseButton } from '@harborclient/sdk/components';
 import { requestTabItem } from '#/renderer/src/ui/shared/classes';
 import type { JSX, KeyboardEvent } from 'react';
 import type { ChatSummary } from '#/shared/types';

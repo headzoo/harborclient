@@ -10,11 +10,11 @@ import { getDefaultPluginSources, pluginSourcesSchema } from '#/shared/plugin/ca
 import { buildPluginCatalogSearchIndex, searchPluginCatalog } from '#/shared/plugin/catalogSearch';
 import type { PluginInfo } from '#/shared/plugin/types';
 import type { TeamHubPluginSource } from '#/shared/types';
-import { Button } from '@harborclient/sdk/ui-react';
-import { FormGroup } from '@harborclient/sdk/ui-react';
-import { FaIcon } from '@harborclient/sdk/ui-react';
-import { Input } from '@harborclient/sdk/ui-react';
-import { PageHeader } from '@harborclient/sdk/ui-react';
+import { Button } from '@harborclient/sdk/components';
+import { FormGroup } from '@harborclient/sdk/components';
+import { FaIcon } from '@harborclient/sdk/components';
+import { Input } from '@harborclient/sdk/components';
+import { PageHeader } from '@harborclient/sdk/components';
 import {
   faAngleLeft,
   faCircleCheck,

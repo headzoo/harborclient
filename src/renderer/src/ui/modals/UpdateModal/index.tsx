@@ -1,4 +1,4 @@
-import { Modal, Spinner, FieldError, StatusMessage } from '@harborclient/sdk/ui-react';
+import { Modal, Spinner, FieldError, StatusMessage } from '@harborclient/sdk/components';
 import { useCallback, useEffect, type JSX } from 'react';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import { closeUpdateModal, selectUpdateModal } from '#/renderer/src/store/slices/modalsSlice';

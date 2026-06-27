@@ -16,7 +16,7 @@ import {
   ModalFooter,
   Select,
   Textarea
-} from '@harborclient/sdk/ui-react';
+} from '@harborclient/sdk/components';
 
 /**
  * Modal for generating and copying an encrypted collection share token.

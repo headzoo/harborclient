@@ -1,4 +1,4 @@
-import { Button, Modal, ModalFooter } from '@harborclient/sdk/ui-react';
+import { Button, Modal, ModalFooter } from '@harborclient/sdk/components';
 import { useCallback, type JSX } from 'react';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import { selectConfirmModal } from '#/renderer/src/store/slices/modalsSlice';

@@ -1,4 +1,4 @@
-import { Button, Select, Textarea, FormGroup } from '@harborclient/sdk/ui-react';
+import { Button, Select, Textarea, FormGroup } from '@harborclient/sdk/components';
 import { useEffect, useRef, useState, type JSX, type KeyboardEvent } from 'react';
 import { getAvailableModels, resolveAiModelOption } from '#/shared/aiModels';
 import type { AiSettings } from '#/shared/types';

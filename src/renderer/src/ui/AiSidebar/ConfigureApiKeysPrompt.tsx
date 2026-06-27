@@ -1,4 +1,4 @@
-import { EmptyState } from '@harborclient/sdk/ui-react';
+import { EmptyState } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 import { useAppDispatch } from '#/renderer/src/store/hooks';
 import { openSettings } from '#/renderer/src/store/slices/navigationSlice';

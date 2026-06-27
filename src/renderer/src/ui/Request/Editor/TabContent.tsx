@@ -3,7 +3,7 @@ import {
   SegmentedTabPanel,
   Textarea,
   CodeEditor
-} from '@harborclient/sdk/ui-react';
+} from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 import type { KeyValue, Variable } from '#/shared/types';
 import type { RegisteredRequestTab, RequestTabContext } from '#/shared/plugin/types';

@@ -98,7 +98,7 @@ detailed audit of known gaps and proposed fixes.
   not hand-roll one-off overlays.
 - Announce important status changes (loading, sending, errors) with
   `role="status"` or `aria-live="polite"`. Follow the pattern in
-  [`BusyIndicator`](../harborclient-sdk/src/ui-react/BusyIndicator/index.tsx) (`@harborclient/sdk/ui-react`).
+  [`BusyIndicator`](../harborclient-sdk/src/components/BusyIndicator/index.tsx) (`@harborclient/sdk/components`).
 - Expose selection and expansion state with `aria-current`, `aria-selected`, and
   `aria-expanded` — not color or background alone.
 
@@ -134,7 +134,7 @@ many call sites.
 
 Always add clear, useful documentation when you write or change code. Match the
 JSDoc style already used in the codebase (see `src/renderer/src/ui/Request/Editor/`
-and [`VariableInput`](../harborclient-sdk/src/ui-react/VariableInput/index.tsx) (`@harborclient/sdk/ui-react`) for examples).
+and [`VariableInput`](../harborclient-sdk/src/components/VariableInput/index.tsx) (`@harborclient/sdk/components`) for examples).
 
 **Every function** — exported or local, component or helper — must have a JSDoc
 docblock. Explain what the function does and why, not just restate its name.

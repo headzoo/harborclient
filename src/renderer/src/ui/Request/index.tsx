@@ -32,9 +32,9 @@ import {
   focusSidebarItem
 } from '#/renderer/src/store/thunks';
 import { useSidebarExpansion } from '#/renderer/src/ui/Sidebar/useSidebarExpansion';
-import { Button } from '@harborclient/sdk/ui-react';
-import { Modal, ModalFooter } from '@harborclient/sdk/ui-react';
-import { ResizeHandle, useResizable } from '@harborclient/sdk/ui-react';
+import { Button } from '@harborclient/sdk/components';
+import { Modal, ModalFooter } from '@harborclient/sdk/components';
+import { ResizeHandle, useResizable } from '@harborclient/sdk/components';
 import { Editor } from './Editor';
 import { Response } from './Response';
 import { TabBar } from './TabBar';

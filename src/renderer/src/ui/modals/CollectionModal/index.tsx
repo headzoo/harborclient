@@ -16,14 +16,14 @@ import {
   importCollection,
   saveRequest
 } from '#/renderer/src/store/thunks';
-import { SegmentedTabs, SegmentedTabPanel, SegmentedTabsGroup } from '@harborclient/sdk/ui-react';
-import { Button } from '@harborclient/sdk/ui-react';
-import { FormGroup } from '@harborclient/sdk/ui-react';
+import { SegmentedTabs, SegmentedTabPanel, SegmentedTabsGroup } from '@harborclient/sdk/components';
+import { Button } from '@harborclient/sdk/components';
+import { FormGroup } from '@harborclient/sdk/components';
 import { providerOptionLabel, useProviders } from '#/renderer/src/hooks/useProviders';
-import { Input, Select, Textarea } from '@harborclient/sdk/ui-react';
-import { Modal, ModalFooter } from '@harborclient/sdk/ui-react';
-import { FieldError } from '@harborclient/sdk/ui-react';
-import { StatusMessage } from '@harborclient/sdk/ui-react';
+import { Input, Select, Textarea } from '@harborclient/sdk/components';
+import { Modal, ModalFooter } from '@harborclient/sdk/components';
+import { FieldError } from '@harborclient/sdk/components';
+import { StatusMessage } from '@harborclient/sdk/components';
 import { formatErrorMessage } from '#/renderer/src/ui/modals/dialogHelpers';
 
 /**

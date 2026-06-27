@@ -4,7 +4,7 @@ import {
   Input,
   KeyValueEditor,
   CodeEditor
-} from '@harborclient/sdk/ui-react';
+} from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 import type { BodyType, Variable } from '#/shared/types';
 import { parseFormParts, serializeFormParts } from '#/shared/formData';

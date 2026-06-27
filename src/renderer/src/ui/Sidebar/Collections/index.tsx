@@ -33,9 +33,9 @@ import type {
   SourceControlStatus
 } from '#/shared/types';
 import type { SidebarSearchFilter } from '#/shared/sidebarSearch';
-import { FaIcon } from '@harborclient/sdk/ui-react';
-import { RowActionsMenu } from '@harborclient/sdk/ui-react';
-import { buildReorderMenuGroup } from '@harborclient/sdk/ui-react';
+import { FaIcon } from '@harborclient/sdk/components';
+import { RowActionsMenu } from '@harborclient/sdk/components';
+import { buildReorderMenuGroup } from '@harborclient/sdk/components';
 import { usePluginContextMenuItems } from '#/renderer/src/plugins/pluginHooks';
 import { buildPluginContextMenuGroups } from '#/renderer/src/plugins/pluginContextMenuHelpers';
 import { useConfirm } from '#/renderer/src/hooks/useConfirm';

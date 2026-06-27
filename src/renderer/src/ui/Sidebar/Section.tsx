@@ -1,4 +1,4 @@
-import { Button, FaIcon } from '@harborclient/sdk/ui-react';
+import { Button, FaIcon } from '@harborclient/sdk/components';
 import type { JSX, ReactNode } from 'react';
 
 import { faChevronDown, faChevronRight, faPlus } from '#/renderer/src/fontawesome';

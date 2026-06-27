@@ -1,4 +1,4 @@
-import { Button, Modal, ModalFooter } from '@harborclient/sdk/ui-react';
+import { Button, Modal, ModalFooter } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 import type { StorageConnection } from '#/shared/types';
 

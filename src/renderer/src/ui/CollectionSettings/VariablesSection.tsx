@@ -1,4 +1,4 @@
-import { VariableTable } from '@harborclient/sdk/ui-react';
+import { VariableTable } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 import type { Variable } from '#/shared/types';
 

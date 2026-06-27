@@ -5,7 +5,7 @@ import {
   ModalFooter,
   FieldError,
   StatusMessage
-} from '@harborclient/sdk/ui-react';
+} from '@harborclient/sdk/components';
 import { useCallback, useId, useState, type JSX } from 'react';
 import type { DiscoveredCollection } from '#/shared/types';
 

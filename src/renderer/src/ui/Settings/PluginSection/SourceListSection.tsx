@@ -1,4 +1,4 @@
-import { Button, FormGroup, Input } from '@harborclient/sdk/ui-react';
+import { Button, FormGroup, Input } from '@harborclient/sdk/components';
 import { useState, type JSX } from 'react';
 import type { PluginSource } from '#/shared/plugin/catalog';
 import { isHarborClientEndpoint } from '#/shared/plugin/catalog';

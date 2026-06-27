@@ -1,4 +1,4 @@
-import { RowActionsMenu } from '@harborclient/sdk/ui-react';
+import { RowActionsMenu } from '@harborclient/sdk/components';
 import { METHOD_CLASSES, sourceRow } from '#/renderer/src/ui/shared/classes';
 import type { SavedRequest } from '#/shared/types';
 

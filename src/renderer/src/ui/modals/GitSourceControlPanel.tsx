@@ -1,4 +1,4 @@
-import { Button, FormGroup, Modal, Textarea } from '@harborclient/sdk/ui-react';
+import { Button, FormGroup, Modal, Textarea } from '@harborclient/sdk/components';
 import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { GitLogEntry, SourceControlStatus } from '#/shared/types';

@@ -1,4 +1,4 @@
-import { Button, PageHeader } from '@harborclient/sdk/ui-react';
+import { Button, PageHeader } from '@harborclient/sdk/components';
 import { useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';

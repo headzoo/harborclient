@@ -1,4 +1,4 @@
-import { Textarea, Button, FormGroup, Modal, ModalFooter } from '@harborclient/sdk/ui-react';
+import { Textarea, Button, FormGroup, Modal, ModalFooter } from '@harborclient/sdk/components';
 import { useState, type JSX } from 'react';
 
 interface Props {

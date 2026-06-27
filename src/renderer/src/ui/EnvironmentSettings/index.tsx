@@ -6,7 +6,7 @@ import {
   Button,
   FormGroup,
   Input
-} from '@harborclient/sdk/ui-react';
+} from '@harborclient/sdk/components';
 import { useEffect, useId, useMemo, useState, type JSX } from 'react';
 import type { Environment, Variable } from '#/shared/types';
 

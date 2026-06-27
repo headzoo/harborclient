@@ -1,4 +1,4 @@
-import { FormGroup, Input } from '@harborclient/sdk/ui-react';
+import { FormGroup, Input } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 import type { MySqlSettings } from '#/shared/types';
 

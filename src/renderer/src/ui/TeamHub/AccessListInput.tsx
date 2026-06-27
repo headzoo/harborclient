@@ -1,4 +1,4 @@
-import { Input, FormGroup } from '@harborclient/sdk/ui-react';
+import { Input, FormGroup } from '@harborclient/sdk/components';
 import { useRef, useState, type JSX, type ReactNode } from 'react';
 import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form';
 

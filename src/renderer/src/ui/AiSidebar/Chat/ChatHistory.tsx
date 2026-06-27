@@ -1,4 +1,4 @@
-import { EmptyState } from '@harborclient/sdk/ui-react';
+import { EmptyState } from '@harborclient/sdk/components';
 import { useEffect, useRef, type JSX } from 'react';
 
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';

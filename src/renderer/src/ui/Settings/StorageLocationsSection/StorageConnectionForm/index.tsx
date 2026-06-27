@@ -1,4 +1,4 @@
-import { SegmentedTabs, FormGroup, Input } from '@harborclient/sdk/ui-react';
+import { SegmentedTabs, FormGroup, Input } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 import type { StorageConnection, StorageProvider } from '#/shared/types';
 

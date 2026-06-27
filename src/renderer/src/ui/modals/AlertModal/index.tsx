@@ -1,4 +1,4 @@
-import { FaIcon, Modal } from '@harborclient/sdk/ui-react';
+import { FaIcon, Modal } from '@harborclient/sdk/components';
 import { useCallback, type JSX } from 'react';
 
 import { faCircleExclamation } from '#/renderer/src/fontawesome';

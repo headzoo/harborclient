@@ -1,4 +1,4 @@
-import { Modal } from '@harborclient/sdk/ui-react';
+import { Modal } from '@harborclient/sdk/components';
 import { useEffect, type JSX } from 'react';
 import logoUrl from '@images/logo-square.png';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';

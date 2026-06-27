@@ -1,4 +1,4 @@
-import { Button, FormGroup, PageHeader, Input } from '@harborclient/sdk/ui-react';
+import { Button, FormGroup, PageHeader, Input } from '@harborclient/sdk/components';
 import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { AiSettings } from '#/shared/types';

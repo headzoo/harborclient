@@ -1,4 +1,4 @@
-import { Resizable } from '@harborclient/sdk/ui-react';
+import { Resizable } from '@harborclient/sdk/components';
 import { type ComponentType, type JSX } from 'react';
 
 interface Props {

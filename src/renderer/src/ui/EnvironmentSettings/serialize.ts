@@ -1,4 +1,4 @@
-import { cleanVariables } from '@harborclient/sdk/ui-react';
+import { cleanVariables } from '@harborclient/sdk/components';
 import type { Variable } from '#/shared/types';
 
 /**

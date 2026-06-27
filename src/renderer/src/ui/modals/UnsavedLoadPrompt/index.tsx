@@ -5,8 +5,8 @@ import {
   setPendingLoadRequest
 } from '#/renderer/src/store/slices/modalsSlice';
 import { requestLoadRequest } from '#/renderer/src/store/thunks/requests';
-import { Button } from '@harborclient/sdk/ui-react';
-import { Modal, ModalFooter } from '@harborclient/sdk/ui-react';
+import { Button } from '@harborclient/sdk/components';
+import { Modal, ModalFooter } from '@harborclient/sdk/components';
 
 /**
  * Confirms opening a request when settings or request tabs have unsaved edits.

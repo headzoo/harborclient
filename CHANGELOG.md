@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- refactor: update component imports to use @harborclient/sdk/components. (`fdd9358`)
 - refactor: update imports and integrate @harborclient/sdk. (`af6660b`)
 - chore(package): update @harborclient/sdk to version 0.4.6. (`ea712d4`)
 

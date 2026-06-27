@@ -6,7 +6,7 @@ import {
   SegmentedTabs,
   SegmentedTabPanel,
   SegmentedTabsGroup
-} from '@harborclient/sdk/ui-react';
+} from '@harborclient/sdk/components';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import type { AuthConfig, Collection, KeyValue, Variable } from '#/shared/types';
 import { normalizeAuth } from '#/shared/auth';

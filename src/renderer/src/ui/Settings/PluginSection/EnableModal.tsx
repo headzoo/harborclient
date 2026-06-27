@@ -1,4 +1,4 @@
-import { Button, FaIcon, Modal, ModalFooter, FieldError } from '@harborclient/sdk/ui-react';
+import { Button, FaIcon, Modal, ModalFooter, FieldError } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 import type { PluginInfo } from '#/shared/plugin/types';
 

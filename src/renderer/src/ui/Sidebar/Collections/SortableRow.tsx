@@ -1,4 +1,4 @@
-import { FaIcon } from '@harborclient/sdk/ui-react';
+import { FaIcon } from '@harborclient/sdk/components';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { type CSSProperties, type JSX, type ReactNode } from 'react';

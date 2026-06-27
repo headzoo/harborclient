@@ -1,4 +1,4 @@
-import { CodeEditor } from '@harborclient/sdk/ui-react';
+import { CodeEditor } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 import type { SendResult } from '#/shared/types';
 

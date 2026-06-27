@@ -6,9 +6,9 @@ import type {
   TeamHubAdminResourceOptions,
   UpdateHubUserInput
 } from '#/shared/types';
-import { Input, Select } from '@harborclient/sdk/ui-react';
-import { FormGroup } from '@harborclient/sdk/ui-react';
-import { StatusMessage } from '@harborclient/sdk/ui-react';
+import { Input, Select } from '@harborclient/sdk/components';
+import { FormGroup } from '@harborclient/sdk/components';
+import { StatusMessage } from '@harborclient/sdk/components';
 import { AccessListInput } from '#/renderer/src/ui/TeamHub/AccessListInput';
 import {
   defaultCreateFormValues,

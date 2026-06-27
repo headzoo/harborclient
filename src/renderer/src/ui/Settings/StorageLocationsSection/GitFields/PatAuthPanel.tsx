@@ -1,4 +1,4 @@
-import { Button, FormGroup, Input } from '@harborclient/sdk/ui-react';
+import { Button, FormGroup, Input } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 
 interface Props {

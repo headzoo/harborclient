@@ -12,7 +12,7 @@ import {
   ResourceListPrimary,
   ResourceListRow,
   Select
-} from '@harborclient/sdk/ui-react';
+} from '@harborclient/sdk/components';
 import { useMemo, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { HubApiTokenRecord, HubUserRecord, TeamHub } from '#/shared/types';

@@ -5,7 +5,7 @@ import {
   SegmentedTabs,
   SegmentedTabsGroup,
   Input
-} from '@harborclient/sdk/ui-react';
+} from '@harborclient/sdk/components';
 import { useCallback, useEffect, useId, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { StorageConnection, GitSettings } from '#/shared/types';

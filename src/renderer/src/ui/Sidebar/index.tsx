@@ -5,7 +5,7 @@ import {
 } from '#/renderer/src/plugins/pluginHooks';
 import toast from 'react-hot-toast';
 import type { SavedRequest } from '#/shared/types';
-import { ResizeHandle, useResizable } from '@harborclient/sdk/ui-react';
+import { ResizeHandle, useResizable } from '@harborclient/sdk/components';
 import {
   isTeamHubProvider,
   providerTypesById,
@@ -56,11 +56,11 @@ import {
   reorderRequests,
   focusSidebarItem
 } from '#/renderer/src/store/thunks';
-import { Button } from '@harborclient/sdk/ui-react';
-import { SegmentedTabs, SegmentedTabPanel, SegmentedTabsGroup } from '@harborclient/sdk/ui-react';
-import { Input } from '@harborclient/sdk/ui-react';
-import { Modal, ModalFooter } from '@harborclient/sdk/ui-react';
-import { FieldError } from '@harborclient/sdk/ui-react';
+import { Button } from '@harborclient/sdk/components';
+import { SegmentedTabs, SegmentedTabPanel, SegmentedTabsGroup } from '@harborclient/sdk/components';
+import { Input } from '@harborclient/sdk/components';
+import { Modal, ModalFooter } from '@harborclient/sdk/components';
+import { FieldError } from '@harborclient/sdk/components';
 import { formatErrorMessage, showAlert, showConfirm } from '#/renderer/src/ui/modals/dialogHelpers';
 import { openCollectionRunnerModal } from '#/renderer/src/store/slices/modalsSlice';
 import { Collections } from './Collections';

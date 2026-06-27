@@ -1,4 +1,4 @@
-import { FaIcon, resolveTabListKeyAction } from '@harborclient/sdk/ui-react';
+import { FaIcon, resolveTabListKeyAction } from '@harborclient/sdk/components';
 import type { Environment } from '#/shared/types';
 import type { JSX, KeyboardEvent } from 'react';
 import type { RequestTab } from '#/renderer/src/store/drafts';
