@@ -2,7 +2,6 @@ import { utilityProcess, type UtilityProcess } from 'electron';
 import { transformSync } from 'esbuild';
 import { join } from 'path';
 import type { EchoServerIncomingRequest } from '#/main/plugins/echoServer/types';
-import { resolveEchoResponseBody } from '#/main/plugins/echoServer/resolveEchoResponseBody';
 import {
   getEchoServerStatus,
   setEchoServerIncomingHandler,
@@ -238,9 +237,9 @@ async function routeEchoRequest(
       pluginId,
       request
     });
-    return resolveEchoResponseBody(result, request.echo);
+    return result;
   } catch {
-    return request.echo;
+    return undefined;
   }
 }
 

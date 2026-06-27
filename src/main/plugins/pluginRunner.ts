@@ -1,8 +1,8 @@
 import 'ses';
 import { createScriptContext } from '#/main/plugins/pluginScriptContext';
 import type { ScriptRunContextInput } from '#/main/scripting/scriptApi';
+import { runEchoRequestHandlers } from '#/main/plugins/echoServer/runEchoRequestHandlers';
 import type { EchoServerIncomingRequest } from '#/main/plugins/echoServer/types';
-import { resolveEchoResponseBody } from '#/main/plugins/echoServer/resolveEchoResponseBody';
 import type {
   PluginHttpRequest,
   PluginHttpResponse,
@@ -87,7 +87,7 @@ interface PluginState {
   >;
   ipcHandlers: Map<string, (...args: unknown[]) => unknown>;
   subscriptions: Array<{ dispose: () => void }>;
-  onRequest?: (request: EchoServerIncomingRequest) => unknown | Promise<unknown>;
+  onRequestHandlers: Array<(request: EchoServerIncomingRequest) => unknown | Promise<unknown>>;
   /** Optional deactivate export captured from the activation compartment. */
   deactivate?: () => void;
 }
@@ -221,11 +221,12 @@ function createMainPluginContext(state: PluginState): Record<string, unknown> {
       },
       onRequest: (handler: (request: EchoServerIncomingRequest) => unknown | Promise<unknown>) => {
         assertPermission('server');
-        state.onRequest = handler;
+        state.onRequestHandlers.push(handler);
         const disposable = {
           dispose: () => {
-            if (state.onRequest === handler) {
-              state.onRequest = undefined;
+            const index = state.onRequestHandlers.indexOf(handler);
+            if (index >= 0) {
+              state.onRequestHandlers.splice(index, 1);
             }
           }
         };
@@ -248,7 +249,8 @@ async function activatePlugin(
     beforeSend: [],
     afterSend: [],
     ipcHandlers: new Map(),
-    subscriptions: []
+    subscriptions: [],
+    onRequestHandlers: []
   };
   plugins.set(pluginId, state);
 
@@ -369,15 +371,15 @@ async function invokeIpc(pluginId: string, channel: string, args: unknown[]): Pr
  */
 async function handleEchoRequest(message: EchoRequestMessage): Promise<SuccessReply | ErrorReply> {
   const state = plugins.get(message.pluginId);
-  if (!state?.onRequest) {
-    return { id: message.id, ok: true, result: message.request.echo };
+  if (!state?.onRequestHandlers.length) {
+    return { id: message.id, ok: true, result: undefined };
   }
   try {
-    const result = await state.onRequest(message.request);
+    const result = await runEchoRequestHandlers(state.onRequestHandlers, message.request);
     return {
       id: message.id,
       ok: true,
-      result: resolveEchoResponseBody(result, message.request.echo)
+      result
     };
   } catch (error) {
     return {

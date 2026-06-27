@@ -1,6 +1,5 @@
 import type { Server } from 'node:http';
 import { createEchoApp } from '#/main/plugins/echoServer/app';
-import { resolveEchoResponseBody } from '#/main/plugins/echoServer/resolveEchoResponseBody';
 import type { EchoServerIncomingRequest, EchoServerStatus } from '#/main/plugins/echoServer/types';
 
 interface EchoServerEntry {
@@ -32,6 +31,9 @@ export function setEchoServerIncomingHandler(handler: EchoServerIncomingHandler 
 /**
  * Starts an echo HTTP server for one plugin.
  *
+ * Binds to loopback (`127.0.0.1`) only so request headers and bodies are not
+ * exposed on the local network. LAN access would require an explicit future opt-in.
+ *
  * @param pluginId - Plugin manifest id.
  * @param options - Listen options; port 0 selects the first available non-privileged port.
  * @returns Assigned listen port after the server is accepting connections.
@@ -44,18 +46,17 @@ export async function startEchoServer(
 
   const app = createEchoApp(async (request) => {
     if (!incomingHandler) {
-      return request.echo;
+      return undefined;
     }
     try {
-      const result = await incomingHandler(pluginId, request);
-      return resolveEchoResponseBody(result, request.echo);
+      return await incomingHandler(pluginId, request);
     } catch {
-      return request.echo;
+      return undefined;
     }
   });
 
   const server = await new Promise<Server>((resolve, reject) => {
-    const instance = app.listen(options.port, () => {
+    const instance = app.listen(options.port, '127.0.0.1', () => {
       resolve(instance);
     });
     instance.on('error', reject);

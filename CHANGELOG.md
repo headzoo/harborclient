@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- chore(package): update @harborclient/sdk to version 0.4.6. (`ea712d4`)
+
 ## 1.8.20 - 2026-06-27
 
 - chore(package): update @harborclient/sdk to version 0.4.5. (`09616a3`)

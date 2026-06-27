@@ -1,6 +1,7 @@
 import { describe, expect, it, afterEach } from 'vitest';
 import {
   getEchoServerStatus,
+  setEchoServerIncomingHandler,
   startEchoServer,
   stopEchoServer,
   stopAllEchoServers
@@ -8,6 +9,7 @@ import {
 
 describe('pluginEchoServer', () => {
   afterEach(async () => {
+    setEchoServerIncomingHandler(null);
     await stopAllEchoServers();
   });
 
@@ -50,5 +52,31 @@ describe('pluginEchoServer', () => {
     };
     expect(body.data).toBe(JSON.stringify({ hello: 'world' }));
     expect(body.json).toEqual({ hello: 'world' });
+  });
+
+  it('returns custom JSON when the incoming handler returns a value', async () => {
+    setEchoServerIncomingHandler(async () => ({ custom: true }));
+    const port = await startEchoServer('test.echo', { port: 0 });
+    const response = await fetch(`http://127.0.0.1:${port}/custom`);
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ custom: true });
+  });
+
+  it('returns default echo JSON when the incoming handler returns null', async () => {
+    setEchoServerIncomingHandler(async () => null);
+    const port = await startEchoServer('test.echo', { port: 0 });
+    const response = await fetch(`http://127.0.0.1:${port}/hello?foo=bar`);
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { args: Record<string, string> };
+    expect(body.args).toEqual({ foo: 'bar' });
+  });
+
+  it('returns default echo JSON when the incoming handler returns undefined', async () => {
+    setEchoServerIncomingHandler(async () => undefined);
+    const port = await startEchoServer('test.echo', { port: 0 });
+    const response = await fetch(`http://127.0.0.1:${port}/hello?foo=bar`);
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { args: Record<string, string> };
+    expect(body.args).toEqual({ foo: 'bar' });
   });
 });

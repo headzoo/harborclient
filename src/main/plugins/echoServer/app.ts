@@ -62,7 +62,11 @@ export function buildIncomingRequestSnapshot(req: RequestWithRawBody): EchoServe
 /**
  * Creates an Express app that echoes incoming HTTP requests through a callback.
  *
- * @param onIncoming - Handler that returns the JSON response body for each request.
+ * The callback returns a raw handler value (`unknown`). `null` and `undefined`
+ * mean "use the default httpbin-style echo payload" built from the incoming
+ * request; resolution happens here before the HTTP response is sent.
+ *
+ * @param onIncoming - Returns the raw JSON response body for each request.
  * @returns Configured Express application.
  */
 export function createEchoApp(
