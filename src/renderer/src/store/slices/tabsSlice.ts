@@ -49,21 +49,20 @@ const tabsSlice = createSlice({
       state.activeTabId = tab.tabId;
     },
     /**
-     * Closes a tab, keeping at least one open.
+     * Closes a tab by id, leaving zero tabs open when the last tab is closed.
      */
     closeTab(state, action: PayloadAction<string>) {
       const tabId = action.payload;
-      if (state.tabs.length <= 1) {
-        const tab = createTab();
-        state.tabs = [tab];
-        state.activeTabId = tab.tabId;
-        return;
-      }
-
       const index = state.tabs.findIndex((t) => t.tabId === tabId);
       if (index === -1) return;
 
       const next = state.tabs.filter((t) => t.tabId !== tabId);
+      if (next.length === 0) {
+        state.tabs = [];
+        state.activeTabId = '';
+        return;
+      }
+
       if (state.activeTabId === tabId) {
         const neighbor = next[Math.min(index, next.length - 1)];
         state.activeTabId = neighbor.tabId;
@@ -118,9 +117,8 @@ const tabsSlice = createSlice({
 
       const remaining = state.tabs.filter((t) => t.draft.id !== requestId);
       if (remaining.length === 0) {
-        const tab = createTab();
-        state.tabs = [tab];
-        state.activeTabId = tab.tabId;
+        state.tabs = [];
+        state.activeTabId = '';
         return;
       }
 
@@ -142,9 +140,8 @@ const tabsSlice = createSlice({
 
       const remaining = state.tabs.filter((t) => t.draft.collection_id !== collectionId);
       if (remaining.length === 0) {
-        const tab = createTab();
-        state.tabs = [tab];
-        state.activeTabId = tab.tabId;
+        state.tabs = [];
+        state.activeTabId = '';
         return;
       }
 

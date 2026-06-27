@@ -128,6 +128,30 @@ describe('loadTabsFromStorage', () => {
     expect(result.tabs[0].draft.name).toBe(fallback.tabs[0].draft.name);
   });
 
+  it('restores an intentionally empty tabs payload', () => {
+    localStorage.setItem(OPEN_TABS_KEY, JSON.stringify({ tabs: [], activeTabId: '' }));
+
+    const result = loadTabsFromStorage();
+
+    expect(result.tabs).toEqual([]);
+    expect(result.activeTabId).toBe('');
+  });
+
+  it('returns a default tab when every tab entry fails salvage', () => {
+    localStorage.setItem(
+      OPEN_TABS_KEY,
+      JSON.stringify({
+        tabs: [{ tabId: 'missing-draft' }, { tabId: 'bad-headers', draft: { name: 'Bad' } }],
+        activeTabId: 'missing-draft'
+      })
+    );
+
+    const result = loadTabsFromStorage();
+
+    expect(result.tabs).toHaveLength(1);
+    expect(result.activeTabId).toBe(result.tabs[0].tabId);
+  });
+
   it('returns a default tab when the top-level shape is invalid', () => {
     localStorage.setItem(OPEN_TABS_KEY, JSON.stringify(null));
     expect(loadTabsFromStorage().tabs).toHaveLength(1);
@@ -344,6 +368,17 @@ describe('persistTabs', () => {
     const tab = createTab();
 
     expect(() => persistTabs([tab], tab.tabId)).not.toThrow();
+  });
+
+  it('round-trips an empty tabs payload', () => {
+    persistTabs([], '');
+
+    const raw = localStorage.getItem(OPEN_TABS_KEY);
+    expect(raw).not.toBeNull();
+
+    const restored = parseOpenTabsFromRaw(raw!);
+    expect(restored.tabs).toEqual([]);
+    expect(restored.activeTabId).toBe('');
   });
 
   it('does not clobber a multi-tab payload when persisting the default single tab', () => {

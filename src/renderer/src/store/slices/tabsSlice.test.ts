@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { defaultAuth } from '#/shared/auth';
 import type { SavedRequest, ScriptTestResult, SendResult } from '#/shared/types';
 import { draftFromSaved, isTabDirty } from '#/renderer/src/store/drafts';
-import tabsReducer, { loadRequest, openTabWithDraft } from '#/renderer/src/store/slices/tabsSlice';
+import tabsReducer, {
+  closeTab,
+  closeTabsForCollection,
+  closeTabsForRequest,
+  loadRequest,
+  newTab,
+  openTabWithDraft
+} from '#/renderer/src/store/slices/tabsSlice';
 
 /**
  * Builds a saved request fixture for loadRequest tests.
@@ -33,6 +40,105 @@ function sampleSaved(overrides: Partial<SavedRequest> = {}): SavedRequest {
     ...overrides
   };
 }
+
+describe('tabsSlice closeTab', () => {
+  it('leaves zero tabs open when the only tab is closed', () => {
+    const initial = tabsReducer(undefined, { type: 'unknown' });
+    const tabId = initial.activeTabId;
+
+    const state = tabsReducer(initial, closeTab(tabId));
+
+    expect(state.tabs).toEqual([]);
+    expect(state.activeTabId).toBe('');
+  });
+
+  it('selects a neighbor when closing a non-active tab among multiple', () => {
+    let state = tabsReducer(undefined, { type: 'unknown' });
+    const firstTabId = state.activeTabId;
+    state = tabsReducer(state, newTab());
+    const secondTabId = state.activeTabId;
+
+    state = tabsReducer(state, closeTab(firstTabId));
+
+    expect(state.tabs).toHaveLength(1);
+    expect(state.tabs[0]?.tabId).toBe(secondTabId);
+    expect(state.activeTabId).toBe(secondTabId);
+  });
+
+  it('selects a neighbor when closing the active tab among multiple', () => {
+    let state = tabsReducer(undefined, { type: 'unknown' });
+    const firstTabId = state.activeTabId;
+    state = tabsReducer(state, newTab());
+    const secondTabId = state.activeTabId;
+
+    state = tabsReducer(state, closeTab(secondTabId));
+
+    expect(state.tabs).toHaveLength(1);
+    expect(state.tabs[0]?.tabId).toBe(firstTabId);
+    expect(state.activeTabId).toBe(firstTabId);
+  });
+});
+
+describe('tabsSlice closeTabsForRequest', () => {
+  it('leaves zero tabs open when all tabs match the request id', () => {
+    let state = tabsReducer(undefined, { type: 'unknown' });
+    state = tabsReducer(state, closeTab(state.activeTabId));
+    state = tabsReducer(
+      state,
+      openTabWithDraft({
+        id: 42,
+        collection_id: 10,
+        folder_id: null,
+        name: 'Only tab',
+        method: 'GET',
+        url: 'https://example.com',
+        headers: [],
+        params: [],
+        auth: defaultAuth(),
+        body: '',
+        body_type: 'none',
+        pre_request_script: '',
+        post_request_script: '',
+        comment: ''
+      })
+    );
+
+    state = tabsReducer(state, closeTabsForRequest(42));
+
+    expect(state.tabs).toEqual([]);
+    expect(state.activeTabId).toBe('');
+  });
+});
+
+describe('tabsSlice closeTabsForCollection', () => {
+  it('leaves zero tabs open when all tabs belong to the collection', () => {
+    let state = tabsReducer(undefined, { type: 'unknown' });
+    state = tabsReducer(state, closeTab(state.activeTabId));
+    state = tabsReducer(
+      state,
+      openTabWithDraft({
+        collection_id: 99,
+        folder_id: null,
+        name: 'Only tab',
+        method: 'GET',
+        url: 'https://example.com',
+        headers: [],
+        params: [],
+        auth: defaultAuth(),
+        body: '',
+        body_type: 'none',
+        pre_request_script: '',
+        post_request_script: '',
+        comment: ''
+      })
+    );
+
+    state = tabsReducer(state, closeTabsForCollection(99));
+
+    expect(state.tabs).toEqual([]);
+    expect(state.activeTabId).toBe('');
+  });
+});
 
 describe('tabsSlice loadRequest', () => {
   it('opens a new tab when no tab exists for the saved request id', () => {

@@ -36,6 +36,7 @@ import { Button } from '@harborclient/sdk/components';
 import { Modal, ModalFooter } from '@harborclient/sdk/components';
 import { ResizeHandle, useResizable } from '@harborclient/sdk/components';
 import { Editor } from './Editor';
+import { NoOpenRequests } from './NoOpenRequests';
 import { Response } from './Response';
 import { TabBar } from './TabBar';
 
@@ -94,6 +95,7 @@ export function Request({ onEditVariables }: Props): JSX.Element {
   const requestsByCollection = useAppSelector(selectRequestsByCollection);
   const selectedCollectionId = useAppSelector(selectSelectedCollectionId);
 
+  const hasOpenTabs = tabs.length > 0;
   const [closeTabPrompt, setCloseTabPrompt] = useState<CloseTabPrompt | null>(null);
   const splitRef = useRef<HTMLElement>(null);
   const {
@@ -199,65 +201,69 @@ export function Request({ onEditVariables }: Props): JSX.Element {
         onNew={() => dispatch(newTab())}
         onEnvironmentChange={(id) => dispatch(setActiveEnvironmentId(id))}
       />
-      <div
-        role="tabpanel"
-        id={`request-tabpanel-${activeTabId}`}
-        aria-labelledby={`request-tab-${activeTabId}`}
-        className="flex min-h-0 flex-1 flex-col"
-      >
-        <section
-          aria-label="Request editor"
-          ref={splitRef}
-          style={{ height: editorHeight }}
-          className="shrink-0 overflow-auto"
+      {hasOpenTabs ? (
+        <div
+          role="tabpanel"
+          id={`request-tabpanel-${activeTabId}`}
+          aria-labelledby={`request-tab-${activeTabId}`}
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <Editor
-            key={`editor-${activeTabId}`}
-            tabId={activeTabId}
-            draft={draft}
-            requestTabContext={requestTabContext}
-            onChange={(next) => dispatch(setActiveDraft(next))}
-            onSend={() => void dispatch(sendRequest())}
-            sending={sending}
-            variables={activeVariables}
-            collectionName={activeCollectionName}
-            folderName={activeFolderName}
-            onEditVariables={onEditVariables}
-            onCollectionClick={() => {
-              if (activeCollectionId == null) return;
-              dispatch(focusSidebarItem({ collectionId: activeCollectionId }));
-              revealCollection(activeCollectionId);
-            }}
-            onFolderClick={() => {
-              if (activeCollectionId == null || activeFolderId == null) return;
-              dispatch(
-                focusSidebarItem({ collectionId: activeCollectionId, folderId: activeFolderId })
-              );
-              revealFolder(activeCollectionId, activeFolderId);
-            }}
+          <section
+            aria-label="Request editor"
+            ref={splitRef}
+            style={{ height: editorHeight }}
+            className="shrink-0 overflow-auto"
+          >
+            <Editor
+              key={`editor-${activeTabId}`}
+              tabId={activeTabId}
+              draft={draft}
+              requestTabContext={requestTabContext}
+              onChange={(next) => dispatch(setActiveDraft(next))}
+              onSend={() => void dispatch(sendRequest())}
+              sending={sending}
+              variables={activeVariables}
+              collectionName={activeCollectionName}
+              folderName={activeFolderName}
+              onEditVariables={onEditVariables}
+              onCollectionClick={() => {
+                if (activeCollectionId == null) return;
+                dispatch(focusSidebarItem({ collectionId: activeCollectionId }));
+                revealCollection(activeCollectionId);
+              }}
+              onFolderClick={() => {
+                if (activeCollectionId == null || activeFolderId == null) return;
+                dispatch(
+                  focusSidebarItem({ collectionId: activeCollectionId, folderId: activeFolderId })
+                );
+                revealFolder(activeCollectionId, activeFolderId);
+              }}
+            />
+          </section>
+          <ResizeHandle
+            orientation="horizontal"
+            value={editorHeight}
+            min={editorMinSize}
+            max={editorMaxSize}
+            onResizeStart={onResizeStart}
+            onKeyboardResize={onKeyboardResize}
+            ariaLabel="Resize request editor"
           />
-        </section>
-        <ResizeHandle
-          orientation="horizontal"
-          value={editorHeight}
-          min={editorMinSize}
-          max={editorMaxSize}
-          onResizeStart={onResizeStart}
-          onKeyboardResize={onKeyboardResize}
-          ariaLabel="Resize request editor"
-        />
-        <section aria-label="Response" className="flex min-h-0 flex-1 flex-col">
-          <Response
-            key={`response-${activeTabId}`}
-            response={response}
-            responseTabContext={responseTabContext}
-            sending={sending}
-            testResults={testResults}
-            requestUrl={draft.url}
-            onCancel={() => void dispatch(cancelRequest(activeTabId))}
-          />
-        </section>
-      </div>
+          <section aria-label="Response" className="flex min-h-0 flex-1 flex-col">
+            <Response
+              key={`response-${activeTabId}`}
+              response={response}
+              responseTabContext={responseTabContext}
+              sending={sending}
+              testResults={testResults}
+              requestUrl={draft.url}
+              onCancel={() => void dispatch(cancelRequest(activeTabId))}
+            />
+          </section>
+        </div>
+      ) : (
+        <NoOpenRequests />
+      )}
 
       {closeTabPrompt && (
         <Modal

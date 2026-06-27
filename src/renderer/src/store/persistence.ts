@@ -286,6 +286,9 @@ export function parseOpenTabsFromRaw(raw: string): { tabs: RequestTab[]; activeT
     }
 
     if (tabs.length === 0) {
+      if (parsed.tabs.length === 0) {
+        return { tabs: [], activeTabId: '' };
+      }
       return defaultTabState();
     }
 
