@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(plugins): add Catppuccin Latte and Nord themes to plugin catalog. (`15f58d1`)
+
 ## 1.8.22 - 2026-06-27
 
 - feat(docs): update documentation structure and enhance plugin catalog. (`1d0b18a`)

@@ -92,6 +92,26 @@
       "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-request-history/main/screenshot.png"
     },
     {
+      "id": "com.harborclient.plugins.catppuccin-latte",
+      "name": "Catppuccin Latte Theme",
+      "version": "1.0.0",
+      "summary": "A Catppuccin Latte light theme with pastel gradients, scrollbars, and focus rings via stylesheet.",
+      "author": "HarborClient",
+      "categories": ["themes"],
+      "repoUrl": "https://github.com/harborclient/plugin-catppuccin-latte",
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-catppuccin-latte/main/screenshot.png"
+    },
+    {
+      "id": "com.harborclient.plugins.nord",
+      "name": "Nord Theme",
+      "version": "1.0.0",
+      "summary": "A Nord theme for HarborClient with custom scrollbars, focus rings, and aurora styling via stylesheet.",
+      "author": "HarborClient",
+      "categories": ["themes"],
+      "repoUrl": "https://github.com/harborclient/plugin-nord",
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-nord/main/screenshot.png"
+    },
+    {
       "id": "com.harborclient.plugins.gruvbox",
       "name": "Gruvbox Theme",
       "version": "1.0.0",
