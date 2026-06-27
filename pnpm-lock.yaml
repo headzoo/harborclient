@@ -145,8 +145,8 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
       '@harborclient/sdk':
-        specifier: ^0.4.4
-        version: 0.4.4(react@19.2.7)
+        specifier: ^0.4.5
+        version: 0.4.5(react@19.2.7)
       '@tailwindcss/vite':
         specifier: ^4.3.1
         version: 4.3.1(vite@6.4.3(@types/node@25.9.3)(jiti@2.7.0)(lightningcss@1.32.0)(yaml@2.9.0))
@@ -1202,8 +1202,8 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
-  '@harborclient/sdk@0.4.4':
-    resolution: {integrity: sha512-q1ZuzTPZ1dpy6Mt339bUvdUroho9Zw1jdathvSfJNBAUxhCbusj54lbTQs1P5u0bWvIRaymdcP/3xe69Iq59Dg==}
+  '@harborclient/sdk@0.4.5':
+    resolution: {integrity: sha512-7ed+1C1t1dZxV8tuaylU2B+iAvB9NAKmYQpJrWHO5dYCdKqL/6mOgPJyHQHG2kD+MtguYvB+ML78QCBzpBjJ5A==}
     hasBin: true
     peerDependencies:
       react: '>=18'
@@ -8016,7 +8016,7 @@ snapshots:
       protobufjs: 7.6.4
       yargs: 17.7.2
 
-  '@harborclient/sdk@0.4.4(react@19.2.7)':
+  '@harborclient/sdk@0.4.5(react@19.2.7)':
     dependencies:
       react: 19.2.7
 

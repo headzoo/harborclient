@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- chore(package): update @harborclient/sdk to version 0.4.5. (`09616a3`)
 - chore(package): update @harborclient/sdk to version 0.4.5. (`e993bfc`)
 - feat(echo-server): implement HTTP echo server plugin with request handling. (`5611b66`)
 - feat(import): add support for importing Bruno collections and enhance import functionality. (`360ef76`)
