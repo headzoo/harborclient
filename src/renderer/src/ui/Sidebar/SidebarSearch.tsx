@@ -1,6 +1,5 @@
+import { Input, FormGroup } from '@harborclient/sdk/ui-react';
 import type { JSX } from 'react';
-import { Input } from '#/renderer/src/components/forms';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
 
 interface Props {
   /**

@@ -1,9 +1,8 @@
+import { Spinner, TabCloseButton } from '@harborclient/sdk/ui-react';
+import { METHOD_CLASSES, requestTabItem } from '#/renderer/src/ui/shared/classes';
 import type { JSX, KeyboardEvent } from 'react';
 import type { RequestTab } from '#/renderer/src/store/drafts';
 import { isTabDirty } from '#/renderer/src/store/drafts';
-import { Spinner } from '#/renderer/src/components/Spinner';
-import { TabCloseButton } from '#/renderer/src/components/TabCloseButton';
-import { METHOD_CLASSES, requestTabItem } from '#/renderer/src/ui/shared/classes';
 
 interface Props {
   /**

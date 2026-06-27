@@ -1,10 +1,13 @@
+import {
+  Button,
+  FormGroup,
+  Modal,
+  ModalFooter,
+  FieldError,
+  StatusMessage
+} from '@harborclient/sdk/ui-react';
 import { useCallback, useId, useState, type JSX } from 'react';
 import type { DiscoveredCollection } from '#/shared/types';
-import { Button } from '#/renderer/src/components/Button';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
-import { Modal, ModalFooter } from '#/renderer/src/components/Modal';
-import { FieldError } from '#/renderer/src/components/FieldError';
-import { StatusMessage } from '#/renderer/src/components/StatusMessage';
 
 interface Props {
   /**

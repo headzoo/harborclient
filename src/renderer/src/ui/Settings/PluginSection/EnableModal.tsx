@@ -1,9 +1,7 @@
+import { Button, FaIcon, Modal, ModalFooter, FieldError } from '@harborclient/sdk/ui-react';
 import type { JSX } from 'react';
 import type { PluginInfo } from '#/shared/plugin/types';
-import { Button } from '#/renderer/src/components/Button';
-import { FaIcon } from '#/renderer/src/components/FaIcon';
-import { Modal, ModalFooter } from '#/renderer/src/components/Modal';
-import { FieldError } from '#/renderer/src/components/FieldError';
+
 import { faCircleCheck } from '#/renderer/src/fontawesome';
 import { PERMISSION_LABELS } from './constants';
 

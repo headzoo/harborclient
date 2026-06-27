@@ -1,7 +1,8 @@
+import { ResizeHandle, useResizable } from '@harborclient/sdk/ui-react';
 import { useEffect, useState, type JSX } from 'react';
 import type { AiSettings, HubLlmModelGroup } from '#/shared/types';
 import { hasAvailableAiModels } from '#/shared/aiModels';
-import { ResizeHandle, useResizable } from '#/renderer/src/components/Resizable';
+
 import { DEFAULT_AI_SETTINGS } from '#/renderer/src/ui/Settings/constants';
 import { ConfigureApiKeysPrompt } from './ConfigureApiKeysPrompt';
 import { AiChat } from './Chat';

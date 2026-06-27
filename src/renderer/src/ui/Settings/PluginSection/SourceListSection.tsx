@@ -1,10 +1,9 @@
+import { Button, FormGroup, Input } from '@harborclient/sdk/ui-react';
 import { useState, type JSX } from 'react';
 import type { PluginSource } from '#/shared/plugin/catalog';
 import { isHarborClientEndpoint } from '#/shared/plugin/catalog';
 import type { TeamHubPluginSource } from '#/shared/types';
-import { Button } from '#/renderer/src/components/Button';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
-import { Input } from '#/renderer/src/components/forms';
+
 import { parseDraftPluginSourceUrl } from './helpers';
 
 interface Props {

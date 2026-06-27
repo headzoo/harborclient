@@ -17,8 +17,8 @@ import {
 } from '@dnd-kit/sortable';
 import { useMemo, useState, type JSX } from 'react';
 import type { Environment } from '#/shared/types';
-import { RowActionsMenu } from '#/renderer/src/components/RowActionsMenu';
-import { buildReorderMenuGroup } from '#/renderer/src/components/rowActionsMenuHelpers';
+import { RowActionsMenu } from '@harborclient/sdk/ui-react';
+import { buildReorderMenuGroup } from '@harborclient/sdk/ui-react';
 import { useConfirm } from '#/renderer/src/hooks/useConfirm';
 import { SortableRow } from '#/renderer/src/ui/Sidebar/Collections/SortableRow';
 import { sourceRow } from '#/renderer/src/ui/shared/classes';

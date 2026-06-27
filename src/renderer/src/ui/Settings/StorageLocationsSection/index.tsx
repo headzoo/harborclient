@@ -1,19 +1,20 @@
+import {
+  AsyncListState,
+  Badge,
+  Button,
+  FieldError,
+  PageHeader,
+  ResourceList,
+  ResourceListPrimary,
+  ResourceListRow
+} from '@harborclient/sdk/ui-react';
 import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { DiscoveredCollection, StorageConnection } from '#/shared/types';
 import { useStorageConnections } from '#/renderer/src/hooks/useStorageConnections';
 import { useAppDispatch } from '#/renderer/src/store/hooks';
 import { refreshCollections } from '#/renderer/src/store/thunks/collections';
-import { Button } from '#/renderer/src/components/Button';
-import { PageHeader } from '#/renderer/src/components/PageHeader';
-import { Badge } from '#/renderer/src/components/Badge';
-import { AsyncListState } from '#/renderer/src/components/AsyncListState';
-import {
-  ResourceList,
-  ResourceListPrimary,
-  ResourceListRow
-} from '#/renderer/src/components/ResourceList';
-import { FieldError } from '#/renderer/src/components/FieldError';
+
 import { createBlankConnection, providerLabel, settingsSectionMeta } from '../constants';
 import { SettingsCloseButton } from '../SettingsCloseButton';
 import { DiscoverCollectionsModal } from './DiscoverCollectionsModal';

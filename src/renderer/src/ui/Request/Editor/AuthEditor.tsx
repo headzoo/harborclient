@@ -1,11 +1,14 @@
+import {
+  Button,
+  FormGroup,
+  Select,
+  VariableInput,
+  fieldFrame,
+  CodeEditor
+} from '@harborclient/sdk/ui-react';
 import { useState, type JSX } from 'react';
 import type { AuthConfig, AuthType, Variable } from '#/shared/types';
 import { buildOAuthAuthHeaderValue } from '#/shared/auth';
-import { Button } from '#/renderer/src/components/Button';
-import { CodeEditor } from '#/renderer/src/components/CodeEditor';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
-import { VariableInput } from '#/renderer/src/components/VariableInput';
-import { Select, fieldFrame } from '#/renderer/src/components/forms';
 
 interface Props {
   /**

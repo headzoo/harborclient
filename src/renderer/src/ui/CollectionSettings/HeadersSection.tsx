@@ -1,6 +1,6 @@
+import { KeyValueEditor } from '@harborclient/sdk/ui-react';
 import type { JSX } from 'react';
 import type { KeyValue, Variable } from '#/shared/types';
-import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
 
 interface Props {
   headers: KeyValue[];

@@ -1,7 +1,8 @@
+import { FaIcon } from '@harborclient/sdk/ui-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { type CSSProperties, type JSX, type ReactNode } from 'react';
-import { FaIcon } from '#/renderer/src/components/FaIcon';
+
 import { faGripVertical } from '#/renderer/src/fontawesome';
 
 interface Props {

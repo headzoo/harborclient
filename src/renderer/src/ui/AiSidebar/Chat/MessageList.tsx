@@ -1,6 +1,7 @@
+import { EmptyState } from '@harborclient/sdk/ui-react';
 import { useEffect, useRef, type JSX } from 'react';
 import type { ChatMessage } from '#/shared/types';
-import { EmptyState } from '#/renderer/src/components/EmptyState';
+
 import { MessageBubble } from './MessageBubble';
 
 interface Props {

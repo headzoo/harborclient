@@ -1,6 +1,7 @@
+import { CodeEditor } from '@harborclient/sdk/ui-react';
 import type { JSX } from 'react';
 import type { Variable } from '#/shared/types';
-import { CodeEditor } from '#/renderer/src/components/CodeEditor';
+import { createHcCompletionSource } from '#/renderer/src/scripting/hcCompletions';
 
 interface Props {
   phase: 'pre' | 'post';
@@ -29,7 +30,7 @@ export function ScriptSection({
         value={value}
         onChange={onChange}
         language="javascript"
-        scriptPhase={phase}
+        completionSource={createHcCompletionSource(phase, variables)}
         placeholder={placeholder}
         variables={variables}
         minHeight="240px"

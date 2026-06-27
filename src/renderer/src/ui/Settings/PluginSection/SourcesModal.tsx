@@ -1,8 +1,8 @@
+import { Button, Modal } from '@harborclient/sdk/ui-react';
 import type { JSX } from 'react';
 import type { PluginSource, PluginSourcesSettings } from '#/shared/plugin/catalog';
 import type { TeamHubPluginSourcesView } from '#/shared/types';
-import { Button } from '#/renderer/src/components/Button';
-import { Modal } from '#/renderer/src/components/Modal';
+
 import { SourceListSection } from './SourceListSection';
 import type { SourceKind } from './types';
 

@@ -1,11 +1,16 @@
+import {
+  KeyValueEditor,
+  SegmentedTabPanel,
+  Textarea,
+  CodeEditor
+} from '@harborclient/sdk/ui-react';
 import type { JSX } from 'react';
 import type { KeyValue, Variable } from '#/shared/types';
 import type { RegisteredRequestTab, RequestTabContext } from '#/shared/plugin/types';
-import { CodeEditor } from '#/renderer/src/components/CodeEditor';
-import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
-import { SegmentedTabPanel } from '#/renderer/src/components/SegmentedTabs';
+import { createHcCompletionSource } from '#/renderer/src/scripting/hcCompletions';
+
 import type { RequestDraft } from '#/renderer/src/store/drafts';
-import { Textarea } from '#/renderer/src/components/forms';
+
 import { AuthEditor } from './AuthEditor';
 import { BodyEditor } from './BodyEditor';
 import { CookiesEditor } from './CookiesEditor';
@@ -117,7 +122,7 @@ export function TabContent({
           value={draft.pre_request_script}
           onChange={(pre_request_script) => update({ pre_request_script })}
           language="javascript"
-          scriptPhase="pre"
+          completionSource={createHcCompletionSource('pre', variables)}
           placeholder="// hc.request.url = 'https://example.com';\n// hc.variables.set('token', 'abc');"
           variables={variables}
           onEditVariable={onEditVariables}
@@ -129,7 +134,7 @@ export function TabContent({
           value={draft.post_request_script}
           onChange={(post_request_script) => update({ post_request_script })}
           language="javascript"
-          scriptPhase="post"
+          completionSource={createHcCompletionSource('post', variables)}
           placeholder={
             '// hc.test("status is 200", () => {\n//   hc.expect(hc.response.code).to.equal(200);\n// });'
           }

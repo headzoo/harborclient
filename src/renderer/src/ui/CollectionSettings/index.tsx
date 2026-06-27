@@ -1,15 +1,16 @@
-import { useEffect, useMemo, useState, type JSX } from 'react';
-import type { AuthConfig, Collection, KeyValue, Variable } from '#/shared/types';
-import { normalizeAuth } from '#/shared/auth';
-import { Button } from '#/renderer/src/components/Button';
-import { cleanVariables } from '#/renderer/src/components/utils';
-import { ModalFooter } from '#/renderer/src/components/Modal';
-import { OverlayPage } from '#/renderer/src/components/OverlayPage';
 import {
+  Button,
+  cleanVariables,
+  ModalFooter,
+  OverlayPage,
   SegmentedTabs,
   SegmentedTabPanel,
   SegmentedTabsGroup
-} from '#/renderer/src/components/SegmentedTabs';
+} from '@harborclient/sdk/ui-react';
+import { useEffect, useMemo, useState, type JSX } from 'react';
+import type { AuthConfig, Collection, KeyValue, Variable } from '#/shared/types';
+import { normalizeAuth } from '#/shared/auth';
+
 import { useProviders } from '#/renderer/src/hooks/useProviders';
 import { usePluginCollectionSettingsTabs } from '#/renderer/src/plugins/pluginHooks';
 import type { CollectionSettingsTabContext } from '#/shared/plugin/types';

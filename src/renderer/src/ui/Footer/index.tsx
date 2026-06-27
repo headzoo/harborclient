@@ -1,8 +1,8 @@
+import { FooterButton, FooterIcon, segmentGroup } from '@harborclient/sdk/ui-react';
 import { useMemo, type JSX } from 'react';
 import type { Variable } from '#/shared/types';
 import type { ConsoleEntry } from '#/renderer/src/store';
-import { FooterButton } from '#/renderer/src/components/FooterButton';
-import { FooterIcon } from '#/renderer/src/components/FooterIcon';
+
 import { faRobot, faTableColumns } from '#/renderer/src/fontawesome';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import {
@@ -10,7 +10,7 @@ import {
   togglePluginFooterPanel
 } from '#/renderer/src/store/slices/navigationSlice';
 import { usePluginFooterPanels, usePluginStatusBarItems } from '#/renderer/src/plugins/pluginHooks';
-import { segmentGroup } from '#/renderer/src/ui/shared/classes';
+
 import { ConsolePanel } from './ConsolePanel';
 import { PluginFooterPanel } from './PluginFooterPanel';
 import { VariablesPanel } from './VariablesPanel';

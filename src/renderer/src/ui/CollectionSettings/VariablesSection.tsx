@@ -1,6 +1,6 @@
+import { VariableTable } from '@harborclient/sdk/ui-react';
 import type { JSX } from 'react';
 import type { Variable } from '#/shared/types';
-import { VariableTable } from '#/renderer/src/components/VariableTable';
 
 interface Props {
   variables: Variable[];

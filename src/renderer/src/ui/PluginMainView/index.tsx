@@ -1,6 +1,6 @@
+import { OverlayCloseButton, Button } from '@harborclient/sdk/ui-react';
 import type { JSX } from 'react';
-import { OverlayCloseButton } from '#/renderer/src/components/OverlayCloseButton';
-import { Button } from '#/renderer/src/components/Button';
+
 import { usePluginMainViews } from '#/renderer/src/plugins/pluginHooks';
 import { pluginContributionId } from '#/shared/plugin/types';
 

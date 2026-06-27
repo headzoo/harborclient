@@ -1,11 +1,8 @@
+import { Modal, Spinner, FieldError, StatusMessage } from '@harborclient/sdk/ui-react';
 import { useCallback, useEffect, type JSX } from 'react';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import { closeUpdateModal, selectUpdateModal } from '#/renderer/src/store/slices/modalsSlice';
 import { checkForUpdates } from '#/renderer/src/store/thunks';
-import { Modal } from '#/renderer/src/components/Modal';
-import { Spinner } from '#/renderer/src/components/Spinner';
-import { FieldError } from '#/renderer/src/components/FieldError';
-import { StatusMessage } from '#/renderer/src/components/StatusMessage';
 
 /**
  * Spinner shown while the update check request is in flight.

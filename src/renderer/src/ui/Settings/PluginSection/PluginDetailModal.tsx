@@ -1,10 +1,8 @@
+import { Button, FaIcon, Modal, Spinner } from '@harborclient/sdk/ui-react';
 import type { JSX } from 'react';
 import type { PluginCatalogEntry } from '#/shared/plugin/catalog';
 import type { PluginGitPreview, PluginInfo, PluginManifest } from '#/shared/plugin/types';
-import { Button } from '#/renderer/src/components/Button';
-import { FaIcon } from '#/renderer/src/components/FaIcon';
-import { Modal } from '#/renderer/src/components/Modal';
-import { Spinner } from '#/renderer/src/components/Spinner';
+
 import { faCircleCheck } from '#/renderer/src/fontawesome';
 import { PERMISSION_LABELS } from './constants';
 import { ErrorMessages } from './ErrorMessages';

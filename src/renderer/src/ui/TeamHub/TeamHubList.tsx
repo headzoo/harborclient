@@ -1,18 +1,22 @@
-import { useEffect, useState, type JSX } from 'react';
-import toast from 'react-hot-toast';
-import type { TeamHub, TeamHubServiceFlags } from '#/shared/types';
-import { Button } from '#/renderer/src/components/Button';
-import { AsyncListState } from '#/renderer/src/components/AsyncListState';
-import { FieldError } from '#/renderer/src/components/FieldError';
-import { Modal, ModalFooter, ModalFormLayout } from '#/renderer/src/components/Modal';
-import { PageHeader } from '#/renderer/src/components/PageHeader';
-import { PanelCloseButton } from '#/renderer/src/components/PanelCloseButton';
-import { faUsers } from '#/renderer/src/fontawesome';
 import {
+  AsyncListState,
+  Button,
+  FieldError,
+  Modal,
+  ModalFooter,
+  ModalFormLayout,
+  PageHeader,
+  PanelCloseButton,
   ResourceList,
   ResourceListPrimary,
   ResourceListRow
-} from '#/renderer/src/components/ResourceList';
+} from '@harborclient/sdk/ui-react';
+import { useEffect, useState, type JSX } from 'react';
+import toast from 'react-hot-toast';
+import type { TeamHub, TeamHubServiceFlags } from '#/shared/types';
+
+import { faUsers } from '#/renderer/src/fontawesome';
+
 import { useAppDispatch } from '#/renderer/src/store/hooks';
 import { refreshCollections } from '#/renderer/src/store/thunks/collections';
 import { formatIpcErrorMessage, showAlert } from '#/renderer/src/ui/modals/dialogHelpers';

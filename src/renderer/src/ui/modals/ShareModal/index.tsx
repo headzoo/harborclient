@@ -7,12 +7,16 @@ import {
   setShareRecipientKid
 } from '#/renderer/src/store/slices/modalsSlice';
 import { generateShareToken } from '#/renderer/src/store/thunks';
-import { Button } from '#/renderer/src/components/Button';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
-import { Select, Textarea } from '#/renderer/src/components/forms';
-import { Modal, ModalFooter } from '#/renderer/src/components/Modal';
-import { FieldError } from '#/renderer/src/components/FieldError';
-import { LoadingMessage } from '#/renderer/src/components/AsyncListState';
+import {
+  Button,
+  FieldError,
+  FormGroup,
+  LoadingMessage,
+  Modal,
+  ModalFooter,
+  Select,
+  Textarea
+} from '@harborclient/sdk/ui-react';
 
 /**
  * Modal for generating and copying an encrypted collection share token.

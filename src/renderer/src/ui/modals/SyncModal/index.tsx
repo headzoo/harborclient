@@ -5,7 +5,7 @@ import {
   selectSyncModal,
   type SyncProviderProgress
 } from '#/renderer/src/store/slices/modalsSlice';
-import { Modal } from '#/renderer/src/components/Modal';
+import { Modal } from '@harborclient/sdk/ui-react';
 
 /**
  * Returns a human-readable label for a provider kind.

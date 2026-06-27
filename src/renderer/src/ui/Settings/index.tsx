@@ -1,5 +1,6 @@
+import { PageHeader } from '@harborclient/sdk/ui-react';
 import { useMemo, useState, type JSX } from 'react';
-import { PageHeader } from '#/renderer/src/components/PageHeader';
+
 import { faPuzzlePiece } from '#/renderer/src/fontawesome';
 import { usePluginSettingsSections } from '#/renderer/src/plugins/pluginHooks';
 import { AiSection } from './AiSection';

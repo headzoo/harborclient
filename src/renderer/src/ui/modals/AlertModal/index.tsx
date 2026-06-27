@@ -1,6 +1,6 @@
+import { FaIcon, Modal } from '@harborclient/sdk/ui-react';
 import { useCallback, type JSX } from 'react';
-import { FaIcon } from '#/renderer/src/components/FaIcon';
-import { Modal } from '#/renderer/src/components/Modal';
+
 import { faCircleExclamation } from '#/renderer/src/fontawesome';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import { selectAlertModal, setAlertModal } from '#/renderer/src/store/slices/modalsSlice';

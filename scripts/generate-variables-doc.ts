@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import {
   DYNAMIC_VARIABLE_CATEGORIES,
   DYNAMIC_VARIABLES
-} from '../src/shared/dynamicVariables.ts';
+} from '@harborclient/sdk/variables';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoDir = path.resolve(scriptDir, '..');

@@ -1,17 +1,18 @@
+import {
+  Button,
+  SegmentedTabs,
+  SegmentedTabPanel,
+  SegmentedTabsGroup,
+  CodeEditor
+} from '@harborclient/sdk/ui-react';
+import { statusDotClass } from '#/renderer/src/ui/shared/classes';
 import { useMemo, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { ResponseTabContext } from '#/shared/plugin/types';
 import type { ScriptTestResult, SendResult } from '#/shared/types';
-import { Button } from '#/renderer/src/components/Button';
-import { CodeEditor } from '#/renderer/src/components/CodeEditor';
-import {
-  SegmentedTabs,
-  SegmentedTabPanel,
-  SegmentedTabsGroup
-} from '#/renderer/src/components/SegmentedTabs';
+
 import { usePluginResponseTabs } from '#/renderer/src/plugins/pluginHooks';
 import { isPluginTabId } from '#/renderer/src/plugins/pluginContextAdapters';
-import { statusDotClass } from '#/renderer/src/ui/shared/classes';
 import {
   bodyLanguage,
   formatBody,

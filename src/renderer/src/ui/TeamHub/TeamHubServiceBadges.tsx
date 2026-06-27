@@ -1,6 +1,7 @@
+import { Badge } from '@harborclient/sdk/ui-react';
+import type { BadgeVariant } from '@harborclient/sdk/ui-react';
 import { type JSX } from 'react';
 import type { TeamHubServiceFlags } from '#/shared/types';
-import { Badge, type BadgeVariant } from '#/renderer/src/components/Badge';
 
 interface Props {
   /**

@@ -1,6 +1,7 @@
+import { CodeEditor } from '@harborclient/sdk/ui-react';
 import type { JSX } from 'react';
 import type { SendResult } from '#/shared/types';
-import { CodeEditor } from '#/renderer/src/components/CodeEditor';
+
 import {
   bodyLanguage,
   formatBody,

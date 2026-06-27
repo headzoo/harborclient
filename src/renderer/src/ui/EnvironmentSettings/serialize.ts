@@ -1,5 +1,5 @@
+import { cleanVariables } from '@harborclient/sdk/ui-react';
 import type { Variable } from '#/shared/types';
-import { cleanVariables } from '#/renderer/src/components/utils';
 
 /**
  * Serializes environment form fields for dirty-state comparison and persistence.

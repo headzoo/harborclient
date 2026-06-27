@@ -5,15 +5,15 @@ import {
   formatAcceleratorDisplay,
   validateShortcutOverrides
 } from '#/shared/shortcuts';
-import { Button } from '#/renderer/src/components/Button';
-import { PageHeader } from '#/renderer/src/components/PageHeader';
+import { Button } from '@harborclient/sdk/ui-react';
+import { PageHeader } from '@harborclient/sdk/ui-react';
 import { useConfirm } from '#/renderer/src/hooks/useConfirm';
-import { field } from '#/renderer/src/components/forms';
+import { field } from '@harborclient/sdk/ui-react';
 import { formatErrorMessage } from '#/renderer/src/ui/modals/dialogHelpers';
 import { settingsSectionMeta } from '../constants';
 import { acceleratorFromKeyboardEvent } from './acceleratorFromKeyboardEvent';
-import { FieldError } from '#/renderer/src/components/FieldError';
-import { StatusMessage } from '#/renderer/src/components/StatusMessage';
+import { FieldError } from '@harborclient/sdk/ui-react';
+import { StatusMessage } from '@harborclient/sdk/ui-react';
 import { SettingsCloseButton } from '../SettingsCloseButton';
 
 interface Props {

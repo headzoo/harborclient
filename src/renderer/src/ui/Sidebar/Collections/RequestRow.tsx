@@ -1,9 +1,10 @@
+import { RowActionsMenu } from '@harborclient/sdk/ui-react';
+import { METHOD_CLASSES, sourceRow } from '#/renderer/src/ui/shared/classes';
 import type { SavedRequest } from '#/shared/types';
-import { RowActionsMenu } from '#/renderer/src/components/RowActionsMenu';
+
 import { useConfirm } from '#/renderer/src/hooks/useConfirm';
 import { usePluginContextMenuItems } from '#/renderer/src/plugins/pluginHooks';
 import { buildPluginContextMenuGroups } from '#/renderer/src/plugins/pluginContextMenuHelpers';
-import { METHOD_CLASSES, sourceRow } from '#/renderer/src/ui/shared/classes';
 import { requestDragId } from '#/renderer/src/ui/Sidebar/Collections/utils';
 import { type JSX } from 'react';
 import { SortableRow } from './SortableRow';

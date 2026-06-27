@@ -1,12 +1,15 @@
+import {
+  VariableTable,
+  cleanVariables,
+  ModalFooter,
+  OverlayPage,
+  Button,
+  FormGroup,
+  Input
+} from '@harborclient/sdk/ui-react';
 import { useEffect, useId, useMemo, useState, type JSX } from 'react';
 import type { Environment, Variable } from '#/shared/types';
-import { VariableTable } from '#/renderer/src/components/VariableTable';
-import { cleanVariables } from '#/renderer/src/components/utils';
-import { ModalFooter } from '#/renderer/src/components/Modal';
-import { OverlayPage } from '#/renderer/src/components/OverlayPage';
-import { Button } from '#/renderer/src/components/Button';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
-import { Input } from '#/renderer/src/components/forms';
+
 import { serializeEnvironmentForm } from './serialize';
 
 interface Props {

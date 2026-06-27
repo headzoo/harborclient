@@ -1,5 +1,5 @@
+import { cleanVariables } from '@harborclient/sdk/ui-react';
 import type { AuthConfig, KeyValue, Variable } from '#/shared/types';
-import { cleanVariables } from '#/renderer/src/components/utils';
 
 /**
  * Drops header rows with no key or value content.

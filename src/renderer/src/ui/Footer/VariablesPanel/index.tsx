@@ -1,6 +1,6 @@
+import { Resizable, EmptyState } from '@harborclient/sdk/ui-react';
 import { type JSX } from 'react';
-import { Resizable } from '#/renderer/src/components/Resizable';
-import { EmptyState } from '#/renderer/src/components/EmptyState';
+
 import type { ResolvedVariable } from './resolve';
 import { VariableRow } from './VariableRow';
 

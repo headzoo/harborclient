@@ -1,20 +1,23 @@
-import { useState, type JSX } from 'react';
-import toast from 'react-hot-toast';
-import type { AdminResourceOption, TeamHub } from '#/shared/types';
-import { Input } from '#/renderer/src/components/forms';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
-import { Button } from '#/renderer/src/components/Button';
-import { Modal, ModalFormLayout } from '#/renderer/src/components/Modal';
-import { PageHeader } from '#/renderer/src/components/PageHeader';
-import { BackButton } from '#/renderer/src/components/BackButton';
-import { faUsers } from '#/renderer/src/fontawesome';
-import { AsyncListState } from '#/renderer/src/components/AsyncListState';
 import {
+  AsyncListState,
+  BackButton,
+  Button,
+  FieldError,
+  FormGroup,
+  Input,
+  Modal,
+  ModalFormLayout,
+  PageHeader,
   ResourceList,
   ResourceListPrimary,
   ResourceListRow
-} from '#/renderer/src/components/ResourceList';
-import { FieldError } from '#/renderer/src/components/FieldError';
+} from '@harborclient/sdk/ui-react';
+import { useState, type JSX } from 'react';
+import toast from 'react-hot-toast';
+import type { AdminResourceOption, TeamHub } from '#/shared/types';
+
+import { faUsers } from '#/renderer/src/fontawesome';
+
 import { useTeamHubAdminCollections } from '#/renderer/src/hooks/useTeamHubAdminCollections';
 import { TeamCollectionContentsView } from '#/renderer/src/ui/TeamHub/TeamCollectionContentsView';
 

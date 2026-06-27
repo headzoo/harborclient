@@ -1,6 +1,6 @@
+import { Select } from '@harborclient/sdk/ui-react';
 import type { JSX } from 'react';
 import type { Environment } from '#/shared/types';
-import { Select } from '#/renderer/src/components/forms';
 
 interface Props {
   environments: Environment[];

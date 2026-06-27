@@ -7,21 +7,22 @@ import type {
   TeamHubAdminResourceOptions,
   UpdateHubUserInput
 } from '#/shared/types';
-import { Input } from '#/renderer/src/components/forms';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
-import { Button } from '#/renderer/src/components/Button';
-import { Modal, ModalFormLayout } from '#/renderer/src/components/Modal';
-import { PageHeader } from '#/renderer/src/components/PageHeader';
-import { BackButton } from '#/renderer/src/components/BackButton';
-import { Badge } from '#/renderer/src/components/Badge';
-import { faUsers } from '#/renderer/src/fontawesome';
-import { AsyncListState } from '#/renderer/src/components/AsyncListState';
 import {
+  AsyncListState,
+  BackButton,
+  Badge,
+  Button,
+  FieldError,
+  FormGroup,
+  Input,
+  Modal,
+  ModalFormLayout,
+  PageHeader,
   ResourceList,
   ResourceListPrimary,
   ResourceListRow
-} from '#/renderer/src/components/ResourceList';
-import { FieldError } from '#/renderer/src/components/FieldError';
+} from '@harborclient/sdk/ui-react';
+import { faUsers } from '#/renderer/src/fontawesome';
 import { useTeamHubUsers } from '#/renderer/src/hooks/useTeamHubUsers';
 import { useAppDispatch } from '#/renderer/src/store/hooks';
 import { refreshCollections } from '#/renderer/src/store/thunks/collections';

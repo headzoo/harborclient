@@ -1,7 +1,7 @@
+import { EmptyState } from '@harborclient/sdk/ui-react';
 import type { JSX } from 'react';
 import { useAppDispatch } from '#/renderer/src/store/hooks';
 import { openSettings } from '#/renderer/src/store/slices/navigationSlice';
-import { EmptyState } from '#/renderer/src/components/EmptyState';
 
 /**
  * Prompt shown when the AI sidebar is open but no provider API keys are configured.

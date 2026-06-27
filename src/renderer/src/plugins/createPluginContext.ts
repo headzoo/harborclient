@@ -176,7 +176,7 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
 
   return {
     pluginId,
-    react: React,
+    react: React as PluginContext['react'],
     subscriptions,
     storage: {
       get: async <T>(key: string) => {

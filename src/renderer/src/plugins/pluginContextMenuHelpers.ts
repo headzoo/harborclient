@@ -1,5 +1,5 @@
 import type { ContextMenuTarget, RegisteredContextMenuItem } from '#/shared/plugin/types';
-import type { MenuItem } from '#/renderer/src/components/RowActionsMenu';
+import type { MenuItem } from '@harborclient/sdk/ui-react';
 import { executePluginCommand } from '#/renderer/src/plugins/createPluginContext';
 
 /**

@@ -1,7 +1,7 @@
+import { Input, FormGroup } from '@harborclient/sdk/ui-react';
 import { useRef, useState, type JSX, type ReactNode } from 'react';
 import { Controller, type Control, type FieldPath, type FieldValues } from 'react-hook-form';
-import { Input } from '#/renderer/src/components/forms';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
+
 import {
   applyAccessSuggestion,
   filterAccessListSuggestions,

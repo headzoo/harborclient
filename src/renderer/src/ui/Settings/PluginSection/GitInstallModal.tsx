@@ -1,9 +1,12 @@
+import {
+  Button,
+  FormGroup,
+  Input,
+  Modal,
+  ModalFormLayout,
+  FieldError
+} from '@harborclient/sdk/ui-react';
 import type { JSX, KeyboardEvent } from 'react';
-import { Button } from '#/renderer/src/components/Button';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
-import { Input } from '#/renderer/src/components/forms';
-import { Modal, ModalFormLayout } from '#/renderer/src/components/Modal';
-import { FieldError } from '#/renderer/src/components/FieldError';
 
 interface Props {
   /**

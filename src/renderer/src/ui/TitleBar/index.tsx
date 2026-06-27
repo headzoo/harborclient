@@ -1,5 +1,6 @@
+import { FaIcon } from '@harborclient/sdk/ui-react';
 import type { JSX } from 'react';
-import { FaIcon } from '#/renderer/src/components/FaIcon';
+
 import { faMinus, faWindowMaximize, faXmark } from '#/renderer/src/fontawesome';
 import { isLinux, isMac } from '#/renderer/src/platform';
 import { LinuxMenuBar } from '#/renderer/src/ui/TitleBar/LinuxMenuBar';

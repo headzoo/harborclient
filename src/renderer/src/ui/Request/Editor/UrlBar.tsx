@@ -1,11 +1,14 @@
+import {
+  Button,
+  FaIcon,
+  MethodSelect,
+  VariableInput,
+  fieldFrame
+} from '@harborclient/sdk/ui-react';
 import { faCaretRight } from '@fortawesome/free-solid-svg-icons';
 import type { JSX } from 'react';
 import type { HttpMethod, Variable } from '#/shared/types';
-import { Button } from '#/renderer/src/components/Button';
-import { FaIcon } from '#/renderer/src/components/FaIcon';
-import { MethodSelect } from '#/renderer/src/components/MethodSelect';
-import { VariableInput } from '#/renderer/src/components/VariableInput';
-import { fieldFrame } from '#/renderer/src/components/forms';
+
 import { usePluginRequestToolbarActions } from '#/renderer/src/plugins/pluginHooks';
 import { executePluginCommand } from '#/renderer/src/plugins/createPluginContext';
 

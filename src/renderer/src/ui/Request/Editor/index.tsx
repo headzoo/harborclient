@@ -1,7 +1,8 @@
+import { SegmentedTabs, SegmentedTabsGroup } from '@harborclient/sdk/ui-react';
 import { useMemo, type JSX } from 'react';
 import type { KeyValue, Variable } from '#/shared/types';
 import { applyParamsToUrl, mergeParamsFromUrl } from '#/shared/queryParams';
-import { SegmentedTabs, SegmentedTabsGroup } from '#/renderer/src/components/SegmentedTabs';
+
 import type { RequestTabContext } from '#/shared/plugin/types';
 import type { RequestDraft } from '#/renderer/src/store/drafts';
 import { usePluginRequestTabs } from '#/renderer/src/plugins/pluginHooks';

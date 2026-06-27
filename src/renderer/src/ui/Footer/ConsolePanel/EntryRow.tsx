@@ -1,6 +1,6 @@
+import { METHOD_CLASSES, statusDotClass } from '#/renderer/src/ui/shared/classes';
 import type { JSX } from 'react';
 import type { ConsoleEntry } from '#/renderer/src/store';
-import { METHOD_CLASSES, statusDotClass } from '#/renderer/src/ui/shared/classes';
 import { formatBytes } from '#/renderer/src/ui/shared/responseFormatUtils';
 import { RequestDetails } from './RequestDetails';
 import { ScriptDetails } from './ScriptDetails';

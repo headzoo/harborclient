@@ -1,9 +1,9 @@
+import { Modal } from '@harborclient/sdk/ui-react';
 import { useEffect, type JSX } from 'react';
 import logoUrl from '@images/logo-square.png';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import { closeAboutModal, selectAboutModal } from '#/renderer/src/store/slices/modalsSlice';
 import { fetchAppVersion } from '#/renderer/src/store/thunks';
-import { Modal } from '#/renderer/src/components/Modal';
 
 /**
  * About dialog showing the application name, version, and documentation link.

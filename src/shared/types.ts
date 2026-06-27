@@ -30,6 +30,8 @@ export type {
   PluginSourcesSettings
 } from '#/shared/plugin/catalog';
 export type { CollectionRunnerConfig } from '#/shared/collectionRunner';
+import type { CodeEditorSetup, CodeEditorTheme, ScriptPhase } from '@harborclient/sdk';
+export type { CodeEditorSetup, CodeEditorTheme, ScriptPhase };
 
 /**
  * Supported HTTP request methods.
@@ -865,11 +867,6 @@ export interface SendResult {
 }
 
 /**
- * Script execution phase relative to the HTTP request.
- */
-export type ScriptPhase = 'pre' | 'post';
-
-/**
  * Request context passed into a pre/post script sandbox.
  */
 export interface ScriptRequestContext {
@@ -973,44 +970,6 @@ export type ThemeSource =
   | 'system'
   | 'high-contrast'
   | `plugin:${string}:${string}`;
-
-/**
- * Named CodeMirror syntax themes available in settings.
- */
-export type CodeEditorTheme =
-  | 'default'
-  | 'dracula'
-  | 'githubLight'
-  | 'githubDark'
-  | 'monokai'
-  | 'nord'
-  | 'solarizedLight'
-  | 'tokyoNight';
-
-/**
- * CodeMirror basicSetup options for editable editor instances.
- */
-export interface CodeEditorSetup {
-  /**
-   * When true, shows line numbers in the gutter.
-   */
-  lineNumbers: boolean;
-
-  /**
-   * When true, shows the code-folding gutter.
-   */
-  foldGutter: boolean;
-
-  /**
-   * When true, highlights the line containing the cursor.
-   */
-  highlightActiveLine: boolean;
-
-  /**
-   * When true, highlights the active line number in the gutter.
-   */
-  highlightActiveLineGutter: boolean;
-}
 
 /**
  * Active database backend for collections and requests.

@@ -1,5 +1,5 @@
 import type { ScriptRequestContext, ScriptRunResult, Variable } from '#/shared/types';
-import { resolveDynamicVariable, VARIABLE_TOKEN_PATTERN } from '#/shared/dynamicVariables';
+import { resolveDynamicVariable, VARIABLE_TOKEN_PATTERN } from '@harborclient/sdk/variables';
 
 /**
  * Builds a runtime variable map from collection variables.

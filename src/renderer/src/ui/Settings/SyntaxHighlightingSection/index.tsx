@@ -1,14 +1,19 @@
+import {
+  Button,
+  FormGroup,
+  PageHeader,
+  Input,
+  Select,
+  CodeEditor,
+  CODE_EDITOR_THEME_OPTIONS
+} from '@harborclient/sdk/ui-react';
 import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
-import { CodeEditor } from '#/renderer/src/components/CodeEditor';
-import { CODE_EDITOR_THEME_OPTIONS } from '#/renderer/src/components/CodeEditor/themes';
+
 import { useAppDispatch } from '#/renderer/src/store/hooks';
 import { setGeneralSettingsState } from '#/renderer/src/store/slices/settingsSlice';
 import type { CodeEditorSetup, GeneralSettings } from '#/shared/types';
-import { Button } from '#/renderer/src/components/Button';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
-import { PageHeader } from '#/renderer/src/components/PageHeader';
-import { Input, Select } from '#/renderer/src/components/forms';
+
 import { DEFAULT_GENERAL_SETTINGS, settingsSectionMeta } from '../constants';
 import { PREVIEW_SAMPLE, SETUP_OPTIONS } from './constants';
 import { SettingsCloseButton } from '../SettingsCloseButton';

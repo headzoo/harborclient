@@ -1,10 +1,8 @@
+import { Button, FormGroup, PageHeader, Input } from '@harborclient/sdk/ui-react';
 import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { AiSettings } from '#/shared/types';
-import { Button } from '#/renderer/src/components/Button';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
-import { PageHeader } from '#/renderer/src/components/PageHeader';
-import { Input } from '#/renderer/src/components/forms';
+
 import { DEFAULT_AI_SETTINGS, settingsSectionMeta } from '../constants';
 import { SettingsCloseButton } from '../SettingsCloseButton';
 

@@ -1,6 +1,7 @@
+import { KeyValueEditor } from '@harborclient/sdk/ui-react';
 import { useEffect, useMemo, useState, type JSX } from 'react';
 import type { KeyValue, Variable } from '#/shared/types';
-import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
+
 import { emptyKeyValue } from '#/renderer/src/store/drafts';
 import { buildRuntimeVars, substituteWithMap } from '#/renderer/src/scripting/scriptOrchestration';
 import { hostFromUrl } from './cookieHost';

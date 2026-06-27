@@ -4,7 +4,7 @@ import {
   DYNAMIC_VARIABLE_NAMES,
   getDynamicVariableDescription,
   VARIABLE_NAME_CHARS
-} from '#/shared/dynamicVariables';
+} from '@harborclient/sdk/variables';
 
 /**
  * Hand-maintained completion surface for the hc sandbox API.

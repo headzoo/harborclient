@@ -1,20 +1,23 @@
-import { useEffect, useState, type JSX } from 'react';
-import toast from 'react-hot-toast';
-import type { TrustedSharingKey } from '#/shared/types';
-import { Button } from '#/renderer/src/components/Button';
-import { PageHeader } from '#/renderer/src/components/PageHeader';
-import { PanelCloseButton } from '#/renderer/src/components/PanelCloseButton';
 import {
+  AsyncListState,
+  Button,
+  FieldError,
+  FormGroup,
+  Input,
+  LoadingMessage,
+  PageHeader,
+  PanelCloseButton,
   ResourceList,
   ResourceListEmptyItem,
   ResourceListPrimary,
-  ResourceListRow
-} from '#/renderer/src/components/ResourceList';
-import { FieldError } from '#/renderer/src/components/FieldError';
-import { AsyncListState, LoadingMessage } from '#/renderer/src/components/AsyncListState';
+  ResourceListRow,
+  Textarea
+} from '@harborclient/sdk/ui-react';
+import { useEffect, useState, type JSX } from 'react';
+import toast from 'react-hot-toast';
+import type { TrustedSharingKey } from '#/shared/types';
+
 import { useConfirm } from '#/renderer/src/hooks/useConfirm';
-import { Input, Textarea } from '#/renderer/src/components/forms';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
 
 interface Props {
   /**

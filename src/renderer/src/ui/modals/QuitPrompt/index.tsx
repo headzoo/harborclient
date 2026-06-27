@@ -1,9 +1,8 @@
+import { Button, Modal, ModalFooter } from '@harborclient/sdk/ui-react';
 import { useCallback, type JSX } from 'react';
 import { unloadAllPlugins } from '#/renderer/src/plugins/pluginLoader';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import { selectQuitPrompt, setQuitPrompt } from '#/renderer/src/store/slices/modalsSlice';
-import { Button } from '#/renderer/src/components/Button';
-import { Modal, ModalFooter } from '#/renderer/src/components/Modal';
 
 /**
  * Confirms quitting when one or more request tabs have unsaved changes.

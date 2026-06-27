@@ -1,5 +1,5 @@
+import { Button } from '@harborclient/sdk/ui-react';
 import type { JSX } from 'react';
-import { Button } from '#/renderer/src/components/Button';
 
 interface Props {
   /**

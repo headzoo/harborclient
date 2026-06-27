@@ -1,8 +1,7 @@
+import { SegmentedTabs, FormGroup, Input } from '@harborclient/sdk/ui-react';
 import type { JSX } from 'react';
 import type { StorageConnection, StorageProvider } from '#/shared/types';
-import { SegmentedTabs } from '#/renderer/src/components/SegmentedTabs';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
-import { Input } from '#/renderer/src/components/forms';
+
 import { createBlankConnection, PROVIDER_OPTIONS } from '../../constants';
 import { FirestoreFields } from '../FirestoreFields';
 import { MySqlFields } from '../MySqlFields';

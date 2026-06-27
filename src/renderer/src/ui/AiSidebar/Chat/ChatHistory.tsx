@@ -1,5 +1,6 @@
+import { EmptyState } from '@harborclient/sdk/ui-react';
 import { useEffect, useRef, type JSX } from 'react';
-import { EmptyState } from '#/renderer/src/components/EmptyState';
+
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import { selectChatHistory } from '#/renderer/src/store/slices/aiChatSlice';
 import { deleteChatThunk } from '#/renderer/src/store/thunks/aiChat';

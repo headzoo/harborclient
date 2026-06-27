@@ -1,6 +1,6 @@
+import { Button, FaIcon } from '@harborclient/sdk/ui-react';
 import type { JSX, ReactNode } from 'react';
-import { Button } from '#/renderer/src/components/Button';
-import { FaIcon } from '#/renderer/src/components/FaIcon';
+
 import { faChevronDown, faChevronRight, faPlus } from '#/renderer/src/fontawesome';
 
 interface Props {

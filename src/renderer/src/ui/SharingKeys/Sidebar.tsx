@@ -1,5 +1,5 @@
-import type { JSX } from 'react';
 import { sourceRow } from '#/renderer/src/ui/shared/classes';
+import type { JSX } from 'react';
 import { SHARING_KEYS_SECTIONS } from './constants';
 import type { SharingKeysSection } from './types';
 

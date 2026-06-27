@@ -1,11 +1,14 @@
+import {
+  Button,
+  PageHeader,
+  PanelCloseButton,
+  Input,
+  Textarea,
+  FormGroup
+} from '@harborclient/sdk/ui-react';
 import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { SharingIdentity } from '#/shared/types';
-import { Button } from '#/renderer/src/components/Button';
-import { PageHeader } from '#/renderer/src/components/PageHeader';
-import { PanelCloseButton } from '#/renderer/src/components/PanelCloseButton';
-import { Input, Textarea } from '#/renderer/src/components/forms';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
 
 interface Props {
   /**

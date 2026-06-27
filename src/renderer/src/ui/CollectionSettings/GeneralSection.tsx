@@ -1,10 +1,8 @@
+import { ErrorRetry, FormGroup, Input, LoadingMessage, Select } from '@harborclient/sdk/ui-react';
 import type { JSX } from 'react';
 import { useId } from 'react';
 import type { ProviderOption } from '#/renderer/src/hooks/useProviders';
 import { providerOptionLabel } from '#/renderer/src/hooks/useProviders';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
-import { Input, Select } from '#/renderer/src/components/forms';
-import { ErrorRetry, LoadingMessage } from '#/renderer/src/components/AsyncListState';
 
 interface Props {
   name: string;

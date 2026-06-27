@@ -6,15 +6,19 @@ import type {
   TeamHubAdminFolderSummary,
   TeamHubAdminRequestSummary
 } from '#/shared/types';
-import { Button } from '#/renderer/src/components/Button';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
-import { PageHeader } from '#/renderer/src/components/PageHeader';
-import { Modal, ModalFooter } from '#/renderer/src/components/Modal';
-import { BackButton } from '#/renderer/src/components/BackButton';
+import {
+  AsyncListState,
+  BackButton,
+  Button,
+  FieldError,
+  FormGroup,
+  Modal,
+  ModalFooter,
+  PageHeader,
+  ResourceList,
+  ResourceListRow
+} from '@harborclient/sdk/ui-react';
 import { faUsers } from '#/renderer/src/fontawesome';
-import { AsyncListState } from '#/renderer/src/components/AsyncListState';
-import { FieldError } from '#/renderer/src/components/FieldError';
-import { ResourceList, ResourceListRow } from '#/renderer/src/components/ResourceList';
 import { useTeamHubAdminCollectionContents } from '#/renderer/src/hooks/useTeamHubAdminCollectionContents';
 import { METHOD_CLASSES } from '#/renderer/src/ui/shared/classes';
 

@@ -1,12 +1,15 @@
+import {
+  FormDataEditor,
+  FormGroup,
+  Input,
+  KeyValueEditor,
+  CodeEditor
+} from '@harborclient/sdk/ui-react';
 import type { JSX } from 'react';
 import type { BodyType, Variable } from '#/shared/types';
 import { parseFormParts, serializeFormParts } from '#/shared/formData';
 import { parseUrlEncodedParts, serializeUrlEncodedParts } from '#/shared/urlencoded';
-import { Input } from '#/renderer/src/components/forms';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
-import { CodeEditor } from '#/renderer/src/components/CodeEditor';
-import { FormDataEditor } from '#/renderer/src/components/FormDataEditor';
-import { KeyValueEditor } from '#/renderer/src/components/KeyValueEditor';
+
 import type { RequestDraft } from '#/renderer/src/store/drafts';
 import { emptyKeyValue } from '#/renderer/src/store/drafts';
 
@@ -88,6 +91,7 @@ export function BodyEditor({
           parts={parseFormParts(body)}
           onChange={(parts) => update({ body: serializeFormParts(parts) })}
           variables={variables}
+          onSelectFiles={window.api.selectFiles}
           onEditVariable={onEditVariables}
         />
       )}

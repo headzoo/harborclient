@@ -1,8 +1,7 @@
+import { Button, Resizable, EmptyState } from '@harborclient/sdk/ui-react';
 import { useCallback, useState, type JSX } from 'react';
 import type { ConsoleEntry } from '#/renderer/src/store';
-import { Button } from '#/renderer/src/components/Button';
-import { Resizable } from '#/renderer/src/components/Resizable';
-import { EmptyState } from '#/renderer/src/components/EmptyState';
+
 import { EntryRow } from './EntryRow';
 
 interface Props {

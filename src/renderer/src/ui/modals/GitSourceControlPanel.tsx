@@ -1,11 +1,9 @@
+import { Button, FormGroup, Modal, Textarea } from '@harborclient/sdk/ui-react';
 import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { GitLogEntry, SourceControlStatus } from '#/shared/types';
-import { Button } from '#/renderer/src/components/Button';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
+
 import { useConfirm } from '#/renderer/src/hooks/useConfirm';
-import { Modal } from '#/renderer/src/components/Modal';
-import { Textarea } from '#/renderer/src/components/forms';
 
 /**
  * Pre-filled commit message when the working tree has uncommitted changes.

@@ -31,7 +31,9 @@ export default defineConfig({
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
-        '@images': resolve(__dirname, 'images')
+        '@images': resolve(__dirname, 'images'),
+        '@harborclient/sdk/react': resolve(__dirname, 'node_modules/react'),
+        '@harborclient/sdk/jsx-runtime': resolve(__dirname, 'node_modules/react/jsx-runtime')
       }
     },
     build: {

@@ -1,7 +1,8 @@
+import { Button, Select, Textarea, FormGroup } from '@harborclient/sdk/ui-react';
 import { useEffect, useRef, useState, type JSX, type KeyboardEvent } from 'react';
 import { getAvailableModels, resolveAiModelOption } from '#/shared/aiModels';
 import type { AiSettings } from '#/shared/types';
-import { Button } from '#/renderer/src/components/Button';
+
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import {
   clearSendError,
@@ -10,8 +11,6 @@ import {
   setSelectedModel
 } from '#/renderer/src/store/slices/aiChatSlice';
 import { sendChatMessage } from '#/renderer/src/store/thunks/aiChat';
-import { Select, Textarea } from '#/renderer/src/components/forms';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
 
 interface Props {
   /**

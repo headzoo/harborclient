@@ -1,16 +1,18 @@
+import {
+  Button,
+  FormGroup,
+  SegmentedTabPanel,
+  SegmentedTabs,
+  SegmentedTabsGroup,
+  Input
+} from '@harborclient/sdk/ui-react';
 import { useCallback, useEffect, useId, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { StorageConnection, GitSettings } from '#/shared/types';
 import { isGitHubRepositoryUrl } from '#/shared/gitUrl';
-import { Button } from '#/renderer/src/components/Button';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
-import {
-  SegmentedTabPanel,
-  SegmentedTabs,
-  SegmentedTabsGroup
-} from '#/renderer/src/components/SegmentedTabs';
+
 import { useConfirm } from '#/renderer/src/hooks/useConfirm';
-import { Input } from '#/renderer/src/components/forms';
+
 import { OAuthAuthPanel } from './OAuthAuthPanel';
 import { PatAuthPanel } from './PatAuthPanel';
 import type { AuthView } from './types';

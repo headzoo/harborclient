@@ -1,7 +1,6 @@
+import { FormGroup, Input } from '@harborclient/sdk/ui-react';
 import type { JSX } from 'react';
 import type { TeamHub } from '#/shared/types';
-import { FormGroup } from '#/renderer/src/components/FormGroup';
-import { Input } from '#/renderer/src/components/forms';
 
 interface Props {
   /**

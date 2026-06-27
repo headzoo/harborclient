@@ -7,7 +7,7 @@ import type {
   ScriptTestResult,
   SendResult
 } from '#/shared/types';
-import { resolveDynamicVariable, VARIABLE_TOKEN_PATTERN } from '#/shared/dynamicVariables';
+import { resolveDynamicVariable, VARIABLE_TOKEN_PATTERN } from '@harborclient/sdk/variables';
 
 /**
  * Context fields passed into the hc sandbox without user script source.

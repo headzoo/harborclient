@@ -1,8 +1,8 @@
+import { Button, PageHeader } from '@harborclient/sdk/ui-react';
 import { useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
-import { Button } from '#/renderer/src/components/Button';
-import { PageHeader } from '#/renderer/src/components/PageHeader';
+
 import { showConfirm } from '#/renderer/src/ui/modals/dialogHelpers';
 import { settingsSectionMeta } from '../constants';
 import { applyLocalStorageSnapshot, collectLocalStorageSnapshot } from './helpers';

@@ -1,10 +1,8 @@
+import { VariableTable, cleanVariables, Button, PageHeader } from '@harborclient/sdk/ui-react';
 import { useMemo, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { Variable } from '#/shared/types';
-import { VariableTable } from '#/renderer/src/components/VariableTable';
-import { cleanVariables } from '#/renderer/src/components/utils';
-import { Button } from '#/renderer/src/components/Button';
-import { PageHeader } from '#/renderer/src/components/PageHeader';
+
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import { saveGlobalVariables } from '#/renderer/src/store/thunks/settings';
 import { settingsSectionMeta } from '../constants';
