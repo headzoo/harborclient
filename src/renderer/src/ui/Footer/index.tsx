@@ -198,16 +198,24 @@ export function Footer({
               <span className="ml-1 text-[14px] text-muted">({variableCount})</span>
             )}
           </FooterButton>
-          {pluginFooterPanels.map((panel) => (
-            <FooterButton
-              key={panel.id}
-              active={activePluginFooterPanelId === panel.id}
-              onClick={() => dispatch(togglePluginFooterPanel(panel.id))}
-              controlsId={`footer-plugin-panel-${panel.id}`}
-            >
-              {panel.title}
-            </FooterButton>
-          ))}
+          {pluginFooterPanels.map((panel) => {
+            const Indicator = panel.Indicator;
+            return (
+              <FooterButton
+                key={panel.id}
+                active={activePluginFooterPanelId === panel.id}
+                onClick={() => dispatch(togglePluginFooterPanel(panel.id))}
+                controlsId={`footer-plugin-panel-${panel.id}`}
+              >
+                {panel.title}
+                {Indicator && (
+                  <span className="ml-1 inline-flex items-center">
+                    <Indicator />
+                  </span>
+                )}
+              </FooterButton>
+            );
+          })}
         </div>
         <div className="flex items-center gap-0.5">
           {rightStatusItems.map((item) => {

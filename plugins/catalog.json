@@ -32,6 +32,16 @@
       "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-dotenv/main/screenshot.png"
     },
     {
+      "id": "com.harborclient.plugins.echo",
+      "name": "Echo Server",
+      "version": "1.0.0",
+      "summary": "HarborClient plugin that runs a local httpbin-style HTTP echo server inside the app.",
+      "author": "HarborClient",
+      "categories": ["requests", "scripting"],
+      "repoUrl": "https://github.com/harborclient/plugin-echo",
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-echo/main/screenshot.png"
+    },
+    {
       "id": "com.harborclient.plugins.history",
       "name": "History",
       "version": "1.0.4",

@@ -10,5 +10,6 @@ export const PERMISSION_LABELS: Record<PluginPermission, string> = {
   'filesystem:read': 'Read from allowlisted filesystem paths',
   'filesystem:write': 'Write to allowlisted filesystem paths',
   http: 'HTTP request hooks in the main process',
-  ipc: 'Custom IPC between renderer and main plugin halves'
+  ipc: 'Custom IPC between renderer and main plugin halves',
+  server: 'Local HTTP echo server for incoming requests'
 };

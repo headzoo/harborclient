@@ -1,6 +1,15 @@
 import { utilityProcess, type UtilityProcess } from 'electron';
 import { transformSync } from 'esbuild';
 import { join } from 'path';
+import type { EchoServerIncomingRequest } from '#/main/plugins/echoServer/types';
+import { resolveEchoResponseBody } from '#/main/plugins/echoServer/resolveEchoResponseBody';
+import {
+  getEchoServerStatus,
+  setEchoServerIncomingHandler,
+  startEchoServer,
+  stopAllEchoServers,
+  stopEchoServer
+} from '#/main/plugins/echoServer/pluginEchoServer';
 import type {
   PluginHttpRequest,
   PluginHttpResponse,
@@ -39,6 +48,30 @@ interface ErrorReply {
 }
 
 type RunnerReply = SuccessReply | ErrorReply;
+
+interface ChildServerStartMessage {
+  type: 'serverStart';
+  id: number;
+  pluginId: string;
+  port: number;
+}
+
+interface ChildServerStopMessage {
+  type: 'serverStop';
+  id: number;
+  pluginId: string;
+}
+
+interface ChildServerStatusMessage {
+  type: 'serverStatus';
+  id: number;
+  pluginId: string;
+}
+
+type ChildOutboundMessage =
+  | ChildServerStartMessage
+  | ChildServerStopMessage
+  | ChildServerStatusMessage;
 
 let runner: UtilityProcess | null = null;
 let nextId = 1;
@@ -100,23 +133,149 @@ function resetRunner(message: string): void {
 }
 
 /**
+ * Posts a correlated reply to the plugin runner child process.
+ *
+ * @param child - Active utility process.
+ * @param reply - Success or error reply payload.
+ */
+function postChildReply(child: UtilityProcess, reply: RunnerReply): void {
+  child.postMessage(reply);
+}
+
+/**
+ * Handles a child-initiated echo server start request.
+ *
+ * @param child - Active utility process.
+ * @param message - Start request with desired listen port.
+ */
+async function handleChildServerStart(
+  child: UtilityProcess,
+  message: ChildServerStartMessage
+): Promise<void> {
+  try {
+    const port = await startEchoServer(message.pluginId, { port: message.port });
+    postChildReply(child, { id: message.id, ok: true, result: { port } });
+  } catch (error) {
+    postChildReply(child, {
+      id: message.id,
+      ok: false,
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+/**
+ * Handles a child-initiated echo server stop request.
+ *
+ * @param child - Active utility process.
+ * @param message - Stop request for one plugin.
+ */
+async function handleChildServerStop(
+  child: UtilityProcess,
+  message: ChildServerStopMessage
+): Promise<void> {
+  try {
+    await stopEchoServer(message.pluginId);
+    postChildReply(child, { id: message.id, ok: true });
+  } catch (error) {
+    postChildReply(child, {
+      id: message.id,
+      ok: false,
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+/**
+ * Handles a child-initiated echo server status query.
+ *
+ * @param child - Active utility process.
+ * @param message - Status query for one plugin.
+ */
+function handleChildServerStatus(child: UtilityProcess, message: ChildServerStatusMessage): void {
+  postChildReply(child, {
+    id: message.id,
+    ok: true,
+    result: getEchoServerStatus(message.pluginId)
+  });
+}
+
+/**
+ * Routes child-initiated server control messages to the echo server module.
+ *
+ * @param child - Active utility process.
+ * @param message - Outbound message from the SES child.
+ */
+function handleChildOutboundMessage(child: UtilityProcess, message: ChildOutboundMessage): void {
+  switch (message.type) {
+    case 'serverStart':
+      void handleChildServerStart(child, message);
+      return;
+    case 'serverStop':
+      void handleChildServerStop(child, message);
+      return;
+    case 'serverStatus':
+      handleChildServerStatus(child, message);
+      return;
+    default:
+      return;
+  }
+}
+
+/**
+ * Routes incoming echo HTTP requests through the plugin runner child.
+ *
+ * @param pluginId - Plugin manifest id owning the server.
+ * @param request - Serializable HTTP request snapshot.
+ */
+async function routeEchoRequest(
+  pluginId: string,
+  request: EchoServerIncomingRequest
+): Promise<unknown> {
+  try {
+    const result = await postMessage({
+      type: 'echoRequest',
+      pluginId,
+      request
+    });
+    return resolveEchoResponseBody(result, request.echo);
+  } catch {
+    return request.echo;
+  }
+}
+
+/**
  * Attaches lifecycle and message handlers to the plugin runner process.
  *
  * @param child - Utility process forked from pluginRunner.js.
  */
 function attachRunnerHandlers(child: UtilityProcess): void {
-  child.on('message', (message: RunnerReply) => {
-    const entry = pending.get(message.id);
+  child.on('message', (message: RunnerReply | ChildOutboundMessage) => {
+    if ('type' in message && message.type === 'serverStart') {
+      handleChildOutboundMessage(child, message);
+      return;
+    }
+    if ('type' in message && message.type === 'serverStop') {
+      handleChildOutboundMessage(child, message);
+      return;
+    }
+    if ('type' in message && message.type === 'serverStatus') {
+      handleChildOutboundMessage(child, message);
+      return;
+    }
+
+    const reply = message as RunnerReply;
+    const entry = pending.get(reply.id);
     if (!entry) {
       return;
     }
     clearTimeout(entry.timeout);
-    pending.delete(message.id);
-    if (message.ok) {
-      entry.resolve(message.result);
+    pending.delete(reply.id);
+    if (reply.ok) {
+      entry.resolve(reply.result);
       return;
     }
-    entry.reject(new Error(message.error));
+    entry.reject(new Error(reply.error));
   });
 
   child.on('exit', () => {
@@ -139,6 +298,7 @@ function ensureRunner(): UtilityProcess {
   const child = utilityProcess.fork(resolveRunnerPath());
   runner = child;
   attachRunnerHandlers(child);
+  setEchoServerIncomingHandler(routeEchoRequest);
   return child;
 }
 
@@ -203,6 +363,7 @@ export async function activatePluginMain(
  * @param pluginId - Plugin manifest id.
  */
 export async function deactivatePluginMain(pluginId: string): Promise<void> {
+  await stopEchoServer(pluginId);
   await postMessage({
     type: 'deactivate',
     pluginId
@@ -266,5 +427,7 @@ export async function invokePluginIpc(
  */
 export function disposePluginRunner(): void {
   shuttingDown = true;
+  setEchoServerIncomingHandler(null);
+  void stopAllEchoServers();
   resetRunner('Plugin runner shutting down');
 }

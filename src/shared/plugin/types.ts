@@ -23,7 +23,8 @@ export type PluginPermission =
   | 'filesystem:read'
   | 'filesystem:write'
   | 'http'
-  | 'ipc';
+  | 'ipc'
+  | 'server';
 
 /**
  * Declarative UI slot entry in manifest.contributes.
@@ -256,6 +257,8 @@ export interface RegisteredFooterPanel {
   id: string;
   title: string;
   Component: React.ComponentType;
+  /** Optional decoration rendered beside the footer toggle label. */
+  Indicator?: React.ComponentType;
 }
 
 /**

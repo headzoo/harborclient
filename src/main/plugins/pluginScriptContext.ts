@@ -92,6 +92,15 @@ export interface PluginScriptContext {
 }
 
 /**
+ * Returns whether a user script contains a real return statement (not a comment).
+ *
+ * @param source - Raw user-authored script source.
+ */
+function scriptUsesReturnStatement(source: string): boolean {
+  return /^\s*return\b/m.test(source);
+}
+
+/**
  * Creates a plugin script sandbox backed by the shared hc factory.
  *
  * @param init - Optional request/response/variable context seeding hc.* APIs.
@@ -119,6 +128,7 @@ export function createScriptContext(init?: Partial<ScriptRunContextInput>): Plug
       injected[String(name)] = fn;
     },
     run: (script) => {
+      const source = String(script).trim();
       const compartment = new Compartment({
         globals: {
           hc: api.hc,
@@ -130,8 +140,18 @@ export function createScriptContext(init?: Partial<ScriptRunContextInput>): Plug
         __options__: true
       });
 
+      if (!source) {
+        return { ...api.readResult(), value: undefined };
+      }
+
+      // Top-level `return` is illegal in compartment script goal; wrap in an IIFE when
+      // the user script uses `return`. Otherwise preserve last-expression completion.
+      const evaluatedSource = scriptUsesReturnStatement(source)
+        ? `(function() {\n${source}\n})()`
+        : source;
+
       try {
-        const value = compartment.evaluate(String(script));
+        const value = compartment.evaluate(evaluatedSource);
         return { ...api.readResult(), value };
       } catch (err) {
         const rawMessage =

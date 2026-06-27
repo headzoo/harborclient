@@ -18,7 +18,8 @@ const pluginPermission = z.enum([
   'filesystem:read',
   'filesystem:write',
   'http',
-  'ipc'
+  'ipc',
+  'server'
 ]) satisfies z.ZodType<PluginPermission>;
 
 const screenshotEntry = z.union([

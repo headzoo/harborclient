@@ -343,7 +343,8 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
         return registerFooterPanelContribution(pluginId, {
           id: pluginContributionId(pluginId, panel.id),
           title: panel.title,
-          Component: panel.Component
+          Component: panel.Component,
+          Indicator: panel.Indicator
         });
       },
       registerMenuItem: (item) => {

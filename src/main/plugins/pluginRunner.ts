@@ -1,6 +1,8 @@
 import 'ses';
 import { createScriptContext } from '#/main/plugins/pluginScriptContext';
 import type { ScriptRunContextInput } from '#/main/scripting/scriptApi';
+import type { EchoServerIncomingRequest } from '#/main/plugins/echoServer/types';
+import { resolveEchoResponseBody } from '#/main/plugins/echoServer/resolveEchoResponseBody';
 import type {
   PluginHttpRequest,
   PluginHttpResponse,
@@ -44,12 +46,20 @@ interface InvokeMessage {
   args: unknown[];
 }
 
+interface EchoRequestMessage {
+  type: 'echoRequest';
+  id: number;
+  pluginId: string;
+  request: EchoServerIncomingRequest;
+}
+
 type IncomingMessage =
   | ActivateMessage
   | DeactivateMessage
   | BeforeSendMessage
   | AfterSendMessage
-  | InvokeMessage;
+  | InvokeMessage
+  | EchoRequestMessage;
 
 interface SuccessReply {
   id: number;
@@ -63,6 +73,11 @@ interface ErrorReply {
   error: string;
 }
 
+interface ChildPendingCall {
+  resolve: (value: unknown) => void;
+  reject: (error: Error) => void;
+}
+
 interface PluginState {
   pluginId: string;
   permissions: PluginPermission[];
@@ -72,11 +87,51 @@ interface PluginState {
   >;
   ipcHandlers: Map<string, (...args: unknown[]) => unknown>;
   subscriptions: Array<{ dispose: () => void }>;
+  onRequest?: (request: EchoServerIncomingRequest) => unknown | Promise<unknown>;
   /** Optional deactivate export captured from the activation compartment. */
   deactivate?: () => void;
 }
 
 const plugins = new Map<string, PluginState>();
+let nextChildId = 1;
+const childPending = new Map<number, ChildPendingCall>();
+
+/**
+ * Posts a child-initiated message to the parent and waits for a correlated reply.
+ *
+ * @param payload - Outbound message excluding the correlation id.
+ */
+function postToParent(payload: Record<string, unknown>): Promise<unknown> {
+  const port = process.parentPort;
+  if (!port) {
+    throw new Error('Plugin runner parent port is unavailable.');
+  }
+
+  const id = nextChildId++;
+
+  return new Promise<unknown>((resolve, reject) => {
+    childPending.set(id, { resolve, reject });
+    port.postMessage({ id, ...payload });
+  });
+}
+
+/**
+ * Resolves or rejects one child-initiated pending call from a parent reply.
+ *
+ * @param reply - Parent reply correlated by id.
+ */
+function settleChildPending(reply: SuccessReply | ErrorReply): void {
+  const entry = childPending.get(reply.id);
+  if (!entry) {
+    return;
+  }
+  childPending.delete(reply.id);
+  if (reply.ok) {
+    entry.resolve(reply.result);
+    return;
+  }
+  entry.reject(new Error(reply.error));
+}
 
 /**
  * Builds the hc API exposed to main-process plugin entries.
@@ -146,6 +201,37 @@ function createMainPluginContext(state: PluginState): Record<string, unknown> {
     },
     scripts: {
       createContext: (init?: Partial<ScriptRunContextInput>) => createScriptContext(init)
+    },
+    server: {
+      start: async (options?: { port?: number }) => {
+        assertPermission('server');
+        const result = (await postToParent({
+          type: 'serverStart',
+          pluginId: state.pluginId,
+          port: options?.port ?? 0
+        })) as { port: number } | undefined;
+        return { port: result?.port ?? 0 };
+      },
+      stop: async () => {
+        assertPermission('server');
+        await postToParent({
+          type: 'serverStop',
+          pluginId: state.pluginId
+        });
+      },
+      onRequest: (handler: (request: EchoServerIncomingRequest) => unknown | Promise<unknown>) => {
+        assertPermission('server');
+        state.onRequest = handler;
+        const disposable = {
+          dispose: () => {
+            if (state.onRequest === handler) {
+              state.onRequest = undefined;
+            }
+          }
+        };
+        subscriptions.push(disposable);
+        return disposable;
+      }
     }
   };
 }
@@ -277,6 +363,32 @@ async function invokeIpc(pluginId: string, channel: string, args: unknown[]): Pr
 }
 
 /**
+ * Handles an echo server request routed from the Electron main process.
+ *
+ * @param message - Incoming echo request with serialized HTTP snapshot.
+ */
+async function handleEchoRequest(message: EchoRequestMessage): Promise<SuccessReply | ErrorReply> {
+  const state = plugins.get(message.pluginId);
+  if (!state?.onRequest) {
+    return { id: message.id, ok: true, result: message.request.echo };
+  }
+  try {
+    const result = await state.onRequest(message.request);
+    return {
+      id: message.id,
+      ok: true,
+      result: resolveEchoResponseBody(result, message.request.echo)
+    };
+  } catch (error) {
+    return {
+      id: message.id,
+      ok: false,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
+/**
  * Dispatches one message from the parent process and posts a reply.
  *
  * @param message - Incoming work item from pluginRunnerHost.
@@ -301,6 +413,8 @@ async function handleMessage(message: IncomingMessage): Promise<SuccessReply | E
         const result = await invokeIpc(message.pluginId, message.channel, message.args);
         return { id: message.id, ok: true, result };
       }
+      case 'echoRequest':
+        return await handleEchoRequest(message);
       default:
         return {
           id: (message as IncomingMessage & { id: number }).id,
@@ -320,8 +434,32 @@ async function handleMessage(message: IncomingMessage): Promise<SuccessReply | E
 const port = process.parentPort;
 if (port) {
   port.on('message', (event) => {
-    const message = event.data as IncomingMessage;
-    void handleMessage(message).then((reply) => {
+    const message = event.data as IncomingMessage | SuccessReply | ErrorReply;
+
+    if (
+      typeof message === 'object' &&
+      message !== null &&
+      'id' in message &&
+      'ok' in message &&
+      !('type' in message)
+    ) {
+      settleChildPending(message as SuccessReply | ErrorReply);
+      return;
+    }
+
+    if (
+      typeof message === 'object' &&
+      message !== null &&
+      'type' in message &&
+      message.type === 'echoRequest'
+    ) {
+      void handleEchoRequest(message as EchoRequestMessage).then((reply) => {
+        port.postMessage(reply);
+      });
+      return;
+    }
+
+    void handleMessage(message as IncomingMessage).then((reply) => {
       port.postMessage(reply);
     });
   });

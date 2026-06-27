@@ -16,6 +16,17 @@ describe('createScriptContext', () => {
     expect(result.value).toBe(6);
   });
 
+  it('supports return statements in user scripts', () => {
+    const context = createScriptContext();
+
+    const result = context.run(`
+      return { foo: 'bar' };
+    `);
+
+    expect(result.error).toBeUndefined();
+    expect(result.value).toEqual({ foo: 'bar' });
+  });
+
   it('exposes hc.variables and hc.globals like pre/post scripts', () => {
     const context = createScriptContext({
       variables: { host: 'example.com' }
