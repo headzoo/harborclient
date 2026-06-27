@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.8.22 - 2026-06-27
+
 - feat(docs): update documentation structure and enhance plugin catalog. (`1d0b18a`)
 - feat(plugins): add new plugins and update existing ones in the catalog. (`8e9b581`)
 - feat(plugins): enhance plugin catalog functionality and filtering. (`395951e`)
