@@ -1,11 +1,24 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-25T18:58:50.661Z",
+  "updatedAt": "2026-06-27T19:46:04.310Z",
   "plugins": [
+    {
+      "id": "com.harborclient.plugins.aws-sigv4",
+      "name": "AWS SigV4",
+      "version": "1.0.2",
+      "summary": "HarborClient plugin that signs outgoing HTTP requests with AWS Signature Version 4.",
+      "author": "HarborClient",
+      "categories": [
+        "requests",
+        "auth"
+      ],
+      "repoUrl": "https://github.com/harborclient/plugin-aws-sigv4",
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-aws-sigv4/main/screenshot.png"
+    },
     {
       "id": "com.harborclient.plugins.curl",
       "name": "cURL",
-      "version": "1.0.3",
+      "version": "1.0.6",
       "summary": "Adds a tab to the request editor that shows an equivalent `curl` command for the configured request.",
       "author": "HarborClient",
       "categories": [
@@ -17,7 +30,7 @@
     {
       "id": "com.harborclient.plugins.dotenv",
       "name": "Dotenv",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "summary": "HarborClient plugin that links a .env file to an environment and keeps variables in sync.",
       "author": "HarborClient",
       "categories": [
@@ -28,9 +41,34 @@
       "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-dotenv/main/screenshot.png"
     },
     {
+      "id": "com.harborclient.plugins.dracula",
+      "name": "Dracula Theme",
+      "version": "1.0.0",
+      "summary": "A Dracula theme for HarborClient.",
+      "author": "HarborClient",
+      "categories": [
+        "themes"
+      ],
+      "repoUrl": "https://github.com/harborclient/plugin-dracula",
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-dracula/main/screenshot.png"
+    },
+    {
+      "id": "com.harborclient.plugins.echo",
+      "name": "Echo Server",
+      "version": "1.0.1",
+      "summary": "HarborClient plugin that runs a local httpbin-style HTTP echo server inside the app.",
+      "author": "HarborClient",
+      "categories": [
+        "requests",
+        "scripting"
+      ],
+      "repoUrl": "https://github.com/harborclient/plugin-echo",
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-echo/main/screenshot.png"
+    },
+    {
       "id": "com.harborclient.plugins.history",
       "name": "History",
-      "version": "1.0.4",
+      "version": "1.0.5",
       "summary": "A HarborClient plugin that records every successful HTTP request and response in a persistent footer panel.",
       "author": "HarborClient",
       "categories": [
@@ -43,7 +81,7 @@
     {
       "id": "com.harborclient.plugins.interval",
       "name": "Interval",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "summary": "Adds a Timer tab to the request editor for interval polling and one-shot delayed sends.",
       "author": "HarborClient",
       "categories": [
@@ -55,7 +93,7 @@
     {
       "id": "com.harborclient.plugins.jwt",
       "name": "JWT Inspector",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "summary": "Scans response headers and body for JWT-shaped strings and decodes the selected token.",
       "author": "HarborClient",
       "categories": [
@@ -68,7 +106,7 @@
     {
       "id": "com.harborclient.plugins.openapi",
       "name": "OpenAPI",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "summary": "HarborClient plugin that imports an OpenAPI 3.x specification and creates a collection with requests grouped by the first tag on each operation.",
       "author": "HarborClient",
       "categories": [
@@ -81,7 +119,7 @@
     {
       "id": "com.harborclient.plugins.request-history",
       "name": "Request History",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "summary": "Records every completed HTTP request and displays them in a Recent Requests sidebar section.",
       "author": "HarborClient",
       "categories": [
@@ -93,7 +131,7 @@
     {
       "id": "com.harborclient.plugins.solarized",
       "name": "Solarized Theme",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "summary": "A Solarized theme for HarborClient.",
       "author": "HarborClient",
       "categories": [

@@ -92,6 +92,16 @@
       "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-request-history/main/screenshot.png"
     },
     {
+      "id": "com.harborclient.plugins.dracula",
+      "name": "Dracula Theme",
+      "version": "1.0.0",
+      "summary": "A Dracula theme for HarborClient.",
+      "author": "HarborClient",
+      "categories": ["themes"],
+      "repoUrl": "https://github.com/harborclient/plugin-dracula",
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-dracula/main/screenshot.png"
+    },
+    {
       "id": "com.harborclient.plugins.solarized",
       "name": "Solarized Theme",
       "version": "1.0.4",

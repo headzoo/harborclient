@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(plugins): add new plugins and update existing ones in the catalog. (`8e9b581`)
 - feat(plugins): enhance plugin catalog functionality and filtering. (`395951e`)
 - feat(tabs): enhance tab management with empty state handling and improved persistence. (`54d8a59`)
 
