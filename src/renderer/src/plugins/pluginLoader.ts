@@ -11,6 +11,28 @@ interface LoadedPlugin {
 
 const loaded = new Map<string, LoadedPlugin>();
 
+/** Module URL plugins use when their bundle externalizes bare `react` imports. */
+const PLUGIN_REACT_SHIM = new URL('./shims/react.ts', import.meta.url).href;
+
+/** Module URL plugins use when their bundle externalizes bare `react-dom` imports. */
+const PLUGIN_REACT_DOM_SHIM = new URL('./shims/react-dom.ts', import.meta.url).href;
+
+/**
+ * Rewrites externalized React imports in a plugin bundle to host shim modules.
+ *
+ * Plugin esbuild configs mark `react` and `react-dom` as external, but dependencies
+ * bundled into the plugin (for example Font Awesome or CodeMirror) still emit bare
+ * `react` specifiers. Blob URL dynamic imports cannot resolve those without a map.
+ *
+ * @param source - Bundled plugin ESM source text.
+ * @returns Source with `react` / `react-dom` imports pointed at host shims.
+ */
+function patchPluginReactImports(source: string): string {
+  return source
+    .replace(/from\s*(["'])react\1/g, `from ${JSON.stringify(PLUGIN_REACT_SHIM)}`)
+    .replace(/from\s*(["'])react-dom\1/g, `from ${JSON.stringify(PLUGIN_REACT_DOM_SHIM)}`);
+}
+
 /**
  * Dynamically imports a plugin bundle from source text.
  *
@@ -19,7 +41,8 @@ const loaded = new Map<string, LoadedPlugin>();
 async function importPluginModule(
   source: string
 ): Promise<{ activate?: (hc: unknown) => void | Promise<void>; deactivate?: () => void }> {
-  const blob = new Blob([source], { type: 'text/javascript' });
+  const patched = patchPluginReactImports(source);
+  const blob = new Blob([patched], { type: 'text/javascript' });
   const url = URL.createObjectURL(blob);
   try {
     return (await import(/* @vite-ignore */ url)) as {

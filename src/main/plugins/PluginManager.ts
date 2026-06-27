@@ -538,29 +538,30 @@ export class PluginManager {
   /**
    * Registers an unpacked plugin directory for development.
    *
+   * Publisher signatures are not checked for unpacked plugins so local development
+   * does not require signing after every change.
+   *
    * @param directory - Absolute path containing manifest.json.
    * @returns Loaded plugin metadata.
    */
   async loadUnpacked(directory: string): Promise<PluginInfo> {
     const absolute = resolve(directory);
     const info = this.#loadFromDirectory(absolute, 'unpacked');
-    const committed = await this.#commitWithSignature(info, () => {
-      removeUnpackedPluginPath(info.id);
-    });
-    setUnpackedPluginPath(committed.id, absolute);
-    setPluginEnabled(committed.id, false);
-    this.#stopWatcher(committed.id);
-    this.#records.set(committed.id, { info: { ...committed, enabled: false }, watchers: [] });
-    this.#emitChanged(committed.id);
-    return this.get(committed.id)!;
+    setUnpackedPluginPath(info.id, absolute);
+    setPluginEnabled(info.id, false);
+    this.#stopWatcher(info.id);
+    this.#records.set(info.id, { info: { ...info, enabled: false }, watchers: [] });
+    this.#emitChanged(info.id);
+    return this.get(info.id)!;
   }
 
   /**
-   * Re-evaluates publisher signatures for all known plugins and notifies listeners.
+   * Re-evaluates publisher signatures for installed and git plugins and notifies
+   * listeners. Unpacked dev plugins skip signature checks.
    */
   async refreshSignatures(): Promise<void> {
     for (const [pluginId, record] of this.#records) {
-      if (record.info.error) {
+      if (record.info.error || record.info.source === 'unpacked') {
         continue;
       }
 
@@ -592,10 +593,14 @@ export class PluginManager {
 
     const info = this.#loadFromDirectory(directory, source);
     let signature = existing.info.signature;
-    try {
-      signature = await evaluatePluginSignature(directory, info.manifest);
-    } catch (error) {
-      console.error(`Failed to refresh signature for ${pluginId} during reload:`, error);
+    if (source !== 'unpacked') {
+      try {
+        signature = await evaluatePluginSignature(directory, info.manifest);
+      } catch (error) {
+        console.error(`Failed to refresh signature for ${pluginId} during reload:`, error);
+      }
+    } else {
+      signature = undefined;
     }
 
     this.#records.set(pluginId, {

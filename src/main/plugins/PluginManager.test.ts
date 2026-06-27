@@ -329,6 +329,99 @@ describe('PluginManager', () => {
     expect(getPluginEnablement()[info.id]).toBe(true);
   });
 
+  /**
+   * Writes a minimal unpacked dev plugin directory for signature bypass tests.
+   *
+   * @param rootDir - userData root.
+   * @param pluginId - Plugin manifest id.
+   * @param options - Optional manifest overrides.
+   */
+  function writeUnpackedDevPlugin(
+    rootDir: string,
+    pluginId: string,
+    options: { author?: string } = {}
+  ): string {
+    const sourceDir = join(rootDir, pluginId);
+    mkdirSync(join(sourceDir, 'dist'), { recursive: true });
+    writeFileSync(
+      join(sourceDir, 'manifest.json'),
+      JSON.stringify({
+        id: pluginId,
+        name: 'Dev Plugin',
+        version: '0.1.0',
+        engines: { harborclient: '>=1.0.0' },
+        renderer: 'dist/renderer.js',
+        permissions: ['ui'],
+        ...(options.author ? { author: options.author } : {})
+      })
+    );
+    writeFileSync(join(sourceDir, 'dist', 'renderer.js'), 'export function activate() {}');
+    return sourceDir;
+  }
+
+  it('loads unpacked plugins without checking publisher signatures', async () => {
+    const evaluateSpy = vi.spyOn(pluginSignature, 'evaluatePluginSignature').mockResolvedValue({
+      status: 'untrusted',
+      author: 'HarborClient',
+      error: 'This plugin claims to be published by "HarborClient", but is not signed.'
+    });
+    const { manager, rootDir } = await createManager();
+    const sourceDir = writeUnpackedDevPlugin(rootDir, 'com.example.dev', {
+      author: 'HarborClient'
+    });
+
+    const info = await manager.loadUnpacked(sourceDir);
+
+    expect(evaluateSpy).not.toHaveBeenCalled();
+    expect(info.source).toBe('unpacked');
+    expect(info.signature).toBeUndefined();
+    expect(manager.get(info.id)?.id).toBe('com.example.dev');
+    evaluateSpy.mockRestore();
+  });
+
+  it('reloads enabled unpacked plugins without re-evaluating signatures', async () => {
+    const evaluateSpy = vi.spyOn(pluginSignature, 'evaluatePluginSignature').mockResolvedValue({
+      status: 'invalid',
+      author: 'Example Inc.',
+      error: 'Plugin signature failed verification.'
+    });
+    const { manager, rootDir } = await createManager();
+    const sourceDir = writeUnpackedDevPlugin(rootDir, 'com.example.dev');
+    const info = await manager.loadUnpacked(sourceDir);
+    manager.setEnabled(info.id, true);
+    evaluateSpy.mockClear();
+
+    const reloaded = await manager.reload(info.id);
+
+    expect(evaluateSpy).not.toHaveBeenCalled();
+    expect(reloaded.enabled).toBe(true);
+    expect(reloaded.signature).toBeUndefined();
+    evaluateSpy.mockRestore();
+  });
+
+  it('refreshSignatures skips unpacked plugins but evaluates installed plugins', async () => {
+    const evaluateSpy = vi.spyOn(pluginSignature, 'evaluatePluginSignature').mockResolvedValue({
+      status: 'unsigned'
+    });
+    const { manager, rootDir } = await createManager();
+    writePlugin(rootDir, 'com.example.installed');
+    manager.discover();
+    const sourceDir = writeUnpackedDevPlugin(rootDir, 'com.example.dev');
+    await manager.loadUnpacked(sourceDir);
+    evaluateSpy.mockClear();
+
+    await manager.refreshSignatures();
+
+    expect(evaluateSpy).toHaveBeenCalledTimes(1);
+    expect(evaluateSpy).toHaveBeenCalledWith(
+      join(rootDir, 'plugins', 'com.example.installed'),
+      expect.objectContaining({ id: 'com.example.installed' })
+    );
+    expect(manager.get('com.example.dev')?.signature).toBeUndefined();
+    expect(manager.get('com.example.installed')?.signature?.status).toBe('unsigned');
+    evaluateSpy.mockRestore();
+  });
+
   it('installs a valid plugin archive', async () => {
     const { manager } = await createManager();
     const archivePath = await writeArchiveFile(await buildPluginArchive());
