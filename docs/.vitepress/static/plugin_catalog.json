@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-27T19:46:04.310Z",
+  "updatedAt": "2026-06-27T19:55:20.635Z",
   "plugins": [
     {
       "id": "com.harborclient.plugins.aws-sigv4",
@@ -64,6 +64,18 @@
       ],
       "repoUrl": "https://github.com/harborclient/plugin-echo",
       "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-echo/main/screenshot.png"
+    },
+    {
+      "id": "com.harborclient.plugins.gruvbox",
+      "name": "Gruvbox Theme",
+      "version": "1.0.0",
+      "summary": "A Gruvbox light theme for HarborClient.",
+      "author": "HarborClient",
+      "categories": [
+        "themes"
+      ],
+      "repoUrl": "https://github.com/harborclient/plugin-gruvbox",
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-gruvbox/main/screenshot.png"
     },
     {
       "id": "com.harborclient.plugins.history",

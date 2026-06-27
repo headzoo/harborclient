@@ -96,7 +96,7 @@ describe('parsePluginCatalog', () => {
         plugins: [
           {
             ...validCatalog.plugins[0],
-            categories: ['utilities', 'unknown-category']
+            categories: ['unknown-category', 'also-unknown']
           }
         ]
       })

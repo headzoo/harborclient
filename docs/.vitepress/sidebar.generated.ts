@@ -37,6 +37,10 @@ export const sidebar: DefaultTheme.SidebarItem[] =
         "link": "/getting-started#verbose-logging"
       },
       {
+        "text": "Seed collection",
+        "link": "/getting-started#seed-collection"
+      },
+      {
         "text": "What's next",
         "link": "/getting-started#whats-next"
       }
@@ -50,6 +54,10 @@ export const sidebar: DefaultTheme.SidebarItem[] =
       {
         "text": "General",
         "link": "/settings#general"
+      },
+      {
+        "text": "Globals",
+        "link": "/settings#globals"
       },
       {
         "text": "Shortcuts",
@@ -179,6 +187,10 @@ export const sidebar: DefaultTheme.SidebarItem[] =
       {
         "text": "Team Hub LLM access",
         "link": "/team-hubs#team-hub-llm-access"
+      },
+      {
+        "text": "Team Hub plugin sources",
+        "link": "/team-hubs#team-hub-plugin-sources"
       },
       {
         "text": "Limitations",
@@ -550,6 +562,17 @@ export const sidebar: DefaultTheme.SidebarItem[] =
   },
   {
     "text": "Plugin marketplace",
-    "link": "/plugins"
+    "link": "/plugins",
+    "items": [
+      {
+        "text": "Custom endpoints",
+        "link": "/plugins#custom-endpoints"
+      },
+      {
+        "text": "Team Hub sources",
+        "link": "/plugins#team-hub-sources"
+      }
+    ],
+    "collapsed": false
   }
 ]
