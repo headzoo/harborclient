@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PluginContext, PluginInfo } from '#/shared/plugin/types';
 import {
   disposePartialRendererActivation,
+  markPluginForThemePrompt,
   reloadPlugin,
   unloadAllPlugins,
   unloadPlugin
@@ -11,14 +12,24 @@ import {
   getRegisteredSettingsSections,
   registerSettingsSectionContribution
 } from '#/renderer/src/plugins/registry';
+import { openPluginThemePrompt } from '#/renderer/src/store/slices/modalsSlice';
+
+const dispatchMock = vi.fn<(action: unknown) => unknown>();
 
 vi.mock('#/renderer/src/plugins/themeRuntime', () => ({
   applyPersistedPluginTheme: vi.fn(async () => {})
 }));
 
+vi.mock('#/renderer/src/store/redux', () => ({
+  store: {
+    dispatch: (action: unknown) => dispatchMock(action)
+  }
+}));
+
 const FAILED_PLUGIN_ID = 'com.example.failed';
 const OTHER_PLUGIN_ID = 'com.example.other';
 const GATED_PLUGIN_ID = 'com.example.gated';
+const THEME_PLUGIN_ID = 'com.example.theme';
 
 const listPluginsMock = vi.fn<() => Promise<PluginInfo[]>>();
 const readPluginEntryMock =
@@ -52,6 +63,35 @@ function createGatedPluginInfo(enabled: boolean): PluginInfo {
 }
 
 /**
+ * Plugin metadata with a contributed theme for theme prompt tests.
+ */
+function createThemePluginInfo(): PluginInfo {
+  return {
+    id: THEME_PLUGIN_ID,
+    name: 'Theme Plugin',
+    version: '1.0.0',
+    source: 'installed',
+    path: '/tmp/theme-plugin',
+    enabled: true,
+    permissions: ['ui'],
+    manifest: {
+      id: THEME_PLUGIN_ID,
+      name: 'Theme Plugin',
+      version: '1.0.0',
+      engines: { harborclient: '>=1.0.0' },
+      renderer: 'dist/renderer.js',
+      permissions: ['ui'],
+      contributes: {
+        themes: [
+          { id: 'dark', title: 'Dark', type: 'dark' },
+          { id: 'light', title: 'Light', type: 'light' }
+        ]
+      }
+    }
+  };
+}
+
+/**
  * Renderer entry source that records whether activate() ran.
  */
 const ACTIVATE_TRACKING_SOURCE = `
@@ -67,12 +107,37 @@ export function activate() {
 }
 `;
 
+const ACTIVATE_WITH_THEME_SOURCE = `
+export function activate(hc) {
+  hc.themes.register({ id: 'dark', title: 'Dark', type: 'dark' });
+}
+`;
+
+const ACTIVATE_WITH_TWO_THEMES_SOURCE = `
+export function activate(hc) {
+  hc.themes.register({ id: 'dark', title: 'Dark', type: 'dark' });
+  hc.themes.register({ id: 'light', title: 'Light', type: 'light' });
+}
+`;
+
 declare global {
   var __gatedPluginActivateCalled: Record<string, boolean> | undefined;
 }
 
+const documentElementMock = {
+  getAttribute: vi.fn<(name: string) => string | null>(() => null),
+  setAttribute: vi.fn<(name: string, value: string) => void>(),
+  removeAttribute: vi.fn<(name: string) => void>()
+};
+
 beforeEach(() => {
   globalThis.__gatedPluginActivateCalled = {};
+  dispatchMock.mockReset();
+  documentElementMock.getAttribute.mockReset();
+  documentElementMock.setAttribute.mockReset();
+  documentElementMock.removeAttribute.mockReset();
+  documentElementMock.getAttribute.mockReturnValue(null);
+  vi.stubGlobal('document', { documentElement: documentElementMock });
   listPluginsMock.mockReset();
   readPluginEntryMock.mockReset();
   activatePluginMainMock.mockReset();
@@ -117,6 +182,7 @@ function cleanupTestContributions(): void {
   clearPluginContributions(FAILED_PLUGIN_ID);
   clearPluginContributions(OTHER_PLUGIN_ID);
   clearPluginContributions(GATED_PLUGIN_ID);
+  clearPluginContributions(THEME_PLUGIN_ID);
 }
 
 describe('pluginLoader', () => {
@@ -204,5 +270,76 @@ describe('pluginLoader', () => {
     expect(
       getRegisteredSettingsSections().some((section) => section.pluginId === FAILED_PLUGIN_ID)
     ).toBe(false);
+  });
+
+  it('opens the theme prompt after marked activation registers themes', async () => {
+    listPluginsMock.mockResolvedValue([createThemePluginInfo()]);
+    readPluginEntryMock.mockResolvedValue(ACTIVATE_WITH_THEME_SOURCE);
+    vi.spyOn(URL, 'createObjectURL').mockImplementation(
+      () => `data:text/javascript,${encodeURIComponent(ACTIVATE_WITH_THEME_SOURCE.trim())}`
+    );
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+
+    markPluginForThemePrompt(THEME_PLUGIN_ID);
+    await reloadPlugin(THEME_PLUGIN_ID);
+
+    expect(dispatchMock).toHaveBeenCalledWith(
+      openPluginThemePrompt({
+        pluginId: THEME_PLUGIN_ID,
+        pluginName: 'Theme Plugin',
+        themes: [{ id: 'dark', title: 'Dark', type: 'dark' }]
+      })
+    );
+  });
+
+  it('includes every registered theme when multiple themes are contributed', async () => {
+    listPluginsMock.mockResolvedValue([createThemePluginInfo()]);
+    readPluginEntryMock.mockResolvedValue(ACTIVATE_WITH_TWO_THEMES_SOURCE);
+    vi.spyOn(URL, 'createObjectURL').mockImplementation(
+      () => `data:text/javascript,${encodeURIComponent(ACTIVATE_WITH_TWO_THEMES_SOURCE.trim())}`
+    );
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+
+    markPluginForThemePrompt(THEME_PLUGIN_ID);
+    await reloadPlugin(THEME_PLUGIN_ID);
+
+    expect(dispatchMock).toHaveBeenCalledWith(
+      openPluginThemePrompt({
+        pluginId: THEME_PLUGIN_ID,
+        pluginName: 'Theme Plugin',
+        themes: [
+          { id: 'dark', title: 'Dark', type: 'dark' },
+          { id: 'light', title: 'Light', type: 'light' }
+        ]
+      })
+    );
+  });
+
+  it('does not open the theme prompt when activation was not user-marked', async () => {
+    listPluginsMock.mockResolvedValue([createThemePluginInfo()]);
+    readPluginEntryMock.mockResolvedValue(ACTIVATE_WITH_THEME_SOURCE);
+    vi.spyOn(URL, 'createObjectURL').mockImplementation(
+      () => `data:text/javascript,${encodeURIComponent(ACTIVATE_WITH_THEME_SOURCE.trim())}`
+    );
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+
+    await reloadPlugin(THEME_PLUGIN_ID);
+
+    expect(dispatchMock).not.toHaveBeenCalled();
+  });
+
+  it('does not open the theme prompt when the plugin theme is already active', async () => {
+    listPluginsMock.mockResolvedValue([createThemePluginInfo()]);
+    readPluginEntryMock.mockResolvedValue(ACTIVATE_WITH_THEME_SOURCE);
+    vi.spyOn(URL, 'createObjectURL').mockImplementation(
+      () => `data:text/javascript,${encodeURIComponent(ACTIVATE_WITH_THEME_SOURCE.trim())}`
+    );
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    documentElementMock.getAttribute.mockReturnValue(`plugin-${THEME_PLUGIN_ID}-dark`);
+
+    markPluginForThemePrompt(THEME_PLUGIN_ID);
+    await reloadPlugin(THEME_PLUGIN_ID);
+
+    expect(dispatchMock).not.toHaveBeenCalled();
   });
 });

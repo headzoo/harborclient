@@ -34,6 +34,24 @@ export interface ConfirmModalState {
   variant: 'default' | 'danger';
 }
 
+/**
+ * One theme offered when prompting to switch after plugin activation.
+ */
+export interface PluginThemePromptTheme {
+  id: string;
+  title: string;
+  type: 'light' | 'dark';
+}
+
+/**
+ * Plugin theme switch prompt shown immediately after user-enabled activation.
+ */
+export interface PluginThemePromptState {
+  pluginId: string;
+  pluginName: string;
+  themes: PluginThemePromptTheme[];
+}
+
 export interface ShareModalState {
   collectionId: number;
   collectionName: string;
@@ -130,6 +148,7 @@ export interface ModalsState {
   collectionRunner: CollectionRunnerModalState | null;
   alertModal: AlertModalState | null;
   confirmModal: ConfirmModalState | null;
+  pluginThemePrompt: PluginThemePromptState | null;
 }
 
 const initialState: ModalsState = {
@@ -142,7 +161,8 @@ const initialState: ModalsState = {
   syncModal: { open: false, running: false, providers: [], completed: 0, total: 0 },
   collectionRunner: null,
   alertModal: null,
-  confirmModal: null
+  confirmModal: null,
+  pluginThemePrompt: null
 };
 
 const modalsSlice = createSlice({
@@ -571,6 +591,18 @@ const modalsSlice = createSlice({
      */
     setConfirmModal(state, action: PayloadAction<ConfirmModalState | null>) {
       state.confirmModal = action.payload;
+    },
+    /**
+     * Opens the plugin theme switch prompt after user-enabled activation.
+     */
+    openPluginThemePrompt(state, action: PayloadAction<PluginThemePromptState>) {
+      state.pluginThemePrompt = action.payload;
+    },
+    /**
+     * Closes the plugin theme switch prompt without changing the active theme.
+     */
+    closePluginThemePrompt(state) {
+      state.pluginThemePrompt = null;
     }
   }
 });
@@ -617,7 +649,9 @@ export const {
   cancelCollectionRunner,
   finishCollectionRunner,
   setAlertModal,
-  setConfirmModal
+  setConfirmModal,
+  openPluginThemePrompt,
+  closePluginThemePrompt
 } = modalsSlice.actions;
 
 /**
@@ -665,5 +699,10 @@ export const selectAlertModal = (state: RootState): AlertModalState | null =>
  */
 export const selectConfirmModal = (state: RootState): ConfirmModalState | null =>
   state.modals.confirmModal;
+/**
+ * Returns plugin theme prompt state when open.
+ */
+export const selectPluginThemePrompt = (state: RootState): PluginThemePromptState | null =>
+  state.modals.pluginThemePrompt;
 
 export default modalsSlice.reducer;

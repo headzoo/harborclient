@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { compareVersions, normalizeVersion } from '#/main/settings/versionCompare';
+import { sanitizePluginCatalogCategories } from '#/shared/plugin/catalogCategories';
 import type { PluginManifest, PluginPermission } from '#/shared/plugin/types';
 
 const contributionEntry = z.object({
@@ -42,6 +43,7 @@ export const pluginManifestSchema = z.object({
   version: z.string().min(1),
   author: z.string().optional(),
   description: z.string().optional(),
+  categories: z.array(z.string().min(1)).transform(sanitizePluginCatalogCategories).optional(),
   icon: z.string().optional(),
   screenshots: z.array(screenshotEntry).optional(),
   homepage: z.string().url().optional(),

@@ -1,4 +1,5 @@
 import type * as React from 'react';
+import type { PluginCatalogCategory } from '#/shared/plugin/catalogCategories';
 import type { ThemeSource } from '#/shared/types';
 import type {
   ActiveTheme,
@@ -53,6 +54,8 @@ export interface PluginManifest {
   version: string;
   author?: string;
   description?: string;
+  /** Marketplace category slugs for discovery metadata. */
+  categories?: PluginCatalogCategory[];
   icon?: string;
   screenshots?: PluginScreenshot[];
   homepage?: string;

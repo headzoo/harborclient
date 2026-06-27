@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(plugins): implement theme prompt for user-enabled plugins. (`6bfd7fa`)
 - feat(plugins): add Catppuccin Latte and Nord themes to plugin catalog. (`15f58d1`)
 
 ## 1.8.22 - 2026-06-27

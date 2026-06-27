@@ -1,7 +1,12 @@
 import type { PluginContext, PluginInfo } from '#/shared/plugin/types';
 import { createPluginContext } from '#/renderer/src/plugins/createPluginContext';
-import { clearPluginContributions } from '#/renderer/src/plugins/registry';
+import {
+  clearPluginContributions,
+  getRegisteredPluginThemes
+} from '#/renderer/src/plugins/registry';
 import { applyPersistedPluginTheme } from '#/renderer/src/plugins/themeRuntime';
+import { store } from '#/renderer/src/store/redux';
+import { openPluginThemePrompt } from '#/renderer/src/store/slices/modalsSlice';
 
 interface LoadedPlugin {
   pluginId: string;
@@ -10,6 +15,9 @@ interface LoadedPlugin {
 }
 
 const loaded = new Map<string, LoadedPlugin>();
+
+/** Plugin ids queued for a post-activation theme switch prompt. */
+const pendingThemePromptIds = new Set<string>();
 
 /** Module URL plugins use when their bundle externalizes bare `react` imports. */
 const PLUGIN_REACT_SHIM = new URL('./shims/react.ts', import.meta.url).href;
@@ -80,6 +88,57 @@ async function clearActivationError(pluginId: string): Promise<void> {
   } catch {
     // Best-effort clear when the main process is unavailable.
   }
+}
+
+/**
+ * Marks a plugin for a theme switch prompt after the next successful activation.
+ *
+ * Call this immediately before enabling a plugin when the user opts in to trying
+ * its contributed themes.
+ *
+ * @param pluginId - Plugin manifest id.
+ */
+export function markPluginForThemePrompt(pluginId: string): void {
+  pendingThemePromptIds.add(pluginId);
+}
+
+/**
+ * Opens the theme switch prompt when the user just enabled a plugin that registered themes.
+ *
+ * @param plugin - Plugin metadata from the main process.
+ */
+function maybePromptForPluginTheme(plugin: PluginInfo): void {
+  if (!pendingThemePromptIds.delete(plugin.id)) {
+    return;
+  }
+
+  const themes = getRegisteredPluginThemes()
+    .filter((entry) => entry.pluginId === plugin.id)
+    .map((entry) => ({
+      id: entry.id,
+      title: entry.title,
+      type: entry.type
+    }));
+
+  if (themes.length === 0) {
+    return;
+  }
+
+  const activeDataTheme = document.documentElement.getAttribute('data-theme');
+  const alreadyActive = themes.some(
+    (theme) => activeDataTheme === `plugin-${plugin.id}-${theme.id}`
+  );
+  if (alreadyActive) {
+    return;
+  }
+
+  store.dispatch(
+    openPluginThemePrompt({
+      pluginId: plugin.id,
+      pluginName: plugin.name,
+      themes
+    })
+  );
 }
 
 /**
@@ -182,6 +241,7 @@ async function loadPlugin(plugin: PluginInfo): Promise<void> {
     }
 
     await applyPersistedPluginTheme();
+    maybePromptForPluginTheme(plugin);
     await clearActivationError(plugin.id);
   } catch (error) {
     await reportActivationFailure(plugin.id, error);

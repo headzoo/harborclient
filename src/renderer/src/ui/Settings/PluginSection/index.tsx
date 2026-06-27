@@ -55,12 +55,24 @@ import { SourcesModal } from './SourcesModal';
 import { TableExternalLink } from './TableExternalLink';
 import type { SourceKind } from './types';
 import { SettingsCloseButton } from '../SettingsCloseButton';
+import { markPluginForThemePrompt } from '#/renderer/src/plugins/pluginLoader';
 
 interface Props {
   /**
    * Closes the settings overlay.
    */
   onClose: () => void;
+}
+
+/**
+ * Queues a theme switch prompt when the plugin manifest declares contributed themes.
+ *
+ * @param plugin - Plugin the user is about to enable.
+ */
+function queueThemePromptIfNeeded(plugin: PluginInfo): void {
+  if ((plugin.manifest.contributes?.themes?.length ?? 0) > 0) {
+    markPluginForThemePrompt(plugin.id);
+  }
 }
 
 /**
@@ -538,6 +550,7 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
       await refresh();
       return;
     }
+    queueThemePromptIfNeeded(plugin);
     await window.api.setPluginEnabled(plugin.id, true);
     const next = await refresh();
     const enabled = next.find((entry) => entry.id === plugin.id);
@@ -714,6 +727,9 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
    * @param plugin - Plugin to enable or disable.
    */
   const handleToggleEnabled = async (plugin: PluginInfo): Promise<void> => {
+    if (!plugin.enabled) {
+      queueThemePromptIfNeeded(plugin);
+    }
     await window.api.setPluginEnabled(plugin.id, !plugin.enabled);
     await refresh();
   };

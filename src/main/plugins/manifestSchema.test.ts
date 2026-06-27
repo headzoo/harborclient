@@ -40,4 +40,33 @@ describe('manifestSchema', () => {
     expect(satisfiesHarborClientEngine('>=1.6.0', '1.6.2')).toBe(true);
     expect(satisfiesHarborClientEngine('>=1.7.0', '1.6.2')).toBe(false);
   });
+
+  it('parses valid marketplace categories', () => {
+    const manifest = parsePluginManifest({
+      ...validManifest,
+      categories: ['requests', 'utilities']
+    });
+    expect(manifest.categories).toEqual(['requests', 'utilities']);
+  });
+
+  it('strips unknown categories and removes duplicates', () => {
+    const manifest = parsePluginManifest({
+      ...validManifest,
+      categories: ['requests', 'unknown-category', 'requests']
+    });
+    expect(manifest.categories).toEqual(['requests']);
+  });
+
+  it('returns an empty array when every category is unknown', () => {
+    const manifest = parsePluginManifest({
+      ...validManifest,
+      categories: ['unknown-category', 'also-unknown']
+    });
+    expect(manifest.categories).toEqual([]);
+  });
+
+  it('leaves categories undefined when omitted', () => {
+    const manifest = parsePluginManifest(validManifest);
+    expect(manifest.categories).toBeUndefined();
+  });
 });
