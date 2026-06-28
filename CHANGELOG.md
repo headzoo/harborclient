@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.8.24 - 2026-06-28
+
 - feat(requests): implement redirect following functionality in HTTP requests. (`9031ccf`)
 
 ## 1.8.23 - 2026-06-28
