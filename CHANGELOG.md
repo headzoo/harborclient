@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.8.31 - 2026-06-28
+
 - feat(plugins): integrate React and ReactDOM for plugin support. (`72c1af2`)
 - refactor: update path handling and improve navigation security. (`05587e6`)
 
