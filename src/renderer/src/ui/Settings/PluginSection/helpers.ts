@@ -1,4 +1,87 @@
+import type { PluginCatalog, PluginCatalogEntry } from '#/shared/plugin/catalog';
 import type { PluginInfo } from '#/shared/plugin/types';
+
+/**
+ * Outcome of resolving a harborclient:// plugin install deep link.
+ */
+export type PendingPluginInstallDeepLinkResult =
+  | { kind: 'cancelled' }
+  | { kind: 'catalog-error'; message: string }
+  | { kind: 'not-found' }
+  | { kind: 'already-installed'; plugin: PluginInfo }
+  | { kind: 'declined' }
+  | { kind: 'installed'; plugin: PluginInfo }
+  | { kind: 'install-error'; message: string };
+
+/**
+ * Resolves a queued plugin install deep link against the marketplace catalog.
+ *
+ * Confirmation and install side effects are delegated to callbacks so the caller
+ * can keep Redux consume timing outside the async flow.
+ *
+ * @param pluginId - Marketplace manifest id from the deep link.
+ * @param options - Catalog lookup, confirmation, and install callbacks.
+ * @returns Structured result describing how the deep link was handled.
+ */
+export async function resolvePendingPluginInstallDeepLink(
+  pluginId: string,
+  options: {
+    getPluginCatalog: () => Promise<PluginCatalog>;
+    listPlugins: () => Promise<PluginInfo[]>;
+    confirmInstall: (entry: PluginCatalogEntry) => Promise<boolean>;
+    installFromGit: (entry: PluginCatalogEntry) => Promise<PluginInfo>;
+    isCancelled: () => boolean;
+  }
+): Promise<PendingPluginInstallDeepLinkResult> {
+  const { getPluginCatalog, listPlugins, confirmInstall, installFromGit, isCancelled } = options;
+
+  let loadedCatalog: PluginCatalog;
+  try {
+    loadedCatalog = await getPluginCatalog();
+  } catch (err) {
+    return {
+      kind: 'catalog-error',
+      message: err instanceof Error ? err.message : String(err)
+    };
+  }
+
+  if (isCancelled()) {
+    return { kind: 'cancelled' };
+  }
+
+  const entry = loadedCatalog.plugins.find((candidate) => candidate.id === pluginId);
+  if (!entry) {
+    return { kind: 'not-found' };
+  }
+
+  const installedPlugins = await listPlugins();
+  if (isCancelled()) {
+    return { kind: 'cancelled' };
+  }
+
+  const installed = findInstalledCatalogPlugin(installedPlugins, entry.id);
+  if (installed) {
+    return { kind: 'already-installed', plugin: installed };
+  }
+
+  const confirmed = await confirmInstall(entry);
+  if (!confirmed || isCancelled()) {
+    return { kind: 'declined' };
+  }
+
+  try {
+    const plugin = await installFromGit(entry);
+    if (isCancelled()) {
+      return { kind: 'cancelled' };
+    }
+    return { kind: 'installed', plugin };
+  } catch (err) {
+    return {
+      kind: 'install-error',
+      message: err instanceof Error ? err.message : String(err)
+    };
+  }
+}
 
 /**
  * Returns whether a plugin is installed under userData (file or git), not dev-unpacked.

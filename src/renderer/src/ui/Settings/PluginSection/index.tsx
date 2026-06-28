@@ -44,7 +44,12 @@ import {
   formatIpcErrorMessage
 } from '#/renderer/src/ui/modals/dialogHelpers';
 import type { PluginGitPreview } from '#/shared/plugin/types';
-import { findInstalledCatalogPlugin, isManagedInstall, stopRowActivation } from './helpers';
+import {
+  findInstalledCatalogPlugin,
+  isManagedInstall,
+  resolvePendingPluginInstallDeepLink,
+  stopRowActivation
+} from './helpers';
 import { CatalogCard } from './CatalogCard';
 import { EnableModal } from './EnableModal';
 import { ErrorMessages } from './ErrorMessages';
@@ -504,91 +509,79 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
 
     const run = async (): Promise<void> => {
       setShowBrowse(true);
+      setCatalogLoading(true);
+      setCatalogError(null);
 
-      let loadedCatalog = catalog;
-      if (!loadedCatalog) {
-        setCatalogLoading(true);
-        setCatalogError(null);
-        try {
-          loadedCatalog = await window.api.getPluginCatalog();
-          if (cancelled) {
-            return;
-          }
-          setCatalog(loadedCatalog);
-        } catch (err) {
-          if (cancelled) {
-            return;
-          }
-          showAlert(
-            dispatch,
-            formatIpcErrorMessage(err, 'Could not load the plugin marketplace.'),
-            'Marketplace unavailable'
-          );
-          dispatch(consumePendingPluginInstall());
-          return;
-        } finally {
+      const result = await resolvePendingPluginInstallDeepLink(pluginId, {
+        getPluginCatalog: async () => {
+          const loaded = await window.api.getPluginCatalog();
           if (!cancelled) {
-            setCatalogLoading(false);
+            setCatalog(loaded);
           }
-        }
-      }
+          return loaded;
+        },
+        listPlugins: () => window.api.listPlugins(),
+        confirmInstall: (entry) =>
+          showConfirm(dispatch, {
+            title: `Install ${entry.name}?`,
+            message: `Install ${entry.name} v${entry.version} by ${entry.author} from ${entry.repoUrl}?`,
+            confirmLabel: 'Install'
+          }),
+        installFromGit: async (entry) => {
+          setCatalogActionBusyId(entry.id);
+          try {
+            return await window.api.installPluginFromGit(entry.repoUrl, entry.ref);
+          } finally {
+            if (!cancelled) {
+              setCatalogActionBusyId(null);
+            }
+          }
+        },
+        isCancelled: () => cancelled
+      });
 
       if (cancelled) {
         return;
       }
 
+      setCatalogLoading(false);
       dispatch(consumePendingPluginInstall());
 
-      const entry = loadedCatalog.plugins.find((candidate) => candidate.id === pluginId);
-      if (!entry) {
-        showAlert(
-          dispatch,
-          `Plugin "${pluginId}" was not found in the marketplace catalog.`,
-          'Plugin not found'
-        );
-        return;
-      }
-
-      const installedPlugins = await window.api.listPlugins();
-      if (cancelled) {
-        return;
-      }
-
-      const installed = findInstalledCatalogPlugin(installedPlugins, entry.id);
-      if (installed) {
-        openDetail(installed);
-        return;
-      }
-
-      const confirmed = await showConfirm(dispatch, {
-        title: `Install ${entry.name}?`,
-        message: `Install ${entry.name} v${entry.version} by ${entry.author} from ${entry.repoUrl}?`,
-        confirmLabel: 'Install'
-      });
-      if (!confirmed || cancelled) {
-        return;
-      }
-
-      setCatalogActionBusyId(entry.id);
-      try {
-        const installedPlugin = await window.api.installPluginFromGit(entry.repoUrl, entry.ref);
-        if (cancelled) {
-          return;
-        }
-        setPendingInstall(installedPlugin);
-      } catch (err) {
-        if (!cancelled) {
+      switch (result.kind) {
+        case 'catalog-error':
           showAlert(
             dispatch,
-            formatIpcErrorMessage(err, 'The plugin could not be installed.'),
+            formatIpcErrorMessage(
+              new Error(result.message),
+              'Could not load the plugin marketplace.'
+            ),
+            'Marketplace unavailable'
+          );
+          break;
+        case 'not-found':
+          showAlert(
+            dispatch,
+            `Plugin "${pluginId}" was not found in the marketplace catalog.`,
+            'Plugin not found'
+          );
+          break;
+        case 'already-installed':
+          openDetail(result.plugin);
+          break;
+        case 'installed':
+          setPendingInstall(result.plugin);
+          break;
+        case 'install-error':
+          showAlert(
+            dispatch,
+            formatIpcErrorMessage(new Error(result.message), 'The plugin could not be installed.'),
             'Install failed',
             { icon: 'warning' }
           );
-        }
-      } finally {
-        if (!cancelled) {
-          setCatalogActionBusyId(null);
-        }
+          break;
+        case 'declined':
+        case 'cancelled':
+          break;
       }
     };
 
@@ -597,7 +590,7 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [pendingPluginInstallId, catalog, dispatch]);
+  }, [pendingPluginInstallId, dispatch]);
 
   /**
    * Closes the read-only detail modal and clears loaded description text.

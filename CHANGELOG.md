@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(plugins): implement resolvePendingPluginInstallDeepLink function for improved plugin installation handling. (`ea7baf9`)
+
 ## 1.8.28 - 2026-06-28
 
 - feat(plugins): introduce --disable-plugins flag for session-based plugin management. (`293d6a3`)
