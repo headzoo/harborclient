@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SendRequestInput } from '#/shared/types';
 import { DEFAULT_GENERAL_SETTINGS } from '#/main/settings/generalSettings';
-import { Requester } from '#/main/http/Requester';
+import { MAX_REDIRECTS, Requester } from '#/main/http/Requester';
 
 describe('Requester', () => {
   const requester = new Requester();
@@ -252,6 +252,184 @@ describe('Requester', () => {
 
       const init = fetchMock.mock.calls[0]?.[1] as RequestInit & { dispatcher?: unknown };
       expect(init.dispatcher).toBeUndefined();
+    });
+
+    it('uses manual redirect mode when followRedirects is true', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(new Response('ok', { status: 200, statusText: 'OK' }));
+      globalThis.fetch = fetchMock;
+
+      await requester.executeRequest(baseInput, {
+        ...DEFAULT_GENERAL_SETTINGS,
+        followRedirects: true
+      });
+
+      const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+      expect(init.redirect).toBe('manual');
+    });
+
+    it('uses manual redirect mode when followRedirects is false', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(new Response('ok', { status: 302, statusText: 'Found' }));
+      globalThis.fetch = fetchMock;
+
+      await requester.executeRequest(baseInput, {
+        ...DEFAULT_GENERAL_SETTINGS,
+        followRedirects: false
+      });
+
+      const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+      expect(init.redirect).toBe('manual');
+    });
+
+    it('follows one redirect and records the hop chain', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(null, {
+            status: 302,
+            statusText: 'Found',
+            headers: { Location: 'https://example.com/final' }
+          })
+        )
+        .mockResolvedValueOnce(new Response('ok', { status: 200, statusText: 'OK' }));
+      globalThis.fetch = fetchMock;
+
+      const result = await requester.executeRequest(baseInput, {
+        ...DEFAULT_GENERAL_SETTINGS,
+        followRedirects: true
+      });
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(result.status).toBe(200);
+      expect(result.redirects).toEqual([
+        {
+          status: 302,
+          statusText: 'Found',
+          url: 'https://example.com',
+          location: 'https://example.com/final',
+          method: 'GET'
+        }
+      ]);
+    });
+
+    it('resolves relative Location headers against the current URL', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(null, {
+            status: 302,
+            statusText: 'Found',
+            headers: { Location: '/final' }
+          })
+        )
+        .mockResolvedValueOnce(new Response('ok', { status: 200, statusText: 'OK' }));
+      globalThis.fetch = fetchMock;
+
+      const result = await requester.executeRequest(baseInput, {
+        ...DEFAULT_GENERAL_SETTINGS,
+        followRedirects: true
+      });
+
+      expect(result.redirects?.[0]?.location).toBe('https://example.com/final');
+      expect(fetchMock.mock.calls[1]?.[0]).toBe('https://example.com/final');
+    });
+
+    it('converts POST with 302 to GET on the next hop', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(null, {
+            status: 302,
+            statusText: 'Found',
+            headers: { Location: 'https://example.com/final' }
+          })
+        )
+        .mockResolvedValueOnce(new Response('ok', { status: 200, statusText: 'OK' }));
+      globalThis.fetch = fetchMock;
+
+      await requester.executeRequest(
+        {
+          ...baseInput,
+          method: 'POST',
+          body: '{"ok":true}',
+          bodyType: 'json'
+        },
+        { ...DEFAULT_GENERAL_SETTINGS, followRedirects: true }
+      );
+
+      const secondInit = fetchMock.mock.calls[1]?.[1] as RequestInit;
+      expect(secondInit.method).toBe('GET');
+      expect(secondInit.body).toBeUndefined();
+    });
+
+    it('strips authorization on cross-origin redirect hops', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response(null, {
+            status: 302,
+            statusText: 'Found',
+            headers: { Location: 'https://other.example.com/path' }
+          })
+        )
+        .mockResolvedValueOnce(new Response('ok', { status: 200, statusText: 'OK' }));
+      globalThis.fetch = fetchMock;
+
+      await requester.executeRequest(
+        {
+          ...baseInput,
+          headers: [{ key: 'Authorization', value: 'Bearer secret', enabled: true }]
+        },
+        { ...DEFAULT_GENERAL_SETTINGS, followRedirects: true }
+      );
+
+      const secondInit = fetchMock.mock.calls[1]?.[1] as RequestInit;
+      const secondHeaders = secondInit.headers as Record<string, string>;
+      expect(secondHeaders.Authorization).toBeUndefined();
+    });
+
+    it('returns too many redirects when the hop limit is exceeded', async () => {
+      const fetchMock = vi.fn().mockImplementation(() =>
+        Promise.resolve(
+          new Response(null, {
+            status: 302,
+            statusText: 'Found',
+            headers: { Location: 'https://example.com/next' }
+          })
+        )
+      );
+      globalThis.fetch = fetchMock;
+
+      const result = await requester.executeRequest(baseInput, {
+        ...DEFAULT_GENERAL_SETTINGS,
+        followRedirects: true
+      });
+
+      expect(result.error).toBe('Too many redirects');
+      expect(fetchMock).toHaveBeenCalledTimes(MAX_REDIRECTS + 1);
+    });
+
+    it('returns a redirect response without following when followRedirects is false', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(null, {
+          status: 302,
+          statusText: 'Found',
+          headers: { Location: 'https://example.com/final' }
+        })
+      );
+      globalThis.fetch = fetchMock;
+
+      const result = await requester.executeRequest(baseInput, {
+        ...DEFAULT_GENERAL_SETTINGS,
+        followRedirects: false
+      });
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(result.status).toBe(302);
+      expect(result.redirects).toBeUndefined();
     });
 
     it('selects dispatchers independently for concurrent secure and insecure requests', async () => {

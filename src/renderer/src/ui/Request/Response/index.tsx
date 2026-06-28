@@ -23,6 +23,7 @@ import {
 } from '#/renderer/src/ui/shared/responseFormatUtils';
 import { Headers } from './Headers';
 import { HtmlPreview } from './HtmlPreview';
+import { Redirects } from './Redirects';
 import { Tests } from './Tests';
 
 interface Props {
@@ -93,16 +94,28 @@ export function Response({
   );
 
   const hasTests = testResults.length > 0;
+  const hasRedirects = (response?.redirects?.length ?? 0) > 0;
   const passedCount = testResults.filter((test) => test.passed).length;
   const failedCount = testResults.length - passedCount;
   const effectiveTab =
-    tab === 'tests' && !hasTests ? 'body' : tab === 'preview' && !showHtmlPreview ? 'body' : tab;
+    tab === 'tests' && !hasTests
+      ? 'body'
+      : tab === 'preview' && !showHtmlPreview
+        ? 'body'
+        : tab === 'redirects' && !hasRedirects
+          ? 'body'
+          : tab;
 
   /**
    * Copies the active tab content to the clipboard.
    */
   const handleCopy = async (): Promise<void> => {
-    if (!response || isPluginTabId(effectiveTab) || effectiveTab === 'preview') {
+    if (
+      !response ||
+      isPluginTabId(effectiveTab) ||
+      effectiveTab === 'preview' ||
+      effectiveTab === 'redirects'
+    ) {
       return;
     }
     const text = responseTabText(
@@ -123,7 +136,12 @@ export function Response({
    * Exports the active tab content to a file via a native save dialog.
    */
   const handleExport = async (): Promise<void> => {
-    if (!response || isPluginTabId(effectiveTab) || effectiveTab === 'preview') {
+    if (
+      !response ||
+      isPluginTabId(effectiveTab) ||
+      effectiveTab === 'preview' ||
+      effectiveTab === 'redirects'
+    ) {
       return;
     }
     const content = responseTabText(
@@ -154,6 +172,7 @@ export function Response({
       { value: 'body', label: 'Body' },
       ...(showHtmlPreview ? [{ value: 'preview', label: 'Preview' }] : []),
       { value: 'headers', label: 'Headers' },
+      { value: 'redirects', label: 'Redirects', hidden: !hasRedirects },
       {
         value: 'tests',
         hidden: !hasTests,
@@ -176,7 +195,16 @@ export function Response({
           hidden: entry.when === 'hasResponse' && response == null
         }))
     ],
-    [failedCount, hasTests, passedCount, pluginTabs, response, showHtmlPreview, testResults.length]
+    [
+      failedCount,
+      hasRedirects,
+      hasTests,
+      passedCount,
+      pluginTabs,
+      response,
+      showHtmlPreview,
+      testResults.length
+    ]
   );
 
   /**
@@ -261,6 +289,11 @@ export function Response({
             <SegmentedTabPanel value="headers">
               <Headers headers={response.headers} />
             </SegmentedTabPanel>
+            {hasRedirects && (
+              <SegmentedTabPanel value="redirects">
+                <Redirects redirects={response.redirects ?? []} />
+              </SegmentedTabPanel>
+            )}
             {hasTests && (
               <SegmentedTabPanel value="tests">
                 <Tests testResults={testResults} />

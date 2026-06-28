@@ -206,6 +206,7 @@ describe('generalSettings', () => {
     requestTimeoutMs: 30000,
     maxResponseSizeMb: 50,
     verifySsl: true,
+    followRedirects: true,
     codeEditorTheme: 'default' as const,
     codeEditorSetup: {
       lineNumbers: true,

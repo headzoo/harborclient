@@ -31,6 +31,7 @@ Control how HarborClient sends requests and handles responses:
 | **Request timeout (ms)** | Abort a request after this many milliseconds. Set to `0` to disable the limit. |
 | **Max response size (MB)** | Stop reading a response larger than this size. Set to `0` for no configurable limit (512 MB hard cap still applies). |
 | **SSL certificate verification** | When enabled, reject requests with invalid TLS certificates. |
+| **Follow redirects** | When enabled, follow 3xx responses automatically. When disabled, return the redirect response without following `Location`. |
 
 Click **Save** to apply request defaults.
 

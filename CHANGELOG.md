@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(requests): implement redirect following functionality in HTTP requests. (`9031ccf`)
+
 ## 1.8.23 - 2026-06-28
 
 - chore(package): update @harborclient/sdk version and add new dependencies. (`578571f`)

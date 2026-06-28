@@ -267,6 +267,7 @@ If the send failed, a red error banner displays the error message below the head
 | --- | --- |
 | **Body** | Read-only response body. JSON is pretty-printed when the Content-Type indicates JSON or the body looks like JSON |
 | **Headers** | Response headers as a key-value grid |
+| **Redirects** | Appears when the request followed one or more redirects. Lists each hop (method, status, source URL, and `Location` target) plus the final destination. Redirect following is controlled by **Settings → General → Follow redirects** |
 | **Tests** | Appears when post-request scripts registered tests. Shows pass/fail counts and error messages |
 
 Responses are **not** restored after you restart the app. Open tabs and their drafts persist, but you need to send again to see a response.
@@ -322,7 +323,6 @@ Edit and View menu shortcuts (undo, copy, paste, zoom, full screen, and others) 
 
 HarborClient does not currently support:
 
-- Redirect following controls, proxy settings, or custom SSL options in the UI
 - OAuth or other interactive authentication flows
 - Persisted request history beyond the session Console
 - Changing query parameters or body type from scripts

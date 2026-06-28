@@ -104,4 +104,17 @@ describe('generalSettings', () => {
 
     expect(getGeneralSettings().globalVariables).toEqual([]);
   });
+
+  it('defaults followRedirects to true when unset', () => {
+    expect(getGeneralSettings().followRedirects).toBe(true);
+  });
+
+  it('persists followRedirects false', () => {
+    setGeneralSettings({
+      ...DEFAULT_GENERAL_SETTINGS,
+      followRedirects: false
+    });
+
+    expect(getGeneralSettings().followRedirects).toBe(false);
+  });
 });

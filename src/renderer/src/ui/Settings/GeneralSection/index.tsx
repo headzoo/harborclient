@@ -115,7 +115,7 @@ export function GeneralSection({ onClose }: Props): JSX.Element {
       <PageHeader
         title={label}
         icon={icon}
-        description="Set appearance, request timeouts, response size limits, and SSL verification defaults."
+        description="Set appearance, request timeouts, response size limits, SSL verification, and redirect following defaults."
       >
         <SettingsCloseButton onClose={onClose} />
       </PageHeader>
@@ -167,6 +167,19 @@ export function GeneralSection({ onClose }: Props): JSX.Element {
             checked={generalSettings.verifySsl}
             disabled={generalLoading || generalSaving}
             onChange={(event) => handleGeneralFieldChange('verifySsl', event.target.checked)}
+          />
+        </FormGroup>
+
+        <FormGroup
+          label="Follow redirects"
+          layout="checkbox"
+          description="When disabled, 3xx responses are returned without following Location."
+        >
+          <Input
+            type="checkbox"
+            checked={generalSettings.followRedirects}
+            disabled={generalLoading || generalSaving}
+            onChange={(event) => handleGeneralFieldChange('followRedirects', event.target.checked)}
           />
         </FormGroup>
       </div>

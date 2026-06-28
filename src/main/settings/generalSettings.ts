@@ -27,6 +27,7 @@ export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
   requestTimeoutMs: 30000,
   maxResponseSizeMb: 50,
   verifySsl: true,
+  followRedirects: true,
   codeEditorTheme: 'default',
   codeEditorSetup: { ...DEFAULT_CODE_EDITOR_SETUP },
   proxy: { ...DEFAULT_PROXY_SETTINGS },
@@ -124,6 +125,7 @@ function normalizeSettings(input: Partial<GeneralSettings>): GeneralSettings {
       HARD_MAX_RESPONSE_SIZE_MB
     ),
     verifySsl: input.verifySsl !== false,
+    followRedirects: input.followRedirects !== false,
     codeEditorTheme: normalizeCodeEditorTheme(input.codeEditorTheme),
     codeEditorSetup: normalizeCodeEditorSetup(input.codeEditorSetup),
     proxy: normalizeProxySettings(input.proxy),

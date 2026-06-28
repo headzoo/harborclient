@@ -1,7 +1,10 @@
 import { Agent, ProxyAgent, type Dispatcher } from 'undici';
 import type {
+  BodyType,
   GeneralSettings,
+  HttpMethod,
   ProxySettings,
+  RedirectHop,
   SendRequestInput,
   SendResult,
   SentRequest
@@ -17,6 +20,29 @@ import { Body } from '#/main/http/Body';
 import { Headers } from '#/main/http/Headers';
 import { QueryString } from '#/main/http/QueryString';
 import { ResponseReader } from '#/main/http/ResponseReader';
+
+/** HTTP status codes treated as redirects when following manually. */
+export const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+
+/** Maximum redirect hops before returning an error. */
+export const MAX_REDIRECTS = 20;
+
+/** Request-body headers removed when a redirect converts the method to GET. */
+const REQUEST_BODY_HEADER_NAMES = [
+  'content-type',
+  'content-length',
+  'content-encoding',
+  'content-language',
+  'content-location'
+] as const;
+
+/** Headers stripped when the redirect target is cross-origin. */
+const CROSS_ORIGIN_HEADER_NAMES = [
+  'authorization',
+  'proxy-authorization',
+  'cookie',
+  'host'
+] as const;
 
 /**
  * Optional collaborators injected into {@link IRequester} implementations.
@@ -70,6 +96,76 @@ function getProxyDispatcher(proxy: ProxySettings, verifySsl: boolean): ProxyAgen
   cachedProxyDispatcher = new ProxyAgent(options);
   cachedProxyDispatcherKey = key;
   return cachedProxyDispatcher;
+}
+
+/**
+ * Removes a header from a map using case-insensitive name matching.
+ *
+ * @param headers - Mutable header map.
+ * @param name - Header name to remove.
+ */
+function deleteHeader(headers: Record<string, string>, name: string): void {
+  const lower = name.toLowerCase();
+  for (const key of Object.keys(headers)) {
+    if (key.toLowerCase() === lower) {
+      delete headers[key];
+    }
+  }
+}
+
+/**
+ * Returns whether a redirect response should convert the next request to GET.
+ *
+ * @param status - Redirect response status code.
+ * @param method - Method used for the redirect response request.
+ */
+function shouldConvertRedirectToGet(status: number, method: HttpMethod): boolean {
+  return (
+    ([301, 302].includes(status) && method === 'POST') ||
+    (status === 303 && method !== 'GET' && method !== 'HEAD')
+  );
+}
+
+/**
+ * Applies fetch redirect transition rules to the next hop's method, body flag, and headers.
+ *
+ * @param status - Redirect response status code.
+ * @param currentUrl - URL of the redirect response request.
+ * @param nextUrl - Resolved Location URL for the next hop.
+ * @param method - Current method; updated in place when converted to GET.
+ * @param headers - Mutable headers for the next hop.
+ * @returns Whether the next hop should include a request body.
+ */
+function applyRedirectTransition(
+  status: number,
+  currentUrl: string,
+  nextUrl: string,
+  method: { value: HttpMethod },
+  headers: Record<string, string>
+): boolean {
+  let shouldSendBody = method.value !== 'GET' && method.value !== 'HEAD';
+
+  if (shouldConvertRedirectToGet(status, method.value)) {
+    method.value = 'GET';
+    shouldSendBody = false;
+    for (const headerName of REQUEST_BODY_HEADER_NAMES) {
+      deleteHeader(headers, headerName);
+    }
+  }
+
+  try {
+    const fromOrigin = new URL(currentUrl).origin;
+    const toOrigin = new URL(nextUrl).origin;
+    if (fromOrigin !== toOrigin) {
+      for (const headerName of CROSS_ORIGIN_HEADER_NAMES) {
+        deleteHeader(headers, headerName);
+      }
+    }
+  } catch {
+    // Invalid URL; leave headers unchanged.
+  }
+
+  return shouldSendBody;
 }
 
 /**
@@ -196,13 +292,62 @@ export class Requester implements IRequester {
   }
 
   /**
+   * Builds the fetch request body for one hop.
+   *
+   * @param input - Original send input (body source).
+   * @param bodyType - Body type for this hop.
+   * @param shouldSendBody - Whether a body should be attached.
+   */
+  private async buildRequestBody(
+    input: SendRequestInput,
+    bodyType: BodyType,
+    shouldSendBody: boolean
+  ): Promise<{ body?: BodyInit; error?: string }> {
+    if (!shouldSendBody || bodyType === 'none') {
+      return {};
+    }
+
+    if (bodyType === 'multipart') {
+      const multipartResult = await this.body.buildMultipart(input.body);
+      if ('error' in multipartResult) {
+        return { error: multipartResult.error };
+      }
+      return { body: multipartResult.formData };
+    }
+
+    if (bodyType === 'urlencoded') {
+      return { body: this.body.buildUrlEncoded(input.body) };
+    }
+
+    return { body: input.body };
+  }
+
+  /**
+   * Resolves the fetch dispatcher from general settings.
+   *
+   * @param settings - General request settings.
+   */
+  private resolveDispatcher(settings: GeneralSettings): Dispatcher | undefined {
+    if (settings.proxy.enabled && settings.proxy.host.trim()) {
+      return getProxyDispatcher(settings.proxy, settings.verifySsl);
+    }
+    if (!settings.verifySsl) {
+      return this.getInsecureDispatcher();
+    }
+    return undefined;
+  }
+
+  /**
    * Executes an HTTP request via fetch and returns timing and response metadata.
    *
+   * When redirect following is enabled, 3xx responses are followed manually so
+   * each hop can be recorded in {@link SendResult.redirects}.
+   *
    * @param input - Method, URL, headers, params, body, and body type.
-   * @param settings - General request settings for timeout, size limits, and SSL verification.
+   * @param settings - General request settings for timeout, size limits, SSL verification, and redirect following.
    * @param signal - Optional abort signal to cancel the in-flight request.
    * @param cookieHeader - Optional Cookie header value from the cookie jar.
-   * @returns Response status, headers, body, timing, and size; error field on failure.
+   * @returns Response status, headers, body, timing, size, and optional redirect chain; error field on failure.
    */
   async executeRequest(
     input: SendRequestInput,
@@ -289,41 +434,98 @@ export class Requester implements IRequester {
 
     const start = performance.now();
     const effectiveSignal = this.buildEffectiveSignal(signal, settings.requestTimeoutMs);
+    const dispatcher = this.resolveDispatcher(settings);
+
+    this.logOutgoingRequest(request);
+
+    let currentUrl = url;
+    let currentMethod: HttpMethod = input.method;
+    const currentHeaders = { ...headers };
+    const currentBodyType = input.bodyType;
+    let currentShouldSendBody = shouldSendBody;
+    const redirects: RedirectHop[] = [];
 
     try {
-      const init: RequestInit & { dispatcher?: Dispatcher } = {
-        method: input.method,
-        headers,
-        signal: effectiveSignal
-      };
+      let response: Response | undefined;
 
-      if (settings.proxy.enabled && settings.proxy.host.trim()) {
-        init.dispatcher = getProxyDispatcher(settings.proxy, settings.verifySsl);
-      } else if (!settings.verifySsl) {
-        init.dispatcher = this.getInsecureDispatcher();
-      }
+      while (true) {
+        const init: RequestInit & { dispatcher?: Dispatcher } = {
+          method: currentMethod,
+          headers: currentHeaders,
+          signal: effectiveSignal,
+          redirect: 'manual'
+        };
 
-      if (shouldSendBody) {
-        if (input.bodyType === 'multipart') {
-          const multipartResult = await this.body.buildMultipart(input.body);
-          if ('error' in multipartResult) {
-            const timeMs = Math.round(performance.now() - start);
-            return this.errorResult(multipartResult.error, request, timeMs);
-          }
-          init.body = multipartResult.formData;
-        } else if (input.bodyType === 'urlencoded') {
-          init.body = this.body.buildUrlEncoded(input.body);
-        } else {
-          init.body = input.body;
+        if (dispatcher) {
+          init.dispatcher = dispatcher;
         }
+
+        const bodyResult = await this.buildRequestBody(
+          input,
+          currentBodyType,
+          currentShouldSendBody
+        );
+        if (bodyResult.error) {
+          const timeMs = Math.round(performance.now() - start);
+          return this.errorResult(bodyResult.error, request, timeMs);
+        }
+        if (bodyResult.body !== undefined) {
+          init.body = bodyResult.body;
+        }
+
+        response = await fetch(currentUrl, init);
+
+        if (
+          !settings.followRedirects ||
+          !REDIRECT_STATUSES.has(response.status) ||
+          !response.headers.get('location')
+        ) {
+          break;
+        }
+
+        const rawLocation = response.headers.get('location')!;
+        let location: string;
+        try {
+          location = new URL(rawLocation, currentUrl).toString();
+        } catch {
+          break;
+        }
+
+        redirects.push({
+          status: response.status,
+          statusText: response.statusText,
+          url: currentUrl,
+          location,
+          method: currentMethod
+        });
+
+        await response.body?.cancel();
+
+        if (redirects.length > MAX_REDIRECTS) {
+          const timeMs = Math.round(performance.now() - start);
+          return this.errorResult('Too many redirects', request, timeMs);
+        }
+
+        const methodRef = { value: currentMethod };
+        currentShouldSendBody = applyRedirectTransition(
+          response.status,
+          currentUrl,
+          location,
+          methodRef,
+          currentHeaders
+        );
+        currentMethod = methodRef.value;
+        currentUrl = location;
       }
 
-      this.logOutgoingRequest(request);
+      if (!response) {
+        const timeMs = Math.round(performance.now() - start);
+        return this.errorResult('No response received', request, timeMs);
+      }
 
-      const response = await fetch(url, init);
       const setCookieHeaders =
         typeof response.headers.getSetCookie === 'function' ? response.headers.getSetCookie() : [];
-      const bodyResult = await this.responseReader.read(response, settings.maxResponseSizeMb);
+      const readResult = await this.responseReader.read(response, settings.maxResponseSizeMb);
       const timeMs = Math.round(performance.now() - start);
 
       const responseHeaders: Record<string, string> = {};
@@ -331,9 +533,9 @@ export class Requester implements IRequester {
         responseHeaders[key] = value;
       });
 
-      if ('error' in bodyResult) {
+      if ('error' in readResult) {
         return this.errorResult(
-          bodyResult.error,
+          readResult.error,
           request,
           timeMs,
           responseHeaders,
@@ -345,11 +547,12 @@ export class Requester implements IRequester {
         status: response.status,
         statusText: response.statusText,
         headers: responseHeaders,
-        body: bodyResult.body,
+        body: readResult.body,
         timeMs,
-        sizeBytes: bodyResult.sizeBytes,
+        sizeBytes: readResult.sizeBytes,
         setCookieHeaders,
-        request
+        request,
+        ...(redirects.length > 0 ? { redirects } : {})
       };
     } catch (err) {
       const timeMs = Math.round(performance.now() - start);

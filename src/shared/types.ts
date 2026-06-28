@@ -817,6 +817,36 @@ export interface SentRequest {
 }
 
 /**
+ * One hop in a redirect chain recorded while following 3xx responses.
+ */
+export interface RedirectHop {
+  /**
+   * Status code of the redirect response (301, 302, 303, 307, or 308).
+   */
+  status: number;
+
+  /**
+   * Status text of the redirect response.
+   */
+  statusText: string;
+
+  /**
+   * Absolute URL that was requested for this hop.
+   */
+  url: string;
+
+  /**
+   * Resolved absolute URL from the Location header.
+   */
+  location: string;
+
+  /**
+   * HTTP method used for this hop.
+   */
+  method: HttpMethod;
+}
+
+/**
  * Result of an HTTP request including timing and size metadata.
  */
 export interface SendResult {
@@ -864,6 +894,11 @@ export interface SendResult {
    * The outgoing request as actually sent; omitted on older results.
    */
   request?: SentRequest;
+
+  /**
+   * Ordered redirect hops that were followed; omitted when none.
+   */
+  redirects?: RedirectHop[];
 }
 
 /**
@@ -1117,6 +1152,11 @@ export interface GeneralSettings {
    * When true, TLS certificates are verified for HTTPS requests.
    */
   verifySsl: boolean;
+
+  /**
+   * When true, 3xx responses are followed automatically.
+   */
+  followRedirects: boolean;
 
   /**
    * CodeMirror syntax theme applied to all editor instances.

@@ -48,8 +48,8 @@ sequenceDiagram
 
 1. **Prepare request** — Build the URL and header map via injected collaborators; merge a cookie jar `Cookie` header when the user did not supply one.
 2. **Validate early** — Return a `SendResult` error without calling `fetch` when the URL is blank or invalid, headers fail validation, or a multipart file cannot be read.
-3. **Configure fetch** — Assemble `RequestInit`: body by type (JSON/text, urlencoded, multipart `FormData`, or omitted for GET/HEAD/none), a combined abort/timeout signal, and an optional insecure undici dispatcher when [`verifySsl`](../settings/generalSettings.ts) is false.
-4. **Execute and read** — Call `fetch`, stream the response through `ResponseReader` (respecting `maxResponseSizeMb` and the hard cap), and return `SendResult` with status, headers, body, timing, `setCookieHeaders`, and a snapshot of the sent request.
+3. **Configure fetch** — Assemble `RequestInit`: body by type (JSON/text, urlencoded, multipart `FormData`, or omitted for GET/HEAD/none), a combined abort/timeout signal, `redirect: 'manual'`, and an optional insecure undici dispatcher when [`verifySsl`](../settings/generalSettings.ts) is false. When [`followRedirects`](../settings/generalSettings.ts) is true, 3xx responses with a `Location` header are followed in a loop (up to 20 hops) and recorded in `SendResult.redirects`.
+4. **Execute and read** — Call `fetch` (once or per redirect hop), stream the final response through `ResponseReader` (respecting `maxResponseSizeMb` and the hard cap), and return `SendResult` with status, headers, body, timing, optional `redirects`, `setCookieHeaders`, and a snapshot of the original sent request.
 
 ## External integration
 
