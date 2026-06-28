@@ -1,4 +1,4 @@
-import { TeamHubClient } from '#/main/teamHub/TeamHubClient';
+import { TeamHubClient } from '@harborclient/team-hub-api';
 import { listTeamHubs } from '#/main/settings/teamHubSettings';
 import { AI_SYSTEM_PROMPT, AI_TOOL_DEFINITIONS } from '#/shared/aiTools';
 import type { ChatStepInput, ChatStepResult, HubLlmModelGroup } from '#/shared/types';

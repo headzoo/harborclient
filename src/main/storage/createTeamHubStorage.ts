@@ -1,7 +1,7 @@
 import { join } from 'path';
 import { TeamHubStorage } from '#/main/storage/TeamHubStorage';
 import { TeamHubIdMap } from '#/main/storage/TeamHubIdMap';
-import { TeamHubClient } from '#/main/teamHub/TeamHubClient';
+import { TeamHubClient } from '@harborclient/team-hub-api';
 import type { TeamHub } from '#/shared/types';
 
 /**

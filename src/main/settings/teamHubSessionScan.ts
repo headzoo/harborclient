@@ -1,5 +1,4 @@
-import { TeamHubClient } from '#/main/teamHub/TeamHubClient';
-import { TeamHubClientError } from '#/main/teamHub/TeamHubClientError';
+import { TeamHubClient, TeamHubClientError } from '@harborclient/team-hub-api';
 import type { TeamHub, TeamHubServiceFlags, TeamHubSessionScanResult } from '#/shared/types';
 
 /**

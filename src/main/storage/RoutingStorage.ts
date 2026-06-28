@@ -17,7 +17,7 @@ import type {
   ProviderDescriptor,
   RoutingInternals
 } from '#/main/storage/routingInternals';
-import { isTeamHubCollectionDeleteForbiddenError } from '#/main/teamHub/isTeamHubCollectionDeleteForbiddenError';
+import { isTeamHubCollectionDeleteForbiddenError } from '@harborclient/team-hub-api';
 import { logVerbose } from '#/main/logger';
 import { isStorageConnectionConfigured } from '#/main/settings/storageSettings';
 import { getSlotForConnection } from '#/main/settings/storageSlots';

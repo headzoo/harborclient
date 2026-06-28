@@ -22,8 +22,11 @@ import { refreshTeamHubPluginSources } from '#/main/settings/teamHubPluginSource
 import { clearTrustedKeysCache } from '#/main/plugins/pluginSignature';
 import { resyncUserTeamHubsSharingServer } from '#/main/settings/teamHubCollectionResync';
 import { scanTeamHubSessions } from '#/main/settings/teamHubSessionScan';
-import { TeamHubClient } from '#/main/teamHub/TeamHubClient';
-import type { FolderRecord, SavedRequestRecord } from '#/main/teamHub/types';
+import {
+  TeamHubClient,
+  type FolderRecord,
+  type SavedRequestRecord
+} from '@harborclient/team-hub-api';
 import type { TeamHubAdminCollectionContents } from '#/shared/types';
 import { getAiSettings, setAiSettings } from '#/main/settings/aiSettings';
 import { getGeneralSettings, setGeneralSettings } from '#/main/settings/generalSettings';

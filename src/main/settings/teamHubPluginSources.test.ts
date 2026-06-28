@@ -23,7 +23,8 @@ vi.mock('#/main/settings/teamHubSettings', () => ({
   listTeamHubs: vi.fn(() => [hubOne])
 }));
 
-vi.mock('#/main/teamHub/TeamHubClient', () => ({
+vi.mock('@harborclient/team-hub-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@harborclient/team-hub-api')>()),
   TeamHubClient: class MockTeamHubClient {
     /**
      * Returns plugin source URLs configured on the mocked Team Hub.

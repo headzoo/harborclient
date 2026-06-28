@@ -16,14 +16,15 @@ import type { TeamHubIdMap } from '#/main/storage/TeamHubIdMap';
 import { trimRequiredName } from '#/main/storage/trimRequiredName';
 import { resolveImportUuid } from '#/main/storage/uuid';
 import type { IStorage } from '#/main/storage/IStorage';
-import type { TeamHubClient } from '#/main/teamHub/TeamHubClient';
-import { toTeamHubAuth, type TeamHubAuthConfig } from '#/main/teamHub/auth';
-import type {
-  CollectionRecord,
-  EnvironmentRecord,
-  FolderRecord,
-  SavedRequestRecord
-} from '#/main/teamHub/types';
+import {
+  toTeamHubAuth,
+  type CollectionRecord,
+  type EnvironmentRecord,
+  type FolderRecord,
+  type SavedRequestRecord,
+  type TeamHubAuthConfig,
+  type TeamHubClient
+} from '@harborclient/team-hub-api';
 import { defaultAuth, normalizeAuth } from '#/shared/auth';
 import type {
   AuthConfig,

@@ -5,7 +5,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { TeamHubStorage } from '#/main/storage/TeamHubStorage';
 import { defaultAuth } from '#/shared/auth';
 import { TeamHubIdMap } from '#/main/storage/TeamHubIdMap';
-import type { TeamHubClient } from '#/main/teamHub/TeamHubClient';
+import type { TeamHubClient } from '@harborclient/team-hub-api';
 import { describeSqlite } from '#/test/nativeModules';
 
 describeSqlite('TeamHubStorage', () => {

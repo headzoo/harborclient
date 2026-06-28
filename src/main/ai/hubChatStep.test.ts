@@ -18,7 +18,8 @@ vi.mock('#/main/settings/teamHubSettings', () => ({
   ])
 }));
 
-vi.mock('#/main/teamHub/TeamHubClient', () => ({
+vi.mock('@harborclient/team-hub-api', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@harborclient/team-hub-api')>()),
   TeamHubClient: vi.fn(function TeamHubClientMock() {
     return {
       completeChatStep

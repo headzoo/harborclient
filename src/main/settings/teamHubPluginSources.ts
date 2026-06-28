@@ -1,6 +1,6 @@
 import { getLocalDatabase } from '#/main/storage/localDatabaseInstance';
 import { listTeamHubs } from '#/main/settings/teamHubSettings';
-import { TeamHubClient } from '#/main/teamHub/TeamHubClient';
+import { TeamHubClient } from '@harborclient/team-hub-api';
 import { parseJson } from '#/shared/parseJson';
 
 import type { TeamHubPluginSource, TeamHubPluginSourcesView } from '#/shared/types';
