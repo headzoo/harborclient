@@ -197,6 +197,7 @@ function cleanupTestContributions(): void {
 describe('pluginLoader', () => {
   afterEach(() => {
     cleanupTestContributions();
+    vi.restoreAllMocks();
   });
 
   it('reloadPlugin does not activate disabled plugins', async () => {

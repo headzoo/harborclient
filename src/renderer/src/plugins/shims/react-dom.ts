@@ -3,8 +3,13 @@
  *
  * Registered via {@link patchPluginReactImports} so dynamically imported plugin
  * modules can resolve bare `react-dom` specifiers to the same instance as the main app.
+ * Reads {@link globalThis.__HARBORCLIENT_REACT_DOM__} directly so packaged builds can
+ * inline this file as a self-contained `data:` URL module.
  */
-import ReactDOM from 'react-dom';
+const ReactDOM = globalThis.__HARBORCLIENT_REACT_DOM__;
+if (!ReactDOM) {
+  throw new Error('Plugin React DOM host is not installed.');
+}
 
 export default ReactDOM;
 

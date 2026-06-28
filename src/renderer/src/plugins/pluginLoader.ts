@@ -1,5 +1,8 @@
 import type { PluginContext, PluginInfo } from '#/shared/plugin/types';
+import * as React from 'react';
+import * as ReactDOM from 'react-dom';
 import { createPluginContext } from '#/renderer/src/plugins/createPluginContext';
+import { installPluginReactHost } from '#/renderer/src/plugins/pluginReactHost';
 import {
   clearPluginContributions,
   getRegisteredPluginThemes
@@ -7,6 +10,8 @@ import {
 import { applyPersistedPluginTheme } from '#/renderer/src/plugins/themeRuntime';
 import { store } from '#/renderer/src/store/redux';
 import { openPluginThemePrompt } from '#/renderer/src/store/slices/modalsSlice';
+
+installPluginReactHost(React, ReactDOM);
 
 interface LoadedPlugin {
   pluginId: string;

@@ -3,8 +3,13 @@
  *
  * Registered via {@link patchPluginReactImports} so dynamically imported plugin
  * modules can resolve bare `react` specifiers to the same instance as the main app.
+ * Reads {@link globalThis.__HARBORCLIENT_REACT__} directly so packaged builds can
+ * inline this file as a self-contained `data:` URL module.
  */
-import React from 'react';
+const React = globalThis.__HARBORCLIENT_REACT__;
+if (!React) {
+  throw new Error('Plugin React host is not installed.');
+}
 
 export default React;
 
