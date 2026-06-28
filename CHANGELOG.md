@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.8.33 - 2026-06-28
+
 - feat(http): add @harborclient/http package and improve splash screen error handling. (`e865ec5`)
 
 ## 1.8.32 - 2026-06-28
