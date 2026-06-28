@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.8.23 - 2026-06-28
+
 - chore(package): update @harborclient/sdk version and add new dependencies. (`578571f`)
 - chore(package): remove local SDK link from package.json overrides. (`70a5bef`)
 - fix(ui): improve code formatting in Sidebar component and adjust PluginScreenshot type definition. (`0886e98`)
