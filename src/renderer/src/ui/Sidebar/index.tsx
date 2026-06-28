@@ -365,10 +365,11 @@ export function Sidebar({
           >
             <button
               type="button"
-              className={`rounded px-2 py-1 text-[13px] app-no-drag ${activeSidebarPanelId == null
+              className={`rounded px-2 py-1 text-[13px] app-no-drag ${
+                activeSidebarPanelId == null
                   ? 'bg-accent/15 font-medium text-accent'
                   : 'text-muted hover:bg-control hover:text-text'
-                }`}
+              }`}
               aria-pressed={activeSidebarPanelId == null}
               onClick={() => dispatch(setActiveSidebarPanel(null))}
             >
@@ -378,10 +379,11 @@ export function Sidebar({
               <button
                 key={panel.id}
                 type="button"
-                className={`rounded px-2 py-1 text-[13px] app-no-drag ${activeSidebarPanelId === panel.id
+                className={`rounded px-2 py-1 text-[13px] app-no-drag ${
+                  activeSidebarPanelId === panel.id
                     ? 'bg-accent/15 font-medium text-accent'
                     : 'text-muted hover:bg-control hover:text-text'
-                  }`}
+                }`}
                 aria-pressed={activeSidebarPanelId === panel.id}
                 title={panel.title}
                 onClick={() => dispatch(setActiveSidebarPanel(panel.id))}

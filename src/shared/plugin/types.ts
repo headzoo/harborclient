@@ -42,9 +42,9 @@ export interface ManifestContributionEntry {
 export type PluginScreenshot =
   | string
   | {
-    path: string;
-    caption?: string;
-  };
+      path: string;
+      caption?: string;
+    };
 
 /**
  * Parsed plugin manifest.json.

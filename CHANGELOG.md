@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- fix(ui): improve code formatting in Sidebar component and adjust PluginScreenshot type definition. (`0886e98`)
 - feat(plugins): update plugin database management and enhance plugin storage access. (`93c5d6b`)
 - feat(plugins): implement theme prompt for user-enabled plugins. (`6bfd7fa`)
 - feat(plugins): add Catppuccin Latte and Nord themes to plugin catalog. (`15f58d1`)
