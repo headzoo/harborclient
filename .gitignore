@@ -13,3 +13,4 @@ docs/.vitepress/dist
 docs/.vitepress/static/download_links.json
 plugins/signing.pem
 docs/images/
+REVIEW.md
