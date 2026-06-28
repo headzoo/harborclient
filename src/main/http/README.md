@@ -53,12 +53,13 @@ sequenceDiagram
 
 ## External integration
 
-| Consumer                                                   | Role                                                                                                                                                                                         |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`../ipc/handlers/network.ts`](../ipc/handlers/network.ts) | Primary caller: builds the cookie URL with `QueryString`, runs `Requester.executeRequest`, captures `Set-Cookie` via `ICookieJar`, and tracks `AbortController` instances for `http:cancel`. |
-| [`../ipc/ipcLimits.ts`](../ipc/ipcLimits.ts)               | Imports `HARD_MAX_RESPONSE_SIZE_MB` from `#/main/http` to align IPC body size limits with outbound HTTP.                                                                                     |
-| [`../../shared/types.ts`](../../shared/types.ts)           | Defines `SendRequestInput`, `SendResult`, `GeneralSettings`, and related shared types.                                                                                                       |
-| [`../cookieJar/`](../cookieJar/)                           | Supplies cookie headers before the request and persists response cookies afterward (outside this module).                                                                                    |
+| Consumer                                                           | Role                                                                                                                                                                                         |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`../ipc/handlers/network.ts`](../ipc/handlers/network.ts)         | Primary caller: builds the cookie URL with `QueryString`, runs `Requester.executeRequest`, captures `Set-Cookie` via `ICookieJar`, and tracks `AbortController` instances for `http:cancel`. |
+| [`../ipc/ipcLimits.ts`](../ipc/ipcLimits.ts)                       | Imports `HARD_MAX_RESPONSE_SIZE_MB` from `#/main/http` to align IPC body size limits with outbound HTTP.                                                                                     |
+| [`../../shared/types/request.ts`](../../shared/types/request.ts)   | Defines `SendRequestInput`, `SendResult`, and related HTTP request types.                                                                                                                    |
+| [`../../shared/types/settings.ts`](../../shared/types/settings.ts) | Defines `GeneralSettings` and proxy configuration types.                                                                                                                                     |
+| [`../cookieJar/`](../cookieJar/)                                   | Supplies cookie headers before the request and persists response cookies afterward (outside this module).                                                                                    |
 
 ## Testing
 

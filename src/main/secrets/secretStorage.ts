@@ -1,13 +1,13 @@
-import {
-  createCipheriv,
-  createDecipheriv,
-  randomBytes,
-  type BinaryLike,
-  type CipherKey
-} from 'crypto';
+import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 import { chmodSync, existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { app, safeStorage } from 'electron';
+import {
+  asArrayBufferView,
+  asBinaryLike,
+  asCipherKey,
+  concatBuffers
+} from '#/main/crypto/bufferAdapters';
 
 const LOCAL_KEY_FILENAME = 'local-secrets.key';
 const IV_LENGTH = 12;
@@ -74,33 +74,6 @@ let encryptorOverride: SecretEncryptor | null = null;
 let defaultEncryptor: SecretEncryptor | null = null;
 
 /**
- * Adapts Node buffers for strict crypto typings.
- *
- * @param value - Buffer passed to a crypto API.
- */
-function asBinaryLike(value: Buffer): BinaryLike {
-  return value as unknown as BinaryLike;
-}
-
-/**
- * Adapts Node buffers for strict cipher key typings.
- *
- * @param value - Buffer used as a symmetric key or IV.
- */
-function asCipherKey(value: Buffer): CipherKey {
-  return value as unknown as CipherKey;
-}
-
-/**
- * Adapts Node buffers for crypto APIs expecting ArrayBufferView.
- *
- * @param value - Buffer passed to a crypto API.
- */
-function asArrayBufferView(value: Buffer): NodeJS.ArrayBufferView {
-  return value as unknown as NodeJS.ArrayBufferView;
-}
-
-/**
  * Reads or creates the local AES key file in userData.
  *
  * @param userDataPath - Electron userData directory.
@@ -131,14 +104,9 @@ function encryptLocal(plaintext: string, userDataPath: string): string {
   const key = getLocalEncryptionKey(userDataPath);
   const iv = randomBytes(IV_LENGTH);
   const cipher = createCipheriv('aes-256-gcm', asCipherKey(key), asBinaryLike(iv));
-  const encrypted = Buffer.concat([
-    cipher.update(plaintext, 'utf8') as Buffer,
-    cipher.final()
-  ] as unknown as readonly Uint8Array[]);
+  const encrypted = concatBuffers(cipher.update(plaintext, 'utf8') as Buffer, cipher.final());
   const authTag = cipher.getAuthTag();
-  return Buffer.concat([iv, authTag, encrypted] as unknown as readonly Uint8Array[]).toString(
-    'base64'
-  );
+  return concatBuffers(iv, authTag, encrypted).toString('base64');
 }
 
 /**
@@ -159,10 +127,10 @@ function decryptLocal(ciphertextBase64: string, userDataPath: string): string {
   const encrypted = data.subarray(IV_LENGTH + AUTH_TAG_LENGTH);
   const decipher = createDecipheriv('aes-256-gcm', asCipherKey(key), asBinaryLike(iv));
   decipher.setAuthTag(asArrayBufferView(authTag));
-  return Buffer.concat([
+  return concatBuffers(
     decipher.update(asArrayBufferView(encrypted)) as Buffer,
     decipher.final()
-  ] as unknown as readonly Uint8Array[]).toString('utf8');
+  ).toString('utf8');
 }
 
 /**

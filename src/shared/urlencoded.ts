@@ -1,4 +1,4 @@
-import type { KeyValue } from '#/shared/types';
+import type { KeyValue } from '#/shared/types/common';
 
 /**
  * Returns a blank urlencoded row with enabled set to true.

@@ -1,4 +1,4 @@
-import type { KeyValue } from '#/shared/types';
+import type { KeyValue } from '#/shared/types/common';
 
 /**
  * Base URL, query string (without leading ?), and hash fragment (without leading #).

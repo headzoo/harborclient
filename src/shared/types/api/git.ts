@@ -1,0 +1,86 @@
+import type {
+  GitLogEntry,
+  GitOAuthFinishedEvent,
+  SourceControlStatus
+} from '#/shared/types/storage';
+
+/**
+ * IPC methods for git.
+ */
+export interface ApiGit {
+  /**
+   * Returns source-control status for each mounted git-backed connection.
+   */
+  listGitStatuses: () => Promise<Record<string, SourceControlStatus>>;
+  /**
+   * Subscribes to working-tree changes for git-backed connections (pull, external edits).
+   *
+   * @param callback - Handler invoked with the connection id whose tree changed.
+   * @returns Unsubscribe function.
+   */
+  onGitWorkingTreeChanged: (callback: (connectionId: string) => void) => () => void;
+  /**
+   * Subscribes to background GitHub OAuth completion for a git-backed connection.
+   *
+   * @param callback - Handler invoked when OAuth polling finishes or fails.
+   * @returns Unsubscribe function.
+   */
+  onGitOAuthFinished: (callback: (event: GitOAuthFinishedEvent) => void) => () => void;
+  /**
+   * Stages all changes and commits in a git-backed connection working tree.
+   *
+   * @param connectionId - Git connection id.
+   * @param message - Commit message.
+   * @param createHarborRoot - When true, creates the HarborClient subdirectory layout if missing.
+   */
+  gitCommit: (connectionId: string, message: string, createHarborRoot?: boolean) => Promise<void>;
+  /**
+   * Pulls (fetch + merge) for a git-backed connection.
+   *
+   * @param connectionId - Git connection id.
+   */
+  gitPull: (connectionId: string) => Promise<void>;
+  /**
+   * Pushes commits to the remote for a git-backed connection.
+   *
+   * @param connectionId - Git connection id.
+   */
+  gitPush: (connectionId: string) => Promise<void>;
+  /**
+   * Returns recent commits for a git-backed connection.
+   *
+   * @param connectionId - Git connection id.
+   * @param depth - Maximum number of commits to return.
+   */
+  gitLog: (connectionId: string, depth?: number) => Promise<GitLogEntry[]>;
+  /**
+   * Stores a PAT for a git-backed connection and validates credentials via fetch.
+   *
+   * @param connectionId - Git connection id.
+   * @param username - Basic Auth username.
+   * @param token - Personal access token.
+   */
+  gitSetPat: (connectionId: string, username: string, token: string) => Promise<void>;
+  /**
+   * Starts GitHub OAuth device flow for a git-backed connection.
+   *
+   * @param connectionId - Git connection id.
+   * @returns Device flow code and verification URL for the user to approve in a browser.
+   */
+  gitStartOAuth: (connectionId: string) => Promise<{ userCode: string; verificationUri: string }>;
+  /**
+   * Completes GitHub OAuth device flow after the user approves in a browser.
+   *
+   * Ensures background polling is running when a pending device flow exists.
+   * Resolves immediately without waiting for GitHub approval.
+   *
+   * @param connectionId - Git connection id.
+   */
+  gitCompleteOAuth: (connectionId: string) => Promise<void>;
+  /**
+   * Removes stored GitHub OAuth tokens and resets auth metadata for a git connection.
+   *
+   * @param connectionId - Git connection id.
+   */
+  gitRevokeOAuth: (connectionId: string) => Promise<void>;
+}

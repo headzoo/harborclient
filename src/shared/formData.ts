@@ -1,4 +1,4 @@
-import type { FormDataPart, FormDataPartType } from '#/shared/types';
+import type { FormDataPart, FormDataPartType } from '#/shared/types/common';
 
 /**
  * Returns a blank multipart form part with enabled set to true.

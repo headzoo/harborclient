@@ -356,35 +356,24 @@ export class Requester implements IRequester {
     cookieHeader?: string
   ): Promise<SendResult> {
     const url = this.queryString.buildUrl(input.url, input.params);
+    const sentRequest: SentRequest = {
+      method: input.method,
+      url: input.url,
+      headers: {},
+      body: '',
+      bodyType: input.bodyType
+    };
+
     const builtHeaders = this.headers.build(input.headers, input.bodyType);
     if (!builtHeaders.ok) {
-      return this.errorResult(
-        builtHeaders.error,
-        {
-          method: input.method,
-          url: input.url,
-          headers: {},
-          body: '',
-          bodyType: input.bodyType
-        },
-        0
-      );
+      return this.errorResult(builtHeaders.error, sentRequest, 0);
     }
 
     const headers = builtHeaders.headers;
+    sentRequest.headers = headers;
     const cookieResult = this.headers.applyCookie(headers, cookieHeader);
     if (!cookieResult.ok) {
-      return this.errorResult(
-        cookieResult.error,
-        {
-          method: input.method,
-          url: input.url,
-          headers,
-          body: '',
-          bodyType: input.bodyType
-        },
-        0
-      );
+      return this.errorResult(cookieResult.error, sentRequest, 0);
     }
 
     const shouldSendBody =
@@ -396,47 +385,23 @@ export class Requester implements IRequester {
           ? this.body.buildUrlEncoded(input.body)
           : input.body
       : '';
-    const request: SentRequest = {
-      method: input.method,
-      url,
-      headers,
-      body: sentBody,
-      bodyType: input.bodyType
-    };
+    sentRequest.body = sentBody;
 
     if (!url.trim()) {
-      return this.errorResult(
-        'URL is required',
-        {
-          method: input.method,
-          url: input.url,
-          headers,
-          body: sentBody,
-          bodyType: input.bodyType
-        },
-        0
-      );
+      return this.errorResult('URL is required', sentRequest, 0);
     }
 
     if (!this.queryString.isValidRequestUrl(url)) {
-      return this.errorResult(
-        'Invalid URL',
-        {
-          method: input.method,
-          url: input.url,
-          headers,
-          body: sentBody,
-          bodyType: input.bodyType
-        },
-        0
-      );
+      return this.errorResult('Invalid URL', sentRequest, 0);
     }
+
+    sentRequest.url = url;
 
     const start = performance.now();
     const effectiveSignal = this.buildEffectiveSignal(signal, settings.requestTimeoutMs);
     const dispatcher = this.resolveDispatcher(settings);
 
-    this.logOutgoingRequest(request);
+    this.logOutgoingRequest(sentRequest);
 
     let currentUrl = url;
     let currentMethod: HttpMethod = input.method;
@@ -467,7 +432,7 @@ export class Requester implements IRequester {
         );
         if (bodyResult.error) {
           const timeMs = Math.round(performance.now() - start);
-          return this.errorResult(bodyResult.error, request, timeMs);
+          return this.errorResult(bodyResult.error, sentRequest, timeMs);
         }
         if (bodyResult.body !== undefined) {
           init.body = bodyResult.body;
@@ -503,7 +468,7 @@ export class Requester implements IRequester {
 
         if (redirects.length > MAX_REDIRECTS) {
           const timeMs = Math.round(performance.now() - start);
-          return this.errorResult('Too many redirects', request, timeMs);
+          return this.errorResult('Too many redirects', sentRequest, timeMs);
         }
 
         const methodRef = { value: currentMethod };
@@ -520,7 +485,7 @@ export class Requester implements IRequester {
 
       if (!response) {
         const timeMs = Math.round(performance.now() - start);
-        return this.errorResult('No response received', request, timeMs);
+        return this.errorResult('No response received', sentRequest, timeMs);
       }
 
       const setCookieHeaders =
@@ -536,7 +501,7 @@ export class Requester implements IRequester {
       if ('error' in readResult) {
         return this.errorResult(
           readResult.error,
-          request,
+          sentRequest,
           timeMs,
           responseHeaders,
           setCookieHeaders
@@ -552,12 +517,16 @@ export class Requester implements IRequester {
         timeMs,
         sizeBytes: readResult.sizeBytes,
         setCookieHeaders,
-        request,
+        request: sentRequest,
         ...(redirects.length > 0 ? { redirects } : {})
       };
     } catch (err) {
       const timeMs = Math.round(performance.now() - start);
-      return this.errorResult(this.mapFetchError(err, settings.requestTimeoutMs), request, timeMs);
+      return this.errorResult(
+        this.mapFetchError(err, settings.requestTimeoutMs),
+        sentRequest,
+        timeMs
+      );
     }
   }
 }

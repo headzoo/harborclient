@@ -1,0 +1,106 @@
+import type { HarborDeepLink } from '#/shared/deepLink';
+import type { MenuActionId, RootMenuLabel, UpdateCheckResult } from '#/shared/types/app';
+import type { ThemeSource } from '#/shared/types/settings';
+
+/**
+ * IPC methods for window.
+ */
+export interface ApiWindow {
+  /**
+   * Subscribes to menu bar action events from the main process.
+   *
+   * @param callback - Handler invoked with the menu action id.
+   * @returns Unsubscribe function.
+   */
+  onMenuAction: (callback: (action: MenuActionId) => void) => () => void;
+  /**
+   * Subscribes to harborclient:// deep-link events from the main process.
+   *
+   * @param callback - Handler invoked with a parsed deep-link action.
+   * @returns Unsubscribe function.
+   */
+  onDeepLink: (callback: (payload: HarborDeepLink) => void) => () => void;
+  /**
+   * Syncs sidebar visibility to the View menu checkbox in the main process.
+   *
+   * @param visible - Whether the sidebar is currently visible in the renderer.
+   */
+  setMenuSidebarVisible: (visible: boolean) => Promise<void>;
+  /**
+   * Syncs AI sidebar visibility to the View menu checkbox in the main process.
+   *
+   * @param visible - Whether the AI sidebar is currently visible in the renderer.
+   */
+  setMenuAiSidebarVisible: (visible: boolean) => Promise<void>;
+  /**
+   * Opens a root application submenu at the given window coordinates.
+   *
+   * @param label - Root menu label to open.
+   * @param x - Left edge in window coordinates.
+   * @param y - Top edge in window coordinates.
+   */
+  popupMenuSubmenu: (label: RootMenuLabel, x: number, y: number) => Promise<void>;
+  /**
+   * Returns the application version from package.json.
+   */
+  getAppVersion: () => Promise<string>;
+  /**
+   * Fetches the latest GitHub release and compares it to the running version.
+   */
+  checkForUpdates: () => Promise<UpdateCheckResult>;
+  /**
+   * Returns the persisted theme preference.
+   */
+  getTheme: () => Promise<ThemeSource>;
+  /**
+   * Persists and applies a theme preference.
+   *
+   * @param theme - Theme source to apply.
+   */
+  setTheme: (theme: ThemeSource) => Promise<void>;
+  /**
+   * Subscribes to theme preference changes pushed from the main process.
+   *
+   * @param callback - Called with the new persisted theme preference.
+   * @returns Unsubscribe function.
+   */
+  onThemeChanged: (callback: (theme: ThemeSource) => void) => () => void;
+  /**
+   * Minimizes the focused application window.
+   */
+  minimizeWindow: () => Promise<void>;
+  /**
+   * Toggles maximize on the focused application window.
+   */
+  toggleMaximizeWindow: () => Promise<void>;
+  /**
+   * Closes the focused application window, honoring the quit prompt when configured.
+   */
+  closeWindow: () => Promise<void>;
+  /**
+   * Subscribes to window close and app quit attempts from the main process.
+   *
+   * @param callback - Handler invoked when the user tries to close or quit.
+   * @returns Unsubscribe function.
+   */
+  onBeforeClose: (callback: () => void) => () => void;
+  /**
+   * Responds to a close/quit attempt after checking unsaved state or user choice.
+   *
+   * @param proceed - True to allow close/quit, false to cancel.
+   */
+  confirmClose: (proceed: boolean) => void;
+  /**
+   * Opens a native file picker for one or more files.
+   *
+   * @returns Selected absolute file paths, or an empty array when canceled.
+   */
+  selectFiles: () => Promise<string[]>;
+  /**
+   * Opens a native directory picker.
+   *
+   * @param defaultPath - Initial directory shown in the dialog, if any.
+   * @returns Selected absolute directory path, or null when canceled.
+   */
+  selectDirectory: (defaultPath: string) => Promise<string | null>;
+}

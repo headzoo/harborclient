@@ -1,4 +1,4 @@
-import type { MenuActionId } from '#/shared/types';
+import type { MenuActionId } from '#/shared/types/app';
 
 /**
  * Identifiers for user-configurable keyboard shortcuts.

@@ -1,4 +1,4 @@
-import type { SidebarExpansionState } from '#/shared/types';
+import type { SidebarExpansionState } from '#/shared/types/settings';
 
 const DEFAULT_SECTIONS = {
   collections: true,

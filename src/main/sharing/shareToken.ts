@@ -10,11 +10,15 @@ import {
   randomBytes,
   randomUUID,
   sign,
-  verify,
-  type BinaryLike,
-  type CipherKey
+  verify
 } from 'crypto';
 import { z } from 'zod';
+import {
+  asArrayBufferView,
+  asBinaryLike,
+  asCipherKey,
+  concatBuffers
+} from '#/main/crypto/bufferAdapters';
 import { storageConnection, dbId } from '#/main/ipc/ipcSchemas';
 import {
   getDefaultSpentShareTokenStore,
@@ -105,24 +109,6 @@ function base64UrlEncodeBuffer(value: Buffer): string {
 }
 
 /**
- * Adapts Node buffers for strict crypto typings.
- *
- * @param value - Buffer passed to a crypto API.
- */
-function asBinaryLike(value: Buffer): BinaryLike {
-  return value as unknown as BinaryLike;
-}
-
-/**
- * Adapts Node buffers for strict cipher key typings.
- *
- * @param value - Buffer used as a symmetric key or IV.
- */
-function asCipherKey(value: Buffer): CipherKey {
-  return value as unknown as CipherKey;
-}
-
-/**
  * Decodes a base64url string to UTF-8.
  *
  * @param value - Base64url-encoded string.
@@ -141,15 +127,6 @@ function base64UrlDecodeBuffer(value: string): Buffer {
   const padLength = (4 - (padded.length % 4)) % 4;
   const normalized = padded + '='.repeat(padLength);
   return Buffer.from(normalized, 'base64');
-}
-
-/**
- * Adapts Node buffers for APIs expecting ArrayBufferView.
- *
- * @param value - Buffer passed to a crypto API.
- */
-function asArrayBufferView(value: Buffer): NodeJS.ArrayBufferView {
-  return value as unknown as NodeJS.ArrayBufferView;
 }
 
 /**
@@ -337,10 +314,10 @@ export function createShareToken(
   const iv = randomBytes(12);
   const cipher = createCipheriv('aes-256-gcm', asCipherKey(aesKey), asBinaryLike(iv));
   const plaintext = Buffer.from(JSON.stringify({ conn: connection, collection }), 'utf-8');
-  const ciphertext = Buffer.concat([
+  const ciphertext = concatBuffers(
     cipher.update(asBinaryLike(plaintext)) as Buffer,
     cipher.final()
-  ] as unknown as readonly Uint8Array[]);
+  );
   const tag = cipher.getAuthTag();
 
   const wrappedKey = publicEncrypt(
@@ -461,10 +438,10 @@ export function verifyShareToken(
 
   let decrypted: Buffer;
   try {
-    decrypted = Buffer.concat([
+    decrypted = concatBuffers(
       decipher.update(asArrayBufferView(base64UrlDecodeBuffer(envelope.ct))) as Buffer,
       decipher.final()
-    ] as unknown as readonly Uint8Array[]);
+    );
   } catch {
     throw new Error('Invalid share token: payload tampering detected.');
   }

@@ -7,11 +7,15 @@ import {
   publicEncrypt,
   randomBytes,
   randomUUID,
-  sign,
-  type BinaryLike,
-  type CipherKey
+  sign
 } from 'crypto';
 import { describe, expect, it } from 'vitest';
+import {
+  asArrayBufferView,
+  asBinaryLike,
+  asCipherKey,
+  concatBuffers
+} from '#/main/crypto/bufferAdapters';
 import type { StorageConnection } from '#/shared/types';
 import {
   createShareToken,
@@ -87,33 +91,6 @@ function base64UrlEncodeBuffer(value: Buffer): string {
 }
 
 /**
- * Adapts Node buffers for strict crypto typings.
- *
- * @param value - Buffer passed to a crypto API.
- */
-function asBinaryLike(value: Buffer): BinaryLike {
-  return value as unknown as BinaryLike;
-}
-
-/**
- * Adapts Node buffers for strict cipher key typings.
- *
- * @param value - Buffer used as a symmetric key or IV.
- */
-function asCipherKey(value: Buffer): CipherKey {
-  return value as unknown as CipherKey;
-}
-
-/**
- * Adapts Node buffers for APIs expecting ArrayBufferView.
- *
- * @param value - Buffer passed to a crypto API.
- */
-function asArrayBufferView(value: Buffer): NodeJS.ArrayBufferView {
-  return value as unknown as NodeJS.ArrayBufferView;
-}
-
-/**
  * Encodes a UTF-8 string as base64url without padding.
  *
  * @param value - UTF-8 string to encode.
@@ -140,10 +117,10 @@ function createShareTokenWithPayload(
   const iv = randomBytes(12);
   const cipher = createCipheriv('aes-256-gcm', asCipherKey(aesKey), asBinaryLike(iv));
   const plaintext = Buffer.from(JSON.stringify(payload), 'utf-8');
-  const ciphertext = Buffer.concat([
+  const ciphertext = concatBuffers(
     cipher.update(asBinaryLike(plaintext)) as Buffer,
     cipher.final()
-  ] as unknown as readonly Uint8Array[]);
+  );
   const tag = cipher.getAuthTag();
 
   const wrappedKey = publicEncrypt(

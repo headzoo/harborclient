@@ -15,6 +15,7 @@ import http from 'isomorphic-git/http/node';
 import fs from 'fs';
 import JSZip from 'jszip';
 import type { BrowserWindow } from 'electron';
+import { pathHasParentSegment } from '#/main/pathHasParentSegment';
 import { collectPluginHotReloadWatchTargets } from '#/main/plugins/pluginHotReloadWatch';
 import { validatePluginManifest } from '#/main/plugins/manifestSchema';
 import { PluginFsAllowlist, normalizePath } from '#/main/plugins/pluginFsAllowlist';
@@ -1054,7 +1055,7 @@ export class PluginManager {
     if (normalized === '.' || normalized === '..' || normalized.startsWith('../')) {
       throw new Error(`Plugin archive contains an unsafe path: ${relativePath}`);
     }
-    if (normalized.split('/').some((segment) => segment === '..')) {
+    if (pathHasParentSegment(normalized)) {
       throw new Error(`Plugin archive contains an unsafe path: ${relativePath}`);
     }
 

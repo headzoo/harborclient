@@ -9,6 +9,7 @@ import {
   writeFileSync
 } from 'fs';
 import { dirname, join, posix } from 'path';
+import { pathHasParentSegment } from '#/main/pathHasParentSegment';
 import { listStorageConnections } from '#/main/settings/storageSettings';
 import { normalizeSqliteFilename } from '#/main/settings/sqliteFilename';
 
@@ -102,7 +103,7 @@ export function isSafeRelativePath(relativePath: string): boolean {
     return false;
   }
 
-  return !normalized.split('/').some((segment) => segment === '..');
+  return !pathHasParentSegment(normalized);
 }
 
 /**

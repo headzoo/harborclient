@@ -31,7 +31,8 @@ Build output goes to `out/`. User docs are in `docs/` (VitePress).
 The renderer never imports Node or Electron APIs directly. All main-process
 access goes through `window.api`, defined in three places that must stay in sync:
 
-1. **`src/shared/types.ts`** — `Api` interface and shared request/response types
+1. **`src/shared/types/`** — domain type modules and `api/` IPC contract (`Api` interface)
+   Re-exported from **`src/shared/types.ts`** for backward-compatible imports
 2. **`src/preload/index.ts`** — thin `ipcRenderer.invoke` wrappers, exposed via
    `contextBridge.exposeInMainWorld('api', api)`
 3. **`src/main/ipc/index.ts`** — `ipcMain.handle` handlers that delegate to main-process modules

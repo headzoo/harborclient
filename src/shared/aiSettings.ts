@@ -1,4 +1,4 @@
-import type { AiSettings } from '#/shared/types';
+import type { AiSettings } from '#/shared/types/settings';
 
 /**
  * Returns whether at least one AI provider API key is configured.

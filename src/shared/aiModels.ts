@@ -1,4 +1,5 @@
-import type { AiSettings, HubLlmModelGroup, LlmProvider } from '#/shared/types';
+import type { HubLlmModelGroup, LlmProvider } from '#/shared/types/ai';
+import type { AiSettings } from '#/shared/types/settings';
 
 /**
  * Whether a chat model is sourced from a personal API key or a Team Hub.

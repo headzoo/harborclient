@@ -1,6 +1,6 @@
 import type * as React from 'react';
 import type { PluginCatalogCategory } from '#/shared/plugin/catalogCategories';
-import type { ThemeSource } from '#/shared/types';
+import type { ThemeSource } from '#/shared/types/settings';
 import type {
   ActiveTheme,
   AppMenu,

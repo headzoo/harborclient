@@ -1,6 +1,6 @@
 import { normalizeAuth, type AuthConfig } from '#/shared/auth';
 import { applyParamsToUrl, mergeParamsFromUrl } from '#/shared/queryParams';
-import type { BodyType, HttpMethod, KeyValue } from '#/shared/types';
+import type { BodyType, HttpMethod, KeyValue } from '#/shared/types/common';
 
 /**
  * Merge mode for key-value lists such as headers, params, and cookies.

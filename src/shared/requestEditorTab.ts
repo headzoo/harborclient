@@ -1,4 +1,4 @@
-import type { EditorTab } from '#/shared/types';
+import type { EditorTab } from '#/shared/types/settings';
 
 const EDITOR_TABS: ReadonlySet<EditorTab> = new Set([
   'params',

@@ -136,6 +136,44 @@ function settleChildPending(reply: SuccessReply | ErrorReply): void {
 }
 
 /**
+ * Registers a disposable cleanup and tracks it for plugin teardown.
+ *
+ * @param subscriptions - Plugin subscription list updated on activation.
+ * @param dispose - Cleanup invoked when the subscription is disposed.
+ * @returns Disposable handle returned to plugin code.
+ */
+function registerDisposable(
+  subscriptions: Array<{ dispose: () => void }>,
+  dispose: () => void
+): { dispose: () => void } {
+  const disposable = { dispose };
+  subscriptions.push(disposable);
+  return disposable;
+}
+
+/**
+ * Adds a handler to a subscription array and returns a disposable that removes it.
+ *
+ * @param subscriptions - Plugin subscription list updated on activation.
+ * @param handlers - Handler array to append to.
+ * @param handler - Handler registered by the plugin.
+ * @returns Disposable handle returned to plugin code.
+ */
+function subscribeHandler<T>(
+  subscriptions: Array<{ dispose: () => void }>,
+  handlers: T[],
+  handler: T
+): { dispose: () => void } {
+  handlers.push(handler);
+  return registerDisposable(subscriptions, () => {
+    const index = handlers.indexOf(handler);
+    if (index >= 0) {
+      handlers.splice(index, 1);
+    }
+  });
+}
+
+/**
  * Builds the hc API exposed to main-process plugin entries.
  *
  * @param state - Mutable plugin runtime state.
@@ -211,46 +249,22 @@ function createMainPluginContext(state: PluginState): Record<string, unknown> {
     http: {
       onBeforeSend: (handler: (request: PluginHttpRequest) => void | Promise<void>) => {
         assertPermission('http');
-        state.beforeSend.push(handler);
-        const disposable = {
-          dispose: () => {
-            const index = state.beforeSend.indexOf(handler);
-            if (index >= 0) {
-              state.beforeSend.splice(index, 1);
-            }
-          }
-        };
-        subscriptions.push(disposable);
-        return disposable;
+        return subscribeHandler(subscriptions, state.beforeSend, handler);
       },
       onAfterSend: (
         handler: (request: PluginHttpRequest, response: PluginHttpResponse) => void | Promise<void>
       ) => {
         assertPermission('http');
-        state.afterSend.push(handler);
-        const disposable = {
-          dispose: () => {
-            const index = state.afterSend.indexOf(handler);
-            if (index >= 0) {
-              state.afterSend.splice(index, 1);
-            }
-          }
-        };
-        subscriptions.push(disposable);
-        return disposable;
+        return subscribeHandler(subscriptions, state.afterSend, handler);
       }
     },
     ipc: {
       handle: (channel: string, handler: (...args: unknown[]) => unknown) => {
         assertPermission('ipc');
         state.ipcHandlers.set(channel, handler);
-        const disposable = {
-          dispose: () => {
-            state.ipcHandlers.delete(channel);
-          }
-        };
-        subscriptions.push(disposable);
-        return disposable;
+        return registerDisposable(subscriptions, () => {
+          state.ipcHandlers.delete(channel);
+        });
       }
     },
     scripts: {
@@ -275,17 +289,7 @@ function createMainPluginContext(state: PluginState): Record<string, unknown> {
       },
       onRequest: (handler: (request: EchoServerIncomingRequest) => unknown | Promise<unknown>) => {
         assertPermission('server');
-        state.onRequestHandlers.push(handler);
-        const disposable = {
-          dispose: () => {
-            const index = state.onRequestHandlers.indexOf(handler);
-            if (index >= 0) {
-              state.onRequestHandlers.splice(index, 1);
-            }
-          }
-        };
-        subscriptions.push(disposable);
-        return disposable;
+        return subscribeHandler(subscriptions, state.onRequestHandlers, handler);
       }
     }
   };

@@ -1,14 +1,4 @@
-import {
-  app,
-  BrowserWindow,
-  dialog,
-  ipcMain,
-  Menu,
-  nativeTheme,
-  screen,
-  shell,
-  type App
-} from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, screen, type App } from 'electron';
 import { join, resolve } from 'path';
 import { RoutingStorage } from '#/main/storage';
 import { initLocalDatabase } from '#/main/storage/localDatabaseInstance';
@@ -42,6 +32,10 @@ import {
   saveWindowState,
   trackWindowState
 } from '#/main/window/windowState';
+import {
+  attachRendererNavigationGuards,
+  createRendererNavigationPolicy
+} from '#/main/window/navigationSecurity';
 import { disposeScriptRunner } from '#/main/scripting/scriptRunnerHost';
 import {
   PluginManager,
@@ -645,10 +639,17 @@ function createWindow(): BrowserWindow {
     });
   }
 
-  window.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url);
-    return { action: 'deny' };
-  });
+  const indexPath = join(__dirname, '../renderer/index.html');
+  const rendererRoot = join(__dirname, '../renderer');
+  attachRendererNavigationGuards(
+    window.webContents,
+    createRendererNavigationPolicy({
+      isDev,
+      devRendererUrl: process.env['ELECTRON_RENDERER_URL'],
+      indexPath,
+      rendererRoot
+    })
+  );
 
   setupCloseHandlers(window);
   setupFullscreenEscapeHandler(window);
@@ -657,7 +658,6 @@ function createWindow(): BrowserWindow {
     logVerbose('createWindow: loading renderer URL', process.env['ELECTRON_RENDERER_URL']);
     window.loadURL(process.env['ELECTRON_RENDERER_URL']);
   } else {
-    const indexPath = join(__dirname, '../renderer/index.html');
     logVerbose('createWindow: loading renderer file', indexPath);
     window.loadFile(indexPath);
   }

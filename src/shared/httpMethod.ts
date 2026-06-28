@@ -1,4 +1,4 @@
-import type { HttpMethod } from '#/shared/types';
+import type { HttpMethod } from '#/shared/types/common';
 
 const HTTP_METHODS = new Set<HttpMethod>([
   'GET',

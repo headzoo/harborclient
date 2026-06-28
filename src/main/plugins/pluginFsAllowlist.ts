@@ -1,5 +1,6 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { dirname, normalize, resolve } from 'path';
+import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'fs';
+import { basename, dirname, join, normalize, resolve } from 'path';
+import { pathHasParentSegment } from '#/main/pathHasParentSegment';
 
 /**
  * Tracks filesystem paths a plugin is allowed to read or write.
@@ -33,9 +34,9 @@ export class PluginFsAllowlist {
    * @param targetPath - Absolute or relative path to allow.
    */
   grantPath(pluginId: string, targetPath: string): void {
-    const normalized = normalizePath(targetPath);
+    const resolved = resolveRealPath(targetPath);
     const paths = this.#pathsByPlugin.get(pluginId) ?? new Set<string>();
-    paths.add(normalized);
+    paths.add(resolved);
     this.#pathsByPlugin.set(pluginId, paths);
   }
 
@@ -46,13 +47,13 @@ export class PluginFsAllowlist {
    * @param targetPath - Path to validate.
    */
   isAllowed(pluginId: string, targetPath: string): boolean {
-    const normalized = normalizePath(targetPath);
+    const resolved = resolveRealPath(targetPath);
     const paths = this.#pathsByPlugin.get(pluginId);
     if (!paths) {
       return false;
     }
     for (const allowed of paths) {
-      if (normalized === allowed || normalized.startsWith(`${allowed}/`)) {
+      if (resolved === allowed || resolved.startsWith(`${allowed}/`)) {
         return true;
       }
     }
@@ -103,10 +104,35 @@ export class PluginFsAllowlist {
  * @param targetPath - Path to normalize.
  */
 export function normalizePath(targetPath: string): string {
-  const resolved = resolve(targetPath);
-  const normalized = normalize(resolved);
-  if (normalized.includes('..')) {
+  if (pathHasParentSegment(targetPath)) {
     throw new Error(`Invalid path: ${targetPath}`);
   }
-  return normalized;
+  const resolved = resolve(targetPath);
+  return normalize(resolved);
+}
+
+/**
+ * Resolves a filesystem path to its canonical form, following symlinks.
+ *
+ * When the final path component does not exist yet, resolves the nearest
+ * existing ancestor and appends the remaining segments so write-before-create
+ * checks still work.
+ *
+ * @param targetPath - Path to resolve.
+ */
+export function resolveRealPath(targetPath: string): string {
+  const normalized = normalizePath(targetPath);
+  try {
+    return realpathSync(normalized);
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code !== 'ENOENT') {
+      throw error;
+    }
+    const parent = dirname(normalized);
+    if (parent === normalized) {
+      return normalized;
+    }
+    return join(resolveRealPath(parent), basename(normalized));
+  }
 }
