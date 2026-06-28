@@ -105,6 +105,9 @@ importers:
       mysql2:
         specifier: ^3.22.5
         version: 3.22.5(@types/node@25.9.3)
+      nanoid:
+        specifier: 3.3.8
+        version: 3.3.8
       openai:
         specifier: ^6.44.0
         version: 6.44.0(zod@4.4.3)
@@ -5141,6 +5144,11 @@ packages:
 
   nanoid@3.3.13:
     resolution: {integrity: sha512-sPdqC6ByMVVGvF1ynvvMo0/o+oD1VX7DaHhijt1bFgjvBkHBib4t49GoNDhf2NDta4oeUNlaGbSt5K7qjZ955Q==}
+    engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
+    hasBin: true
+
+  nanoid@3.3.8:
+    resolution: {integrity: sha512-WNLf5Sd8oZxOm+TzppcYk8gVOgP+l58xNy58D0nbUnOxOWRWvlcCV4kUF7ltmI6PsrLl/BgKEyS4mqsGChFN0w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
@@ -13045,6 +13053,8 @@ snapshots:
     optional: true
 
   nanoid@3.3.13: {}
+
+  nanoid@3.3.8: {}
 
   napi-build-utils@2.0.0: {}
 

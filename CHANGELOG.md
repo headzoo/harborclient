@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(dependencies): add nanoid package version 3.3.8 to project. (`63a58e4`)
+
 ## 1.8.26 - 2026-06-28
 
 - feat(deep-linking): implement harborclient protocol for plugin installation. (`ec00f60`)
