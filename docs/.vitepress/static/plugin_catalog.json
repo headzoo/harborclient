@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-06-27T23:36:20.198Z",
+  "updatedAt": "2026-06-28T12:20:17.107Z",
   "plugins": [
     {
       "id": "com.harborclient.plugins.aws-sigv4",
@@ -103,6 +103,18 @@
       "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-history/main/screenshot.png"
     },
     {
+      "id": "com.harborclient.plugins.httpie",
+      "name": "HTTPie",
+      "version": "1.0.0",
+      "summary": "Adds a tab to the request editor that shows an equivalent `http` command for the configured request.",
+      "author": "HarborClient",
+      "categories": [
+        "requests"
+      ],
+      "repoUrl": "https://github.com/harborclient/plugin-httpie",
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-httpie/main/screenshot.png"
+    },
+    {
       "id": "com.harborclient.plugins.interval",
       "name": "Interval",
       "version": "1.0.4",
@@ -113,6 +125,19 @@
       ],
       "repoUrl": "https://github.com/harborclient/plugin-interval",
       "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-interval/main/screenshot.png"
+    },
+    {
+      "id": "com.harborclient.plugins.json-schema",
+      "name": "JSON Schema Validator",
+      "version": "1.0.0",
+      "summary": "Attach JSON Schemas to requests and validate response bodies against them with path-level error details.",
+      "author": "HarborClient",
+      "categories": [
+        "requests",
+        "response"
+      ],
+      "repoUrl": "https://github.com/harborclient/plugin-json-validator",
+      "screenshot": "https://raw.githubusercontent.com/harborclient/plugin-json-validator/main/screenshot.png"
     },
     {
       "id": "com.harborclient.plugins.jwt",
@@ -155,7 +180,7 @@
     {
       "id": "com.harborclient.plugins.request-history",
       "name": "Request History",
-      "version": "1.0.4",
+      "version": "1.2.0",
       "summary": "Records every completed HTTP request and displays them in a Recent Requests sidebar section.",
       "author": "HarborClient",
       "categories": [

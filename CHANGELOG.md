@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(plugins): add new HTTPie and JSON Schema Validator plugins, update plugin catalog. (`a02d0a5`)
+
 ## 1.8.25 - 2026-06-28
 
 - chore(package): update @harborclient/team-hub-api dependency to version 0.1.1. (`58914e4`)

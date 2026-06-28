@@ -9,6 +9,7 @@ import {
 } from '#/main/storage/collectionData';
 import { convertPostmanCollection, isPostmanCollection } from '#/main/import/postman';
 import { convertBrunoCollection, isBrunoCollectionManifest } from '#/main/import/bruno';
+import { convertHarToCollection, isHarArchive } from '#/main/import/har';
 import { defaultAuth } from '#/shared/auth';
 import type { IStorage } from '#/main/storage/IStorage';
 import { RoutingStorage } from '#/main/storage/RoutingStorage';
@@ -101,6 +102,11 @@ interface CollectionImportContext {
    * Absolute path to a Bruno collection root directory.
    */
   collectionDir?: string;
+
+  /**
+   * Base name of the selected import file, without extension.
+   */
+  fileName?: string;
 }
 
 /**
@@ -133,6 +139,10 @@ async function importCollectionFromParsed(
       throw new Error('Bruno collection import requires a collection directory path.');
     }
     exportData = validateCollectionExport(convertBrunoCollection(collectionDir, parsed));
+  } else if (isHarArchive(parsed)) {
+    exportData = validateCollectionExport(
+      convertHarToCollection(parsed, { name: context?.fileName })
+    );
   } else {
     exportData = validateCollectionExport(parsed);
   }
@@ -321,7 +331,8 @@ export function registerCollectionHandlers(db: IStorage): void {
     }
 
     const result = await importCollectionFromParsed(db, win, file.parsed, {
-      collectionDir: file.collectionDir
+      collectionDir: file.collectionDir,
+      fileName: file.fileName
     });
     return result?.collection ?? null;
   });
@@ -370,7 +381,8 @@ export function registerCollectionHandlers(db: IStorage): void {
 
     if (isPostmanCollection(parsed)) {
       const result = await importCollectionFromParsed(db, win, parsed, {
-        collectionDir: file.collectionDir
+        collectionDir: file.collectionDir,
+        fileName: file.fileName
       });
       if (!result) {
         return null;
@@ -384,7 +396,23 @@ export function registerCollectionHandlers(db: IStorage): void {
 
     if (isBrunoCollectionManifest(parsed)) {
       const result = await importCollectionFromParsed(db, win, parsed, {
-        collectionDir: file.collectionDir
+        collectionDir: file.collectionDir,
+        fileName: file.fileName
+      });
+      if (!result) {
+        return null;
+      }
+      return {
+        kind: 'collection',
+        collection: result.collection,
+        action: result.action
+      } satisfies ImportEntityResult;
+    }
+
+    if (isHarArchive(parsed)) {
+      const result = await importCollectionFromParsed(db, win, parsed, {
+        collectionDir: file.collectionDir,
+        fileName: file.fileName
       });
       if (!result) {
         return null;
@@ -400,7 +428,8 @@ export function registerCollectionHandlers(db: IStorage): void {
 
     if (exportKind === 'collection') {
       const result = await importCollectionFromParsed(db, win, parsed, {
-        collectionDir: file.collectionDir
+        collectionDir: file.collectionDir,
+        fileName: file.fileName
       });
       if (!result) {
         return null;

@@ -1,7 +1,7 @@
 import { BrowserWindow, dialog } from 'electron';
 import { stat } from 'fs/promises';
 import { readFile } from 'fs/promises';
-import { join, dirname } from 'path';
+import { join, dirname, basename } from 'path';
 import { isBrunoCollectionManifest } from '#/main/import/bruno';
 import {
   getSuppressPostmanImportWarning,
@@ -36,7 +36,28 @@ export type ImportFileSelection = {
    * Absolute path to the Bruno collection root when a manifest was loaded.
    */
   collectionDir?: string;
+
+  /**
+   * Base name of the selected import file, without extension.
+   */
+  fileName?: string;
 };
+
+/**
+ * Returns the base name of a file path without its extension.
+ *
+ * @param filePath - Absolute path to an import file.
+ * @returns File base name suitable for default collection naming.
+ */
+function importFileBaseName(filePath: string): string {
+  const fileName = basename(filePath);
+  const extensionIndex = fileName.lastIndexOf('.');
+  if (extensionIndex <= 0) {
+    return fileName;
+  }
+
+  return fileName.slice(0, extensionIndex);
+}
 
 /**
  * Reads bruno.json from a directory and returns a parsed import selection.
@@ -58,7 +79,8 @@ async function readBrunoCollectionSelection(collectionDir: string): Promise<Impo
     raw,
     parsed,
     filePath: manifestPath,
-    collectionDir
+    collectionDir,
+    fileName: importFileBaseName(manifestPath)
   };
 }
 
@@ -79,7 +101,7 @@ export async function openImportFile(
     properties: isDarwin
       ? (['openFile', 'openDirectory'] as Array<'openFile' | 'openDirectory'>)
       : (['openFile'] as Array<'openFile'>),
-    filters: [{ name: 'JSON', extensions: ['json'] }]
+    filters: [{ name: 'Import files', extensions: ['json', 'har'] }]
   };
   const { canceled, filePaths } = win
     ? await dialog.showOpenDialog(win, dialogOptions)
@@ -101,7 +123,8 @@ export async function openImportFile(
   const selection: ImportFileSelection = {
     raw,
     parsed,
-    filePath: selectedPath
+    filePath: selectedPath,
+    fileName: importFileBaseName(selectedPath)
   };
 
   if (isBrunoCollectionManifest(parsed)) {
