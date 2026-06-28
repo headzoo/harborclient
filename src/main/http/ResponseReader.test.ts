@@ -6,8 +6,9 @@ import { ResponseReader } from '#/main/http/ResponseReader';
  * Builds a fetch Response backed by a ReadableStream of byte chunks.
  *
  * @param chunks - Ordered body chunks to enqueue before closing the stream.
+ * @param init - Optional ResponseInit including headers.
  */
-function createStreamResponse(chunks: Uint8Array[]): Response {
+function createStreamResponse(chunks: Uint8Array[], init?: ResponseInit): Response {
   const stream = new ReadableStream({
     start(controller) {
       for (const chunk of chunks) {
@@ -17,7 +18,7 @@ function createStreamResponse(chunks: Uint8Array[]): Response {
     }
   });
 
-  return new Response(stream, { status: 200, statusText: 'OK' });
+  return new Response(stream, { status: 200, statusText: 'OK', ...init });
 }
 
 describe('ResponseReader', () => {
@@ -77,6 +78,36 @@ describe('ResponseReader', () => {
       const result = await responseReader.read(response, 1);
 
       expect(result).toEqual({ body: '', sizeBytes: 0 });
+    });
+
+    it('includes bodyBase64 for image content-type responses', async () => {
+      const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+      const response = createStreamResponse([bytes], {
+        headers: { 'content-type': 'image/png' }
+      });
+
+      const result = await responseReader.read(response, 1);
+
+      expect(result).toEqual({
+        body: new TextDecoder().decode(bytes),
+        sizeBytes: bytes.length,
+        bodyBase64: Buffer.from(bytes).toString('base64')
+      });
+    });
+
+    it('omits bodyBase64 for non-image content-type responses', async () => {
+      const payload = 'plain text';
+      const response = createStreamResponse([new TextEncoder().encode(payload)], {
+        headers: { 'content-type': 'text/plain' }
+      });
+
+      const result = await responseReader.read(response, 1);
+
+      expect(result).toEqual({
+        body: payload,
+        sizeBytes: new TextEncoder().encode(payload).length
+      });
+      expect(result).not.toHaveProperty('bodyBase64');
     });
   });
 });

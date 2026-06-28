@@ -18,11 +18,14 @@ import {
   formatBody,
   formatBytes,
   isHtmlResponse,
+  isImageResponse,
+  responseContentType,
   responseTabExportPath,
   responseTabText
 } from '#/renderer/src/ui/shared/responseFormatUtils';
 import { Headers } from './Headers';
 import { HtmlPreview } from './HtmlPreview';
+import { ImagePreview } from './ImagePreview';
 import { Redirects } from './Redirects';
 import { Tests } from './Tests';
 
@@ -93,6 +96,19 @@ export function Response({
     [response]
   );
 
+  /**
+   * Whether the current response should expose the image preview tab and button.
+   */
+  const showImagePreview = useMemo(
+    () => (response ? isImageResponse(response.headers) : false),
+    [response]
+  );
+
+  /**
+   * Whether the Preview tab should appear for HTML or image responses.
+   */
+  const showPreviewTab = showHtmlPreview || showImagePreview;
+
   const hasTests = testResults.length > 0;
   const hasRedirects = (response?.redirects?.length ?? 0) > 0;
   const passedCount = testResults.filter((test) => test.passed).length;
@@ -100,7 +116,7 @@ export function Response({
   const effectiveTab =
     tab === 'tests' && !hasTests
       ? 'body'
-      : tab === 'preview' && !showHtmlPreview
+      : tab === 'preview' && !showPreviewTab
         ? 'body'
         : tab === 'redirects' && !hasRedirects
           ? 'body'
@@ -170,7 +186,7 @@ export function Response({
   const tabs = useMemo(
     () => [
       { value: 'body', label: 'Body' },
-      ...(showHtmlPreview ? [{ value: 'preview', label: 'Preview' }] : []),
+      ...(showPreviewTab ? [{ value: 'preview', label: 'Preview' }] : []),
       { value: 'headers', label: 'Headers' },
       { value: 'redirects', label: 'Redirects', hidden: !hasRedirects },
       {
@@ -202,7 +218,7 @@ export function Response({
       passedCount,
       pluginTabs,
       response,
-      showHtmlPreview,
+      showPreviewTab,
       testResults.length
     ]
   );
@@ -281,9 +297,16 @@ export function Response({
                 language={responseBodyLanguage}
               />
             </SegmentedTabPanel>
-            {showHtmlPreview && (
+            {showPreviewTab && (
               <SegmentedTabPanel value="preview" className="flex min-h-0 flex-1 flex-col">
-                <HtmlPreview body={response.body} requestUrl={requestUrl} />
+                {showHtmlPreview ? (
+                  <HtmlPreview body={response.body} requestUrl={requestUrl} />
+                ) : (
+                  <ImagePreview
+                    bodyBase64={response.bodyBase64}
+                    contentType={responseContentType(response.headers)}
+                  />
+                )}
               </SegmentedTabPanel>
             )}
             <SegmentedTabPanel value="headers">

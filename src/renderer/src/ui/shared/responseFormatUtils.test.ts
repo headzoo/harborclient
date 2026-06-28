@@ -4,6 +4,7 @@ import {
   formatHeadersText,
   formatTestsText,
   isHtmlResponse,
+  isImageResponse,
   resolveHtmlPreviewBaseUrl,
   responseBodyExportPath,
   responseTabExportPath,
@@ -74,6 +75,25 @@ describe('isHtmlResponse', () => {
 
   it('returns false for non-html content with plain text', () => {
     expect(isHtmlResponse('hello world', { 'content-type': 'application/json' })).toBe(false);
+  });
+});
+
+describe('isImageResponse', () => {
+  it('returns true for image/png content-type', () => {
+    expect(isImageResponse({ 'content-type': 'image/png' })).toBe(true);
+  });
+
+  it('returns true for image/jpeg with charset parameter', () => {
+    expect(isImageResponse({ 'Content-Type': 'image/jpeg; charset=binary' })).toBe(true);
+  });
+
+  it('returns false for text/html content-type', () => {
+    expect(isImageResponse({ 'content-type': 'text/html' })).toBe(false);
+  });
+
+  it('returns false when content-type is missing', () => {
+    expect(isImageResponse({})).toBe(false);
+    expect(isImageResponse(undefined)).toBe(false);
   });
 });
 

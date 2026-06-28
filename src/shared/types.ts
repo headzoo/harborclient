@@ -871,6 +871,11 @@ export interface SendResult {
   body: string;
 
   /**
+   * Base64-encoded response body for image responses only; omitted for other content types.
+   */
+  bodyBase64?: string;
+
+  /**
    * Round-trip time in milliseconds.
    */
   timeMs: number;

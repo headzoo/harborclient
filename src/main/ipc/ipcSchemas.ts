@@ -148,6 +148,7 @@ export const sendResult = z.object({
   statusText: z.string(),
   headers: z.record(z.string(), z.string()),
   body: z.string(),
+  bodyBase64: z.string().optional(),
   timeMs: z.number(),
   sizeBytes: z.number(),
   error: z.string().optional(),

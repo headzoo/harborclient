@@ -67,6 +67,11 @@ export class ResponseReader implements IResponseReader {
     }
 
     const body = new TextDecoder().decode(combined);
-    return { body, sizeBytes: totalBytes };
+    const contentType = response.headers.get('content-type')?.toLowerCase() ?? '';
+    const bodyBase64 = contentType.startsWith('image/')
+      ? Buffer.from(combined).toString('base64')
+      : undefined;
+
+    return { body, sizeBytes: totalBytes, ...(bodyBase64 ? { bodyBase64 } : {}) };
   }
 }

@@ -162,6 +162,24 @@ export function isHtmlResponse(body: string, headers?: Record<string, string>): 
 }
 
 /**
+ * Returns the response Content-Type header value, or an empty string when absent.
+ *
+ * @param headers - Response headers map.
+ */
+export function responseContentType(headers?: Record<string, string>): string {
+  return headers?.['content-type'] ?? headers?.['Content-Type'] ?? '';
+}
+
+/**
+ * Returns true when the response Content-Type indicates an image body.
+ *
+ * @param headers - Response headers map.
+ */
+export function isImageResponse(headers?: Record<string, string>): boolean {
+  return responseContentType(headers).toLowerCase().startsWith('image/');
+}
+
+/**
  * Wraps an HTML fragment in a minimal document shell with preview CSP.
  *
  * @param body - Raw HTML fragment.

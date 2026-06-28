@@ -548,6 +548,7 @@ export class Requester implements IRequester {
         statusText: response.statusText,
         headers: responseHeaders,
         body: readResult.body,
+        ...(readResult.bodyBase64 ? { bodyBase64: readResult.bodyBase64 } : {}),
         timeMs,
         sizeBytes: readResult.sizeBytes,
         setCookieHeaders,

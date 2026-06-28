@@ -1,7 +1,9 @@
 /**
  * Result of reading a response body with size limits applied.
  */
-export type ReadResponseBodyResult = { body: string; sizeBytes: number } | { error: string };
+export type ReadResponseBodyResult =
+  | { body: string; sizeBytes: number; bodyBase64?: string }
+  | { error: string };
 
 /**
  * Response body reading with configurable and hard size limits.
