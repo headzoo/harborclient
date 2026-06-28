@@ -1,3 +1,4 @@
+import { DEFAULT_PROXY_SETTINGS, HARD_MAX_RESPONSE_SIZE_MB } from '@harborclient/http';
 import { getLocalDatabase } from '#/main/storage/localDatabaseInstance';
 import { normalizeVariable } from '#/main/storage/collectionVariables';
 import { parseJson } from '#/shared/parseJson';
@@ -8,20 +9,9 @@ import {
 } from '#/shared/codeEditorSettings';
 import type { GeneralSettings, ProxyProtocol, ProxySettings, Variable } from '#/shared/types';
 
-/**
- * Absolute ceiling for the configurable max response size setting (MB).
- */
-export const HARD_MAX_RESPONSE_SIZE_MB = 512;
+export { HARD_MAX_RESPONSE_SIZE_MB };
 
-export const DEFAULT_PROXY_SETTINGS: ProxySettings = {
-  enabled: false,
-  protocol: 'http',
-  host: '',
-  port: 8080,
-  authEnabled: false,
-  username: '',
-  password: ''
-};
+export { DEFAULT_PROXY_SETTINGS };
 
 export const DEFAULT_GENERAL_SETTINGS: GeneralSettings = {
   requestTimeoutMs: 30000,

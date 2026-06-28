@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { Headers } from '#/main/http/Headers';
+import { Headers } from '@harborclient/http';
 import {
   applyPluginAfterSendHooks,
   logPluginActivationFailureToTerminal,

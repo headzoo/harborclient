@@ -694,7 +694,11 @@ ipcMain.on('app:close-decision', (_event, ...raw) => {
 app.whenReady().then(async () => {
   logVerbose('app ready: verbose logging enabled');
   applyLinuxDesktopIdentity();
-  await createSplashWindow();
+  try {
+    await createSplashWindow();
+  } catch (err) {
+    console.warn('Splash screen failed to load, continuing without it:', err);
+  }
   const splashStartedAt = Date.now();
 
   try {

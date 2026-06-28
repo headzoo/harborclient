@@ -1,6 +1,5 @@
 import type { ICookieJar } from '#/main/cookieJar/ICookieJar';
-import { QueryString } from '#/main/http/QueryString';
-import { Requester } from '#/main/http/Requester';
+import { QueryString, Requester } from '@harborclient/http';
 import { handle } from '#/main/ipc/handle';
 import { ipcArgSchemas } from '#/main/ipc/ipcSchemas';
 import { runScript } from '#/main/scripting/scripts';

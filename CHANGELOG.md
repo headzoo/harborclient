@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(http): add @harborclient/http package and improve splash screen error handling. (`e865ec5`)
+
 ## 1.8.32 - 2026-06-28
 
 - feat(plugins): enhance plugin loading with JavaScript MIME type support. (`94d17c9`)

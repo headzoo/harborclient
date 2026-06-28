@@ -48,6 +48,9 @@ importers:
       '@fortawesome/react-fontawesome':
         specifier: ^3.3.1
         version: 3.3.1(@fortawesome/fontawesome-svg-core@7.2.0)(react@19.2.7)
+      '@harborclient/http':
+        specifier: ^0.1.1
+        version: 0.1.1
       '@harborclient/sdk':
         specifier: ^0.6.1
         version: 0.6.1(@babel/runtime@7.29.7)(@codemirror/lint@6.9.7)(@codemirror/search@6.7.1)(@codemirror/theme-one-dark@6.1.3)(codemirror@6.0.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -1208,6 +1211,10 @@ packages:
     resolution: {integrity: sha512-wtF6h+DY6M3YaDBPAmvuuA6jV8Sif9MjtOI5euKFWRgCDl5PeDpPsHR9u2l6St5ceY8AZgoNDww5+HvEsXFsGg==}
     engines: {node: '>=6'}
     hasBin: true
+
+  '@harborclient/http@0.1.1':
+    resolution: {integrity: sha512-19OYMs76482u6qDSSjdPjUX91dwD8YqIkib2oCcA+biZF0MhRQkB50eCpU8cuDkENyE480DMgFEJkDG8/qfdjg==}
+    engines: {node: '>=24'}
 
   '@harborclient/sdk@0.6.1':
     resolution: {integrity: sha512-/6Z6OS5RrDvz59tAPRI1KwII8oZfBJDWoRAKLF7iantzzXuOV7B87yXmHWaAv5Y9hQZzUkoFM8HwdM88QANmTg==}
@@ -8035,6 +8042,10 @@ snapshots:
       long: 5.3.2
       protobufjs: 7.6.4
       yargs: 17.7.2
+
+  '@harborclient/http@0.1.1':
+    dependencies:
+      undici: 6.27.0
 
   '@harborclient/sdk@0.6.1(@babel/runtime@7.29.7)(@codemirror/lint@6.9.7)(@codemirror/search@6.7.1)(@codemirror/theme-one-dark@6.1.3)(codemirror@6.0.2)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:

@@ -1,28 +1,8 @@
 import type { CodeEditorSetup, CodeEditorTheme } from '@harborclient/sdk';
 import type { Variable } from '#/shared/types/common';
+import type { ProxySettings } from '@harborclient/http';
 
-/**
- * Theme preference for light, dark, system, or high-contrast appearance.
- */
-export type ThemeSource =
-  | 'light'
-  | 'dark'
-  | 'system'
-  | 'high-contrast'
-  | `plugin:${string}:${string}`;
-
-/**
- * Request editor tab identifiers.
- */
-export type EditorTab =
-  | 'params'
-  | 'headers'
-  | 'auth'
-  | 'cookies'
-  | 'body'
-  | 'pre'
-  | 'post'
-  | 'comment';
+export type { ProxyProtocol, ProxySettings } from '@harborclient/http';
 
 /**
  * Persisted sidebar expansion state for sections, collections, and folders.
@@ -85,49 +65,27 @@ export interface AiChatSessionState {
 }
 
 /**
- * Proxy protocol used to connect to the proxy server.
+ * Theme preference for light, dark, system, or high-contrast appearance.
  */
-export type ProxyProtocol = 'http' | 'https';
+export type ThemeSource =
+  | 'light'
+  | 'dark'
+  | 'system'
+  | 'high-contrast'
+  | `plugin:${string}:${string}`;
 
 /**
- * Global HTTP proxy configuration applied to every outbound request.
+ * Request editor tab identifiers.
  */
-export interface ProxySettings {
-  /**
-   * When true, outbound requests are routed through the configured proxy.
-   */
-  enabled: boolean;
-
-  /**
-   * Protocol used to connect to the proxy server.
-   */
-  protocol: ProxyProtocol;
-
-  /**
-   * Proxy server hostname or IP address.
-   */
-  host: string;
-
-  /**
-   * Proxy server port.
-   */
-  port: number;
-
-  /**
-   * When true, HTTP Basic authentication credentials are sent to the proxy.
-   */
-  authEnabled: boolean;
-
-  /**
-   * Username for proxy HTTP Basic authentication.
-   */
-  username: string;
-
-  /**
-   * Password for proxy HTTP Basic authentication.
-   */
-  password: string;
-}
+export type EditorTab =
+  | 'params'
+  | 'headers'
+  | 'auth'
+  | 'cookies'
+  | 'body'
+  | 'pre'
+  | 'post'
+  | 'comment';
 
 /**
  * General application settings for HTTP request execution.
