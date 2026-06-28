@@ -11,7 +11,7 @@ import {
   setPluginEnabled,
   setUnpackedPluginPath
 } from '#/main/plugins/devRegistry';
-import { PluginManager } from '#/main/plugins/PluginManager';
+import { PluginManager, isDisablePluginsFlagEnabled } from '#/main/plugins/PluginManager';
 import * as pluginSignature from '#/main/plugins/pluginSignature';
 import {
   clearLocalDatabaseForTesting,
@@ -23,11 +23,15 @@ const cleanups: Array<() => void | Promise<void>> = [];
 
 /**
  * Creates an isolated userData directory and plugin manager for tests.
+ *
+ * @param options - Optional session overrides passed to {@link PluginManager}.
  */
-async function createManager(): Promise<{ manager: PluginManager; rootDir: string }> {
+async function createManager(options?: {
+  disableAllPlugins?: boolean;
+}): Promise<{ manager: PluginManager; rootDir: string }> {
   const rootDir = mkdtempSync(join(tmpdir(), 'harborclient-plugins-'));
   await initLocalDatabase(rootDir);
-  const manager = new PluginManager(rootDir, '1.6.2');
+  const manager = new PluginManager(rootDir, '1.6.2', options);
   cleanups.push(async () => {
     manager.dispose();
     await getLocalDatabase().close();
@@ -550,5 +554,58 @@ describe('PluginManager', () => {
     expect(() => manager.resolveMainActivation('com.example.missing')).toThrow(
       'Unknown plugin: com.example.missing'
     );
+  });
+
+  it('reports all plugins disabled when disableAllPlugins is active', async () => {
+    setPluginEnabled('com.example.flagged', true);
+    const { manager, rootDir } = await createManager({ disableAllPlugins: true });
+    writePlugin(rootDir, 'com.example.flagged');
+    const plugins = manager.discover();
+
+    expect(plugins[0]?.enabled).toBe(false);
+    expect(getPluginEnablement()['com.example.flagged']).toBe(true);
+  });
+
+  it('persists enablement but keeps plugins inactive while disableAllPlugins is active', async () => {
+    const { manager, rootDir } = await createManager({ disableAllPlugins: true });
+    writePlugin(rootDir, 'com.example.flagged');
+    manager.discover();
+
+    manager.setEnabled('com.example.flagged', true);
+
+    expect(manager.get('com.example.flagged')?.enabled).toBe(false);
+    expect(getPluginEnablement()['com.example.flagged']).toBe(true);
+  });
+
+  it('restores persisted enablement after a session without disableAllPlugins', async () => {
+    const rootDir = mkdtempSync(join(tmpdir(), 'harborclient-plugins-restore-'));
+    await initLocalDatabase(rootDir);
+    cleanups.push(async () => {
+      await getLocalDatabase().close();
+      rmSync(rootDir, { recursive: true, force: true });
+    });
+
+    setPluginEnabled('com.example.flagged', true);
+    writePlugin(rootDir, 'com.example.flagged');
+
+    const disabledManager = new PluginManager(rootDir, '1.6.2', { disableAllPlugins: true });
+    disabledManager.discover();
+    expect(disabledManager.get('com.example.flagged')?.enabled).toBe(false);
+    disabledManager.dispose();
+
+    const normalManager = new PluginManager(rootDir, '1.6.2');
+    normalManager.discover();
+    expect(normalManager.get('com.example.flagged')?.enabled).toBe(true);
+    normalManager.dispose();
+  });
+});
+
+describe('isDisablePluginsFlagEnabled', () => {
+  it('returns true when --disable-plugins is present', () => {
+    expect(isDisablePluginsFlagEnabled(['electron', '--disable-plugins'])).toBe(true);
+  });
+
+  it('returns false when --disable-plugins is absent', () => {
+    expect(isDisablePluginsFlagEnabled(['electron', '--verbose'])).toBe(false);
   });
 });

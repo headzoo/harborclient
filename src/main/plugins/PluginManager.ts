@@ -88,11 +88,27 @@ export function parseDevPluginPaths(argv: string[] = process.argv): string[] {
 }
 
 /**
+ * Reads `process.argv` for `--disable-plugins` so the flag works in dev and packaged builds.
+ *
+ * @param argv - Process argv including Electron flags.
+ * @returns True when all plugins should stay inactive for this session.
+ */
+export function isDisablePluginsFlagEnabled(argv: string[] = process.argv): boolean {
+  return argv.includes('--disable-plugins');
+}
+
+interface PluginManagerOptions {
+  /** When true, no plugin activates for this process regardless of persisted enablement. */
+  disableAllPlugins?: boolean;
+}
+
+/**
  * Manages plugin discovery, installation, dev loading, and storage on disk.
  */
 export class PluginManager {
   readonly #userDataPath: string;
   readonly #appVersion: string;
+  readonly #disableAllPlugins: boolean;
   readonly #records = new Map<string, PluginRecord>();
   readonly #reloadTimers = new Map<string, ReturnType<typeof setTimeout>>();
   readonly #fsAllowlist = new PluginFsAllowlist();
@@ -103,10 +119,22 @@ export class PluginManager {
   /**
    * @param userDataPath - Electron userData directory.
    * @param appVersion - Running HarborClient semver.
+   * @param options - Optional session overrides such as `--disable-plugins`.
    */
-  constructor(userDataPath: string, appVersion: string) {
+  constructor(userDataPath: string, appVersion: string, options: PluginManagerOptions = {}) {
     this.#userDataPath = userDataPath;
     this.#appVersion = appVersion;
+    this.#disableAllPlugins = options.disableAllPlugins ?? false;
+  }
+
+  /**
+   * Applies session-only disable overrides to persisted plugin enablement.
+   *
+   * @param persisted - Enablement stored in settings.
+   * @returns Whether the plugin should activate in this process.
+   */
+  #effectiveEnabled(persisted: boolean): boolean {
+    return this.#disableAllPlugins ? false : persisted;
   }
 
   /**
@@ -280,7 +308,7 @@ export class PluginManager {
           }
         : entry;
       this.#records.set(info.id, {
-        info: { ...info, enabled: enablement[info.id] ?? false },
+        info: { ...info, enabled: this.#effectiveEnabled(enablement[info.id] ?? false) },
         watchers: []
       });
     }
@@ -292,7 +320,9 @@ export class PluginManager {
           continue;
         }
 
-        const enabled = enablement[info.id] ?? enablement[registryKey] ?? false;
+        const enabled = this.#effectiveEnabled(
+          enablement[info.id] ?? enablement[registryKey] ?? false
+        );
         if (registryKey !== info.id) {
           removeUnpackedPluginPath(registryKey);
           setUnpackedPluginPath(info.id, directory);
@@ -335,7 +365,9 @@ export class PluginManager {
     for (const directory of directories) {
       void this.loadUnpacked(directory)
         .then((info) => {
-          this.setEnabled(info.id, true);
+          if (!this.#disableAllPlugins) {
+            this.setEnabled(info.id, true);
+          }
         })
         .catch((error) => {
           console.error(`Failed to load dev plugin from ${directory}:`, error);
@@ -644,9 +676,10 @@ export class PluginManager {
       throw new Error(`Unknown plugin: ${pluginId}`);
     }
     setPluginEnabled(pluginId, enabled);
-    record.info = { ...record.info, enabled };
+    const effectiveEnabled = this.#effectiveEnabled(enabled);
+    record.info = { ...record.info, enabled: effectiveEnabled };
     if (record.info.source === 'unpacked') {
-      if (enabled) {
+      if (effectiveEnabled) {
         this.#startWatcher(pluginId);
       } else {
         this.#stopWatcher(pluginId);

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(plugins): introduce --disable-plugins flag for session-based plugin management. (`293d6a3`)
+
 ## 1.8.27 - 2026-06-28
 
 - feat(dependencies): add nanoid package version 3.3.8 to project. (`63a58e4`)

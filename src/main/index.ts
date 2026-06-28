@@ -43,7 +43,11 @@ import {
   trackWindowState
 } from '#/main/window/windowState';
 import { disposeScriptRunner } from '#/main/scripting/scriptRunnerHost';
-import { PluginManager, parseDevPluginPaths } from '#/main/plugins/PluginManager';
+import {
+  PluginManager,
+  isDisablePluginsFlagEnabled,
+  parseDevPluginPaths
+} from '#/main/plugins/PluginManager';
 import { disposePluginRunner } from '#/main/plugins/pluginRunnerHost';
 import type { StorageConnection, ThemeSource } from '#/shared/types';
 import { HARBOR_PROTOCOL, parseHarborDeepLink, type HarborDeepLink } from '#/shared/deepLink';
@@ -704,7 +708,13 @@ app.whenReady().then(async () => {
     await applyPersistedTheme();
 
     logVerbose('startup: initializing plugin manager');
-    pluginManager = new PluginManager(app.getPath('userData'), app.getVersion());
+    const disableAllPlugins = isDisablePluginsFlagEnabled();
+    if (disableAllPlugins) {
+      logVerbose('startup: --disable-plugins active; all plugins will stay inactive');
+    }
+    pluginManager = new PluginManager(app.getPath('userData'), app.getVersion(), {
+      disableAllPlugins
+    });
     pluginManager.discover();
     void pluginManager.refreshSignatures();
     pluginManager.registerStartupDevPaths(parseDevPluginPaths());

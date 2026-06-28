@@ -105,6 +105,22 @@ Pass `--seed` on startup to ensure the **HarborClient Echo** sample collection e
 pnpm dev -- --seed
 ```
 
+## Plugins
+
+Pass `--disable-plugins` on startup to keep every plugin inactive for that session only. Saved enablement in Settings is unchanged; plugins return to their previous on/off state on the next launch without the flag.
+
+**Packaged build:**
+
+```bash
+./HarborClient --disable-plugins
+```
+
+**Development:**
+
+```bash
+pnpm dev -- --disable-plugins
+```
+
 ## What's next
 
 - [Making requests](/requests) — build, send, and inspect HTTP requests.

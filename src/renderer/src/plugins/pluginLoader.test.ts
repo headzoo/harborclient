@@ -3,6 +3,7 @@ import type { PluginContext, PluginInfo } from '#/shared/plugin/types';
 import {
   disposePartialRendererActivation,
   markPluginForThemePrompt,
+  normalizePluginActivationError,
   reloadPlugin,
   unloadAllPlugins,
   unloadPlugin
@@ -38,6 +39,7 @@ const activatePluginMainMock = vi.fn<(pluginId: string) => Promise<void>>();
 const deactivatePluginMainMock = vi.fn<(pluginId: string) => Promise<void>>();
 const reportPluginRuntimeErrorMock =
   vi.fn<(pluginId: string, message: string | null) => Promise<PluginInfo>>();
+const setPluginEnabledMock = vi.fn<(pluginId: string, enabled: boolean) => Promise<PluginInfo>>();
 
 /**
  * Minimal plugin metadata used by reloadPlugin gating tests.
@@ -143,6 +145,7 @@ beforeEach(() => {
   activatePluginMainMock.mockReset();
   deactivatePluginMainMock.mockReset();
   reportPluginRuntimeErrorMock.mockReset();
+  setPluginEnabledMock.mockReset();
   readPluginEntryMock.mockResolvedValue(ACTIVATE_TRACKING_SOURCE);
   activatePluginMainMock.mockResolvedValue(undefined);
   deactivatePluginMainMock.mockResolvedValue(undefined);
@@ -151,13 +154,18 @@ beforeEach(() => {
     id: pluginId,
     runtimeError: message ?? undefined
   }));
+  setPluginEnabledMock.mockImplementation(async (pluginId, enabled) => ({
+    ...createGatedPluginInfo(enabled),
+    id: pluginId
+  }));
   vi.stubGlobal('window', {
     api: {
       listPlugins: listPluginsMock,
       readPluginEntry: readPluginEntryMock,
       activatePluginMain: activatePluginMainMock,
       deactivatePluginMain: deactivatePluginMainMock,
-      reportPluginRuntimeError: reportPluginRuntimeErrorMock
+      reportPluginRuntimeError: reportPluginRuntimeErrorMock,
+      setPluginEnabled: setPluginEnabledMock
     }
   });
 });
@@ -213,7 +221,7 @@ describe('pluginLoader', () => {
     expect(reportPluginRuntimeErrorMock).toHaveBeenCalledWith(GATED_PLUGIN_ID, null);
   });
 
-  it('reports runtime errors when renderer activation fails', async () => {
+  it('disables the plugin and reports runtime errors when renderer activation fails', async () => {
     listPluginsMock.mockResolvedValue([createGatedPluginInfo(true)]);
     readPluginEntryMock.mockResolvedValue(ACTIVATE_FAILING_SOURCE);
     vi.spyOn(URL, 'createObjectURL').mockImplementation(
@@ -223,8 +231,20 @@ describe('pluginLoader', () => {
 
     await expect(reloadPlugin(GATED_PLUGIN_ID)).rejects.toThrow('Renderer activate failed');
 
+    expect(setPluginEnabledMock).toHaveBeenCalledWith(GATED_PLUGIN_ID, false);
     expect(reportPluginRuntimeErrorMock).toHaveBeenCalledWith(
       GATED_PLUGIN_ID,
+      'Renderer activate failed'
+    );
+  });
+
+  it('normalizes dynamic import fetch failures to a stable message', () => {
+    expect(
+      normalizePluginActivationError(
+        new Error('Failed to fetch dynamically imported module: blob:http://localhost/abc')
+      )
+    ).toBe('Failed to load plugin module.');
+    expect(normalizePluginActivationError(new Error('Renderer activate failed'))).toBe(
       'Renderer activate failed'
     );
   });

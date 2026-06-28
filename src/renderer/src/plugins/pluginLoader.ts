@@ -62,14 +62,42 @@ async function importPluginModule(
   }
 }
 
+/** Stable runtime error text for blob-URL dynamic import failures. */
+const PLUGIN_MODULE_IMPORT_ERROR = 'Failed to load plugin module.';
+
 /**
- * Persists an activation failure so Settings can show the runtime error.
+ * Normalizes activation error messages for persistence.
+ *
+ * Dynamic import failures include a unique blob URL on each attempt, which
+ * would otherwise bypass deduplication in the main process and re-trigger reload.
+ *
+ * @param error - Thrown activation error.
+ * @returns Message suitable for Settings and runtime-error deduplication.
+ */
+export function normalizePluginActivationError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes('Failed to fetch dynamically imported module')) {
+    return PLUGIN_MODULE_IMPORT_ERROR;
+  }
+  return message;
+}
+
+/**
+ * Disables a plugin and persists its activation failure for Settings.
+ *
+ * Disabling first breaks the renderer reload loop triggered by runtime-error
+ * updates; a stable normalized message avoids repeated change events on retry.
  *
  * @param pluginId - Plugin manifest id.
  * @param error - Thrown activation error.
  */
-async function reportActivationFailure(pluginId: string, error: unknown): Promise<void> {
-  const message = error instanceof Error ? error.message : String(error);
+async function handleActivationFailure(pluginId: string, error: unknown): Promise<void> {
+  const message = normalizePluginActivationError(error);
+  try {
+    await window.api.setPluginEnabled(pluginId, false);
+  } catch {
+    // Best-effort disable when activation fails.
+  }
   try {
     await window.api.reportPluginRuntimeError(pluginId, message);
   } catch {
@@ -244,7 +272,7 @@ async function loadPlugin(plugin: PluginInfo): Promise<void> {
     maybePromptForPluginTheme(plugin);
     await clearActivationError(plugin.id);
   } catch (error) {
-    await reportActivationFailure(plugin.id, error);
+    await handleActivationFailure(plugin.id, error);
     throw error;
   }
 }
