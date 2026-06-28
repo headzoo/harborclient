@@ -1,6 +1,8 @@
 import type { PluginContext, PluginInfo } from '#/shared/plugin/types';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+import reactShimSource from '#/renderer/src/plugins/shims/react.ts?raw';
+import reactDomShimSource from '#/renderer/src/plugins/shims/react-dom.ts?raw';
 import { createPluginContext } from '#/renderer/src/plugins/createPluginContext';
 import { installPluginReactHost } from '#/renderer/src/plugins/pluginReactHost';
 import {
@@ -13,6 +15,9 @@ import { openPluginThemePrompt } from '#/renderer/src/store/slices/modalsSlice';
 
 installPluginReactHost(React, ReactDOM);
 
+/** MIME type browsers require for ES module imports from blob/data URLs. */
+const PLUGIN_MODULE_MIME_TYPE = 'text/javascript';
+
 interface LoadedPlugin {
   pluginId: string;
   deactivate?: () => void;
@@ -24,11 +29,21 @@ const loaded = new Map<string, LoadedPlugin>();
 /** Plugin ids queued for a post-activation theme switch prompt. */
 const pendingThemePromptIds = new Set<string>();
 
-/** Module URL plugins use when their bundle externalizes bare `react` imports. */
-const PLUGIN_REACT_SHIM = new URL('./shims/react.ts', import.meta.url).href;
-
-/** Module URL plugins use when their bundle externalizes bare `react-dom` imports. */
-const PLUGIN_REACT_DOM_SHIM = new URL('./shims/react-dom.ts', import.meta.url).href;
+/**
+ * Creates a blob URL module for plugin imports with a JavaScript MIME type.
+ *
+ * The shim sources are imported as raw text (not as `new URL('./shim.ts')`) because
+ * Vite inlines `.ts` module URLs as `data:video/mp2t` in packaged builds. Browsers
+ * reject importing a data/blob ES module whose MIME type is not JavaScript, which is
+ * why renderer plugins failed to load in production. Building the blob with an explicit
+ * `text/javascript` type avoids that.
+ *
+ * @param source - ESM source text to expose as an importable module.
+ * @returns Object URL whose blob carries a JavaScript MIME type.
+ */
+function createJavaScriptModuleUrl(source: string): string {
+  return URL.createObjectURL(new Blob([source], { type: PLUGIN_MODULE_MIME_TYPE }));
+}
 
 /**
  * Rewrites externalized React imports in a plugin bundle to host shim modules.
@@ -38,25 +53,36 @@ const PLUGIN_REACT_DOM_SHIM = new URL('./shims/react-dom.ts', import.meta.url).h
  * `react` specifiers. Blob URL dynamic imports cannot resolve those without a map.
  *
  * @param source - Bundled plugin ESM source text.
+ * @param reactShimUrl - Module URL re-exporting the host React instance.
+ * @param reactDomShimUrl - Module URL re-exporting the host React DOM instance.
  * @returns Source with `react` / `react-dom` imports pointed at host shims.
  */
-function patchPluginReactImports(source: string): string {
+function patchPluginReactImports(
+  source: string,
+  reactShimUrl: string,
+  reactDomShimUrl: string
+): string {
   return source
-    .replace(/from\s*(["'])react\1/g, `from ${JSON.stringify(PLUGIN_REACT_SHIM)}`)
-    .replace(/from\s*(["'])react-dom\1/g, `from ${JSON.stringify(PLUGIN_REACT_DOM_SHIM)}`);
+    .replace(/from\s*(["'])react\1/g, `from ${JSON.stringify(reactShimUrl)}`)
+    .replace(/from\s*(["'])react-dom\1/g, `from ${JSON.stringify(reactDomShimUrl)}`);
 }
 
 /**
  * Dynamically imports a plugin bundle from source text.
+ *
+ * React/React DOM shim modules are created per import with a JavaScript MIME type and
+ * revoked once the plugin module has been instantiated; the loaded module keeps the
+ * host React instance via {@link installPluginReactHost}, so revoking the URLs is safe.
  *
  * @param source - Bundled ESM source returned by the main process.
  */
 async function importPluginModule(
   source: string
 ): Promise<{ activate?: (hc: unknown) => void | Promise<void>; deactivate?: () => void }> {
-  const patched = patchPluginReactImports(source);
-  const blob = new Blob([patched], { type: 'text/javascript' });
-  const url = URL.createObjectURL(blob);
+  const reactShimUrl = createJavaScriptModuleUrl(reactShimSource);
+  const reactDomShimUrl = createJavaScriptModuleUrl(reactDomShimSource);
+  const patched = patchPluginReactImports(source, reactShimUrl, reactDomShimUrl);
+  const url = createJavaScriptModuleUrl(patched);
   try {
     return (await import(/* @vite-ignore */ url)) as {
       activate?: (hc: unknown) => void | Promise<void>;
@@ -64,6 +90,8 @@ async function importPluginModule(
     };
   } finally {
     URL.revokeObjectURL(url);
+    URL.revokeObjectURL(reactShimUrl);
+    URL.revokeObjectURL(reactDomShimUrl);
   }
 }
 

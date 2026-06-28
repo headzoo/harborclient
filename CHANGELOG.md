@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(plugins): enhance plugin loading with JavaScript MIME type support. (`94d17c9`)
+
 ## 1.8.31 - 2026-06-28
 
 - feat(plugins): integrate React and ReactDOM for plugin support. (`72c1af2`)

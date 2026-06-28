@@ -223,6 +223,21 @@ describe('pluginLoader', () => {
     expect(reportPluginRuntimeErrorMock).toHaveBeenCalledWith(GATED_PLUGIN_ID, null);
   });
 
+  it('builds plugin and shim module blobs with a JavaScript MIME type', async () => {
+    const blobMimeTypes: string[] = [];
+    listPluginsMock.mockResolvedValue([createGatedPluginInfo(true)]);
+    vi.spyOn(URL, 'createObjectURL').mockImplementation((blob) => {
+      blobMimeTypes.push(blob instanceof Blob ? blob.type : 'not-a-blob');
+      return `data:text/javascript,${encodeURIComponent(ACTIVATE_TRACKING_SOURCE.trim())}`;
+    });
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+
+    await reloadPlugin(GATED_PLUGIN_ID);
+
+    expect(blobMimeTypes.length).toBeGreaterThan(0);
+    expect(blobMimeTypes.every((type) => type === 'text/javascript')).toBe(true);
+  });
+
   it('disables the plugin and reports runtime errors when renderer activation fails', async () => {
     listPluginsMock.mockResolvedValue([createGatedPluginInfo(true)]);
     readPluginEntryMock.mockResolvedValue(ACTIVATE_FAILING_SOURCE);
