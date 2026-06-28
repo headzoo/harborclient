@@ -84,7 +84,7 @@
     {
       "id": "com.harborclient.plugins.request-history",
       "name": "Request History",
-      "version": "1.0.4",
+      "version": "1.2.0",
       "summary": "Records every completed HTTP request and displays them in a Recent Requests sidebar section.",
       "author": "HarborClient",
       "categories": ["requests"],

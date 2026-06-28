@@ -365,11 +365,10 @@ export function Sidebar({
           >
             <button
               type="button"
-              className={`rounded px-2 py-1 text-[13px] app-no-drag ${
-                activeSidebarPanelId == null
+              className={`rounded px-2 py-1 text-[13px] app-no-drag ${activeSidebarPanelId == null
                   ? 'bg-accent/15 font-medium text-accent'
                   : 'text-muted hover:bg-control hover:text-text'
-              }`}
+                }`}
               aria-pressed={activeSidebarPanelId == null}
               onClick={() => dispatch(setActiveSidebarPanel(null))}
             >
@@ -379,11 +378,10 @@ export function Sidebar({
               <button
                 key={panel.id}
                 type="button"
-                className={`rounded px-2 py-1 text-[13px] app-no-drag ${
-                  activeSidebarPanelId === panel.id
+                className={`rounded px-2 py-1 text-[13px] app-no-drag ${activeSidebarPanelId === panel.id
                     ? 'bg-accent/15 font-medium text-accent'
                     : 'text-muted hover:bg-control hover:text-text'
-                }`}
+                  }`}
                 aria-pressed={activeSidebarPanelId === panel.id}
                 title={panel.title}
                 onClick={() => dispatch(setActiveSidebarPanel(panel.id))}
@@ -647,12 +645,14 @@ export function Sidebar({
             {pluginSidebarSections.map((section) => {
               const expanded = pluginSectionExpanded[section.id] ?? true;
               const Component = section.Component;
+              const HeaderActions = section.headerActions;
               return (
                 <nav key={section.id} aria-label={section.title}>
                   <Section
                     title={section.title}
                     expanded={expanded}
                     onToggle={() => togglePluginSection(section.id)}
+                    headerActions={HeaderActions ? <HeaderActions /> : undefined}
                   >
                     <Component />
                   </Section>

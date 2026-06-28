@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import '#/shared/plugin/databaseTypes';
 import type { PluginManifest } from '#/shared/plugin/types';
 import { createPluginContext } from '#/renderer/src/plugins/createPluginContext';
 import {
@@ -101,5 +102,10 @@ describe('createPluginContext runtime surfaces', () => {
     expect(() => hc.fs.watchFile('/tmp/example.env', () => {})).toThrow(
       /lacks permission: filesystem:read/
     );
+  });
+
+  it('rejects hc.database.get without the database permission', async () => {
+    const hc = createPluginContext('com.example.test', createManifest(['storage']));
+    await expect(hc.database.get('SELECT 1')).rejects.toThrow(/lacks permission: database/);
   });
 });

@@ -9,6 +9,11 @@ import { rebuildAppMenu } from '#/main/appMenu';
 import { handle } from '#/main/ipc/handle';
 import { ipcArgSchemas } from '#/main/ipc/ipcSchemas';
 import { setPluginMenuContributions } from '#/main/plugins/pluginMenuContributions';
+import { PluginDatabaseManager } from '#/main/plugins/PluginDatabaseManager';
+import {
+  setPluginDatabaseManager,
+  getPluginDatabaseManager
+} from '#/main/plugins/pluginDatabaseManagerInstance';
 import {
   activatePluginMain,
   deactivatePluginMain,
@@ -16,7 +21,9 @@ import {
   isPluginRunnerShuttingDown,
   PluginRunnerUnavailableError,
   runPluginAfterSendHooks,
-  runPluginBeforeSendHooks
+  runPluginBeforeSendHooks,
+  setPluginDatabaseAccess,
+  setPluginStorageAccess
 } from '#/main/plugins/pluginRunnerHost';
 import type { PluginHttpResponse } from '#/shared/plugin/types';
 import { toPluginHttpRequest } from '#/shared/plugin/httpRequest';
@@ -24,6 +31,20 @@ import { parseHttpMethod } from '#/shared/httpMethod';
 import type { KeyValue, SendRequestInput } from '#/shared/types';
 
 let manager: PluginManager | null = null;
+let databaseManager: PluginDatabaseManager | null = null;
+
+/**
+ * Ensures a plugin exists and has database permission before running SQL.
+ *
+ * @param pluginManager - Initialized plugin manager.
+ * @param pluginId - Plugin manifest id.
+ */
+function assertPluginDatabaseAccess(pluginManager: PluginManager, pluginId: string): void {
+  if (!pluginManager.get(pluginId)) {
+    throw new Error(`Unknown plugin: ${pluginId}`);
+  }
+  pluginManager.assertPermission(pluginId, 'database');
+}
 
 /**
  * Runs a plugin runner call and returns undefined when the runner is unavailable
@@ -165,6 +186,22 @@ export function mergePluginHttpHeaders(
  */
 export function registerPluginHandlers(pluginManager: PluginManager): void {
   setPluginManager(pluginManager);
+  databaseManager = new PluginDatabaseManager(pluginManager.getUserDataPath());
+  setPluginDatabaseManager(databaseManager);
+  pluginManager.setDatabaseManager(databaseManager);
+  setPluginStorageAccess({
+    get: (pluginId, key) => pluginManager.getStorageValue(pluginId, key),
+    set: (pluginId, key, value) => pluginManager.setStorageValue(pluginId, key, value)
+  });
+  setPluginDatabaseAccess({
+    get: (pluginId, sql, params, txnId) => databaseManager!.get(pluginId, sql, params, txnId),
+    all: (pluginId, sql, params, txnId) => databaseManager!.all(pluginId, sql, params, txnId),
+    run: (pluginId, sql, params, txnId) => databaseManager!.run(pluginId, sql, params, txnId),
+    exec: (pluginId, sql) => databaseManager!.exec(pluginId, sql),
+    beginTransaction: (pluginId) => databaseManager!.beginTransaction(pluginId),
+    endTransaction: (pluginId, txnId, action) =>
+      databaseManager!.endTransaction(pluginId, txnId, action)
+  });
 
   handle('plugins:list', ipcArgSchemas.none, () => pluginManager.list());
 
@@ -258,6 +295,41 @@ export function registerPluginHandlers(pluginManager: PluginManager): void {
   handle('plugins:storageSet', ipcArgSchemas.pluginStorageSet, (_event, pluginId, key, value) => {
     pluginManager.setStorageValue(pluginId, key, value);
   });
+
+  handle(
+    'plugins:databaseQuery',
+    ipcArgSchemas.pluginDbQuery,
+    (_event, pluginId, mode, sql, params, txnId) => {
+      assertPluginDatabaseAccess(pluginManager, pluginId);
+      const db = getPluginDatabaseManager();
+      if (mode === 'get') {
+        return db.get(pluginId, sql, params ?? [], txnId);
+      }
+      if (mode === 'all') {
+        return db.all(pluginId, sql, params ?? [], txnId);
+      }
+      return db.run(pluginId, sql, params ?? [], txnId);
+    }
+  );
+
+  handle('plugins:databaseExec', ipcArgSchemas.pluginDbExec, (_event, pluginId, sql) => {
+    assertPluginDatabaseAccess(pluginManager, pluginId);
+    return getPluginDatabaseManager().exec(pluginId, sql);
+  });
+
+  handle('plugins:databaseTxBegin', ipcArgSchemas.pluginDbTxBegin, (_event, pluginId) => {
+    assertPluginDatabaseAccess(pluginManager, pluginId);
+    return getPluginDatabaseManager().beginTransaction(pluginId);
+  });
+
+  handle(
+    'plugins:databaseTxEnd',
+    ipcArgSchemas.pluginDbTxEnd,
+    (_event, pluginId, txnId, action) => {
+      assertPluginDatabaseAccess(pluginManager, pluginId);
+      return getPluginDatabaseManager().endTransaction(pluginId, txnId, action);
+    }
+  );
 
   handle('plugins:activateMain', ipcArgSchemas.pluginActivateMain, async (_event, pluginId) => {
     await withPluginRunner(async () => {

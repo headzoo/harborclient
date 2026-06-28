@@ -903,6 +903,15 @@ export class LocalDatabase {
   }
 
   /**
+   * Deletes all persisted storage rows for one plugin.
+   *
+   * @param pluginId - Plugin manifest id.
+   */
+  deletePluginStorage(pluginId: string): void {
+    this.getDb().prepare('DELETE FROM plugin_storage WHERE plugin_id = ?').run(pluginId);
+  }
+
+  /**
    * Persists a user-granted filesystem path for one plugin.
    *
    * @param pluginId - Plugin manifest id.

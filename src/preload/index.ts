@@ -1567,6 +1567,59 @@ function setPluginStorage(pluginId: string, key: string, value: unknown): Promis
 }
 
 /**
+ * Runs one plugin database query outside or inside a transaction.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param mode - Query shape to execute.
+ * @param sql - Parameterized SQL statement.
+ * @param params - Bound parameter values.
+ * @param txnId - Active transaction id when applicable.
+ */
+function pluginDatabaseQuery(
+  pluginId: string,
+  mode: 'get' | 'all' | 'run',
+  sql: string,
+  params?: unknown[],
+  txnId?: string
+): Promise<unknown> {
+  return ipcRenderer.invoke('plugins:databaseQuery', pluginId, mode, sql, params, txnId);
+}
+
+/**
+ * Executes a plugin database migration script.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param sql - Multi-statement SQL script.
+ */
+function pluginDatabaseExec(pluginId: string, sql: string): Promise<void> {
+  return ipcRenderer.invoke('plugins:databaseExec', pluginId, sql);
+}
+
+/**
+ * Starts a plugin database transaction and returns an opaque transaction id.
+ *
+ * @param pluginId - Plugin manifest id.
+ */
+function pluginDatabaseTxBegin(pluginId: string): Promise<string> {
+  return ipcRenderer.invoke('plugins:databaseTxBegin', pluginId);
+}
+
+/**
+ * Commits or rolls back a plugin database transaction.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param txnId - Transaction id from {@link pluginDatabaseTxBegin}.
+ * @param action - Whether to commit or roll back.
+ */
+function pluginDatabaseTxEnd(
+  pluginId: string,
+  txnId: string,
+  action: 'commit' | 'rollback'
+): Promise<void> {
+  return ipcRenderer.invoke('plugins:databaseTxEnd', pluginId, txnId, action);
+}
+
+/**
  * Activates a plugin main entry in the SES utilityProcess runner.
  *
  * Main entry source and permissions are resolved in the main process from disk.
@@ -1861,6 +1914,10 @@ const api: Api = {
   readPluginAsset,
   getPluginStorage,
   setPluginStorage,
+  pluginDatabaseQuery,
+  pluginDatabaseExec,
+  pluginDatabaseTxBegin,
+  pluginDatabaseTxEnd,
   activatePluginMain,
   deactivatePluginMain,
   reportPluginRuntimeError,

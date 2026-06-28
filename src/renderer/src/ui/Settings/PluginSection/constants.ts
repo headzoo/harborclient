@@ -6,6 +6,7 @@ import type { PluginPermission } from '#/shared/plugin/types';
 export const PERMISSION_LABELS: Record<PluginPermission, string> = {
   ui: 'UI contributions (settings, themes, toasts, commands)',
   storage: 'Plugin-scoped persistent storage',
+  database: 'Private SQLite database scoped to this plugin',
   'filesystem:pick': 'Open/save dialogs for user-selected paths',
   'filesystem:read': 'Read from allowlisted filesystem paths',
   'filesystem:write': 'Write to allowlisted filesystem paths',

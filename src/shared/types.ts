@@ -3545,6 +3545,51 @@ export interface Api {
   setPluginStorage: (pluginId: string, key: string, value: unknown) => Promise<void>;
 
   /**
+   * Runs one plugin database query outside or inside a transaction.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @param mode - Query shape to execute.
+   * @param sql - Parameterized SQL statement.
+   * @param params - Bound parameter values.
+   * @param txnId - Active transaction id when applicable.
+   */
+  pluginDatabaseQuery: (
+    pluginId: string,
+    mode: 'get' | 'all' | 'run',
+    sql: string,
+    params?: unknown[],
+    txnId?: string
+  ) => Promise<unknown>;
+
+  /**
+   * Executes a plugin database migration script.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @param sql - Multi-statement SQL script.
+   */
+  pluginDatabaseExec: (pluginId: string, sql: string) => Promise<void>;
+
+  /**
+   * Starts a plugin database transaction and returns an opaque transaction id.
+   *
+   * @param pluginId - Plugin manifest id.
+   */
+  pluginDatabaseTxBegin: (pluginId: string) => Promise<string>;
+
+  /**
+   * Commits or rolls back a plugin database transaction.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @param txnId - Transaction id from {@link HostApi.pluginDatabaseTxBegin}.
+   * @param action - Whether to commit or roll back.
+   */
+  pluginDatabaseTxEnd: (
+    pluginId: string,
+    txnId: string,
+    action: 'commit' | 'rollback'
+  ) => Promise<void>;
+
+  /**
    * Activates a plugin main entry in the SES utilityProcess runner.
    *
    * Main entry source and permissions are resolved in the main process from disk.

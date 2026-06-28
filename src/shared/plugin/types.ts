@@ -20,6 +20,7 @@ export type * from '@harborclient/sdk';
 export type PluginPermission =
   | 'ui'
   | 'storage'
+  | 'database'
   | 'filesystem:pick'
   | 'filesystem:read'
   | 'filesystem:write'
@@ -41,9 +42,9 @@ export interface ManifestContributionEntry {
 export type PluginScreenshot =
   | string
   | {
-      path: string;
-      caption?: string;
-    };
+    path: string;
+    caption?: string;
+  };
 
 /**
  * Parsed plugin manifest.json.
@@ -194,6 +195,8 @@ export interface RegisteredSidebarSection {
   title: string;
   order?: number;
   Component: React.ComponentType;
+  /** Optional controls rendered in the section header row. */
+  headerActions?: React.ComponentType;
 }
 
 /**

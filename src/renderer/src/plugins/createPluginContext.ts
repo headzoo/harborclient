@@ -1,5 +1,6 @@
 import toast from 'react-hot-toast';
 import * as React from 'react';
+import '#/shared/plugin/databaseTypes';
 import type {
   PluginContext,
   PluginManifest,
@@ -39,6 +40,7 @@ import {
   triggerSendRequest
 } from '#/renderer/src/plugins/hostRequestCommands';
 import { subscribePluginAfterSend } from '#/renderer/src/plugins/pluginAfterSendBus';
+import { createPluginDatabaseApi } from '#/shared/plugin/pluginDatabaseApi';
 
 const commandHandlers = new Map<string, Set<(...args: unknown[]) => void | Promise<void>>>();
 
@@ -188,6 +190,24 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
         await window.api.setPluginStorage(pluginId, key, value);
       }
     },
+    database: createPluginDatabaseApi({
+      query: (mode, sql, params, txnId) => {
+        assertPermission('database');
+        return window.api.pluginDatabaseQuery(pluginId, mode, sql, params, txnId);
+      },
+      exec: (sql) => {
+        assertPermission('database');
+        return window.api.pluginDatabaseExec(pluginId, sql);
+      },
+      beginTransaction: () => {
+        assertPermission('database');
+        return window.api.pluginDatabaseTxBegin(pluginId);
+      },
+      endTransaction: (txnId, action) => {
+        assertPermission('database');
+        return window.api.pluginDatabaseTxEnd(pluginId, txnId, action);
+      }
+    }),
     fs: {
       pickFile: async (options) => {
         assertPermission('filesystem:pick');
@@ -294,7 +314,8 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
           id: pluginContributionId(pluginId, section.id),
           title: section.title,
           order: section.order,
-          Component: section.Component
+          Component: section.Component,
+          headerActions: section.headerActions
         });
       },
       registerMainView: (view) => {

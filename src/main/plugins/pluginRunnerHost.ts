@@ -67,11 +67,90 @@ interface ChildServerStatusMessage {
   pluginId: string;
 }
 
+interface ChildStorageGetMessage {
+  type: 'storageGet';
+  id: number;
+  pluginId: string;
+  key: string;
+}
+
+interface ChildStorageSetMessage {
+  type: 'storageSet';
+  id: number;
+  pluginId: string;
+  key: string;
+  value: unknown;
+}
+
+interface ChildDatabaseQueryMessage {
+  type: 'databaseQuery';
+  id: number;
+  pluginId: string;
+  mode: 'get' | 'all' | 'run';
+  sql: string;
+  params?: unknown[];
+  txnId?: string;
+}
+
+interface ChildDatabaseExecMessage {
+  type: 'databaseExec';
+  id: number;
+  pluginId: string;
+  sql: string;
+}
+
+interface ChildDatabaseTxBeginMessage {
+  type: 'databaseTxBegin';
+  id: number;
+  pluginId: string;
+}
+
+interface ChildDatabaseTxEndMessage {
+  type: 'databaseTxEnd';
+  id: number;
+  pluginId: string;
+  txnId: string;
+  action: 'commit' | 'rollback';
+}
+
 type ChildOutboundMessage =
   | ChildServerStartMessage
   | ChildServerStopMessage
-  | ChildServerStatusMessage;
+  | ChildServerStatusMessage
+  | ChildStorageGetMessage
+  | ChildStorageSetMessage
+  | ChildDatabaseQueryMessage
+  | ChildDatabaseExecMessage
+  | ChildDatabaseTxBeginMessage
+  | ChildDatabaseTxEndMessage;
 
+/**
+ * Callbacks bridging plugin runner storage messages to persisted plugin values.
+ */
+export interface PluginStorageAccess {
+  get: (pluginId: string, key: string) => unknown;
+  set: (pluginId: string, key: string, value: unknown) => void;
+}
+
+/**
+ * Callbacks bridging plugin runner database messages to the plugin database manager.
+ */
+export interface PluginDatabaseAccess {
+  get: (
+    pluginId: string,
+    sql: string,
+    params?: unknown[],
+    txnId?: string
+  ) => Promise<unknown | undefined>;
+  all: (pluginId: string, sql: string, params?: unknown[], txnId?: string) => Promise<unknown[]>;
+  run: (pluginId: string, sql: string, params?: unknown[], txnId?: string) => Promise<unknown>;
+  exec: (pluginId: string, sql: string) => Promise<void>;
+  beginTransaction: (pluginId: string) => Promise<string>;
+  endTransaction: (pluginId: string, txnId: string, action: 'commit' | 'rollback') => Promise<void>;
+}
+
+let pluginStorageAccess: PluginStorageAccess | null = null;
+let pluginDatabaseAccess: PluginDatabaseAccess | null = null;
 let runner: UtilityProcess | null = null;
 let nextId = 1;
 let shuttingDown = false;
@@ -82,6 +161,24 @@ const pending = new Map<number, PendingCall>();
  */
 export function isPluginRunnerShuttingDown(): boolean {
   return shuttingDown;
+}
+
+/**
+ * Registers callbacks used to read and write plugin-scoped storage from the runner child.
+ *
+ * @param handlers - Storage access implementation, typically backed by PluginManager.
+ */
+export function setPluginStorageAccess(handlers: PluginStorageAccess): void {
+  pluginStorageAccess = handlers;
+}
+
+/**
+ * Registers callbacks used to query plugin-scoped SQLite databases from the runner child.
+ *
+ * @param handlers - Database access implementation, typically backed by PluginDatabaseManager.
+ */
+export function setPluginDatabaseAccess(handlers: PluginDatabaseAccess): void {
+  pluginDatabaseAccess = handlers;
 }
 
 /**
@@ -200,6 +297,192 @@ function handleChildServerStatus(child: UtilityProcess, message: ChildServerStat
 }
 
 /**
+ * Handles a child-initiated plugin storage read.
+ *
+ * @param child - Active utility process.
+ * @param message - Storage get request with plugin id and key.
+ */
+export function handleChildStorageGet(
+  child: UtilityProcess,
+  message: ChildStorageGetMessage
+): void {
+  if (!pluginStorageAccess) {
+    postChildReply(child, {
+      id: message.id,
+      ok: false,
+      error: 'Plugin storage access is not configured.'
+    });
+    return;
+  }
+  try {
+    const result = pluginStorageAccess.get(message.pluginId, message.key);
+    postChildReply(child, { id: message.id, ok: true, result });
+  } catch (error) {
+    postChildReply(child, {
+      id: message.id,
+      ok: false,
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+/**
+ * Handles a child-initiated plugin storage write.
+ *
+ * @param child - Active utility process.
+ * @param message - Storage set request with plugin id, key, and JSON-serializable value.
+ */
+export function handleChildStorageSet(
+  child: UtilityProcess,
+  message: ChildStorageSetMessage
+): void {
+  if (!pluginStorageAccess) {
+    postChildReply(child, {
+      id: message.id,
+      ok: false,
+      error: 'Plugin storage access is not configured.'
+    });
+    return;
+  }
+  try {
+    pluginStorageAccess.set(message.pluginId, message.key, message.value);
+    postChildReply(child, { id: message.id, ok: true });
+  } catch (error) {
+    postChildReply(child, {
+      id: message.id,
+      ok: false,
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+/**
+ * Handles a child-initiated plugin database query.
+ *
+ * @param child - Active utility process.
+ * @param message - Database query request.
+ */
+export async function handleChildDatabaseQuery(
+  child: UtilityProcess,
+  message: ChildDatabaseQueryMessage
+): Promise<void> {
+  if (!pluginDatabaseAccess) {
+    postChildReply(child, {
+      id: message.id,
+      ok: false,
+      error: 'Plugin database access is not configured.'
+    });
+    return;
+  }
+  try {
+    const params = message.params ?? [];
+    const result =
+      message.mode === 'get'
+        ? await pluginDatabaseAccess.get(message.pluginId, message.sql, params, message.txnId)
+        : message.mode === 'all'
+          ? await pluginDatabaseAccess.all(message.pluginId, message.sql, params, message.txnId)
+          : await pluginDatabaseAccess.run(message.pluginId, message.sql, params, message.txnId);
+    postChildReply(child, { id: message.id, ok: true, result });
+  } catch (error) {
+    postChildReply(child, {
+      id: message.id,
+      ok: false,
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+/**
+ * Handles a child-initiated plugin database exec request.
+ *
+ * @param child - Active utility process.
+ * @param message - Exec request with SQL script.
+ */
+export async function handleChildDatabaseExec(
+  child: UtilityProcess,
+  message: ChildDatabaseExecMessage
+): Promise<void> {
+  if (!pluginDatabaseAccess) {
+    postChildReply(child, {
+      id: message.id,
+      ok: false,
+      error: 'Plugin database access is not configured.'
+    });
+    return;
+  }
+  try {
+    await pluginDatabaseAccess.exec(message.pluginId, message.sql);
+    postChildReply(child, { id: message.id, ok: true });
+  } catch (error) {
+    postChildReply(child, {
+      id: message.id,
+      ok: false,
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+/**
+ * Handles a child-initiated plugin database transaction begin request.
+ *
+ * @param child - Active utility process.
+ * @param message - Begin request for one plugin.
+ */
+export async function handleChildDatabaseTxBegin(
+  child: UtilityProcess,
+  message: ChildDatabaseTxBeginMessage
+): Promise<void> {
+  if (!pluginDatabaseAccess) {
+    postChildReply(child, {
+      id: message.id,
+      ok: false,
+      error: 'Plugin database access is not configured.'
+    });
+    return;
+  }
+  try {
+    const txnId = await pluginDatabaseAccess.beginTransaction(message.pluginId);
+    postChildReply(child, { id: message.id, ok: true, result: txnId });
+  } catch (error) {
+    postChildReply(child, {
+      id: message.id,
+      ok: false,
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+/**
+ * Handles a child-initiated plugin database transaction end request.
+ *
+ * @param child - Active utility process.
+ * @param message - Commit or rollback request.
+ */
+export async function handleChildDatabaseTxEnd(
+  child: UtilityProcess,
+  message: ChildDatabaseTxEndMessage
+): Promise<void> {
+  if (!pluginDatabaseAccess) {
+    postChildReply(child, {
+      id: message.id,
+      ok: false,
+      error: 'Plugin database access is not configured.'
+    });
+    return;
+  }
+  try {
+    await pluginDatabaseAccess.endTransaction(message.pluginId, message.txnId, message.action);
+    postChildReply(child, { id: message.id, ok: true });
+  } catch (error) {
+    postChildReply(child, {
+      id: message.id,
+      ok: false,
+      error: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
+/**
  * Routes child-initiated server control messages to the echo server module.
  *
  * @param child - Active utility process.
@@ -215,6 +498,24 @@ function handleChildOutboundMessage(child: UtilityProcess, message: ChildOutboun
       return;
     case 'serverStatus':
       handleChildServerStatus(child, message);
+      return;
+    case 'storageGet':
+      handleChildStorageGet(child, message);
+      return;
+    case 'storageSet':
+      handleChildStorageSet(child, message);
+      return;
+    case 'databaseQuery':
+      void handleChildDatabaseQuery(child, message);
+      return;
+    case 'databaseExec':
+      void handleChildDatabaseExec(child, message);
+      return;
+    case 'databaseTxBegin':
+      void handleChildDatabaseTxBegin(child, message);
+      return;
+    case 'databaseTxEnd':
+      void handleChildDatabaseTxEnd(child, message);
       return;
     default:
       return;
@@ -259,6 +560,30 @@ function attachRunnerHandlers(child: UtilityProcess): void {
       return;
     }
     if ('type' in message && message.type === 'serverStatus') {
+      handleChildOutboundMessage(child, message);
+      return;
+    }
+    if ('type' in message && message.type === 'storageGet') {
+      handleChildOutboundMessage(child, message);
+      return;
+    }
+    if ('type' in message && message.type === 'storageSet') {
+      handleChildOutboundMessage(child, message);
+      return;
+    }
+    if ('type' in message && message.type === 'databaseQuery') {
+      handleChildOutboundMessage(child, message);
+      return;
+    }
+    if ('type' in message && message.type === 'databaseExec') {
+      handleChildOutboundMessage(child, message);
+      return;
+    }
+    if ('type' in message && message.type === 'databaseTxBegin') {
+      handleChildOutboundMessage(child, message);
+      return;
+    }
+    if ('type' in message && message.type === 'databaseTxEnd') {
       handleChildOutboundMessage(child, message);
       return;
     }

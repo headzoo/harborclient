@@ -15,6 +15,7 @@ const themeContributionEntry = contributionEntry.extend({
 const pluginPermission = z.enum([
   'ui',
   'storage',
+  'database',
   'filesystem:pick',
   'filesystem:read',
   'filesystem:write',

@@ -522,6 +522,16 @@ export const ipcArgSchemas = {
   pluginReadAsset: z.tuple([pluginId, z.string().min(1)]),
   pluginStorageKey: z.tuple([pluginId, z.string().min(1)]),
   pluginStorageSet: z.tuple([pluginId, z.string().min(1), z.unknown()]),
+  pluginDbQuery: z.tuple([
+    pluginId,
+    z.enum(['get', 'all', 'run']),
+    z.string().min(1).max(MAX_IPC_SCRIPT_CHARS),
+    z.array(z.unknown()).optional(),
+    z.string().min(1).optional()
+  ]),
+  pluginDbExec: z.tuple([pluginId, z.string().min(1).max(MAX_IPC_SCRIPT_CHARS)]),
+  pluginDbTxBegin: z.tuple([pluginId]),
+  pluginDbTxEnd: z.tuple([pluginId, z.string().min(1), z.enum(['commit', 'rollback'])]),
   pluginActivateMain: z.tuple([pluginId]),
   pluginReportRuntimeError: z.tuple([pluginId, z.string().nullable()]),
   pluginInvokeMain: z.tuple([pluginId, z.string().min(1), z.array(z.unknown())]),

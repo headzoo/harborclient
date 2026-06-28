@@ -40,7 +40,7 @@ const FIXED_TOP_LEVEL_FILES = [
   'local-secrets.key'
 ] as const;
 
-const BACKUP_DIRECTORIES = ['git-index', 'git-provider-settings'] as const;
+const BACKUP_DIRECTORIES = ['git-index', 'git-provider-settings', 'plugin-databases'] as const;
 
 /**
  * Metadata stored at the root of every HarborClient backup archive.

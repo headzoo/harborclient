@@ -1,6 +1,7 @@
 import { app, BrowserWindow, dialog } from 'electron';
 import { readFile, writeFile } from 'fs/promises';
 import { getLocalDatabase } from '#/main/storage/localDatabaseInstance';
+import { getPluginDatabaseManager } from '#/main/plugins/pluginDatabaseManagerInstance';
 import type { IStorage } from '#/main/storage/IStorage';
 import { RoutingStorage } from '#/main/storage/RoutingStorage';
 import {
@@ -20,6 +21,11 @@ import { ipcArgSchemas } from '#/main/ipc/ipcSchemas';
  */
 function checkpointOpenDatabases(db: IStorage): void {
   getLocalDatabase().checkpointWal();
+  try {
+    getPluginDatabaseManager().checkpointAll();
+  } catch {
+    // Plugin database manager is unavailable before IPC registration during startup.
+  }
   if (db instanceof RoutingStorage) {
     db.checkpointWalForBackup();
   }

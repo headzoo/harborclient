@@ -3,11 +3,13 @@ import { createScriptContext } from '#/main/plugins/pluginScriptContext';
 import type { ScriptRunContextInput } from '#/main/scripting/scriptApi';
 import { runEchoRequestHandlers } from '#/main/plugins/echoServer/runEchoRequestHandlers';
 import type { EchoServerIncomingRequest } from '#/main/plugins/echoServer/types';
+import '#/shared/plugin/databaseTypes';
 import type {
   PluginHttpRequest,
   PluginHttpResponse,
   PluginPermission
 } from '#/shared/plugin/types';
+import { createPluginDatabaseApi } from '#/shared/plugin/pluginDatabaseApi';
 
 lockdown();
 
@@ -151,9 +153,61 @@ function createMainPluginContext(state: PluginState): Record<string, unknown> {
   return {
     subscriptions,
     storage: {
-      get: async () => undefined,
-      set: async () => undefined
+      get: async <T>(key: string) => {
+        assertPermission('storage');
+        return (await postToParent({
+          type: 'storageGet',
+          pluginId: state.pluginId,
+          key
+        })) as T | undefined;
+      },
+      set: async <T>(key: string, value: T) => {
+        assertPermission('storage');
+        await postToParent({
+          type: 'storageSet',
+          pluginId: state.pluginId,
+          key,
+          value
+        });
+      }
     },
+    database: createPluginDatabaseApi({
+      query: (mode, sql, params, txnId) => {
+        assertPermission('database');
+        return postToParent({
+          type: 'databaseQuery',
+          pluginId: state.pluginId,
+          mode,
+          sql,
+          params,
+          txnId
+        });
+      },
+      exec: (sql) => {
+        assertPermission('database');
+        return postToParent({
+          type: 'databaseExec',
+          pluginId: state.pluginId,
+          sql
+        }) as Promise<void>;
+      },
+      beginTransaction: () => {
+        assertPermission('database');
+        return postToParent({
+          type: 'databaseTxBegin',
+          pluginId: state.pluginId
+        }) as Promise<string>;
+      },
+      endTransaction: (txnId, action) => {
+        assertPermission('database');
+        return postToParent({
+          type: 'databaseTxEnd',
+          pluginId: state.pluginId,
+          txnId,
+          action
+        }) as Promise<void>;
+      }
+    }),
     http: {
       onBeforeSend: (handler: (request: PluginHttpRequest) => void | Promise<void>) => {
         assertPermission('http');

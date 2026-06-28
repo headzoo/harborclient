@@ -33,6 +33,7 @@ import {
 } from '#/main/plugins/devRegistry';
 import { assertSafeGitPluginUrl } from '#/main/plugins/gitPluginUrl';
 import { evaluatePluginSignature } from '#/main/plugins/pluginSignature';
+import type { PluginDatabaseManager } from '#/main/plugins/PluginDatabaseManager';
 import { getLocalDatabase } from '#/main/storage/localDatabaseInstance';
 import type {
   PluginAssetResult,
@@ -97,6 +98,7 @@ export class PluginManager {
   readonly #fsAllowlist = new PluginFsAllowlist();
   readonly #fsWatcher = new PluginFsWatcher(this.#fsAllowlist);
   #notifyWindow: (() => BrowserWindow | null) | null = null;
+  #databaseManager: PluginDatabaseManager | null = null;
 
   /**
    * @param userDataPath - Electron userData directory.
@@ -115,6 +117,22 @@ export class PluginManager {
   setNotifyWindow(getter: () => BrowserWindow | null): void {
     this.#notifyWindow = getter;
     this.#fsWatcher.setWindowProvider(getter);
+  }
+
+  /**
+   * Returns the Electron userData directory used for plugin packages and databases.
+   */
+  getUserDataPath(): string {
+    return this.#userDataPath;
+  }
+
+  /**
+   * Registers the plugin database manager used for uninstall cleanup and shutdown.
+   *
+   * @param databaseManager - Initialized plugin database manager.
+   */
+  setDatabaseManager(databaseManager: PluginDatabaseManager): void {
+    this.#databaseManager = databaseManager;
   }
 
   /**
@@ -692,6 +710,7 @@ export class PluginManager {
     this.#stopWatcher(pluginId);
     this.#fsWatcher.clearPlugin(pluginId);
     this.clearFilesystemGrants(pluginId);
+    this.#clearPluginPersistence(pluginId);
     rmSync(record.info.path, { recursive: true, force: true });
     if (record.info.source === 'git') {
       removeGitPluginOrigin(pluginId);
@@ -717,6 +736,7 @@ export class PluginManager {
     this.#stopWatcher(pluginId);
     this.#fsWatcher.clearPlugin(pluginId);
     this.clearFilesystemGrants(pluginId);
+    this.#clearPluginPersistence(pluginId);
     removeUnpackedPluginPath(pluginId);
     clearPluginEnabled(pluginId);
     this.#records.delete(pluginId);
@@ -826,7 +846,18 @@ export class PluginManager {
    */
   dispose(): void {
     this.disposeWatchers();
+    this.#databaseManager?.closeAll();
     this.#records.clear();
+  }
+
+  /**
+   * Deletes plugin-scoped KV storage and SQLite database files for one plugin.
+   *
+   * @param pluginId - Plugin manifest id.
+   */
+  #clearPluginPersistence(pluginId: string): void {
+    getLocalDatabase().deletePluginStorage(pluginId);
+    this.#databaseManager?.deleteDatabase(pluginId);
   }
 
   /**

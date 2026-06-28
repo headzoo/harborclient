@@ -33,6 +33,11 @@ interface Props {
    * Accessible label for the add button.
    */
   addLabel?: string;
+
+  /**
+   * Optional action controls rendered in the header row (for example plugin header actions).
+   */
+  headerActions?: ReactNode;
 }
 
 /**
@@ -44,7 +49,8 @@ export function Section({
   onToggle,
   children,
   onAdd,
-  addLabel
+  addLabel,
+  headerActions
 }: Props): JSX.Element {
   return (
     <div className="mb-3">
@@ -65,17 +71,22 @@ export function Section({
             {title}
           </h2>
         </button>
-        {onAdd && (
-          <Button
-            type="button"
-            variant="toolbar"
-            title={addLabel ?? 'Add'}
-            aria-label={addLabel ?? 'Add'}
-            className="inline-flex items-center gap-1"
-            onClick={onAdd}
-          >
-            <FaIcon icon={faPlus} className="h-3 w-3" />
-          </Button>
+        {(headerActions || onAdd) && (
+          <div className="flex shrink-0 items-center gap-1">
+            {headerActions}
+            {onAdd && (
+              <Button
+                type="button"
+                variant="toolbar"
+                title={addLabel ?? 'Add'}
+                aria-label={addLabel ?? 'Add'}
+                className="inline-flex items-center gap-1"
+                onClick={onAdd}
+              >
+                <FaIcon icon={faPlus} className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
         )}
       </div>
       {expanded && children}
