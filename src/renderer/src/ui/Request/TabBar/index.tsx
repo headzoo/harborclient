@@ -89,7 +89,7 @@ export function TabBar({
   };
 
   return (
-    <div className="flex shrink-0 items-end gap-0 overflow-x-auto border-b border-separator bg-sidebar px-2 py-1 app-no-drag">
+    <div className="flex shrink-0 min-h-15 items-end gap-0 overflow-x-auto border-b border-separator bg-sidebar px-2 py-1 app-no-drag">
       <div
         role="tablist"
         aria-label="Open requests"
@@ -110,7 +110,7 @@ export function TabBar({
       <div className="flex shrink-0 self-stretch items-stretch rounded-t-md border border-b-0 border-transparent bg-transparent px-1 text-muted hover:bg-selection/60 hover:text-text">
         <button
           type="button"
-          className="inline-flex cursor-pointer items-center justify-center self-stretch border-none bg-transparent px-2 py-2 text-inherit app-no-drag"
+          className="inline-flex cursor-pointer items-center justify-center self-stretch border-none bg-transparent px-2 pt-3 text-inherit app-no-drag"
           title="New tab"
           aria-label="New tab"
           onClick={onNew}

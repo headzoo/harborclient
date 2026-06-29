@@ -2,7 +2,8 @@ import {
   Button,
   cleanVariables,
   ModalFooter,
-  OverlayPage,
+  PageHeader,
+  PanelCloseButton,
   SegmentedTabs,
   SegmentedTabPanel,
   SegmentedTabsGroup
@@ -228,10 +229,77 @@ function CollectionSettingsForm({
   };
 
   return (
-    <OverlayPage
-      title="Collection Settings"
-      onClose={onClose}
-      footer={
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-6">
+      <div className="mx-auto w-full">
+        <PageHeader title="Collection Settings">
+          <PanelCloseButton onClose={onClose} ariaLabel="Close collection settings" />
+        </PageHeader>
+
+        <SegmentedTabsGroup value={tab} onChange={setTab} ariaLabel="Collection settings sections">
+          <div className="-mx-6 -mt-3 mb-6">
+            <SegmentedTabs fullWidth tabs={tabs} />
+          </div>
+
+          <SegmentedTabPanel value="general">
+            <GeneralSection
+              name={name}
+              onNameChange={setName}
+              connectionId={resolvedConnectionId}
+              providers={providers}
+              onConnectionIdChange={setConnectionId}
+              providersLoading={providersLoading}
+              providersError={providersError}
+              onProvidersRetry={reloadProviders}
+              onSave={() => void handleSave()}
+              onClose={onClose}
+            />
+          </SegmentedTabPanel>
+          <SegmentedTabPanel value="variables">
+            <VariablesSection variables={variables} onChange={setVariables} />
+          </SegmentedTabPanel>
+          <SegmentedTabPanel value="headers">
+            <HeadersSection headers={headers} variables={variables} onChange={setHeaders} />
+          </SegmentedTabPanel>
+          <SegmentedTabPanel value="auth">
+            <AuthSection
+              auth={auth}
+              collectionId={collection.id}
+              variables={variables}
+              onChange={setAuth}
+            />
+          </SegmentedTabPanel>
+          <SegmentedTabPanel value="pre">
+            <ScriptSection
+              phase="pre"
+              description="Runs before every request in this collection, before the request-level pre-request script. Supports {{variable}} syntax."
+              placeholder="// hc.variables.set('token', 'abc');"
+              value={preRequestScript}
+              onChange={setPreRequestScript}
+              variables={variables}
+            />
+          </SegmentedTabPanel>
+          <SegmentedTabPanel value="post">
+            <ScriptSection
+              phase="post"
+              description="Runs after every request in this collection, after the request-level post-request script. Supports {{variable}} syntax."
+              placeholder={
+                '// hc.test("status is 200", () => {\n//   hc.expect(hc.response.code).to.equal(200);\n// });'
+              }
+              value={postRequestScript}
+              onChange={setPostRequestScript}
+              variables={variables}
+            />
+          </SegmentedTabPanel>
+          {pluginTabs.map((entry) => {
+            const Component = entry.Component;
+            return (
+              <SegmentedTabPanel key={entry.id} value={entry.id}>
+                <Component context={collectionTabContext} />
+              </SegmentedTabPanel>
+            );
+          })}
+        </SegmentedTabsGroup>
+
         <ModalFooter>
           <Button variant="secondary" onClick={onClose}>
             Cancel
@@ -243,72 +311,7 @@ function CollectionSettingsForm({
             {saving ? 'Saving…' : 'Save'}
           </Button>
         </ModalFooter>
-      }
-    >
-      <SegmentedTabsGroup value={tab} onChange={setTab} ariaLabel="Collection settings sections">
-        <div className="mb-6">
-          <SegmentedTabs tabs={tabs} />
-        </div>
-
-        <SegmentedTabPanel value="general">
-          <GeneralSection
-            name={name}
-            onNameChange={setName}
-            connectionId={resolvedConnectionId}
-            providers={providers}
-            onConnectionIdChange={setConnectionId}
-            providersLoading={providersLoading}
-            providersError={providersError}
-            onProvidersRetry={reloadProviders}
-            onSave={() => void handleSave()}
-            onClose={onClose}
-          />
-        </SegmentedTabPanel>
-        <SegmentedTabPanel value="variables">
-          <VariablesSection variables={variables} onChange={setVariables} />
-        </SegmentedTabPanel>
-        <SegmentedTabPanel value="headers">
-          <HeadersSection headers={headers} variables={variables} onChange={setHeaders} />
-        </SegmentedTabPanel>
-        <SegmentedTabPanel value="auth">
-          <AuthSection
-            auth={auth}
-            collectionId={collection.id}
-            variables={variables}
-            onChange={setAuth}
-          />
-        </SegmentedTabPanel>
-        <SegmentedTabPanel value="pre">
-          <ScriptSection
-            phase="pre"
-            description="Runs before every request in this collection, before the request-level pre-request script. Supports {{variable}} syntax."
-            placeholder="// hc.variables.set('token', 'abc');"
-            value={preRequestScript}
-            onChange={setPreRequestScript}
-            variables={variables}
-          />
-        </SegmentedTabPanel>
-        <SegmentedTabPanel value="post">
-          <ScriptSection
-            phase="post"
-            description="Runs after every request in this collection, after the request-level post-request script. Supports {{variable}} syntax."
-            placeholder={
-              '// hc.test("status is 200", () => {\n//   hc.expect(hc.response.code).to.equal(200);\n// });'
-            }
-            value={postRequestScript}
-            onChange={setPostRequestScript}
-            variables={variables}
-          />
-        </SegmentedTabPanel>
-        {pluginTabs.map((entry) => {
-          const Component = entry.Component;
-          return (
-            <SegmentedTabPanel key={entry.id} value={entry.id}>
-              <Component context={collectionTabContext} />
-            </SegmentedTabPanel>
-          );
-        })}
-      </SegmentedTabsGroup>
-    </OverlayPage>
+      </div>
+    </div>
   );
 }

@@ -166,9 +166,16 @@ should understand intent without opening the implementation.
 
 ## Changelog
 
+Git hooks live in `.githooks/` (activated by `pnpm install` via the `prepare`
+script, which sets `core.hooksPath` to `.githooks`).
+
+The `pre-commit` hook blocks commits that stage a local SDK link override
+(`link:../harborclient-sdk`) in `package.json` or `pnpm-lock.yaml`. Remove the
+override and run `pnpm install` before committing those files. CI runs the same
+check as a backup for `git commit --no-verify`.
+
 `CHANGELOG.md` is kept up to date automatically by the `post-commit` hook in
-`.githooks/post-commit` (activated by `pnpm install` via the `prepare` script,
-which sets `core.hooksPath` to `.githooks`).
+`.githooks/post-commit`.
 
 How it works:
 

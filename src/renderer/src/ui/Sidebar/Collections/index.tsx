@@ -768,7 +768,7 @@ export function Collections({
                       <span className="truncate">{collection.name}</span>
                       {connectionName != null && (
                         <span
-                          className="shrink-0 rounded bg-info/15 px-1.5 py-0.5 text-[14px] font-medium text-info"
+                          className="shrink-0 rounded bg-info/15 px-1.5 py-0.5 text-[11px] font-medium text-info"
                           title={`Stored in ${connectionName}`}
                         >
                           {connectionName}

@@ -458,13 +458,13 @@ function resolveAppIcon(): string {
 /**
  * Resolves the splash page file path for dev and packaged builds.
  * Uses loadFile (not the Vite dev server) because splash is fully self-contained.
+ * Always loads the Vite-built `out/renderer/splash.html` so assets stay under the
+ * renderer output directory; loading source HTML with `../../images/` paths fails
+ * on some Linux file:// setups with ERR_FAILED.
  *
  * @returns Absolute path to splash.html.
  */
 function resolveSplashPath(): string {
-  if (isDev) {
-    return join(__dirname, '../../src/renderer/splash.html');
-  }
   return join(__dirname, '../renderer/splash.html');
 }
 
@@ -536,6 +536,7 @@ async function createSplashWindow(): Promise<BrowserWindow> {
     show: false,
     icon: resolveAppIcon(),
     webPreferences: {
+      sandbox: false,
       contextIsolation: true,
       nodeIntegration: false
     }

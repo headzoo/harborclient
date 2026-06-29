@@ -71,7 +71,7 @@ export function TabItem({ tab, active, tabIndex, onSelect, onClose }: Props): JS
       aria-selected={active}
       aria-label={requestTabAccessibleName(tab)}
       tabIndex={tabIndex}
-      className={`group -mb-1 flex max-w-[220px] shrink-0 cursor-pointer self-stretch items-stretch gap-1.5 rounded-t-md border border-b-0 px-4 ${requestTabItem(active)}`}
+      className={`group -mb-1 flex max-w-[220px] min-h-12 shrink-0 cursor-pointer self-stretch items-stretch gap-1.5 rounded-t-md border border-b-0 px-4 ${requestTabItem(active)}`}
       onClick={() => onSelect(tab.tabId)}
       onKeyDown={handleTabKeyDown}
     >

@@ -73,7 +73,7 @@ export function TabContent({
   requestTabContext
 }: Props): JSX.Element {
   return (
-    <div className="min-h-[160px] pt-2">
+    <div className="min-h-[160px] pt-4">
       <SegmentedTabPanel value="params">
         <KeyValueEditor
           rows={draft.params}

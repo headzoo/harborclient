@@ -204,22 +204,24 @@ export function Editor({
         />
       </div>
 
-      <div className="p-3">
+      <div>
         <SegmentedTabsGroup value={tab} onChange={setTab} ariaLabel="Request editor sections">
           <div>
             <SegmentedTabs tabs={tabs} />
           </div>
 
-          <TabContent
-            draft={draft}
-            showBody={showBody}
-            update={update}
-            onParamsChange={handleParamsChange}
-            variables={variables}
-            onEditVariables={onEditVariables}
-            pluginTabs={pluginTabs}
-            requestTabContext={requestTabContext}
-          />
+          <div className="px-6">
+            <TabContent
+              draft={draft}
+              showBody={showBody}
+              update={update}
+              onParamsChange={handleParamsChange}
+              variables={variables}
+              onEditVariables={onEditVariables}
+              pluginTabs={pluginTabs}
+              requestTabContext={requestTabContext}
+            />
+          </div>
         </SegmentedTabsGroup>
       </div>
     </div>

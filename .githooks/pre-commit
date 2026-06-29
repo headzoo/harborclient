@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Reject commits that stage a local @harborclient/sdk link override used for
+# sibling-repo debugging. CI runs the same check as a backup for --no-verify.
+
+set -euo pipefail
+
+FORBIDDEN='link:../harborclient-sdk'
+
+for file in package.json pnpm-lock.yaml; do
+  if ! git diff --cached --name-only --diff-filter=ACMR | grep -qx "$file"; then
+    continue
+  fi
+
+  if git show ":$file" | grep -qF "$FORBIDDEN"; then
+    cat >&2 <<EOF
+pre-commit: $file contains a local @harborclient/sdk link override ($FORBIDDEN).
+
+Remove "@harborclient/sdk": "$FORBIDDEN" from package.json (dependencies or
+pnpm.overrides), run pnpm install to refresh pnpm-lock.yaml, re-stage, and
+retry.
+EOF
+    exit 1
+  fi
+done

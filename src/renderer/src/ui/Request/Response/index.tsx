@@ -3,7 +3,8 @@ import {
   SegmentedTabs,
   SegmentedTabPanel,
   SegmentedTabsGroup,
-  CodeEditor
+  CodeEditor,
+  FaIcon
 } from '@harborclient/sdk/components';
 import { statusDotClass } from '#/renderer/src/ui/shared/classes';
 import { useMemo, useState, type JSX } from 'react';
@@ -11,6 +12,7 @@ import toast from 'react-hot-toast';
 import type { ResponseTabContext } from '#/shared/plugin/types';
 import type { ScriptTestResult, SendResult } from '#/shared/types';
 
+import { faGlobe } from '#/renderer/src/fontawesome';
 import { usePluginResponseTabs } from '#/renderer/src/plugins/pluginHooks';
 import { isPluginTabId } from '#/renderer/src/plugins/pluginContextAdapters';
 import {
@@ -239,19 +241,6 @@ export function Response({
     ]
   );
 
-  /**
-   * Renders a centered placeholder when there is no response content to show.
-   *
-   * @param message - User-facing empty-state text.
-   */
-  const emptyState = (message: string): JSX.Element => (
-    <div className="flex flex-1 flex-col p-3">
-      <div className="flex flex-1 items-center justify-center text-[14px] text-muted">
-        {message}
-      </div>
-    </div>
-  );
-
   if (sending) {
     return (
       <div className="flex flex-1 flex-col p-3">
@@ -269,7 +258,17 @@ export function Response({
 
   if (!response) {
     if (noResponsePluginTabs.length === 0) {
-      return emptyState('Send a request to see the response');
+      return (
+        <div className="flex flex-1 flex-col p-3">
+          <div
+            role="status"
+            aria-label="Send a request to see the response"
+            className="flex flex-1 items-center justify-center text-muted"
+          >
+            <FaIcon icon={faGlobe} className="text-4xl" />
+          </div>
+        </div>
+      );
     }
 
     if (noResponsePluginTabs.length === 1) {
@@ -291,7 +290,7 @@ export function Response({
     return (
       <div className="flex min-h-0 flex-1 flex-col p-3">
         <SegmentedTabsGroup value={effectiveTab} onChange={setTab} ariaLabel="Response view">
-          <div className="mb-2 flex shrink-0 items-center gap-2">
+          <div className="mb-2 -mx-3 -mt-2 flex shrink-0 items-center gap-2">
             <SegmentedTabs tabs={pluginTabsOnly} />
           </div>
           <div className="flex min-h-0 flex-1 flex-col overflow-auto">
@@ -311,7 +310,7 @@ export function Response({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col p-3">
-      <div className="mb-2 flex items-center gap-3 text-[14px]">
+      <div className="mb-2 flex items-center gap-3 text-[14px] border-b border-separator p-3 -mx-3 -mt-2">
         <span className="inline-flex items-center gap-1.5 font-medium text-text">
           <span
             className={`inline-block h-2 w-2 shrink-0 rounded-full ${statusDotClass(response.status)}`}
@@ -331,9 +330,10 @@ export function Response({
 
       <div className="flex min-h-0 flex-1 flex-col">
         <SegmentedTabsGroup value={effectiveTab} onChange={setTab} ariaLabel="Response view">
-          <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
-            <SegmentedTabs tabs={tabs} />
-            <div className="flex shrink-0 items-center gap-1">
+          <div className="mb-2 -mx-3 -mt-2 flex shrink-0 items-center justify-between gap-2 border-b border-separator">
+            <SegmentedTabs tabs={tabs} className="border-none" />
+
+            <div className="flex shrink-0 items-center gap-1 mr-2">
               <Button type="button" variant="toolbar" onClick={() => void handleCopy()}>
                 Copy
               </Button>

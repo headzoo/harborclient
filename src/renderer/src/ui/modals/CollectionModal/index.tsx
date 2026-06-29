@@ -179,15 +179,16 @@ export function CollectionModal(): JSX.Element | null {
           onChange={(tab) => dispatch(setCollectionModalTab(tab))}
           ariaLabel="Add collection options"
         >
-          <SegmentedTabs
-            fullWidth
-            className="mb-3"
-            tabs={[
-              { value: 'create', label: 'Create new' },
-              { value: 'import', label: 'Import from file' },
-              { value: 'join', label: 'Join shared collection' }
-            ]}
-          />
+          <div className="-mx-4 -mt-4 mb-4">
+            <SegmentedTabs
+              fullWidth
+              tabs={[
+                { value: 'create', label: 'Create new' },
+                { value: 'import', label: 'Import from file' },
+                { value: 'join', label: 'Join shared collection' }
+              ]}
+            />
+          </div>
 
           {collectionModal.submitError && (
             <FieldError spacing="section" className="mb-3 mt-0">

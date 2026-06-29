@@ -54,6 +54,13 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - name: Reject local SDK link override
+        run: |
+          if grep -qF 'link:../harborclient-sdk' package.json pnpm-lock.yaml; then
+            echo "::error::package.json or pnpm-lock.yaml contains a local @harborclient/sdk link override (link:../harborclient-sdk). Remove it before pushing."
+            exit 1
+          fi
+
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm lint

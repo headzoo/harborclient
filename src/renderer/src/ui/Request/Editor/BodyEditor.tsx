@@ -61,7 +61,7 @@ export function BodyEditor({
   const urlEncodedRows = bodyType === 'urlencoded' ? parseUrlEncodedParts(body) : [];
 
   return (
-    <div className="flex flex-col gap-2 mt-3">
+    <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
         <span className="text-[14px] text-muted">Body type</span>
         {BODY_TYPE_OPTIONS.map(({ value, label }) => (
