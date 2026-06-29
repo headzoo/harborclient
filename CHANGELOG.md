@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- chore(deps): update @harborclient/sdk to version 0.6.4 in package.json and pnpm-lock.yaml. (`ca9d3c2`)
+
 ## 1.8.35 - 2026-06-29
 
 - fix(ui): adjust icon sizes in BreadcrumbPrefix and Response components. (`73d12cd`)
