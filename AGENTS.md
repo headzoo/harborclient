@@ -32,10 +32,11 @@ Use `pnpm` only. Lockfile is `pnpm-lock.yaml`. Do not use npm or yarn.
 - New native deps must be added to `pnpm.onlyBuiltDependencies` in
   `package.json`.
 
-## Generated files
+## Documentation site
 
-Never commit `docs/.vitepress/cache/` (VitePress build cache). Do not hand-edit
-generated docs nav — use `pnpm docs:build:nav`.
+User-facing docs and plugin marketplace metadata live in the separate
+[harborclient-site](https://github.com/harborclient/harborclient-site)
+repository. Edit docs there and deploy with Docker (Nginx on port 8080).
 
 ## Architecture
 

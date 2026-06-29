@@ -24,7 +24,8 @@ Source lives under `src/`:
 | `src/renderer/` | React UI (Redux Toolkit, Tailwind CSS v4)                         |
 | `src/shared/`   | Types and pure utilities shared across processes                  |
 
-Build output goes to `out/`. User docs are in `docs/` (VitePress).
+Build output goes to `out/`. User docs live in the
+[harborclient-site](https://github.com/harborclient/harborclient-site) repository.
 
 ## IPC contract
 
@@ -84,11 +85,9 @@ Avoid large refactors unless explicitly requested.
 
 ## Documentation
 
-User-facing docs live in `docs/` and publish to [harborclient.com](https://harborclient.com/).
-
-- Do not hand-edit generated nav output — run `pnpm docs:build:nav` (or
-  `pnpm docs:serve` for local preview).
-- `docs/.vitepress/cache/` is a VitePress build cache; never commit it.
+User-facing docs and the plugin marketplace catalog live in
+[harborclient-site](https://github.com/harborclient/harborclient-site) and
+publish to [harborclient.com](https://harborclient.com/) via Docker/Nginx.
 
 ## Commits and changelog
 

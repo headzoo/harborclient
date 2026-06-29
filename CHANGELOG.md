@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- chore: update documentation and configuration files. (`381d0ef`)
+
 ## 1.8.33 - 2026-06-28
 
 - feat(http): add @harborclient/http package and improve splash screen error handling. (`e865ec5`)

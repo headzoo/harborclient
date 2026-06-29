@@ -33,14 +33,8 @@
     "release:patch": "gh workflow run Release --ref main -f release_type=patch",
     "release:minor": "gh workflow run Release --ref main -f release_type=minor",
     "release:major": "gh workflow run Release --ref main -f release_type=major",
-    "docs:build": "pnpm docs:build:nav && vitepress build docs",
-    "docs:build:nav": "node scripts/sync-docs-assets.mjs && node scripts/sync-plugin-signing-key.mjs && node scripts/generate-download-links.mjs && node scripts/generate-plugin-catalog.mjs && node --experimental-strip-types scripts/generate-variables-doc.ts && node scripts/build-docs-nav.mjs && node scripts/assert-docs-slugs.mjs",
-    "docs:preview": "pnpm docs:build && vitepress preview docs",
-    "docs:serve": "pnpm docs:build:nav && concurrently --kill-others --prefixColors=auto -n nav,vp \"node scripts/watch-docs-nav.mjs\" \"vitepress dev docs\"",
     "kill": "pkill -f \"harborclient/node_modules/.pnpm/electron\"",
-    "screenshots": "node scripts/capture-screenshots.mjs",
-    "plugin:sign": "node --experimental-strip-types scripts/plugin-sign.ts",
-    "plugin:verify": "node --experimental-strip-types scripts/plugin-verify.ts"
+    "screenshots": "node scripts/capture-screenshots.mjs"
   },
   "packageManager": "pnpm@10.17.1",
   "dependencies": {
@@ -102,10 +96,8 @@
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^4.4.1",
-    "concurrently": "^8.2.2",
     "cytoscape": "^3.34.0",
     "cytoscape-cose-bilkent": "^4.1.0",
-    "dayjs": "^1.11.21",
     "debug": "^4.4.3",
     "electron": "^39.8.10",
     "electron-builder": "^26.0.12",
@@ -115,14 +107,11 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
     "firebase-tools": "^15.22.0",
-    "mermaid": "^11.15.0",
     "playwright": "^1.61.1",
     "prettier": "^3.8.4",
     "tailwindcss": "^4.3.1",
     "typescript": "^5.8.3",
     "vite": "^6.3.3",
-    "vitepress": "^1.6.4",
-    "vitepress-plugin-mermaid": "^2.0.17",
     "vitest": "^4.1.9"
   },
   "pnpm": {

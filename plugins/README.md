@@ -30,7 +30,7 @@ Commit `harborclient.key` and update `trusted.json` after generation or rotation
 
 ## Sign and verify official plugins
 
-From the HarborClient repository root:
+From the harborclient-site repository root:
 
 ```bash
 pnpm plugin:sign -- --dir /path/to/plugin --private-key plugins/signing.pem --key-id harborclient-official
