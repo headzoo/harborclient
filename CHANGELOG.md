@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- chore(deps): update @harborclient/sdk to version 0.6.7 in package.json and pnpm-lock.yaml. (`9c8a58c`)
 - chore(deps): update @harborclient/sdk to version 0.6.6 and adjust type overrides in package.json and pnpm-lock.yaml. (`6ac32f1`)
 
 ## 1.8.36 - 2026-06-29
