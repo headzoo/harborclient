@@ -7,6 +7,7 @@ import {
 import type { JSX } from 'react';
 import type { KeyValue, Variable } from '#/shared/types';
 import type { RegisteredRequestTab, RequestTabContext } from '#/shared/plugin/types';
+import { PluginSurface } from '#/renderer/src/plugins/PluginSurface';
 import { createHcCompletionSource } from '#/renderer/src/scripting/hcCompletions';
 
 import type { RequestDraft } from '#/renderer/src/store/drafts';
@@ -151,14 +152,17 @@ export function TabContent({
           placeholder="Notes for this request"
         />
       </SegmentedTabPanel>
-      {pluginTabs.map((entry) => {
-        const Component = entry.Component;
-        return (
-          <SegmentedTabPanel key={entry.id} value={entry.id} className="min-h-[320px]">
-            <Component context={requestTabContext} />
-          </SegmentedTabPanel>
-        );
-      })}
+      {pluginTabs.map((entry) => (
+        <SegmentedTabPanel key={entry.id} value={entry.id} className="min-h-[320px]">
+          <PluginSurface
+            pluginId={entry.pluginId}
+            contributionId={entry.contributionId}
+            kind="requestTabs"
+            context={requestTabContext}
+            minHeight={320}
+          />
+        </SegmentedTabPanel>
+      ))}
     </div>
   );
 }

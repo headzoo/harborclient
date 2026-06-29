@@ -9,6 +9,7 @@ import {
   selectActivePluginFooterPanelId,
   togglePluginFooterPanel
 } from '#/renderer/src/store/slices/navigationSlice';
+import { PluginSurface } from '#/renderer/src/plugins/PluginSurface';
 import { usePluginFooterPanels, usePluginStatusBarItems } from '#/renderer/src/plugins/pluginHooks';
 
 import { ConsolePanel } from './ConsolePanel';
@@ -164,22 +165,25 @@ export function Footer({
         <PluginFooterPanel
           key={panel.id}
           id={panel.id}
+          pluginId={panel.pluginId}
+          contributionId={panel.contributionId}
           title={panel.title}
           open={activePluginFooterPanelId === panel.id}
           onClose={() => dispatch(togglePluginFooterPanel(panel.id))}
-          Component={panel.Component}
         />
       ))}
       <footer className="relative z-50 flex shrink-0 items-center justify-between border-t border-separator bg-control px-2 py-0.5 app-no-drag">
         <div className={`${segmentGroup} min-w-0 flex-1`}>
-          {leftStatusItems.map((item) => {
-            const Component = item.Component;
-            return (
-              <div key={item.id} className="px-1">
-                <Component />
-              </div>
-            );
-          })}
+          {leftStatusItems.map((item) => (
+            <div key={item.id} className="px-1">
+              <PluginSurface
+                pluginId={item.pluginId}
+                contributionId={item.contributionId}
+                kind="statusBarItems"
+                style={{ minHeight: 20, height: 20, width: 120 }}
+              />
+            </div>
+          ))}
           <FooterButton
             active={consoleOpen}
             onClick={onToggleConsole}
@@ -198,34 +202,39 @@ export function Footer({
               <span className="ml-1 text-[14px] text-muted">({variableCount})</span>
             )}
           </FooterButton>
-          {pluginFooterPanels.map((panel) => {
-            const Indicator = panel.Indicator;
-            return (
-              <FooterButton
-                key={panel.id}
-                active={activePluginFooterPanelId === panel.id}
-                onClick={() => dispatch(togglePluginFooterPanel(panel.id))}
-                controlsId={`footer-plugin-panel-${panel.id}`}
-              >
-                {panel.title}
-                {Indicator && (
-                  <span className="ml-1 inline-flex items-center">
-                    <Indicator />
-                  </span>
-                )}
-              </FooterButton>
-            );
-          })}
+          {pluginFooterPanels.map((panel) => (
+            <FooterButton
+              key={panel.id}
+              active={activePluginFooterPanelId === panel.id}
+              onClick={() => dispatch(togglePluginFooterPanel(panel.id))}
+              controlsId={`footer-plugin-panel-${panel.id}`}
+            >
+              {panel.title}
+              {panel.hasIndicator ? (
+                <span className="ml-1 inline-flex items-center">
+                  <PluginSurface
+                    pluginId={panel.pluginId}
+                    contributionId={panel.contributionId}
+                    kind="footerPanels"
+                    slot="indicator"
+                    style={{ minHeight: 16, height: 16, width: 48 }}
+                  />
+                </span>
+              ) : null}
+            </FooterButton>
+          ))}
         </div>
         <div className="flex items-center gap-0.5">
-          {rightStatusItems.map((item) => {
-            const Component = item.Component;
-            return (
-              <div key={item.id} className="px-1">
-                <Component />
-              </div>
-            );
-          })}
+          {rightStatusItems.map((item) => (
+            <div key={item.id} className="px-1">
+              <PluginSurface
+                pluginId={item.pluginId}
+                contributionId={item.contributionId}
+                kind="statusBarItems"
+                style={{ minHeight: 20, height: 20, width: 120 }}
+              />
+            </div>
+          ))}
           <FooterIcon
             onClick={onToggleSidebar}
             icon={faTableColumns}

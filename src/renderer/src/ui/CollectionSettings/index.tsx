@@ -13,6 +13,7 @@ import type { AuthConfig, Collection, KeyValue, Variable } from '#/shared/types'
 import { normalizeAuth } from '#/shared/auth';
 
 import { useProviders } from '#/renderer/src/hooks/useProviders';
+import { PluginSurface } from '#/renderer/src/plugins/PluginSurface';
 import { usePluginCollectionSettingsTabs } from '#/renderer/src/plugins/pluginHooks';
 import type { CollectionSettingsTabContext } from '#/shared/plugin/types';
 import { emptyKeyValue } from '#/renderer/src/store/drafts';
@@ -302,14 +303,17 @@ function CollectionSettingsForm({
             variables={variables}
           />
         </SegmentedTabPanel>
-        {pluginTabs.map((entry) => {
-          const Component = entry.Component;
-          return (
-            <SegmentedTabPanel key={entry.id} value={entry.id}>
-              <Component context={collectionTabContext} />
-            </SegmentedTabPanel>
-          );
-        })}
+        {pluginTabs.map((entry) => (
+          <SegmentedTabPanel key={entry.id} value={entry.id}>
+            <PluginSurface
+              pluginId={entry.pluginId}
+              contributionId={entry.contributionId}
+              kind="collectionSettingsTabs"
+              context={collectionTabContext}
+              minHeight={320}
+            />
+          </SegmentedTabPanel>
+        ))}
       </SegmentedTabsGroup>
     </Page>
   );

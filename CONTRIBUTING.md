@@ -24,6 +24,9 @@ Source lives under `src/`:
 | `src/renderer/` | React UI (Redux Toolkit, Tailwind CSS v4)                         |
 | `src/shared/`   | Types and pure utilities shared across processes                  |
 
+Plugin subsystem architecture is documented in
+[`src/renderer/src/plugins/README.md`](src/renderer/src/plugins/README.md).
+
 Build output goes to `out/`. User docs live in the
 [harborclient-site](https://github.com/harborclient/harborclient-site) repository.
 

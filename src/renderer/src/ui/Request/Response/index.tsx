@@ -13,6 +13,7 @@ import type { ResponseTabContext } from '#/shared/plugin/types';
 import type { ScriptTestResult, SendResult } from '#/shared/types';
 
 import { faGlobe } from '#/renderer/src/fontawesome';
+import { PluginSurface } from '#/renderer/src/plugins/PluginSurface';
 import { usePluginResponseTabs } from '#/renderer/src/plugins/pluginHooks';
 import { isPluginTabId } from '#/renderer/src/plugins/pluginContextAdapters';
 import {
@@ -272,11 +273,17 @@ export function Response({
     }
 
     if (noResponsePluginTabs.length === 1) {
-      const SingleComponent = noResponsePluginTabs[0].Component;
+      const singleTab = noResponsePluginTabs[0];
       return (
         <div className="flex min-h-0 flex-1 flex-col p-3">
           <div className="flex min-h-0 flex-1 flex-col overflow-auto">
-            <SingleComponent context={responseTabContext} />
+            <PluginSurface
+              pluginId={singleTab.pluginId}
+              contributionId={singleTab.contributionId}
+              kind="responseTabs"
+              context={responseTabContext}
+              minHeight={240}
+            />
           </div>
         </div>
       );
@@ -294,14 +301,17 @@ export function Response({
             <SegmentedTabs tabs={pluginTabsOnly} />
           </div>
           <div className="flex min-h-0 flex-1 flex-col overflow-auto">
-            {noResponsePluginTabs.map((entry) => {
-              const Component = entry.Component;
-              return (
-                <SegmentedTabPanel key={entry.id} value={entry.id}>
-                  <Component context={responseTabContext} />
-                </SegmentedTabPanel>
-              );
-            })}
+            {noResponsePluginTabs.map((entry) => (
+              <SegmentedTabPanel key={entry.id} value={entry.id}>
+                <PluginSurface
+                  pluginId={entry.pluginId}
+                  contributionId={entry.contributionId}
+                  kind="responseTabs"
+                  context={responseTabContext}
+                  minHeight={240}
+                />
+              </SegmentedTabPanel>
+            ))}
           </div>
         </SegmentedTabsGroup>
       </div>
@@ -378,14 +388,17 @@ export function Response({
             )}
             {pluginTabs
               .filter((entry) => entry.when !== 'noResponse')
-              .map((entry) => {
-                const Component = entry.Component;
-                return (
-                  <SegmentedTabPanel key={entry.id} value={entry.id}>
-                    <Component context={responseTabContext} />
-                  </SegmentedTabPanel>
-                );
-              })}
+              .map((entry) => (
+                <SegmentedTabPanel key={entry.id} value={entry.id}>
+                  <PluginSurface
+                    pluginId={entry.pluginId}
+                    contributionId={entry.contributionId}
+                    kind="responseTabs"
+                    context={responseTabContext}
+                    minHeight={240}
+                  />
+                </SegmentedTabPanel>
+              ))}
           </div>
         </SegmentedTabsGroup>
       </div>

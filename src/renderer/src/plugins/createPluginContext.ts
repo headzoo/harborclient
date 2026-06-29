@@ -299,7 +299,7 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
         return registerSettingsSectionContribution(pluginId, {
           id: pluginSettingsSectionId(pluginId, section.id),
           title: section.title,
-          Component: section.Component
+          contributionId: section.id
         });
       },
       registerSidebarPanel: (panel) => {
@@ -310,7 +310,7 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
           title: panel.title,
           icon: panel.icon,
           order: panel.order,
-          Component: panel.Component
+          contributionId: panel.id
         });
       },
       registerSidebarSection: (section) => {
@@ -320,8 +320,8 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
           id: pluginContributionId(pluginId, section.id),
           title: section.title,
           order: section.order,
-          Component: section.Component,
-          headerActions: section.headerActions
+          contributionId: section.id,
+          hasHeaderActions: Boolean(section.headerActions)
         });
       },
       registerMainView: (view) => {
@@ -330,7 +330,7 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
         return registerMainViewContribution(pluginId, {
           id: pluginContributionId(pluginId, view.id),
           title: view.title,
-          Component: view.Component
+          contributionId: view.id
         });
       },
       registerRequestTab: (tab) => {
@@ -340,7 +340,7 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
           id: pluginContributionId(pluginId, tab.id),
           title: tab.title,
           order: tab.order,
-          Component: tab.Component
+          contributionId: tab.id
         });
       },
       registerResponseTab: (tab) => {
@@ -351,7 +351,7 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
           title: tab.title,
           order: tab.order,
           when: tab.when,
-          Component: tab.Component
+          contributionId: tab.id
         });
       },
       registerCollectionSettingsTab: (tab) => {
@@ -361,7 +361,7 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
           id: pluginContributionId(pluginId, tab.id),
           title: tab.title,
           order: tab.order,
-          Component: tab.Component
+          contributionId: tab.id
         });
       },
       registerFooterPanel: (panel) => {
@@ -370,8 +370,8 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
         return registerFooterPanelContribution(pluginId, {
           id: pluginContributionId(pluginId, panel.id),
           title: panel.title,
-          Component: panel.Component,
-          Indicator: panel.Indicator
+          contributionId: panel.id,
+          hasIndicator: Boolean(panel.Indicator)
         });
       },
       registerMenuItem: (item) => {
@@ -396,7 +396,7 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
           id: pluginContributionId(pluginId, item.id),
           alignment: item.alignment,
           order: item.order,
-          Component: item.Component
+          contributionId: item.id
         });
       },
       showToast: (message, options) => {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
+import { PluginSurface } from '#/renderer/src/plugins/PluginSurface';
 import {
   usePluginSidebarPanels,
   usePluginSidebarSections
@@ -400,7 +401,12 @@ export function Sidebar({
         )}
         {activeSidebarPanel ? (
           <div className="flex-1 overflow-y-auto px-2 py-2">
-            <activeSidebarPanel.Component />
+            <PluginSurface
+              pluginId={activeSidebarPanel.pluginId}
+              contributionId={activeSidebarPanel.contributionId}
+              kind="sidebarPanels"
+              minHeight={240}
+            />
           </div>
         ) : (
           <>
@@ -654,17 +660,30 @@ export function Sidebar({
 
               {pluginSidebarSections.map((section) => {
                 const expanded = pluginSectionExpanded[section.id] ?? true;
-                const Component = section.Component;
-                const HeaderActions = section.headerActions;
                 return (
                   <nav key={section.id} aria-label={section.title}>
                     <Section
                       title={section.title}
                       expanded={expanded}
                       onToggle={() => togglePluginSection(section.id)}
-                      headerActions={HeaderActions ? <HeaderActions /> : undefined}
+                      headerActions={
+                        section.hasHeaderActions ? (
+                          <PluginSurface
+                            pluginId={section.pluginId}
+                            contributionId={section.contributionId}
+                            kind="sidebarSections"
+                            slot="headerActions"
+                            style={{ minHeight: 24, height: 24 }}
+                          />
+                        ) : undefined
+                      }
                     >
-                      <Component />
+                      <PluginSurface
+                        pluginId={section.pluginId}
+                        contributionId={section.contributionId}
+                        kind="sidebarSections"
+                        minHeight={120}
+                      />
                     </Section>
                   </nav>
                 );

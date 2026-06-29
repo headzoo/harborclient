@@ -6,9 +6,11 @@ import { clearTrustedKeysCache } from '#/main/plugins/pluginSignature';
 import { getPluginSources, setPluginSources } from '#/main/settings/pluginSourcesSettings';
 import { refreshTeamHubPluginSources } from '#/main/settings/teamHubPluginSources';
 import { rebuildAppMenu } from '#/main/appMenu';
+import { logVerbose } from '#/main/logger';
 import { handle } from '#/main/ipc/handle';
 import { ipcArgSchemas } from '#/main/ipc/ipcSchemas';
 import { setPluginMenuContributions } from '#/main/plugins/pluginMenuContributions';
+import { getPluginUiBroker } from '#/main/plugins/PluginUiBroker';
 import { PluginDatabaseManager } from '#/main/plugins/PluginDatabaseManager';
 import {
   setPluginDatabaseManager,
@@ -233,7 +235,14 @@ export function registerPluginHandlers(pluginManager: PluginManager): void {
       databaseManager!.endTransaction(pluginId, txnId, action)
   });
 
-  handle('plugins:list', ipcArgSchemas.none, () => pluginManager.list());
+  handle('plugins:list', ipcArgSchemas.none, () => {
+    const plugins = pluginManager.list();
+    logVerbose('plugins:list', {
+      total: plugins.length,
+      enabled: plugins.filter((plugin) => plugin.enabled).map((plugin) => plugin.id)
+    });
+    return plugins;
+  });
 
   handle('plugins:catalog', ipcArgSchemas.none, () => fetchPluginCatalog());
 
@@ -494,6 +503,23 @@ export function registerPluginHandlers(pluginManager: PluginManager): void {
   handle('plugins:fsUnwatchFile', ipcArgSchemas.pluginFsUnwatchFile, (_event, pluginId, path) => {
     pluginManager.unwatchFilesystemPath(pluginId, path);
   });
+
+  handle('plugins:pushViewContext', ipcArgSchemas.pluginPushViewContext, (_event, payload) => {
+    getPluginUiBroker().pushViewContext(
+      payload.pluginId,
+      payload.contributionId,
+      payload.kind,
+      payload.context
+    );
+  });
+
+  handle(
+    'plugins:executeAgentCommand',
+    ipcArgSchemas.pluginExecuteAgentCommand,
+    (_event, pluginId, commandId, args) => {
+      getPluginUiBroker().executeCommand(pluginId, commandId, args ?? []);
+    }
+  );
 }
 
 /**

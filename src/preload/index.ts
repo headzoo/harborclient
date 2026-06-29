@@ -1780,6 +1780,96 @@ function pluginFsWatchFile(pluginId: string, path: string, callback: () => void)
   };
 }
 
+/**
+ * Pushes serialized view context to an isolated plugin surface webview.
+ */
+function pushPluginViewContext(payload: {
+  pluginId: string;
+  contributionId: string;
+  kind: string;
+  context: unknown;
+}): Promise<void> {
+  return ipcRenderer.invoke('plugins:pushViewContext', payload);
+}
+
+/**
+ * Executes a plugin command in the plugin agent webview.
+ */
+function executePluginAgentCommand(
+  pluginId: string,
+  commandId: string,
+  args: unknown[] = []
+): Promise<void> {
+  return ipcRenderer.invoke('plugins:executeAgentCommand', pluginId, commandId, args);
+}
+
+/**
+ * Subscribes to contribution registry updates from plugin agent webviews.
+ */
+function onPluginsContributions(
+  callback: (message: {
+    pluginId: string;
+    op: string;
+    kind?: string;
+    contribution?: Record<string, unknown>;
+    contributionId?: string;
+  }) => void
+): () => void {
+  const listener = (_event: Electron.IpcRendererEvent, message: unknown): void => {
+    callback(message as never);
+  };
+  ipcRenderer.on('plugins:contributions', listener);
+  return () => {
+    ipcRenderer.removeListener('plugins:contributions', listener);
+  };
+}
+
+/**
+ * Subscribes to host bridge requests from isolated plugin webviews.
+ */
+function onPluginsHostBridge(
+  callback: (message: { pluginId: string; op: string; payload?: unknown }) => void
+): () => void {
+  const listener = (_event: Electron.IpcRendererEvent, message: unknown): void => {
+    callback(message as never);
+  };
+  ipcRenderer.on('plugins:hostBridge', listener);
+  return () => {
+    ipcRenderer.removeListener('plugins:hostBridge', listener);
+  };
+}
+
+/**
+ * Subscribes to plugin agent webview readiness notifications.
+ */
+function onPluginsAgentReady(callback: (payload: { pluginId: string }) => void): () => void {
+  const listener = (_event: Electron.IpcRendererEvent, payload: { pluginId: string }): void => {
+    callback(payload);
+  };
+  ipcRenderer.on('plugins:agentReady', listener);
+  return () => {
+    ipcRenderer.removeListener('plugins:agentReady', listener);
+  };
+}
+
+/**
+ * Subscribes to plugin agent webview bootstrap failure notifications.
+ */
+function onPluginsAgentFailed(
+  callback: (payload: { pluginId: string; message: string }) => void
+): () => void {
+  const listener = (
+    _event: Electron.IpcRendererEvent,
+    payload: { pluginId: string; message: string }
+  ): void => {
+    callback(payload);
+  };
+  ipcRenderer.on('plugins:agentFailed', listener);
+  return () => {
+    ipcRenderer.removeListener('plugins:agentFailed', listener);
+  };
+}
+
 const api: Api = {
   listCollections,
   createCollection,
@@ -1951,7 +2041,13 @@ const api: Api = {
   pluginFsSaveFile,
   pluginFsReadFile,
   pluginFsWriteFile,
-  pluginFsWatchFile
+  pluginFsWatchFile,
+  pushPluginViewContext,
+  executePluginAgentCommand,
+  onPluginsContributions,
+  onPluginsHostBridge,
+  onPluginsAgentReady,
+  onPluginsAgentFailed
 };
 
 contextBridge.exposeInMainWorld('api', api);

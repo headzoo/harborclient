@@ -22,7 +22,6 @@ import {
   saveFromMenu
 } from '#/renderer/src/store/thunks';
 import { formatErrorMessage, showAlert } from '#/renderer/src/ui/modals/dialogHelpers';
-import { executePluginCommand } from '#/renderer/src/plugins/createPluginContext';
 
 /**
  * Subscribes to main-process menu actions and dispatches the matching store updates.
@@ -111,7 +110,7 @@ export function useMenuActions(): void {
    */
   useEffect(() => {
     const unsubscribe = window.api.onPluginMenuCommand(({ pluginId, command }) => {
-      void executePluginCommand(pluginId, command).catch((err: unknown) => {
+      void window.api.executePluginAgentCommand(pluginId, command).catch((err: unknown) => {
         showAlert(
           dispatch,
           formatErrorMessage(err, `Plugin command failed: ${pluginId}:${command}`)

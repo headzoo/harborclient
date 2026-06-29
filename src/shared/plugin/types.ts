@@ -1,14 +1,10 @@
-import type * as React from 'react';
 import type { PluginCatalogCategory } from '#/shared/plugin/catalogCategories';
 import type { ThemeSource } from '#/shared/types/settings';
 import type {
   ActiveTheme,
   AppMenu,
   BuiltinThemeId,
-  CollectionSettingsTabContext,
   ContextMenuTarget,
-  RequestTabContext,
-  ResponseTabContext,
   ThemeColorToken
 } from '@harborclient/sdk';
 
@@ -171,7 +167,8 @@ export interface RegisteredSettingsSection {
   pluginId: string;
   id: string;
   title: string;
-  Component: React.ComponentType;
+  /** Manifest contributes.settingsSections id used by plugin surface URLs. */
+  contributionId: string;
 }
 
 /**
@@ -194,9 +191,9 @@ export interface RegisteredSidebarSection {
   id: string;
   title: string;
   order?: number;
-  Component: React.ComponentType;
-  /** Optional controls rendered in the section header row. */
-  headerActions?: React.ComponentType;
+  contributionId: string;
+  /** Whether the section declares headerActions in the manifest. */
+  hasHeaderActions?: boolean;
 }
 
 /**
@@ -208,7 +205,7 @@ export interface RegisteredSidebarPanel {
   title: string;
   icon?: string;
   order?: number;
-  Component: React.ComponentType;
+  contributionId: string;
 }
 
 /**
@@ -218,7 +215,7 @@ export interface RegisteredMainView {
   pluginId: string;
   id: string;
   title: string;
-  Component: React.ComponentType;
+  contributionId: string;
 }
 
 /**
@@ -229,7 +226,7 @@ export interface RegisteredRequestTab {
   id: string;
   title: string;
   order?: number;
-  Component: React.ComponentType<{ context: RequestTabContext }>;
+  contributionId: string;
 }
 
 /**
@@ -241,7 +238,7 @@ export interface RegisteredResponseTab {
   title: string;
   order?: number;
   when?: 'always' | 'hasResponse' | 'noResponse';
-  Component: React.ComponentType<{ context: ResponseTabContext }>;
+  contributionId: string;
 }
 
 /**
@@ -252,7 +249,7 @@ export interface RegisteredCollectionSettingsTab {
   id: string;
   title: string;
   order?: number;
-  Component: React.ComponentType<{ context: CollectionSettingsTabContext }>;
+  contributionId: string;
 }
 
 /**
@@ -262,9 +259,9 @@ export interface RegisteredFooterPanel {
   pluginId: string;
   id: string;
   title: string;
-  Component: React.ComponentType;
-  /** Optional decoration rendered beside the footer toggle label. */
-  Indicator?: React.ComponentType;
+  contributionId: string;
+  /** Whether the panel declares an Indicator component in the manifest. */
+  hasIndicator?: boolean;
 }
 
 /**
@@ -312,7 +309,7 @@ export interface RegisteredStatusBarItem {
   id: string;
   alignment?: 'left' | 'right';
   order?: number;
-  Component: React.ComponentType;
+  contributionId: string;
 }
 
 /**

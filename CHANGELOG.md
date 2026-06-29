@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(plugins): implement plugin UI broker and enhance plugin communication. (`fcaa067`)
+
 ## 1.8.38 - 2026-06-29
 
 - chore(deps): update @harborclient/sdk to version 0.6.12 in package.json and pnpm-lock.yaml; refactor checkbox components in various UI sections. (`24d90ed`)

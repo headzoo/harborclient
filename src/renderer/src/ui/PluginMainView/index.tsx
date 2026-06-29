@@ -2,6 +2,7 @@ import { OverlayCloseButton, Button } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 
 import { usePluginMainViews } from '#/renderer/src/plugins/pluginHooks';
+import { PluginSurface } from '#/renderer/src/plugins/PluginSurface';
 import { pluginContributionId } from '#/shared/plugin/types';
 
 interface Props {
@@ -39,7 +40,6 @@ export function PluginMainView({ pluginId, viewId, onClose }: Props): JSX.Elemen
     );
   }
 
-  const Component = view.Component;
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-center justify-between gap-4 border-b border-separator px-6 py-4">
@@ -47,7 +47,12 @@ export function PluginMainView({ pluginId, viewId, onClose }: Props): JSX.Elemen
         <OverlayCloseButton label="Close plugin view" onClose={onClose} />
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto p-6">
-        <Component />
+        <PluginSurface
+          pluginId={view.pluginId}
+          contributionId={view.contributionId}
+          kind="mainViews"
+          minHeight={400}
+        />
       </div>
     </div>
   );

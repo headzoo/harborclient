@@ -43,6 +43,12 @@ import {
   parseDevPluginPaths
 } from '#/main/plugins/PluginManager';
 import { disposePluginRunner } from '#/main/plugins/pluginRunnerHost';
+import { initPluginUiBroker } from '#/main/plugins/PluginUiBroker';
+import {
+  ensureHarborPluginProtocolForSession,
+  registerHarborPluginProtocol,
+  registerHarborPluginScheme
+} from '#/main/plugins/registerPluginProtocol';
 import type { StorageConnection, ThemeSource } from '#/shared/types';
 import { HARBOR_PROTOCOL, parseHarborDeepLink, type HarborDeepLink } from '#/shared/deepLink';
 
@@ -169,6 +175,7 @@ if (!gotSingleInstanceLock) {
 }
 
 registerProtocolClient();
+registerHarborPluginScheme();
 
 app.on('open-url', (event, url) => {
   event.preventDefault();
@@ -593,7 +600,8 @@ function createWindow(): BrowserWindow {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      webviewTag: true
     }
   });
 
@@ -652,12 +660,73 @@ function createWindow(): BrowserWindow {
     })
   );
 
+  window.webContents.on('will-attach-webview', (event, webPreferences, params) => {
+    let url: URL;
+    try {
+      url = new URL(params.src);
+    } catch {
+      event.preventDefault();
+      return;
+    }
+    if (url.protocol !== 'harbor-plugin:') {
+      event.preventDefault();
+      return;
+    }
+
+    const pluginId = decodeURIComponent(url.hostname);
+    const role = url.searchParams.get('role') === 'view' ? 'view' : 'agent';
+    const contrib = url.searchParams.get('contrib') ?? '';
+    const kind = url.searchParams.get('kind') ?? '';
+    const slot = url.searchParams.get('slot') ?? '';
+
+    logVerbose('will-attach-webview: allow', { pluginId, role, src: params.src });
+    ensureHarborPluginProtocolForSession(`persist:plugin-${pluginId}`);
+    webPreferences.contextIsolation = true;
+    webPreferences.nodeIntegration = false;
+    webPreferences.sandbox = true;
+    webPreferences.preload = join(__dirname, '../preload/plugin.js');
+    webPreferences.additionalArguments = [
+      `--plugin-id=${pluginId}`,
+      `--plugin-role=${role}`,
+      ...(contrib ? [`--plugin-contrib=${contrib}`] : []),
+      ...(kind ? [`--plugin-kind=${kind}`] : []),
+      ...(slot ? [`--plugin-slot=${slot}`] : [])
+    ];
+  });
+
+  window.webContents.on('did-attach-webview', (_event, guestContents) => {
+    guestContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+    guestContents.on('did-fail-load', (_failEvent, errorCode, errorDescription, validatedURL) => {
+      logVerbose('plugin webview did-fail-load', {
+        guestId: guestContents.id,
+        errorCode,
+        errorDescription,
+        validatedURL
+      });
+    });
+  });
+
   setupCloseHandlers(window);
   setupFullscreenEscapeHandler(window);
 
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {
-    logVerbose('createWindow: loading renderer URL', process.env['ELECTRON_RENDERER_URL']);
-    window.loadURL(process.env['ELECTRON_RENDERER_URL']);
+    const rendererUrl = process.env['ELECTRON_RENDERER_URL'];
+    logVerbose('createWindow: loading renderer URL', rendererUrl);
+    // Vite serves optimized deps (node_modules/.vite/deps) with an immutable
+    // Cache-Control header keyed on a ?v=<browserHash> query. That hash is
+    // derived from the lockfile + config, not from `file:`-linked package
+    // contents, so it stays constant when @harborclient/sdk is rebuilt locally.
+    // Electron then keeps serving the stale cached body for the same URL,
+    // producing "module does not provide an export named X" errors. Clearing
+    // the dev session cache before load guarantees a fresh fetch.
+    void window.webContents.session
+      .clearCache()
+      .catch(() => {
+        // Best-effort; a stale cache only matters during local SDK development.
+      })
+      .finally(() => {
+        window.loadURL(rendererUrl);
+      });
   } else {
     logVerbose('createWindow: loading renderer file', indexPath);
     window.loadFile(indexPath);
@@ -723,6 +792,24 @@ app.whenReady().then(async () => {
     pluginManager.discover();
     void pluginManager.refreshSignatures();
     pluginManager.registerStartupDevPaths(parseDevPluginPaths());
+
+    logVerbose('startup: initializing plugin UI broker');
+    const pluginUiBroker = initPluginUiBroker(pluginManager);
+    pluginUiBroker.setMainWindow(() => mainWindow);
+    pluginUiBroker.setThemeGetter(async () => {
+      const value = await db.getSetting(THEME_SETTING_KEY);
+      return (value ?? 'system') as ThemeSource;
+    });
+    registerHarborPluginProtocol(
+      pluginManager,
+      join(__dirname, '../..'),
+      (pluginId) => {
+        pluginUiBroker.markAgentReady(pluginId);
+      },
+      (pluginId, message) => {
+        pluginUiBroker.markAgentFailed(pluginId, message);
+      }
+    );
 
     logVerbose('startup: registering IPC handlers');
     registerIpcHandlers(db, pluginManager);

@@ -582,6 +582,15 @@ export const ipcArgSchemas = {
   ]),
   pluginFsWatchFile: z.tuple([pluginId, z.string().min(1)]),
   pluginFsUnwatchFile: z.tuple([pluginId, z.string().min(1)]),
+  pluginPushViewContext: z.tuple([
+    z.object({
+      pluginId: z.string().min(1),
+      contributionId: z.string().min(1),
+      kind: z.string().min(1),
+      context: z.unknown()
+    })
+  ]),
+  pluginExecuteAgentCommand: z.tuple([pluginId, z.string().min(1), z.array(z.unknown())]),
   oauthFetchToken: z.tuple([z.string(), oauth2Config, z.boolean()]),
   oauthClearToken: z.tuple([z.string().min(1)])
 } as const;

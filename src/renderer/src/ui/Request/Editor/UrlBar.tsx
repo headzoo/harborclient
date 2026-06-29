@@ -10,7 +10,6 @@ import type { JSX } from 'react';
 import type { HttpMethod, Variable } from '#/shared/types';
 
 import { usePluginRequestToolbarActions } from '#/renderer/src/plugins/pluginHooks';
-import { executePluginCommand } from '#/renderer/src/plugins/createPluginContext';
 
 interface Props {
   /**
@@ -94,7 +93,7 @@ export function UrlBar({
           variant="secondary"
           title={action.title}
           aria-label={action.title}
-          onClick={() => void executePluginCommand(action.pluginId, action.command)}
+          onClick={() => void window.api.executePluginAgentCommand(action.pluginId, action.command)}
         >
           {action.title}
         </Button>

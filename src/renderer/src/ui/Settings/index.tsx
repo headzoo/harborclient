@@ -2,6 +2,7 @@ import { Page, PageSidebar, SidebarLayout } from '@harborclient/sdk/components';
 import { useMemo, useState, type JSX } from 'react';
 
 import { faPuzzlePiece } from '#/renderer/src/fontawesome';
+import { PluginSurface } from '#/renderer/src/plugins/PluginSurface';
 import { usePluginSettingsSections } from '#/renderer/src/plugins/pluginHooks';
 import { AiSection } from './AiSection';
 import { BackupRestoreSection } from './BackupRestoreSection';
@@ -56,7 +57,6 @@ function SettingsPanel({
 
   const pluginSection = pluginSections.find((entry) => entry.id === section);
   if (pluginSection) {
-    const Component = pluginSection.Component;
     return (
       <Page
         embedded
@@ -64,7 +64,12 @@ function SettingsPanel({
         icon={faPuzzlePiece}
         actions={<SettingsCloseButton onClose={onClose} />}
       >
-        <Component />
+        <PluginSurface
+          pluginId={pluginSection.pluginId}
+          contributionId={pluginSection.contributionId}
+          kind="settingsSections"
+          minHeight={400}
+        />
       </Page>
     );
   }

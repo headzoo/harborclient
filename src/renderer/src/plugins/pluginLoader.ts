@@ -1,102 +1,137 @@
-import type { PluginContext, PluginInfo } from '#/shared/plugin/types';
-import * as React from 'react';
-import * as ReactDOM from 'react-dom';
-import reactShimSource from '#/renderer/src/plugins/shims/react.ts?raw';
-import reactDomShimSource from '#/renderer/src/plugins/shims/react-dom.ts?raw';
-import { createPluginContext } from '#/renderer/src/plugins/createPluginContext';
-import { installPluginReactHost } from '#/renderer/src/plugins/pluginReactHost';
-import {
-  clearPluginContributions,
-  getRegisteredPluginThemes
-} from '#/renderer/src/plugins/registry';
+import type { PluginInfo } from '#/shared/plugin/types';
+import { buildPluginAgentUrl } from '#/shared/plugin/pluginSurface';
+import { clearPluginContributions } from '#/renderer/src/plugins/registry';
 import { applyPersistedPluginTheme } from '#/renderer/src/plugins/themeRuntime';
-import { store } from '#/renderer/src/store/redux';
-import { openPluginThemePrompt } from '#/renderer/src/store/slices/modalsSlice';
 
-installPluginReactHost(React, ReactDOM);
+/** Tracks hidden agent webviews mounted for enabled plugins. */
+const agentWebviews = new Map<string, Electron.WebviewTag>();
 
-/** MIME type browsers require for ES module imports from blob/data URLs. */
-const PLUGIN_MODULE_MIME_TYPE = 'text/javascript';
+/** Pending agent-ready promises keyed by plugin id. */
+const agentReadyWaiters = new Map<
+  string,
+  { resolve: () => void; reject: (error: Error) => void; timeout: ReturnType<typeof setTimeout> }
+>();
 
-interface LoadedPlugin {
-  pluginId: string;
-  deactivate?: () => void;
-  disposables: Array<{ dispose: () => void }>;
-}
-
-const loaded = new Map<string, LoadedPlugin>();
-
-/** Plugin ids queued for a post-activation theme switch prompt. */
-const pendingThemePromptIds = new Set<string>();
+/** Maximum time to wait for a plugin agent webview to finish activation. */
+export const AGENT_READY_TIMEOUT_MS = 30000;
 
 /**
- * Creates a blob URL module for plugin imports with a JavaScript MIME type.
+ * Waits until the plugin agent webview reports successful activation.
  *
- * The shim sources are imported as raw text (not as `new URL('./shim.ts')`) because
- * Vite inlines `.ts` module URLs as `data:video/mp2t` in packaged builds. Browsers
- * reject importing a data/blob ES module whose MIME type is not JavaScript, which is
- * why renderer plugins failed to load in production. Building the blob with an explicit
- * `text/javascript` type avoids that.
- *
- * @param source - ESM source text to expose as an importable module.
- * @returns Object URL whose blob carries a JavaScript MIME type.
+ * @param pluginId - Plugin manifest id.
  */
-function createJavaScriptModuleUrl(source: string): string {
-  return URL.createObjectURL(new Blob([source], { type: PLUGIN_MODULE_MIME_TYPE }));
+function waitForAgentReady(pluginId: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      agentReadyWaiters.delete(pluginId);
+      reject(new Error(`Plugin ${pluginId} agent webview timed out.`));
+    }, AGENT_READY_TIMEOUT_MS);
+    agentReadyWaiters.set(pluginId, { resolve, reject, timeout });
+  });
 }
 
 /**
- * Rewrites externalized React imports in a plugin bundle to host shim modules.
+ * Resolves a pending agent-ready waiter when the broker notifies the host.
  *
- * Plugin esbuild configs mark `react` and `react-dom` as external, but dependencies
- * bundled into the plugin (for example Font Awesome or CodeMirror) still emit bare
- * `react` specifiers. Blob URL dynamic imports cannot resolve those without a map.
- *
- * @param source - Bundled plugin ESM source text.
- * @param reactShimUrl - Module URL re-exporting the host React instance.
- * @param reactDomShimUrl - Module URL re-exporting the host React DOM instance.
- * @returns Source with `react` / `react-dom` imports pointed at host shims.
+ * @param pluginId - Plugin manifest id.
  */
-function patchPluginReactImports(
-  source: string,
-  reactShimUrl: string,
-  reactDomShimUrl: string
-): string {
-  return source
-    .replace(/from\s*(["'])react\1/g, `from ${JSON.stringify(reactShimUrl)}`)
-    .replace(/from\s*(["'])react-dom\1/g, `from ${JSON.stringify(reactDomShimUrl)}`);
-}
-
-/**
- * Dynamically imports a plugin bundle from source text.
- *
- * React/React DOM shim modules are created per import with a JavaScript MIME type and
- * revoked once the plugin module has been instantiated; the loaded module keeps the
- * host React instance via {@link installPluginReactHost}, so revoking the URLs is safe.
- *
- * @param source - Bundled ESM source returned by the main process.
- */
-async function importPluginModule(
-  source: string
-): Promise<{ activate?: (hc: unknown) => void | Promise<void>; deactivate?: () => void }> {
-  const reactShimUrl = createJavaScriptModuleUrl(reactShimSource);
-  const reactDomShimUrl = createJavaScriptModuleUrl(reactDomShimSource);
-  const patched = patchPluginReactImports(source, reactShimUrl, reactDomShimUrl);
-  const url = createJavaScriptModuleUrl(patched);
-  try {
-    return (await import(/* @vite-ignore */ url)) as {
-      activate?: (hc: unknown) => void | Promise<void>;
-      deactivate?: () => void;
-    };
-  } finally {
-    URL.revokeObjectURL(url);
-    URL.revokeObjectURL(reactShimUrl);
-    URL.revokeObjectURL(reactDomShimUrl);
+export function notifyAgentReady(pluginId: string): void {
+  const waiter = agentReadyWaiters.get(pluginId);
+  if (!waiter) {
+    return;
   }
+  clearTimeout(waiter.timeout);
+  agentReadyWaiters.delete(pluginId);
+  waiter.resolve();
 }
 
-/** Stable runtime error text for blob-URL dynamic import failures. */
-const PLUGIN_MODULE_IMPORT_ERROR = 'Failed to load plugin module.';
+/**
+ * Creates or returns the off-screen container used for plugin agent webviews.
+ *
+ * Agent webviews must not live under `display: none`; Electron may never load
+ * their guest documents in that state.
+ */
+function ensureAgentContainer(): HTMLElement {
+  let container = document.getElementById('plugin-agent-webviews');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'plugin-agent-webviews';
+    container.style.position = 'fixed';
+    container.style.left = '-10000px';
+    container.style.top = '0';
+    container.style.width = '640px';
+    container.style.height = '480px';
+    container.style.overflow = 'hidden';
+    container.style.opacity = '0';
+    container.style.pointerEvents = 'none';
+    container.style.zIndex = '-1';
+    document.body.appendChild(container);
+  }
+  return container;
+}
+
+/**
+ * Rejects a pending agent-ready waiter when the agent webview fails to load.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param message - Failure description for Settings and logs.
+ */
+export function rejectAgentReady(pluginId: string, message: string): void {
+  const waiter = agentReadyWaiters.get(pluginId);
+  if (!waiter) {
+    return;
+  }
+  clearTimeout(waiter.timeout);
+  agentReadyWaiters.delete(pluginId);
+  waiter.reject(new Error(message));
+}
+
+/**
+ * Mounts the hidden agent webview for one plugin if it is not already present.
+ *
+ * @param plugin - Plugin metadata from the main process.
+ */
+function mountAgentWebview(plugin: PluginInfo): void {
+  if (!plugin.manifest.renderer || agentWebviews.has(plugin.id)) {
+    return;
+  }
+  const agentUrl = buildPluginAgentUrl(plugin.id);
+  const webview = document.createElement('webview') as Electron.WebviewTag;
+  webview.setAttribute('src', agentUrl);
+  webview.partition = `persist:plugin-${plugin.id}`;
+  webview.setAttribute('allowpopups', 'false');
+  webview.style.width = '640px';
+  webview.style.height = '480px';
+  webview.addEventListener('did-fail-load', (event) => {
+    if (event.isMainFrame) {
+      rejectAgentReady(
+        plugin.id,
+        `Plugin ${plugin.id} agent webview failed to load (${event.errorDescription}).`
+      );
+    }
+  });
+  webview.addEventListener('console-message', (event) => {
+    if (event.level >= 2) {
+      console.error(`[plugin agent ${plugin.id}]`, event.message);
+    }
+  });
+  ensureAgentContainer().appendChild(webview);
+  agentWebviews.set(plugin.id, webview);
+}
+
+/**
+ * Removes the hidden agent webview for one plugin.
+ *
+ * @param pluginId - Plugin manifest id.
+ */
+function unmountAgentWebview(pluginId: string): void {
+  const webview = agentWebviews.get(pluginId);
+  if (!webview) {
+    return;
+  }
+  webview.remove();
+  agentWebviews.delete(pluginId);
+}
 
 /** Matches unique blob URLs appended to dynamic import failure messages. */
 const DYNAMIC_IMPORT_BLOB_URL_PATTERN = /:\s*blob:[^\s)]+/g;
@@ -112,10 +147,22 @@ function omitBlobUrlsFromErrorText(text: string): string {
 }
 
 /**
+ * Normalizes activation error messages for persistence.
+ *
+ * @param error - Thrown activation error.
+ */
+export function normalizePluginActivationError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes('Failed to fetch dynamically imported module')) {
+    return 'Failed to load plugin module.';
+  }
+  return message;
+}
+
+/**
  * Formats an activation error for terminal logging, including nested causes.
  *
  * @param error - Thrown activation error.
- * @returns Multi-line detail string with message, stack, and cause chain.
  */
 export function formatPluginActivationErrorDetails(error: unknown): string {
   const lines: string[] = [];
@@ -144,27 +191,7 @@ export function formatPluginActivationErrorDetails(error: unknown): string {
 }
 
 /**
- * Normalizes activation error messages for persistence.
- *
- * Dynamic import failures include a unique blob URL on each attempt, which
- * would otherwise bypass deduplication in the main process and re-trigger reload.
- *
- * @param error - Thrown activation error.
- * @returns Message suitable for Settings and runtime-error deduplication.
- */
-export function normalizePluginActivationError(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
-  if (message.includes('Failed to fetch dynamically imported module')) {
-    return PLUGIN_MODULE_IMPORT_ERROR;
-  }
-  return message;
-}
-
-/**
  * Disables a plugin and persists its activation failure for Settings.
- *
- * Disabling first breaks the renderer reload loop triggered by runtime-error
- * updates; a stable normalized message avoids repeated change events on retry.
  *
  * @param plugin - Plugin metadata from the main process.
  * @param error - Thrown activation error.
@@ -198,82 +225,14 @@ async function clearActivationError(pluginId: string): Promise<void> {
 }
 
 /**
- * Marks a plugin for a theme switch prompt after the next successful activation.
- *
- * Call this immediately before enabling a plugin when the user opts in to trying
- * its contributed themes.
- *
- * @param pluginId - Plugin manifest id.
+ * Clears pending agent waiters and tracked webviews — test helper only.
  */
-export function markPluginForThemePrompt(pluginId: string): void {
-  pendingThemePromptIds.add(pluginId);
-}
-
-/**
- * Opens the theme switch prompt when the user just enabled a plugin that registered themes.
- *
- * @param plugin - Plugin metadata from the main process.
- */
-function maybePromptForPluginTheme(plugin: PluginInfo): void {
-  if (!pendingThemePromptIds.delete(plugin.id)) {
-    return;
+export function resetPluginLoaderForTests(): void {
+  for (const [pluginId, waiter] of agentReadyWaiters.entries()) {
+    clearTimeout(waiter.timeout);
+    agentReadyWaiters.delete(pluginId);
   }
-
-  const themes = getRegisteredPluginThemes()
-    .filter((entry) => entry.pluginId === plugin.id)
-    .map((entry) => ({
-      id: entry.id,
-      title: entry.title,
-      type: entry.type
-    }));
-
-  if (themes.length === 0) {
-    return;
-  }
-
-  const activeDataTheme = document.documentElement.getAttribute('data-theme');
-  const alreadyActive = themes.some(
-    (theme) => activeDataTheme === `plugin-${plugin.id}-${theme.id}`
-  );
-  if (alreadyActive) {
-    return;
-  }
-
-  store.dispatch(
-    openPluginThemePrompt({
-      pluginId: plugin.id,
-      pluginName: plugin.name,
-      themes
-    })
-  );
-}
-
-/**
- * Tears down partial renderer activation after activate() throws before load completes.
- *
- * @param pluginId - Plugin manifest id.
- * @param hc - Activation context whose subscriptions may hold partial resources.
- * @param module - Imported plugin module that may export deactivate().
- */
-export async function disposePartialRendererActivation(
-  pluginId: string,
-  hc: PluginContext,
-  module: { deactivate?: () => void }
-): Promise<void> {
-  try {
-    module.deactivate?.();
-  } catch {
-    // Plugin deactivate may fail during partial activation.
-  }
-  for (const disposable of hc.subscriptions) {
-    try {
-      disposable.dispose();
-    } catch {
-      // Ignore dispose errors during rollback.
-    }
-  }
-  clearPluginContributions(pluginId);
-  await applyPersistedPluginTheme();
+  agentWebviews.clear();
 }
 
 /**
@@ -282,29 +241,18 @@ export async function disposePartialRendererActivation(
  * @param pluginId - Plugin manifest id.
  */
 export async function unloadPlugin(pluginId: string): Promise<void> {
-  const entry = loaded.get(pluginId);
-  if (!entry) {
-    clearPluginContributions(pluginId);
-    return;
-  }
-  entry.deactivate?.();
-  for (const disposable of entry.disposables) {
-    disposable.dispose();
-  }
+  unmountAgentWebview(pluginId);
   clearPluginContributions(pluginId);
-  if (entry.pluginId) {
-    try {
-      await window.api.deactivatePluginMain(pluginId);
-    } catch {
-      // Main entry may not have been active.
-    }
+  try {
+    await window.api.deactivatePluginMain(pluginId);
+  } catch {
+    // Main entry may not have been active.
   }
-  loaded.delete(pluginId);
   await applyPersistedPluginTheme();
 }
 
 /**
- * Activates one enabled plugin in the renderer host.
+ * Activates one enabled plugin through its hidden agent webview.
  *
  * @param plugin - Plugin metadata from the main process.
  */
@@ -324,31 +272,15 @@ async function loadPlugin(plugin: PluginInfo): Promise<void> {
       return;
     }
 
-    const source = await window.api.readPluginEntry(plugin.id, 'renderer');
-    const module = await importPluginModule(source);
-    if (typeof module.activate !== 'function') {
-      throw new Error(`Plugin ${plugin.id} renderer entry must export activate(hc).`);
-    }
-
-    const hc = createPluginContext(plugin.id, plugin.manifest);
-    try {
-      await module.activate(hc);
-    } catch (error) {
-      await disposePartialRendererActivation(plugin.id, hc, module);
-      throw error;
-    }
-    loaded.set(plugin.id, {
-      pluginId: plugin.id,
-      deactivate: module.deactivate,
-      disposables: [...hc.subscriptions]
-    });
+    const readyPromise = waitForAgentReady(plugin.id);
+    mountAgentWebview(plugin);
+    await readyPromise;
 
     if (plugin.manifest.main) {
       await window.api.activatePluginMain(plugin.id);
     }
 
     await applyPersistedPluginTheme();
-    maybePromptForPluginTheme(plugin);
     await clearActivationError(plugin.id);
   } catch (error) {
     await handleActivationFailure(plugin, error);
@@ -393,7 +325,26 @@ export async function reloadPlugin(pluginId: string): Promise<void> {
  * Unloads every plugin currently held by the renderer host.
  */
 export async function unloadAllPlugins(): Promise<void> {
-  for (const pluginId of [...loaded.keys()]) {
+  for (const pluginId of [...agentWebviews.keys()]) {
     await unloadPlugin(pluginId);
   }
+}
+
+/**
+ * Marks a plugin for a theme switch prompt after the next successful activation.
+ *
+ * @param pluginId - Plugin manifest id.
+ */
+export function markPluginForThemePrompt(pluginId: string): void {
+  void pluginId;
+  // Theme prompt remains host-side; agent webviews receive theme pushes separately.
+}
+
+/**
+ * Rolls back partial activation state when agent startup fails.
+ *
+ * @param pluginId - Plugin manifest id.
+ */
+export async function disposePartialRendererActivation(pluginId: string): Promise<void> {
+  await unloadPlugin(pluginId);
 }

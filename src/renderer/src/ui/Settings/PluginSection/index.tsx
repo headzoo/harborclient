@@ -1076,7 +1076,7 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
                           onClick={stopRowActivation}
                           onMouseDown={stopRowActivation}
                         >
-                          <div className="flex flex-nowrap gap-2">
+                          <div className="flex flex-nowrap gap-2 justify-end">
                             <Button
                               type="button"
                               variant="secondary"

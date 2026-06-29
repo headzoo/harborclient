@@ -8,20 +8,6 @@ import {
   registerSettingsSectionContribution
 } from '#/renderer/src/plugins/registry';
 
-/**
- * Minimal React component stub for registry tests.
- */
-function StubSection(): null {
-  return null;
-}
-
-/**
- * Minimal request tab stub for registry tests.
- */
-function StubRequestTab(): null {
-  return null;
-}
-
 describe('plugin registry', () => {
   it('returns stable snapshot references until contributions change', () => {
     const first = getRegisteredSettingsSections();
@@ -31,7 +17,7 @@ describe('plugin registry', () => {
     const disposable = registerSettingsSectionContribution('com.example.test', {
       id: 'plugin:com.example.test:general',
       title: 'Example',
-      Component: StubSection
+      contributionId: 'general'
     });
 
     const third = getRegisteredSettingsSections();
@@ -54,7 +40,7 @@ describe('plugin registry', () => {
     const disposable = registerRequestTabContribution('com.example.test', {
       id: 'plugin:com.example.test:tab',
       title: 'Tab',
-      Component: StubRequestTab
+      contributionId: 'tab'
     });
 
     const third = getRegisteredRequestTabs();
@@ -69,17 +55,17 @@ describe('plugin registry', () => {
     registerSettingsSectionContribution('com.example.a', {
       id: 'plugin:com.example.a:general',
       title: 'A Settings',
-      Component: StubSection
+      contributionId: 'general'
     });
     registerRequestTabContribution('com.example.a', {
       id: 'plugin:com.example.a:tab',
       title: 'A Tab',
-      Component: StubRequestTab
+      contributionId: 'tab'
     });
     registerSettingsSectionContribution('com.example.b', {
       id: 'plugin:com.example.b:general',
       title: 'B Settings',
-      Component: StubSection
+      contributionId: 'general'
     });
 
     clearPluginContributions('com.example.a');

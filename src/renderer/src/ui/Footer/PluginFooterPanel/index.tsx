@@ -1,11 +1,23 @@
 import { Resizable } from '@harborclient/sdk/components';
-import { type ComponentType, type JSX } from 'react';
+import { type JSX } from 'react';
+import { PluginSurface } from '#/renderer/src/plugins/PluginSurface';
+import type { PluginContributionKind } from '#/shared/plugin/pluginSurface';
 
 interface Props {
   /**
    * Namespaced panel id used for DOM ids and height persistence.
    */
   id: string;
+
+  /**
+   * Plugin manifest id.
+   */
+  pluginId: string;
+
+  /**
+   * Manifest footerPanels contribution id.
+   */
+  contributionId: string;
 
   /**
    * Display title for the close button accessible name.
@@ -21,20 +33,21 @@ interface Props {
    * Closes the plugin footer panel.
    */
   onClose: () => void;
-
-  /**
-   * Plugin-provided panel content.
-   */
-  Component: ComponentType;
 }
 
 /**
  * Host-owned resizable shell for plugin footer panels.
- *
- * Wraps plugin content with the same resize handle, height persistence, and
- * close affordance as built-in Console and Variables panels.
  */
-export function PluginFooterPanel({ id, title, open, onClose, Component }: Props): JSX.Element {
+export function PluginFooterPanel({
+  id,
+  pluginId,
+  contributionId,
+  title,
+  open,
+  onClose
+}: Props): JSX.Element {
+  const kind: PluginContributionKind = 'footerPanels';
+
   return (
     <Resizable
       id={`footer-plugin-panel-${id}`}
@@ -46,7 +59,13 @@ export function PluginFooterPanel({ id, title, open, onClose, Component }: Props
       headerless
     >
       <div className="flex min-h-0 flex-1 flex-col">
-        <Component />
+        <PluginSurface
+          pluginId={pluginId}
+          contributionId={contributionId}
+          kind={kind}
+          minHeight={160}
+          className="h-full"
+        />
       </div>
     </Resizable>
   );

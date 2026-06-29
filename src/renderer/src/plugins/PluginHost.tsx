@@ -2,10 +2,13 @@ import { useEffect } from 'react';
 import {
   reloadAllPlugins,
   reloadPlugin,
-  unloadAllPlugins
+  unloadAllPlugins,
+  notifyAgentReady,
+  rejectAgentReady
 } from '#/renderer/src/plugins/pluginLoader';
 import { registerHostPluginCommands } from '#/renderer/src/plugins/hostCommands';
 import { startPluginMenuSync } from '#/renderer/src/plugins/pluginMenuSync';
+import { startPluginBridgeHost } from '#/renderer/src/plugins/pluginBridgeHost';
 
 /**
  * Mounts the plugin host lifecycle and hot-reload listeners.
@@ -17,6 +20,13 @@ export function PluginHost(): null {
   useEffect(() => {
     const unregisterHostCommands = registerHostPluginCommands();
     const stopMenuSync = startPluginMenuSync();
+    const stopBridgeHost = startPluginBridgeHost();
+    const unsubscribeAgentReady = window.api.onPluginsAgentReady(({ pluginId }) => {
+      notifyAgentReady(pluginId);
+    });
+    const unsubscribeAgentFailed = window.api.onPluginsAgentFailed(({ pluginId, message }) => {
+      rejectAgentReady(pluginId, message);
+    });
     let active = true;
     void reloadAllPlugins().catch((error) => {
       console.error('Failed to load plugins:', error);
@@ -33,6 +43,9 @@ export function PluginHost(): null {
       active = false;
       unregisterHostCommands();
       stopMenuSync();
+      stopBridgeHost();
+      unsubscribeAgentReady();
+      unsubscribeAgentFailed();
       unsubscribe();
       void unloadAllPlugins();
     };

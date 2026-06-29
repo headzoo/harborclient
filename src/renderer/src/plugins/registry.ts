@@ -513,6 +513,120 @@ export function registerContextMenuItemContribution(
 }
 
 /**
+ * Removes one contribution from the registry by kind and manifest id.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param kind - Contribution bucket key.
+ * @param contributionId - Manifest contribution id or menu key.
+ */
+export function unregisterContribution(
+  pluginId: string,
+  kind:
+    | 'settingsSections'
+    | 'sidebarPanels'
+    | 'sidebarSections'
+    | 'mainViews'
+    | 'requestTabs'
+    | 'responseTabs'
+    | 'collectionSettingsTabs'
+    | 'footerPanels'
+    | 'statusBarItems'
+    | 'menuItems'
+    | 'requestToolbarActions'
+    | 'contextMenuItems',
+  contributionId: string
+): void {
+  const filter = <T extends { pluginId: string }>(
+    bucket: T[],
+    matches: (item: T) => boolean
+  ): void => {
+    const next = bucket.filter((item) => !matches(item));
+    bucket.length = 0;
+    bucket.push(...next);
+  };
+
+  switch (kind) {
+    case 'settingsSections':
+      filter(
+        state.settingsSections,
+        (item) => item.pluginId === pluginId && item.contributionId === contributionId
+      );
+      break;
+    case 'sidebarPanels':
+      filter(
+        state.sidebarPanels,
+        (item) => item.pluginId === pluginId && item.contributionId === contributionId
+      );
+      break;
+    case 'sidebarSections':
+      filter(
+        state.sidebarSections,
+        (item) => item.pluginId === pluginId && item.contributionId === contributionId
+      );
+      break;
+    case 'mainViews':
+      filter(
+        state.mainViews,
+        (item) => item.pluginId === pluginId && item.contributionId === contributionId
+      );
+      break;
+    case 'requestTabs':
+      filter(
+        state.requestTabs,
+        (item) => item.pluginId === pluginId && item.contributionId === contributionId
+      );
+      break;
+    case 'responseTabs':
+      filter(
+        state.responseTabs,
+        (item) => item.pluginId === pluginId && item.contributionId === contributionId
+      );
+      break;
+    case 'collectionSettingsTabs':
+      filter(
+        state.collectionSettingsTabs,
+        (item) => item.pluginId === pluginId && item.contributionId === contributionId
+      );
+      break;
+    case 'footerPanels':
+      filter(
+        state.footerPanels,
+        (item) => item.pluginId === pluginId && item.contributionId === contributionId
+      );
+      break;
+    case 'statusBarItems':
+      filter(
+        state.statusBarItems,
+        (item) => item.pluginId === pluginId && item.contributionId === contributionId
+      );
+      break;
+    case 'menuItems': {
+      const [menu, command] = contributionId.split(':');
+      filter(
+        state.menuItems,
+        (item) => item.pluginId === pluginId && item.menu === menu && item.command === command
+      );
+      break;
+    }
+    case 'requestToolbarActions':
+      filter(
+        state.requestToolbarActions,
+        (item) => item.pluginId === pluginId && item.id === contributionId
+      );
+      break;
+    case 'contextMenuItems':
+      filter(
+        state.contextMenuItems,
+        (item) => item.pluginId === pluginId && item.id === contributionId
+      );
+      break;
+    default:
+      break;
+  }
+  emitChange();
+}
+
+/**
  * Removes every contribution owned by one plugin.
  *
  * @param pluginId - Plugin manifest id.

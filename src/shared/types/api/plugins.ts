@@ -249,4 +249,46 @@ export interface ApiPlugins {
    * Watches an allowlisted file for changes and invokes the callback when it changes.
    */
   pluginFsWatchFile: (pluginId: string, path: string, callback: () => void) => () => void;
+  /**
+   * Pushes serialized view context to an isolated plugin surface webview.
+   */
+  pushPluginViewContext: (payload: {
+    pluginId: string;
+    contributionId: string;
+    kind: string;
+    context: unknown;
+  }) => Promise<void>;
+  /**
+   * Executes a plugin command in the plugin agent webview.
+   */
+  executePluginAgentCommand: (
+    pluginId: string,
+    commandId: string,
+    args?: unknown[]
+  ) => Promise<void>;
+  /**
+   * Subscribes to contribution registry updates from plugin agent webviews.
+   */
+  onPluginsContributions: (
+    callback: (message: {
+      pluginId: string;
+      op: string;
+      kind?: string;
+      contribution?: Record<string, unknown>;
+      contributionId?: string;
+    }) => void
+  ) => () => void;
+  /**
+   * Subscribes to host bridge requests from isolated plugin webviews.
+   */
+  onPluginsHostBridge: (
+    callback: (message: { pluginId: string; op: string; payload?: unknown }) => void
+  ) => () => void;
+  /**
+   * Subscribes to plugin agent webview readiness notifications.
+   */
+  onPluginsAgentReady: (callback: (payload: { pluginId: string }) => void) => () => void;
+  onPluginsAgentFailed: (
+    callback: (payload: { pluginId: string; message: string }) => void
+  ) => () => void;
 }

@@ -1,6 +1,5 @@
 import type { ContextMenuTarget, RegisteredContextMenuItem } from '#/shared/plugin/types';
 import type { MenuItem } from '@harborclient/sdk/components';
-import { executePluginCommand } from '#/renderer/src/plugins/createPluginContext';
 
 /**
  * Builds row action menu groups from plugin context menu contributions.
@@ -29,7 +28,7 @@ export function buildPluginContextMenuGroups(
     groupItems.push({
       label: item.title,
       onSelect: () => {
-        void executePluginCommand(item.pluginId, item.command, payload);
+        void window.api.executePluginAgentCommand(item.pluginId, item.command, [payload]);
       }
     });
     grouped.set(groupKey, groupItems);

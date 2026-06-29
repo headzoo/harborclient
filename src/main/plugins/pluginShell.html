@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self' harbor-plugin:; connect-src 'self' harbor-plugin:; style-src 'self' harbor-plugin: 'unsafe-inline'; img-src 'self' harbor-plugin: data:; font-src 'self' harbor-plugin: data:;"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="harbor-plugin://host/styles.css" />
+    <title>HarborClient Plugin</title>
+    <style>
+      html,
+      body,
+      #root {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background: transparent;
+      }
+
+      body.plugin-surface {
+        overflow: hidden;
+      }
+    </style>
+  </head>
+
+  <body class="plugin-surface">
+    <div id="root"></div>
+    <script type="module" src="harbor-plugin://host/bootstrap.js"></script>
+  </body>
+</html>
