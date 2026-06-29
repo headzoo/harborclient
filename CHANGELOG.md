@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.8.35 - 2026-06-29
+
 - fix(ui): adjust icon sizes in BreadcrumbPrefix and Response components. (`73d12cd`)
 
 ## 1.8.34 - 2026-06-29
