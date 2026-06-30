@@ -3,6 +3,7 @@ import type {
   RegisteredContextMenuItem,
   RegisteredFooterPanel,
   RegisteredMainView,
+  RegisteredModal,
   RegisteredMenuItem,
   RegisteredPluginTheme,
   RegisteredRequestTab,
@@ -24,6 +25,7 @@ interface MutableRegistryState {
   sidebarSections: RegisteredSidebarSection[];
   sidebarPanels: RegisteredSidebarPanel[];
   mainViews: RegisteredMainView[];
+  modals: RegisteredModal[];
   requestTabs: RegisteredRequestTab[];
   responseTabs: RegisteredResponseTab[];
   collectionSettingsTabs: RegisteredCollectionSettingsTab[];
@@ -40,6 +42,7 @@ interface CachedRegistrySnapshot {
   sidebarSections: RegisteredSidebarSection[];
   sidebarPanels: RegisteredSidebarPanel[];
   mainViews: RegisteredMainView[];
+  modals: RegisteredModal[];
   requestTabs: RegisteredRequestTab[];
   responseTabs: RegisteredResponseTab[];
   collectionSettingsTabs: RegisteredCollectionSettingsTab[];
@@ -56,6 +59,7 @@ const state: MutableRegistryState = {
   sidebarSections: [],
   sidebarPanels: [],
   mainViews: [],
+  modals: [],
   requestTabs: [],
   responseTabs: [],
   collectionSettingsTabs: [],
@@ -80,6 +84,7 @@ function emptySnapshot(): CachedRegistrySnapshot {
     sidebarSections: [],
     sidebarPanels: [],
     mainViews: [],
+    modals: [],
     requestTabs: [],
     responseTabs: [],
     collectionSettingsTabs: [],
@@ -167,6 +172,7 @@ function rebuildCachedSnapshots(): void {
     sidebarSections: sortByOrderThenTitle(state.sidebarSections),
     sidebarPanels: sortByOrderThenTitle(state.sidebarPanels),
     mainViews: [...state.mainViews].sort((left, right) => left.title.localeCompare(right.title)),
+    modals: [...state.modals].sort((left, right) => left.title.localeCompare(right.title)),
     requestTabs: sortByOrderThenTitle(state.requestTabs),
     responseTabs: sortByOrderThenTitle(state.responseTabs),
     collectionSettingsTabs: sortByOrderThenTitle(state.collectionSettingsTabs),
@@ -350,6 +356,26 @@ export function registerMainViewContribution(
 }
 
 /**
+ * Registers a modal overlay contribution rendered at the application root.
+ *
+ * @param pluginId - Plugin manifest id.
+ * @param modal - Modal contribution metadata.
+ */
+export function registerModalContribution(
+  pluginId: string,
+  modal: Omit<RegisteredModal, 'pluginId'>
+): Disposable {
+  const entry: RegisteredModal = { pluginId, ...modal };
+  return registerContribution(
+    state.modals,
+    pluginId,
+    modal.id,
+    entry,
+    (item) => item.pluginId === pluginId && item.id === modal.id
+  );
+}
+
+/**
  * Registers a request editor tab contribution.
  *
  * @param pluginId - Plugin manifest id.
@@ -526,6 +552,7 @@ export function unregisterContribution(
     | 'sidebarPanels'
     | 'sidebarSections'
     | 'mainViews'
+    | 'modals'
     | 'requestTabs'
     | 'responseTabs'
     | 'collectionSettingsTabs'
@@ -567,6 +594,12 @@ export function unregisterContribution(
     case 'mainViews':
       filter(
         state.mainViews,
+        (item) => item.pluginId === pluginId && item.contributionId === contributionId
+      );
+      break;
+    case 'modals':
+      filter(
+        state.modals,
         (item) => item.pluginId === pluginId && item.contributionId === contributionId
       );
       break;
@@ -637,6 +670,7 @@ export function clearPluginContributions(pluginId: string): void {
   state.sidebarSections = state.sidebarSections.filter((item) => item.pluginId !== pluginId);
   state.sidebarPanels = state.sidebarPanels.filter((item) => item.pluginId !== pluginId);
   state.mainViews = state.mainViews.filter((item) => item.pluginId !== pluginId);
+  state.modals = state.modals.filter((item) => item.pluginId !== pluginId);
   state.requestTabs = state.requestTabs.filter((item) => item.pluginId !== pluginId);
   state.responseTabs = state.responseTabs.filter((item) => item.pluginId !== pluginId);
   state.collectionSettingsTabs = state.collectionSettingsTabs.filter(
@@ -660,6 +694,7 @@ export const getRegisteredSidebarSections = (): RegisteredSidebarSection[] =>
 export const getRegisteredSidebarPanels = (): RegisteredSidebarPanel[] =>
   cachedSnapshot.sidebarPanels;
 export const getRegisteredMainViews = (): RegisteredMainView[] => cachedSnapshot.mainViews;
+export const getRegisteredModals = (): RegisteredModal[] => cachedSnapshot.modals;
 export const getRegisteredRequestTabs = (): RegisteredRequestTab[] => cachedSnapshot.requestTabs;
 export const getRegisteredResponseTabs = (): RegisteredResponseTab[] => cachedSnapshot.responseTabs;
 export const getRegisteredCollectionSettingsTabs = (): RegisteredCollectionSettingsTab[] =>

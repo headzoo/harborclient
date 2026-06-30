@@ -65,6 +65,7 @@ export function PluginFooterPanel({
           kind={kind}
           minHeight={160}
           className="h-full"
+          resizeMode="fill"
         />
       </div>
     </Resizable>

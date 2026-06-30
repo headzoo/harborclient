@@ -3,6 +3,7 @@ import type {
   RegisteredContextMenuItem,
   RegisteredFooterPanel,
   RegisteredMainView,
+  RegisteredModal,
   RegisteredMenuItem,
   RegisteredRequestTab,
   RegisteredRequestToolbarAction,
@@ -17,6 +18,7 @@ import {
   registerContextMenuItemContribution,
   registerFooterPanelContribution,
   registerMainViewContribution,
+  registerModalContribution,
   registerMenuItemContribution,
   registerRequestTabContribution,
   registerRequestToolbarActionContribution,
@@ -45,12 +47,15 @@ import {
   updateEnvironmentVariables
 } from '#/renderer/src/plugins/hostEnvironmentCommands';
 import toast from 'react-hot-toast';
+import { store } from '#/renderer/src/store/redux';
+import { setPluginModal } from '#/renderer/src/store/slices/modalsSlice';
 
 type ContributionKind =
   | 'settingsSections'
   | 'sidebarPanels'
   | 'sidebarSections'
   | 'mainViews'
+  | 'modals'
   | 'requestTabs'
   | 'responseTabs'
   | 'collectionSettingsTabs'
@@ -69,6 +74,14 @@ interface ContributionMessage {
 }
 
 interface HostBridgeMessage {
+  pluginId: string;
+  op: string;
+  payload?: unknown;
+}
+
+/** Correlated host bridge invoke that must return a result to the plugin webview. */
+export interface HostBridgeInvokeMessage {
+  requestId: number;
   pluginId: string;
   op: string;
   payload?: unknown;
@@ -116,6 +129,12 @@ export function applyContributionMessage(message: ContributionMessage): void {
       registerMainViewContribution(
         message.pluginId,
         contribution as Omit<RegisteredMainView, 'pluginId'>
+      );
+      break;
+    case 'modals':
+      registerModalContribution(
+        message.pluginId,
+        contribution as Omit<RegisteredModal, 'pluginId'>
       );
       break;
     case 'requestTabs':
@@ -172,7 +191,7 @@ export function applyContributionMessage(message: ContributionMessage): void {
 }
 
 /**
- * Handles host-side operations requested by isolated plugin webviews.
+ * Handles void host-side operations requested by isolated plugin webviews.
  *
  * @param message - Host bridge payload from the main-process broker.
  */
@@ -186,6 +205,29 @@ export async function handlePluginHostBridge(message: HostBridgeMessage): Promis
         options?: { duration?: number };
       };
       toast(text, { duration: options?.duration ?? 2000 });
+      return;
+    }
+    case 'ui.openModal': {
+      const { modalId, context } = payload as { modalId: string; context?: unknown };
+      store.dispatch(
+        setPluginModal({
+          pluginId,
+          contributionId: modalId,
+          context
+        })
+      );
+      return;
+    }
+    case 'ui.closeModal': {
+      const { modalId } = payload as { modalId?: string };
+      const current = store.getState().modals.pluginModal;
+      if (!current || current.pluginId !== pluginId) {
+        return;
+      }
+      if (modalId && current.contributionId !== modalId) {
+        return;
+      }
+      store.dispatch(setPluginModal(null));
       return;
     }
     case 'commands.execute': {
@@ -215,14 +257,6 @@ export async function handlePluginHostBridge(message: HostBridgeMessage): Promis
     case 'host.sendRequest':
       triggerSendRequest();
       return;
-    case 'host.createEnvironmentWithVariables': {
-      const { name, variables } = payload as {
-        name: string;
-        variables: Parameters<typeof createEnvironmentWithVariables>[1];
-      };
-      await createEnvironmentWithVariables(name, variables);
-      return;
-    }
     case 'host.updateEnvironmentVariables': {
       const { environmentId, variables } = payload as {
         environmentId: number;
@@ -231,33 +265,54 @@ export async function handlePluginHostBridge(message: HostBridgeMessage): Promis
       await updateEnvironmentVariables(environmentId, variables);
       return;
     }
-    case 'host.createCollection':
-      await createCollectionFromPlugin((payload as { payload: never }).payload);
-      return;
-    case 'host.listCollectionRequests': {
-      const { collectionId, folderId } = payload as {
-        collectionId: number;
-        folderId?: number | null;
-      };
-      await listCollectionRequestsForPlugin(collectionId, folderId);
-      return;
-    }
-    case 'host.getCollectionMetadata': {
-      const { collectionId } = payload as { collectionId: number };
-      await getCollectionMetadataForPlugin(collectionId);
-      return;
-    }
     case 'host.logRequestToConsole':
       logRequestToConsole((payload as { payload: PluginConsoleLogPayload }).payload);
-      return;
-    case 'host.sendHttpRequest':
-      await sendHttpRequestForPlugin((payload as { input: never }).input);
       return;
     case 'host.clearResponse':
       clearActiveResponse();
       return;
     default:
       return;
+  }
+}
+
+/**
+ * Executes a return-value host bridge operation in the host renderer.
+ *
+ * @param message - Correlated invoke payload from the main-process broker.
+ * @returns Serializable operation result forwarded back to the plugin webview.
+ */
+export async function handlePluginHostBridgeInvoke(
+  message: HostBridgeInvokeMessage
+): Promise<unknown> {
+  const { pluginId, op, payload } = message;
+  void pluginId;
+
+  switch (op) {
+    case 'host.createEnvironmentWithVariables': {
+      const { name, variables } = payload as {
+        name: string;
+        variables: Parameters<typeof createEnvironmentWithVariables>[1];
+      };
+      return createEnvironmentWithVariables(name, variables);
+    }
+    case 'host.createCollection':
+      return createCollectionFromPlugin((payload as { payload: never }).payload);
+    case 'host.listCollectionRequests': {
+      const { collectionId, folderId } = payload as {
+        collectionId: number;
+        folderId?: number | null;
+      };
+      return listCollectionRequestsForPlugin(collectionId, folderId);
+    }
+    case 'host.getCollectionMetadata': {
+      const { collectionId } = payload as { collectionId: number };
+      return getCollectionMetadataForPlugin(collectionId);
+    }
+    case 'host.sendHttpRequest':
+      return sendHttpRequestForPlugin((payload as { input: never }).input);
+    default:
+      throw new Error(`Unsupported plugin host bridge invoke operation: ${op}`);
   }
 }
 
@@ -271,8 +326,27 @@ export function startPluginBridgeHost(): () => void {
   const unsubHostBridge = window.api.onPluginsHostBridge((message) => {
     void handlePluginHostBridge(message as HostBridgeMessage);
   });
+  const unsubHostBridgeInvoke = window.api.onPluginsHostBridgeInvoke((message) => {
+    void (async () => {
+      try {
+        const result = await handlePluginHostBridgeInvoke(message as HostBridgeInvokeMessage);
+        window.api.completePluginHostBridge({
+          requestId: message.requestId,
+          ok: true,
+          result
+        });
+      } catch (error) {
+        window.api.completePluginHostBridge({
+          requestId: message.requestId,
+          ok: false,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    })();
+  });
   return () => {
     unsubContributions();
     unsubHostBridge();
+    unsubHostBridgeInvoke();
   };
 }

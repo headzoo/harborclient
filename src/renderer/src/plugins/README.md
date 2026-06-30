@@ -179,7 +179,7 @@ registers bridge listeners, and calls `reloadAllPlugins()` on mount.
    - If `manifest.main` exists, call `activatePluginMain`.
    - Clear runtime error, done.
 4. **UI plugin** (has `manifest.renderer`):
-   - Start `waitForAgentReady(pluginId)` (30 second timeout).
+   - Start `waitForAgentReady(pluginId)` (12 second per-attempt timeout, up to 3 attempts).
    - **`mountAgentWebview`** — create hidden agent webview at `buildPluginAgentUrl()`.
    - Wait for `plugins:agentReady` from the main-process broker.
    - Agent load chain: `shell.html` → `bootstrap.js` → SDK `viewHost` → `bundle.js` → `activate()`.
@@ -260,6 +260,13 @@ Context is pushed separately:
 **Slots:** `content` (default), `headerActions`, `indicator` — encoded as `?slot=`
 in the surface URL.
 
+**Sizing:** Request and collection settings plugin tabs use `resizeMode="fill"`: the
+webview fills the host tab area and the guest scrolls internally (`plugin-surface-fill`
+in [`pluginShell.html`](../../../main/plugins/pluginShell.html)). Other surfaces use
+`resizeMode="content"` (default): the guest reports height via `view.reportSize`, the
+broker forwards `plugins:surfaceResize`, and `PluginSurface` sets an explicit pixel
+height. Footer panels and status bar slots also use fill mode.
+
 ---
 
 ## Contribution registry and UI mount points
@@ -321,14 +328,17 @@ Used by the host renderer for plugin management, storage/database access with ex
 
 **Push channels (main → host renderer):**
 
-| Event                                        | Purpose                                             |
-| -------------------------------------------- | --------------------------------------------------- |
-| `plugins:changed`                            | Plugin list or state changed                        |
-| `plugins:contributions`                      | Contribution register/unregister from agent webview |
-| `plugins:hostBridge`                         | Host-side action (toast, command, host.\*)          |
-| `plugins:agentReady` / `plugins:agentFailed` | Agent webview lifecycle                             |
-| `plugins:fsChanged`                          | Watched file changed                                |
-| `menu:pluginCommand`                         | Native menu item clicked                            |
+| Event                                        | Purpose                                                              |
+| -------------------------------------------- | -------------------------------------------------------------------- |
+| `plugins:changed`                            | Plugin list or state changed                                         |
+| `plugins:contributions`                      | Contribution register/unregister from agent webview                  |
+| `plugins:hostBridge`                         | Void host-side action (toast, load request, clear response, etc.)    |
+| `plugins:hostBridgeInvoke`                   | Return-value host bridge call (HTTP send, collection metadata, etc.) |
+| `plugins:hostBridgeComplete`                 | Host renderer reply completing a correlated invoke (renderer → main) |
+| `plugins:surfaceResize`                      | Plugin surface webview reported guest content height                 |
+| `plugins:agentReady` / `plugins:agentFailed` | Agent webview lifecycle                                              |
+| `plugins:fsChanged`                          | Watched file changed                                                 |
+| `menu:pluginCommand`                         | Native menu item clicked                                             |
 
 ### 2. Plugin webviews — `window.hcBridge`
 
@@ -347,25 +357,36 @@ The SDK view-host (`harbor-plugin://host/view-host.js`) builds the full
 
 **Broker operations (`plugins:uiBridge`):**
 
-| Operation                                     | Permission | Target                                         |
-| --------------------------------------------- | ---------- | ---------------------------------------------- |
-| `storage.get/set`                             | `storage`  | PluginManager                                  |
-| `database.*`                                  | `database` | PluginDatabaseManager                          |
-| `ipc.invoke`                                  | `ipc`      | SES runner (lazy-activates main if inactive)   |
-| `registerContribution/unregisterContribution` | `ui`       | Host renderer via `plugins:contributions`      |
-| `ui.showToast`, `commands.execute`            | `ui`       | Host renderer via `plugins:hostBridge`         |
-| `commands.executeRemote`                      | `ui`       | Another plugin's agent webview                 |
-| `host.*`                                      | `ui`       | Host renderer (open draft, send request, etc.) |
-| `themes.getActive`                            | `ui`       | Main process theme getter                      |
+| Operation                                          | Permission                             | Target                                                        |
+| -------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------- |
+| `storage.get/set`                                  | `storage`                              | PluginManager                                                 |
+| `database.*`                                       | `database`                             | PluginDatabaseManager                                         |
+| `fs.pickFile`, `fs.pickDirectory`, `fs.saveFile`   | `filesystem:pick`                      | PluginManager via shared fs helpers (`pluginFsOperations`)    |
+| `fs.readFile`, `fs.writeFile`, `fs.watchFile`      | `filesystem:read` / `filesystem:write` | PluginManager via shared fs helpers                           |
+| `ipc.invoke`                                       | `ipc`                                  | SES runner (lazy-activates main if inactive)                  |
+| `registerContribution/unregisterContribution`      | `ui`                                   | Host renderer via `plugins:contributions`                     |
+| `ui.showToast`, `commands.execute`                 | `ui`                                   | Host renderer via `plugins:hostBridge` (void)                 |
+| `commands.executeRemote`                           | `ui`                                   | Another plugin's agent webview                                |
+| `host.openRequestDraft`, `host.loadRequest`, …     | `ui`                                   | Host renderer via `plugins:hostBridge` (void)                 |
+| `host.sendHttpRequest`, `host.createCollection`, … | `ui`                                   | Host renderer via `plugins:hostBridgeInvoke` (returns result) |
+| `themes.getActive`                                 | `ui`                                   | Main process theme getter                                     |
+| `view.getContext`                                  | `ui`                                   | Cached context snapshot for a view contribution               |
+| `view.reportSize`                                  | `ui`                                   | Host renderer via `plugins:surfaceResize`                     |
 
 **Push events to webviews (`plugin-ui:event`):**
 
-| Channel            | Purpose                                               |
-| ------------------ | ----------------------------------------------------- |
-| `view.context`     | Serializable context snapshot for a view contribution |
-| `themes.changed`   | Active theme metadata                                 |
-| `theme.styles`     | Theme CSS variables (preload applies to DOM)          |
-| `commands.execute` | Run a registered command in the agent webview         |
+| Channel            | Purpose                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| `view.context`     | Serializable context snapshot for a view contribution                                |
+| `themes.changed`   | Active theme metadata                                                                |
+| `theme.styles`     | Theme CSS variables (preload applies to DOM)                                         |
+| `commands.execute` | Run a registered command in the agent webview                                        |
+| `http.afterSend`   | Completed HTTP exchange for plugins with `http` permission (agent and view webviews) |
+| `fs.watch:<path>`  | Watched allowlisted file changed (view webviews using `hc.fs.watchFile`)             |
+
+Both agent and view webviews receive `http.afterSend` when the plugin declares the
+`http` permission, so footer/sidebar plugins can capture sends in the same realm that
+renders their UI.
 
 ### 3. Main entry — `hc` in SES compartment
 
@@ -531,7 +552,7 @@ pnpm dev -- --disable-plugins
 
 - Check Settings → Plugins for persisted runtime errors
 - Watch terminal output for `[plugin agent {id}]` console messages
-- Agent load failures surface via `plugins:agentFailed` within the 30 second timeout
+- Agent load failures surface via `plugins:agentFailed` or timeout after up to 3 activation attempts
 
 ---
 

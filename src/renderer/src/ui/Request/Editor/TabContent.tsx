@@ -74,7 +74,7 @@ export function TabContent({
   requestTabContext
 }: Props): JSX.Element {
   return (
-    <div className="min-h-[160px] pt-4">
+    <div className="flex min-h-0 flex-1 flex-col pt-4">
       <SegmentedTabPanel value="params">
         <KeyValueEditor
           rows={draft.params}
@@ -153,13 +153,14 @@ export function TabContent({
         />
       </SegmentedTabPanel>
       {pluginTabs.map((entry) => (
-        <SegmentedTabPanel key={entry.id} value={entry.id} className="min-h-[320px]">
+        <SegmentedTabPanel key={entry.id} value={entry.id} className="flex min-h-0 flex-1 flex-col">
           <PluginSurface
             pluginId={entry.pluginId}
             contributionId={entry.contributionId}
             kind="requestTabs"
             context={requestTabContext}
-            minHeight={320}
+            resizeMode="fill"
+            className="h-full"
           />
         </SegmentedTabPanel>
       ))}

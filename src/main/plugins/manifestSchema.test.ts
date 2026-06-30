@@ -69,4 +69,16 @@ describe('manifestSchema', () => {
     const manifest = parsePluginManifest(validManifest);
     expect(manifest.categories).toBeUndefined();
   });
+
+  it('preserves modals contributions', () => {
+    const manifest = parsePluginManifest({
+      ...validManifest,
+      contributes: {
+        modals: [{ id: 'schema-editor', title: 'Add JSON Schema' }]
+      }
+    });
+    expect(manifest.contributes?.modals).toEqual([
+      { id: 'schema-editor', title: 'Add JSON Schema' }
+    ]);
+  });
 });

@@ -52,6 +52,15 @@ export interface PluginThemePromptState {
   themes: PluginThemePromptTheme[];
 }
 
+/**
+ * Open plugin modal overlay rendered at the application root.
+ */
+export interface PluginModalState {
+  pluginId: string;
+  contributionId: string;
+  context?: unknown;
+}
+
 export interface ShareModalState {
   collectionId: number;
   collectionName: string;
@@ -149,6 +158,7 @@ export interface ModalsState {
   alertModal: AlertModalState | null;
   confirmModal: ConfirmModalState | null;
   pluginThemePrompt: PluginThemePromptState | null;
+  pluginModal: PluginModalState | null;
 }
 
 const initialState: ModalsState = {
@@ -162,7 +172,8 @@ const initialState: ModalsState = {
   collectionRunner: null,
   alertModal: null,
   confirmModal: null,
-  pluginThemePrompt: null
+  pluginThemePrompt: null,
+  pluginModal: null
 };
 
 const modalsSlice = createSlice({
@@ -603,6 +614,12 @@ const modalsSlice = createSlice({
      */
     closePluginThemePrompt(state) {
       state.pluginThemePrompt = null;
+    },
+    /**
+     * Opens or closes the host plugin modal overlay webview.
+     */
+    setPluginModal(state, action: PayloadAction<PluginModalState | null>) {
+      state.pluginModal = action.payload;
     }
   }
 });
@@ -651,7 +668,8 @@ export const {
   setAlertModal,
   setConfirmModal,
   openPluginThemePrompt,
-  closePluginThemePrompt
+  closePluginThemePrompt,
+  setPluginModal
 } = modalsSlice.actions;
 
 /**
@@ -704,5 +722,10 @@ export const selectConfirmModal = (state: RootState): ConfirmModalState | null =
  */
 export const selectPluginThemePrompt = (state: RootState): PluginThemePromptState | null =>
   state.modals.pluginThemePrompt;
+/**
+ * Returns open plugin modal overlay state when active.
+ */
+export const selectPluginModal = (state: RootState): PluginModalState | null =>
+  state.modals.pluginModal;
 
 export default modalsSlice.reducer;

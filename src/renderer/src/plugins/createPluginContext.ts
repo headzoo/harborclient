@@ -19,6 +19,7 @@ import {
   registerContextMenuItemContribution,
   registerFooterPanelContribution,
   registerMainViewContribution,
+  registerModalContribution,
   registerMenuItemContribution,
   registerRequestTabContribution,
   registerRequestToolbarActionContribution,
@@ -33,6 +34,8 @@ import {
   createEnvironmentWithVariables,
   updateEnvironmentVariables
 } from '#/renderer/src/plugins/hostEnvironmentCommands';
+import { store } from '#/renderer/src/store/redux';
+import { setPluginModal } from '#/renderer/src/store/slices/modalsSlice';
 import {
   createCollectionFromPlugin,
   getCollectionMetadataForPlugin,
@@ -333,6 +336,15 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
           contributionId: view.id
         });
       },
+      registerModal: (modal) => {
+        assertUi();
+        assertManifestContribution(manifest, 'modals', modal.id);
+        return registerModalContribution(pluginId, {
+          id: pluginContributionId(pluginId, modal.id),
+          title: modal.title,
+          contributionId: modal.id
+        });
+      },
       registerRequestTab: (tab) => {
         assertUi();
         assertManifestContribution(manifest, 'requestTabs', tab.id);
@@ -402,6 +414,28 @@ export function createPluginContext(pluginId: string, manifest: PluginManifest):
       showToast: (message, options) => {
         assertUi();
         toast(message, { duration: options?.duration ?? 2000 });
+      },
+      openModal: (modalId, context) => {
+        assertUi();
+        assertManifestContribution(manifest, 'modals', modalId);
+        store.dispatch(
+          setPluginModal({
+            pluginId,
+            contributionId: modalId,
+            context
+          })
+        );
+      },
+      closeModal: (modalId) => {
+        assertUi();
+        const current = store.getState().modals.pluginModal;
+        if (!current || current.pluginId !== pluginId) {
+          return;
+        }
+        if (modalId && current.contributionId !== modalId) {
+          return;
+        }
+        store.dispatch(setPluginModal(null));
       }
     },
     http: {

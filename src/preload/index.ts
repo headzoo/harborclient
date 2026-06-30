@@ -1,5 +1,6 @@
 import type { OAuthFetchTokenResult } from '#/shared/auth';
 import type { HarborDeepLink } from '#/shared/deepLink';
+import type { PluginHttpRequest, PluginHttpResponse } from '@harborclient/sdk';
 import { contextBridge, ipcRenderer } from 'electron';
 import { normalize, resolve } from 'path';
 import type {
@@ -1793,6 +1794,16 @@ function pushPluginViewContext(payload: {
 }
 
 /**
+ * Pushes a completed HTTP exchange to plugin webviews with the `http` permission.
+ */
+function pushPluginHttpAfterSend(payload: {
+  request: PluginHttpRequest;
+  response: PluginHttpResponse;
+}): Promise<void> {
+  return ipcRenderer.invoke('plugins:pushHttpAfterSend', payload);
+}
+
+/**
  * Executes a plugin command in the plugin agent webview.
  */
 function executePluginAgentCommand(
@@ -1836,6 +1847,58 @@ function onPluginsHostBridge(
   ipcRenderer.on('plugins:hostBridge', listener);
   return () => {
     ipcRenderer.removeListener('plugins:hostBridge', listener);
+  };
+}
+
+/**
+ * Subscribes to correlated host bridge invokes that must return a result.
+ */
+function onPluginsHostBridgeInvoke(
+  callback: (message: {
+    requestId: number;
+    pluginId: string;
+    op: string;
+    payload?: unknown;
+  }) => void
+): () => void {
+  const listener = (_event: Electron.IpcRendererEvent, message: unknown): void => {
+    callback(message as never);
+  };
+  ipcRenderer.on('plugins:hostBridgeInvoke', listener);
+  return () => {
+    ipcRenderer.removeListener('plugins:hostBridgeInvoke', listener);
+  };
+}
+
+/**
+ * Completes a correlated host bridge invoke with a result or error.
+ */
+function completePluginHostBridge(message: {
+  requestId: number;
+  ok: boolean;
+  result?: unknown;
+  error?: string;
+}): void {
+  ipcRenderer.send('plugins:hostBridgeComplete', message);
+}
+
+/**
+ * Subscribes to content height updates from isolated plugin surface webviews.
+ */
+function onPluginSurfaceResize(
+  callback: (message: {
+    pluginId: string;
+    contributionId: string;
+    kind: string;
+    height: number;
+  }) => void
+): () => void {
+  const listener = (_event: Electron.IpcRendererEvent, message: unknown): void => {
+    callback(message as never);
+  };
+  ipcRenderer.on('plugins:surfaceResize', listener);
+  return () => {
+    ipcRenderer.removeListener('plugins:surfaceResize', listener);
   };
 }
 
@@ -2043,9 +2106,13 @@ const api: Api = {
   pluginFsWriteFile,
   pluginFsWatchFile,
   pushPluginViewContext,
+  pushPluginHttpAfterSend,
   executePluginAgentCommand,
   onPluginsContributions,
   onPluginsHostBridge,
+  onPluginsHostBridgeInvoke,
+  completePluginHostBridge,
+  onPluginSurfaceResize,
   onPluginsAgentReady,
   onPluginsAgentFailed
 };

@@ -50,6 +50,7 @@ beforeEach(() => {
     api: {
       listRequests: listRequestsMock,
       sendRequest: sendRequestMock,
+      pushPluginHttpAfterSend: vi.fn().mockResolvedValue(undefined),
       getCookies: getCookiesMock,
       setCookies: setCookiesMock,
       runScript: vi.fn().mockResolvedValue({ logs: [], tests: [], error: undefined }),

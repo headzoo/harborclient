@@ -23,6 +23,7 @@ export function emitPluginAfterSend(
       console.error('Plugin renderer after-send handler failed:', error);
     });
   }
+  void window.api.pushPluginHttpAfterSend({ request, response });
 }
 
 /**

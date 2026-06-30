@@ -8,11 +8,13 @@ function readSessionFromArgv(): {
   role: 'agent' | 'view';
   contributionId?: string;
   kind?: string;
+  slot?: string;
 } {
   const pluginIdArg = process.argv.find((arg) => arg.startsWith('--plugin-id='));
   const roleArg = process.argv.find((arg) => arg.startsWith('--plugin-role='));
   const contribArg = process.argv.find((arg) => arg.startsWith('--plugin-contrib='));
   const kindArg = process.argv.find((arg) => arg.startsWith('--plugin-kind='));
+  const slotArg = process.argv.find((arg) => arg.startsWith('--plugin-slot='));
 
   const pluginId = pluginIdArg?.slice('--plugin-id='.length);
   const roleValue = roleArg?.slice('--plugin-role='.length);
@@ -24,7 +26,8 @@ function readSessionFromArgv(): {
     pluginId,
     role: roleValue,
     contributionId: contribArg?.slice('--plugin-contrib='.length) || undefined,
-    kind: kindArg?.slice('--plugin-kind='.length) || undefined
+    kind: kindArg?.slice('--plugin-kind='.length) || undefined,
+    slot: slotArg?.slice('--plugin-slot='.length) || undefined
   };
 }
 

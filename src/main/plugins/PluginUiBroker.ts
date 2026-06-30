@@ -1,8 +1,18 @@
 import { ipcMain, webContents, type WebContents } from 'electron';
 import type { BrowserWindow } from 'electron';
+import type { PluginHttpRequest, PluginHttpResponse } from '@harborclient/sdk';
+import type { PluginFsPickFileOptions, PluginFsSaveFileOptions } from '@harborclient/sdk';
 import type { PluginManager } from '#/main/plugins/PluginManager';
 import { getPluginDatabaseManager } from '#/main/plugins/pluginDatabaseManagerInstance';
 import { activatePluginMain, invokePluginIpc } from '#/main/plugins/pluginRunnerHost';
+import {
+  pickDirectoryForPlugin,
+  pickFileForPlugin,
+  readFileForPlugin,
+  saveFileForPlugin,
+  watchFileForPlugin,
+  writeFileForPlugin
+} from '#/main/plugins/pluginFsOperations';
 import type { PluginPermission } from '#/shared/plugin/types';
 import { toActiveTheme } from '#/shared/plugin/types';
 import type { ThemeSource } from '#/shared/types';
@@ -41,14 +51,43 @@ const OP_PERMISSIONS: Record<string, PluginPermission | 'ui'> = {
   'host.logRequestToConsole': 'ui',
   'host.sendHttpRequest': 'ui',
   'host.clearResponse': 'ui',
-  'view.getContext': 'ui'
+  'view.getContext': 'ui',
+  'view.reportSize': 'ui',
+  'ui.openModal': 'ui',
+  'ui.closeModal': 'ui'
 };
+
+/** Host bridge operations that must round-trip a result to the plugin webview. */
+const HOST_BRIDGE_RETURN_OPS = new Set([
+  'host.sendHttpRequest',
+  'host.createEnvironmentWithVariables',
+  'host.createCollection',
+  'host.listCollectionRequests',
+  'host.getCollectionMetadata'
+]);
+
+/** Maximum wait for the host renderer to complete a return-value host bridge call. */
+const HOST_BRIDGE_INVOKE_TIMEOUT_MS = 60_000;
+
+interface PendingHostBridgeInvoke {
+  resolve: (value: unknown) => void;
+  reject: (reason?: unknown) => void;
+  timeout: ReturnType<typeof setTimeout>;
+}
+
+interface HostBridgeCompleteMessage {
+  requestId: number;
+  ok: boolean;
+  result?: unknown;
+  error?: string;
+}
 
 interface PluginWebviewSession {
   pluginId: string;
   role: 'agent' | 'view';
   contributionId?: string;
   kind?: string;
+  slot?: string;
 }
 
 /**
@@ -65,6 +104,8 @@ export class PluginUiBroker {
    * on mount/dom-ready can race ahead of the guest's subscription).
    */
   readonly #viewContextCache = new Map<string, unknown>();
+  readonly #pendingHostBridge = new Map<number, PendingHostBridgeInvoke>();
+  #nextHostBridgeRequestId = 1;
   #mainWindow: (() => BrowserWindow | null) | null = null;
   #getTheme: (() => Promise<ThemeSource>) | null = null;
 
@@ -106,6 +147,10 @@ export class PluginUiBroker {
 
     ipcMain.on('plugins:uiRegisterSession', (event, session: PluginWebviewSession) => {
       this.#sessions.set(event.sender.id, session);
+    });
+
+    ipcMain.on('plugins:hostBridgeComplete', (_event, message: HostBridgeCompleteMessage) => {
+      this.#completeHostBridgeInvoke(message);
     });
   }
 
@@ -210,6 +255,25 @@ export class PluginUiBroker {
   }
 
   /**
+   * Pushes a completed HTTP exchange to every plugin webview that declares the
+   * `http` permission so renderer-side `hc.http.onAfterSend` handlers can run.
+   *
+   * @param request - Serializable request snapshot from the host send pipeline.
+   * @param response - Serializable response snapshot from the host send pipeline.
+   */
+  pushHttpAfterSend(request: PluginHttpRequest, response: PluginHttpResponse): void {
+    for (const [webContentsId, session] of this.#sessions.entries()) {
+      if (!this.#pluginManager.getPluginPermissions(session.pluginId).includes('http')) {
+        continue;
+      }
+      this.#getWebContentsById(webContentsId)?.send('plugin-ui:event', {
+        channel: 'http.afterSend',
+        payload: { request, response }
+      });
+    }
+  }
+
+  /**
    * Forwards a command execution request to a plugin agent webview.
    *
    * @param pluginId - Target plugin manifest id.
@@ -230,6 +294,24 @@ export class PluginUiBroker {
   }
 
   /**
+   * Pushes a filesystem change event to plugin webviews watching one path.
+   *
+   * @param pluginId - Plugin manifest id.
+   * @param normalizedPath - Normalized absolute path that changed.
+   */
+  notifyFilesystemChanged(pluginId: string, normalizedPath: string): void {
+    for (const [webContentsId, session] of this.#sessions.entries()) {
+      if (session.pluginId !== pluginId) {
+        continue;
+      }
+      this.#getWebContentsById(webContentsId)?.send('plugin-ui:event', {
+        channel: `fs.watch:${normalizedPath}`,
+        payload: normalizedPath
+      });
+    }
+  }
+
+  /**
    * Dispatches one bridge operation for a plugin webview.
    *
    * @param sender - Calling webContents.
@@ -243,6 +325,10 @@ export class PluginUiBroker {
     }
 
     this.#assertOpPermission(session.pluginId, op);
+
+    if (HOST_BRIDGE_RETURN_OPS.has(op)) {
+      return this.#invokeHostBridge(session.pluginId, op, payload);
+    }
 
     switch (op) {
       case 'storage.get': {
@@ -281,6 +367,35 @@ export class PluginUiBroker {
         const { txnId, action } = payload as { txnId: string; action: 'commit' | 'rollback' };
         return getPluginDatabaseManager().endTransaction(session.pluginId, txnId, action);
       }
+      case 'fs.pickFile': {
+        const { options } = payload as { options?: PluginFsPickFileOptions };
+        return pickFileForPlugin(this.#pluginManager, session.pluginId, options);
+      }
+      case 'fs.pickDirectory': {
+        const { defaultPath } = payload as { defaultPath?: string };
+        return pickDirectoryForPlugin(this.#pluginManager, session.pluginId, defaultPath ?? '');
+      }
+      case 'fs.saveFile': {
+        const { content, options } = payload as {
+          content: string;
+          options?: PluginFsSaveFileOptions;
+        };
+        return saveFileForPlugin(this.#pluginManager, session.pluginId, content, options);
+      }
+      case 'fs.readFile': {
+        const { path } = payload as { path: string };
+        return readFileForPlugin(this.#pluginManager, session.pluginId, path);
+      }
+      case 'fs.writeFile': {
+        const { path, content } = payload as { path: string; content: string };
+        writeFileForPlugin(this.#pluginManager, session.pluginId, path, content);
+        return undefined;
+      }
+      case 'fs.watchFile': {
+        const { path } = payload as { path: string };
+        watchFileForPlugin(this.#pluginManager, session.pluginId, path);
+        return undefined;
+      }
       case 'ipc.invoke': {
         const { channel, args } = payload as { channel: string; args: unknown[] };
         try {
@@ -305,6 +420,44 @@ export class PluginUiBroker {
         const key = `${session.pluginId}::${session.contributionId}::${session.kind}`;
         return this.#viewContextCache.has(key) ? this.#viewContextCache.get(key) : null;
       }
+      case 'view.reportSize': {
+        const {
+          height,
+          width,
+          slot: reportSlot
+        } = payload as {
+          height?: unknown;
+          width?: unknown;
+          slot?: unknown;
+        };
+        const slot =
+          typeof reportSlot === 'string' && reportSlot.length > 0
+            ? reportSlot
+            : (session.slot ?? 'content');
+        const resizeMessage: Record<string, unknown> = {
+          pluginId: session.pluginId,
+          contributionId: session.contributionId,
+          kind: session.kind,
+          slot
+        };
+        let hasSize = false;
+        if (typeof height === 'number' && Number.isFinite(height) && height > 0) {
+          resizeMessage.height = Math.ceil(height);
+          hasSize = true;
+        }
+        if (typeof width === 'number' && Number.isFinite(width) && width > 0) {
+          resizeMessage.width = Math.ceil(width);
+          hasSize = true;
+        }
+        if (!hasSize) {
+          return undefined;
+        }
+        const window = this.#mainWindow?.();
+        if (window && !window.isDestroyed()) {
+          window.webContents.send('plugins:surfaceResize', resizeMessage);
+        }
+        return undefined;
+      }
       case 'registerContribution':
       case 'unregisterContribution': {
         this.#mainWindow?.()?.webContents.send('plugins:contributions', {
@@ -328,16 +481,13 @@ export class PluginUiBroker {
         return undefined;
       }
       case 'ui.showToast':
+      case 'ui.openModal':
+      case 'ui.closeModal':
       case 'host.openRequestDraft':
       case 'host.loadRequest':
       case 'host.sendRequest':
-      case 'host.createEnvironmentWithVariables':
       case 'host.updateEnvironmentVariables':
-      case 'host.createCollection':
-      case 'host.listCollectionRequests':
-      case 'host.getCollectionMetadata':
       case 'host.logRequestToConsole':
-      case 'host.sendHttpRequest':
       case 'host.clearResponse':
       case 'commands.execute': {
         this.#mainWindow?.()?.webContents.send('plugins:hostBridge', {
@@ -364,6 +514,68 @@ export class PluginUiBroker {
       return;
     }
     this.#pluginManager.assertPermission(pluginId, required);
+  }
+
+  /**
+   * Forwards a return-value host bridge call to the host renderer and waits for
+   * the correlated completion message.
+   *
+   * @param pluginId - Calling plugin manifest id.
+   * @param op - Host bridge operation name.
+   * @param payload - Serializable operation payload.
+   */
+  #invokeHostBridge(pluginId: string, op: string, payload: unknown): Promise<unknown> {
+    const window = this.#mainWindow?.();
+    if (!window || window.isDestroyed()) {
+      return Promise.reject(new Error('Main application window is not available.'));
+    }
+
+    const requestId = this.#nextHostBridgeRequestId++;
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.#pendingHostBridge.delete(requestId);
+        reject(new Error(`Plugin host bridge operation timed out: ${op}`));
+      }, HOST_BRIDGE_INVOKE_TIMEOUT_MS);
+
+      this.#pendingHostBridge.set(requestId, { resolve, reject, timeout });
+      window.webContents.send('plugins:hostBridgeInvoke', {
+        requestId,
+        pluginId,
+        op,
+        payload
+      });
+    });
+  }
+
+  /**
+   * Resolves or rejects a pending host bridge invoke when the host renderer replies.
+   *
+   * @param message - Completion payload from the host renderer preload bridge.
+   */
+  #completeHostBridgeInvoke(message: HostBridgeCompleteMessage): void {
+    const pending = this.#pendingHostBridge.get(message.requestId);
+    if (!pending) {
+      return;
+    }
+
+    clearTimeout(pending.timeout);
+    this.#pendingHostBridge.delete(message.requestId);
+
+    if (message.ok) {
+      pending.resolve(message.result);
+      return;
+    }
+
+    pending.reject(new Error(message.error ?? 'Plugin host bridge invocation failed.'));
+  }
+
+  /**
+   * Completes a pending host bridge invoke — exposed for unit tests.
+   *
+   * @param message - Completion payload matching {@link HostBridgeCompleteMessage}.
+   */
+  completeHostBridgeInvokeForTests(message: HostBridgeCompleteMessage): void {
+    this.#completeHostBridgeInvoke(message);
   }
 
   /**
@@ -394,7 +606,11 @@ export function getPluginUiBroker(): PluginUiBroker {
  * @param pluginManager - Initialized plugin manager.
  */
 export function initPluginUiBroker(pluginManager: PluginManager): PluginUiBroker {
-  brokerInstance = new PluginUiBroker(pluginManager);
-  brokerInstance.registerIpcHandlers();
-  return brokerInstance;
+  const broker = new PluginUiBroker(pluginManager);
+  brokerInstance = broker;
+  broker.registerIpcHandlers();
+  pluginManager.setFilesystemWebviewNotifier((pluginId, normalizedPath) => {
+    broker.notifyFilesystemChanged(pluginId, normalizedPath);
+  });
+  return broker;
 }

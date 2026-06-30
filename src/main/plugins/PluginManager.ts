@@ -149,6 +149,15 @@ export class PluginManager {
   }
 
   /**
+   * Registers a callback used to push watched file changes to plugin webviews.
+   *
+   * @param notifier - Receives the plugin id and normalized path that changed.
+   */
+  setFilesystemWebviewNotifier(notifier: (pluginId: string, normalizedPath: string) => void): void {
+    this.#fsWatcher.setPluginWebviewNotifier(notifier);
+  }
+
+  /**
    * Returns the Electron userData directory used for plugin packages and databases.
    */
   getUserDataPath(): string {

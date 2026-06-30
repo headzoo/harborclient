@@ -27,6 +27,7 @@ import modalsReducer, {
   setQuitPrompt,
   setAlertModal,
   setConfirmModal,
+  setPluginModal,
   setSyncProviderStatus,
   setSyncProviders,
   skipRemainingCollectionRunnerRequests,
@@ -278,5 +279,24 @@ describe('modalsSlice', () => {
     state = modalsReducer(state, skipRemainingCollectionRunnerRequests());
     state = modalsReducer(state, closeCollectionRunnerModal());
     expect(state.collectionRunner).toBeNull();
+  });
+
+  it('opens and closes the plugin modal overlay', () => {
+    let state = modalsReducer(
+      undefined,
+      setPluginModal({
+        pluginId: 'com.test.plugin',
+        contributionId: 'editor',
+        context: { editingId: 'abc' }
+      })
+    );
+    expect(state.pluginModal).toEqual({
+      pluginId: 'com.test.plugin',
+      contributionId: 'editor',
+      context: { editingId: 'abc' }
+    });
+
+    state = modalsReducer(state, setPluginModal(null));
+    expect(state.pluginModal).toBeNull();
   });
 });

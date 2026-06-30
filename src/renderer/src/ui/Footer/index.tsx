@@ -175,11 +175,12 @@ export function Footer({
       <footer className="relative z-50 flex shrink-0 items-center justify-between border-t border-separator bg-control px-2 py-0.5 app-no-drag">
         <div className={`${segmentGroup} min-w-0 flex-1`}>
           {leftStatusItems.map((item) => (
-            <div key={item.id} className="px-1">
+            <div key={item.id} className="overflow-hidden px-1" style={{ width: 120, height: 20 }}>
               <PluginSurface
                 pluginId={item.pluginId}
                 contributionId={item.contributionId}
                 kind="statusBarItems"
+                resizeMode="fill"
                 style={{ minHeight: 20, height: 20, width: 120 }}
               />
             </div>
@@ -226,11 +227,12 @@ export function Footer({
         </div>
         <div className="flex items-center gap-0.5">
           {rightStatusItems.map((item) => (
-            <div key={item.id} className="px-1">
+            <div key={item.id} className="overflow-hidden px-1" style={{ width: 120, height: 20 }}>
               <PluginSurface
                 pluginId={item.pluginId}
                 contributionId={item.contributionId}
                 kind="statusBarItems"
+                resizeMode="fill"
                 style={{ minHeight: 20, height: 20, width: 120 }}
               />
             </div>

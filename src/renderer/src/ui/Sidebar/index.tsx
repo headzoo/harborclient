@@ -358,7 +358,7 @@ export function Sidebar({
 
   return (
     <>
-      <aside className="flex shrink-0 flex-col bg-sidebar" style={{ width }}>
+      <aside className="flex shrink-0 flex-col overflow-x-hidden bg-sidebar" style={{ width }}>
         {pluginSidebarPanels.length > 0 && (
           <nav
             aria-label="Sidebar panels"
@@ -400,7 +400,7 @@ export function Sidebar({
           </nav>
         )}
         {activeSidebarPanel ? (
-          <div className="flex-1 overflow-y-auto px-2 py-2">
+          <div className="flex-1 overflow-x-hidden overflow-y-auto px-2 py-2">
             <PluginSurface
               pluginId={activeSidebarPanel.pluginId}
               contributionId={activeSidebarPanel.contributionId}
@@ -411,7 +411,7 @@ export function Sidebar({
         ) : (
           <>
             <SidebarSearch value={searchQuery} onChange={setSearchQuery} />
-            <div className="flex-1 overflow-y-auto px-2 pb-3">
+            <div className="flex-1 overflow-x-hidden overflow-y-auto px-2 pb-3">
               {searchLoading ? (
                 <p className="mt-1.5 text-[14px] text-muted" role="status">
                   Loading…
@@ -673,7 +673,6 @@ export function Sidebar({
                             contributionId={section.contributionId}
                             kind="sidebarSections"
                             slot="headerActions"
-                            style={{ minHeight: 24, height: 24 }}
                           />
                         ) : undefined
                       }

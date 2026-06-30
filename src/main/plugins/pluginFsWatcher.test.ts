@@ -50,17 +50,21 @@ describe('PluginFsWatcher', () => {
 
   it('debounces change notifications', () => {
     const send = vi.fn();
+    const notifyWebview = vi.fn();
     watcher.setWindowProvider(() => ({ webContents: { send } }) as never);
+    watcher.setPluginWebviewNotifier(notifyWebview);
 
     watcher.watchFile('com.example.test', '/tmp/example.env');
     onChange?.();
     onChange?.();
     expect(send).not.toHaveBeenCalled();
+    expect(notifyWebview).not.toHaveBeenCalled();
 
     vi.advanceTimersByTime(300);
     expect(send).toHaveBeenCalledWith('plugins:fsChanged', {
       pluginId: 'com.example.test',
       path: '/tmp/example.env'
     });
+    expect(notifyWebview).toHaveBeenCalledWith('com.example.test', '/tmp/example.env');
   });
 });

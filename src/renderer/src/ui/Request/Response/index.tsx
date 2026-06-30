@@ -276,13 +276,14 @@ export function Response({
       const singleTab = noResponsePluginTabs[0];
       return (
         <div className="flex min-h-0 flex-1 flex-col p-3">
-          <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <PluginSurface
               pluginId={singleTab.pluginId}
               contributionId={singleTab.contributionId}
               kind="responseTabs"
               context={responseTabContext}
-              minHeight={240}
+              resizeMode="fill"
+              className="h-full"
             />
           </div>
         </div>
@@ -300,15 +301,20 @@ export function Response({
           <div className="mb-2 -mx-3 -mt-2 flex shrink-0 items-center gap-2">
             <SegmentedTabs tabs={pluginTabsOnly} />
           </div>
-          <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             {noResponsePluginTabs.map((entry) => (
-              <SegmentedTabPanel key={entry.id} value={entry.id}>
+              <SegmentedTabPanel
+                key={entry.id}
+                value={entry.id}
+                className="flex min-h-0 flex-1 flex-col"
+              >
                 <PluginSurface
                   pluginId={entry.pluginId}
                   contributionId={entry.contributionId}
                   kind="responseTabs"
                   context={responseTabContext}
-                  minHeight={240}
+                  resizeMode="fill"
+                  className="h-full"
                 />
               </SegmentedTabPanel>
             ))}
@@ -389,13 +395,18 @@ export function Response({
             {pluginTabs
               .filter((entry) => entry.when !== 'noResponse')
               .map((entry) => (
-                <SegmentedTabPanel key={entry.id} value={entry.id}>
+                <SegmentedTabPanel
+                  key={entry.id}
+                  value={entry.id}
+                  className="flex min-h-0 flex-1 flex-col"
+                >
                   <PluginSurface
                     pluginId={entry.pluginId}
                     contributionId={entry.contributionId}
                     kind="responseTabs"
                     context={responseTabContext}
-                    minHeight={240}
+                    resizeMode="fill"
+                    className="h-full"
                   />
                 </SegmentedTabPanel>
               ))}

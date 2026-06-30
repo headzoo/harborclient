@@ -46,12 +46,13 @@ export function PluginMainView({ pluginId, viewId, onClose }: Props): JSX.Elemen
         <h1 className="m-0 text-[15px] font-semibold text-text">{view.title}</h1>
         <OverlayCloseButton label="Close plugin view" onClose={onClose} />
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto p-6">
+      <div className="min-h-0 flex-1 overflow-hidden p-6">
         <PluginSurface
           pluginId={view.pluginId}
           contributionId={view.contributionId}
           kind="mainViews"
-          minHeight={400}
+          resizeMode="fill"
+          className="h-full"
         />
       </div>
     </div>

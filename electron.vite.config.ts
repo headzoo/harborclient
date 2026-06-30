@@ -46,6 +46,16 @@ export default defineConfig({
       strictPort: true
     },
     plugins: [react(), tailwindcss()],
+    // Force dependency pre-bundling on every dev start. Vite caches optimized
+    // deps in node_modules/.vite/deps keyed on a hash of the lockfile and config,
+    // not on `file:`-linked package contents. Without forcing, a local
+    // `@harborclient/sdk` rebuild is never picked up: Vite keeps serving the
+    // stale pre-bundled copy even after `pnpm install` and a dev-server restart.
+    // Re-optimizing each start keeps the linked SDK fresh without changing module
+    // resolution (excluding it from bundling breaks its transitive deps).
+    optimizeDeps: {
+      force: true
+    },
     resolve: {
       alias: {
         '@images': resolve(__dirname, 'images'),

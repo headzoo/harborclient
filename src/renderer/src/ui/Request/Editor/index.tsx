@@ -181,8 +181,8 @@ export function Editor({
   };
 
   return (
-    <div>
-      <div className="border-b border-separator p-3">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="shrink-0 border-b border-separator p-3">
         <Name
           name={draft.name}
           collectionName={collectionName}
@@ -204,13 +204,13 @@ export function Editor({
         />
       </div>
 
-      <div>
+      <div className="flex min-h-0 flex-1 flex-col">
         <SegmentedTabsGroup value={tab} onChange={setTab} ariaLabel="Request editor sections">
-          <div>
+          <div className="shrink-0">
             <SegmentedTabs tabs={tabs} />
           </div>
 
-          <div className="px-6">
+          <div className="flex min-h-0 flex-1 flex-col px-6">
             <TabContent
               draft={draft}
               showBody={showBody}

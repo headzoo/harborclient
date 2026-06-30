@@ -590,6 +590,26 @@ export const ipcArgSchemas = {
       context: z.unknown()
     })
   ]),
+  pluginPushHttpAfterSend: z.tuple([
+    z.object({
+      request: z.object({
+        method: z.string(),
+        url: z.string(),
+        headers: z.record(z.string(), z.string()),
+        body: z.string(),
+        bodyType: z.string().optional(),
+        params: z.array(z.object({ key: z.string(), value: z.string() })).optional(),
+        sourceRequestId: z.number().optional(),
+        sourceRequestName: z.string().optional()
+      }),
+      response: z.object({
+        status: z.number(),
+        statusText: z.string(),
+        headers: z.record(z.string(), z.string()),
+        body: z.string()
+      })
+    })
+  ]),
   pluginExecuteAgentCommand: z.tuple([pluginId, z.string().min(1), z.array(z.unknown())]),
   oauthFetchToken: z.tuple([z.string(), oauth2Config, z.boolean()]),
   oauthClearToken: z.tuple([z.string().min(1)])

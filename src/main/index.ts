@@ -696,6 +696,16 @@ function createWindow(): BrowserWindow {
 
   window.webContents.on('did-attach-webview', (_event, guestContents) => {
     guestContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+    guestContents.on('did-finish-load', () => {
+      logVerbose('plugin webview did-finish-load', { guestId: guestContents.id });
+    });
+    guestContents.on('render-process-gone', (_goneEvent, details) => {
+      logVerbose('plugin webview render-process-gone', {
+        guestId: guestContents.id,
+        reason: details.reason,
+        exitCode: details.exitCode
+      });
+    });
     guestContents.on('did-fail-load', (_failEvent, errorCode, errorDescription, validatedURL) => {
       logVerbose('plugin webview did-fail-load', {
         guestId: guestContents.id,

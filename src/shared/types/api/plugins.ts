@@ -1,4 +1,5 @@
 import type { PluginCatalog, PluginSourcesSettings } from '#/shared/plugin/catalog';
+import type { PluginHttpRequest, PluginHttpResponse } from '@harborclient/sdk';
 import type {
   PluginAssetResult,
   PluginEntryKind,
@@ -9,6 +10,16 @@ import type {
   SerializableMenuContribution
 } from '#/shared/plugin/types';
 import type { TeamHubPluginSourcesView } from '#/shared/types/teamHub';
+
+/** Payload pushed when a plugin surface webview reports its content height. */
+export interface PluginSurfaceResizeMessage {
+  pluginId: string;
+  contributionId: string;
+  kind: string;
+  slot?: 'content' | 'headerActions' | 'indicator';
+  height?: number;
+  width?: number;
+}
 
 /**
  * IPC methods for plugins.
@@ -259,6 +270,13 @@ export interface ApiPlugins {
     context: unknown;
   }) => Promise<void>;
   /**
+   * Pushes a completed HTTP exchange to plugin webviews with the `http` permission.
+   */
+  pushPluginHttpAfterSend: (payload: {
+    request: PluginHttpRequest;
+    response: PluginHttpResponse;
+  }) => Promise<void>;
+  /**
    * Executes a plugin command in the plugin agent webview.
    */
   executePluginAgentCommand: (
@@ -284,6 +302,30 @@ export interface ApiPlugins {
   onPluginsHostBridge: (
     callback: (message: { pluginId: string; op: string; payload?: unknown }) => void
   ) => () => void;
+  /**
+   * Subscribes to correlated host bridge invokes that must return a result.
+   */
+  onPluginsHostBridgeInvoke: (
+    callback: (message: {
+      requestId: number;
+      pluginId: string;
+      op: string;
+      payload?: unknown;
+    }) => void
+  ) => () => void;
+  /**
+   * Completes a correlated host bridge invoke started by the main-process broker.
+   */
+  completePluginHostBridge: (message: {
+    requestId: number;
+    ok: boolean;
+    result?: unknown;
+    error?: string;
+  }) => void;
+  /**
+   * Subscribes to content height updates from isolated plugin surface webviews.
+   */
+  onPluginSurfaceResize: (callback: (message: PluginSurfaceResizeMessage) => void) => () => void;
   /**
    * Subscribes to plugin agent webview readiness notifications.
    */

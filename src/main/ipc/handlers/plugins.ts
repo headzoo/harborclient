@@ -1,5 +1,13 @@
-import { BrowserWindow, dialog } from 'electron';
+import { dialog } from 'electron';
 import type { PluginManager } from '#/main/plugins/PluginManager';
+import {
+  pickDirectoryForPlugin,
+  pickFileForPlugin,
+  readFileForPlugin,
+  saveFileForPlugin,
+  watchFileForPlugin,
+  writeFileForPlugin
+} from '#/main/plugins/pluginFsOperations';
 import { fetchPluginCatalog } from '#/main/plugins/pluginCatalog';
 import { fetchPluginPreviewFromGit } from '#/main/plugins/gitPluginPreview';
 import { clearTrustedKeysCache } from '#/main/plugins/pluginSignature';
@@ -410,25 +418,7 @@ export function registerPluginHandlers(pluginManager: PluginManager): void {
     ipcArgSchemas.pluginFsPickFile,
     async (_event, pluginId, options) => {
       pluginManager.assertPermission(pluginId, 'filesystem:pick');
-      const win = BrowserWindow.getFocusedWindow();
-      const dialogOptions = {
-        title: options?.title ?? 'Select file',
-        properties: [
-          'openFile',
-          ...(options?.multiple ? (['multiSelections'] as const) : [])
-        ] as Array<'openFile' | 'multiSelections'>,
-        filters: options?.filters ?? [{ name: 'All Files', extensions: ['*'] }]
-      };
-      const { canceled, filePaths } = win
-        ? await dialog.showOpenDialog(win, dialogOptions)
-        : await dialog.showOpenDialog(dialogOptions);
-      if (canceled || filePaths.length === 0) {
-        return [];
-      }
-      for (const filePath of filePaths) {
-        pluginManager.grantFilesystemPath(pluginId, filePath);
-      }
-      return filePaths;
+      return pickFileForPlugin(pluginManager, pluginId, options);
     }
   );
 
@@ -437,20 +427,7 @@ export function registerPluginHandlers(pluginManager: PluginManager): void {
     ipcArgSchemas.pluginFsPickDirectory,
     async (_event, pluginId, defaultPath) => {
       pluginManager.assertPermission(pluginId, 'filesystem:pick');
-      const win = BrowserWindow.getFocusedWindow();
-      const dialogOptions = {
-        title: 'Select directory',
-        properties: ['openDirectory'] as Array<'openDirectory'>,
-        defaultPath: defaultPath.trim() || undefined
-      };
-      const { canceled, filePaths } = win
-        ? await dialog.showOpenDialog(win, dialogOptions)
-        : await dialog.showOpenDialog(dialogOptions);
-      if (canceled || filePaths.length === 0) {
-        return null;
-      }
-      pluginManager.grantFilesystemPath(pluginId, filePaths[0]);
-      return filePaths[0];
+      return pickDirectoryForPlugin(pluginManager, pluginId, defaultPath);
     }
   );
 
@@ -459,31 +436,13 @@ export function registerPluginHandlers(pluginManager: PluginManager): void {
     ipcArgSchemas.pluginFsSaveFile,
     async (_event, pluginId, content, options) => {
       pluginManager.assertPermission(pluginId, 'filesystem:pick');
-      const win = BrowserWindow.getFocusedWindow();
-      const dialogOptions = {
-        title: 'Save file',
-        defaultPath: options?.defaultPath,
-        filters: options?.filters ?? [
-          { name: 'Text', extensions: ['txt', 'json'] },
-          { name: 'All Files', extensions: ['*'] }
-        ]
-      };
-      const { canceled, filePath } = win
-        ? await dialog.showSaveDialog(win, dialogOptions)
-        : await dialog.showSaveDialog(dialogOptions);
-      if (canceled || !filePath) {
-        return null;
-      }
-      pluginManager.grantFilesystemPath(pluginId, filePath);
-      pluginManager.fsAllowlist.writeTextFile(pluginId, filePath, content);
-      return filePath;
+      return saveFileForPlugin(pluginManager, pluginId, content, options);
     }
   );
 
   handle('plugins:fsReadFile', ipcArgSchemas.pluginFsReadFile, (_event, pluginId, path) => {
     pluginManager.assertPermission(pluginId, 'filesystem:read');
-    pluginManager.reconcileFilesystemGrants(pluginId);
-    return pluginManager.fsAllowlist.readTextFile(pluginId, path);
+    return readFileForPlugin(pluginManager, pluginId, path);
   });
 
   handle(
@@ -491,13 +450,13 @@ export function registerPluginHandlers(pluginManager: PluginManager): void {
     ipcArgSchemas.pluginFsWriteFile,
     (_event, pluginId, path, content) => {
       pluginManager.assertPermission(pluginId, 'filesystem:write');
-      pluginManager.reconcileFilesystemGrants(pluginId);
-      pluginManager.fsAllowlist.writeTextFile(pluginId, path, content);
+      writeFileForPlugin(pluginManager, pluginId, path, content);
     }
   );
 
   handle('plugins:fsWatchFile', ipcArgSchemas.pluginFsWatchFile, (_event, pluginId, path) => {
-    pluginManager.watchFilesystemPath(pluginId, path);
+    pluginManager.assertPermission(pluginId, 'filesystem:read');
+    watchFileForPlugin(pluginManager, pluginId, path);
   });
 
   handle('plugins:fsUnwatchFile', ipcArgSchemas.pluginFsUnwatchFile, (_event, pluginId, path) => {
@@ -511,6 +470,10 @@ export function registerPluginHandlers(pluginManager: PluginManager): void {
       payload.kind,
       payload.context
     );
+  });
+
+  handle('plugins:pushHttpAfterSend', ipcArgSchemas.pluginPushHttpAfterSend, (_event, payload) => {
+    getPluginUiBroker().pushHttpAfterSend(payload.request, payload.response);
   });
 
   handle(

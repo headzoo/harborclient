@@ -11,7 +11,8 @@ export type PluginContributionKind =
   | 'responseTabs'
   | 'collectionSettingsTabs'
   | 'footerPanels'
-  | 'statusBarItems';
+  | 'statusBarItems'
+  | 'modals';
 
 /**
  * Builds the harbor-plugin agent shell URL for one plugin.

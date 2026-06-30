@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(plugins): enhance plugin filesystem operations and UI interactions. (`dccf6ce`)
 - feat(plugins): implement plugin UI broker and enhance plugin communication. (`fcaa067`)
 
 ## 1.8.38 - 2026-06-29

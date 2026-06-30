@@ -66,6 +66,7 @@ export interface PluginManifest {
     sidebarPanels?: ManifestContributionEntry[];
     sidebarSections?: ManifestContributionEntry[];
     mainViews?: ManifestContributionEntry[];
+    modals?: ManifestContributionEntry[];
     requestTabs?: ManifestContributionEntry[];
     responseTabs?: ManifestContributionEntry[];
     collectionSettingsTabs?: ManifestContributionEntry[];
@@ -212,6 +213,16 @@ export interface RegisteredSidebarPanel {
  * Registered main-area overlay contribution.
  */
 export interface RegisteredMainView {
+  pluginId: string;
+  id: string;
+  title: string;
+  contributionId: string;
+}
+
+/**
+ * Registered modal overlay contribution.
+ */
+export interface RegisteredModal {
   pluginId: string;
   id: string;
   title: string;

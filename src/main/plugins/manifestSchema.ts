@@ -61,6 +61,7 @@ export const pluginManifestSchema = z.object({
       sidebarPanels: z.array(contributionEntry).optional(),
       sidebarSections: z.array(contributionEntry).optional(),
       mainViews: z.array(contributionEntry).optional(),
+      modals: z.array(contributionEntry).optional(),
       requestTabs: z.array(contributionEntry).optional(),
       responseTabs: z.array(contributionEntry).optional(),
       collectionSettingsTabs: z.array(contributionEntry).optional(),

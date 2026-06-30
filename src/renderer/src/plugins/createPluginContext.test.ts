@@ -35,7 +35,8 @@ beforeEach(() => {
   vi.stubGlobal('window', {
     api: {
       invokePluginMain: invokePluginMainMock,
-      activatePluginMain: activatePluginMainMock
+      activatePluginMain: activatePluginMainMock,
+      pushPluginHttpAfterSend: vi.fn().mockResolvedValue(undefined)
     }
   });
 });

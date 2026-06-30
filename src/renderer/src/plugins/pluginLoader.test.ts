@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PluginInfo } from '#/shared/plugin/types';
 import {
+  AGENT_READY_TIMEOUT_MS,
+  MAX_AGENT_ACTIVATION_ATTEMPTS,
   disposePartialRendererActivation,
   formatPluginActivationErrorDetails,
   markPluginForThemePrompt,
@@ -28,6 +30,28 @@ const reportPluginRuntimeErrorMock =
 const setPluginEnabledMock = vi.fn<(pluginId: string, enabled: boolean) => Promise<PluginInfo>>();
 
 const createdWebviews: Array<{ remove: ReturnType<typeof vi.fn>; src: string }> = [];
+
+/** Mount count at which the mock agent webview reports ready (test hook). */
+let notifyAgentReadyAfterMountCount = 1;
+
+/**
+ * Records one mock webview mount and optionally resolves the pending agent-ready waiter.
+ *
+ * @param webview - Mock webview instance.
+ * @param value - Assigned src URL.
+ * @param mountCountRef - Mutable mount counter for the current test.
+ */
+function recordMockWebviewMount(
+  webview: { remove: ReturnType<typeof vi.fn> },
+  value: string,
+  mountCountRef: { count: number }
+): void {
+  mountCountRef.count += 1;
+  createdWebviews.push({ remove: webview.remove, src: value });
+  if (mountCountRef.count >= notifyAgentReadyAfterMountCount) {
+    queueMicrotask(() => notifyAgentReady(GATED_PLUGIN_ID));
+  }
+}
 
 /**
  * Minimal plugin metadata used by reloadPlugin gating tests.
@@ -60,6 +84,8 @@ const agentContainer = {
 
 beforeEach(() => {
   createdWebviews.length = 0;
+  notifyAgentReadyAfterMountCount = 1;
+  const mountCountRef = { count: 0 };
   agentContainer.appendChild.mockReset();
   listPluginsMock.mockReset();
   activatePluginMainMock.mockReset();
@@ -92,16 +118,14 @@ beforeEach(() => {
       style: {} as CSSStyleDeclaration,
       setAttribute: vi.fn((name: string, value: string) => {
         if (name === 'src') {
-          createdWebviews.push({ remove: webview.remove, src: value });
-          queueMicrotask(() => notifyAgentReady(GATED_PLUGIN_ID));
+          recordMockWebviewMount(webview, value, mountCountRef);
         }
       }),
       addEventListener: vi.fn()
     };
     Object.defineProperty(webview, 'src', {
       set(value: string) {
-        createdWebviews.push({ remove: webview.remove, src: value });
-        queueMicrotask(() => notifyAgentReady(GATED_PLUGIN_ID));
+        recordMockWebviewMount(webview, value, mountCountRef);
       },
       get() {
         return createdWebviews.at(-1)?.src ?? '';
@@ -160,6 +184,46 @@ describe('pluginLoader', () => {
     expect(createdWebviews).toHaveLength(1);
     expect(createdWebviews[0]?.src).toContain(GATED_PLUGIN_ID);
     expect(reportPluginRuntimeErrorMock).toHaveBeenCalledWith(GATED_PLUGIN_ID, null);
+  });
+
+  it('reloadPlugin remounts the agent webview and succeeds on a later attempt', async () => {
+    vi.useFakeTimers();
+    try {
+      notifyAgentReadyAfterMountCount = 2;
+      listPluginsMock.mockResolvedValue([createGatedPluginInfo(true)]);
+
+      const reloadPromise = reloadPlugin(GATED_PLUGIN_ID);
+      await Promise.all([vi.advanceTimersByTimeAsync(AGENT_READY_TIMEOUT_MS), reloadPromise]);
+
+      expect(createdWebviews.length).toBeGreaterThanOrEqual(2);
+      expect(setPluginEnabledMock).not.toHaveBeenCalledWith(GATED_PLUGIN_ID, false);
+      expect(reportPluginRuntimeErrorMock).toHaveBeenCalledWith(GATED_PLUGIN_ID, null);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('reloadPlugin disables the plugin after exhausting agent activation retries', async () => {
+    vi.useFakeTimers();
+    try {
+      notifyAgentReadyAfterMountCount = Number.MAX_SAFE_INTEGER;
+      listPluginsMock.mockResolvedValue([createGatedPluginInfo(true)]);
+
+      const reloadPromise = reloadPlugin(GATED_PLUGIN_ID);
+      const timerPromise = (async () => {
+        for (let attempt = 0; attempt < MAX_AGENT_ACTIVATION_ATTEMPTS; attempt += 1) {
+          await vi.advanceTimersByTimeAsync(AGENT_READY_TIMEOUT_MS);
+        }
+      })();
+      await expect(Promise.all([timerPromise, reloadPromise])).rejects.toThrow(
+        /timed out \(last phase:/
+      );
+
+      expect(createdWebviews.length).toBeGreaterThanOrEqual(MAX_AGENT_ACTIVATION_ATTEMPTS);
+      expect(setPluginEnabledMock).toHaveBeenCalledWith(GATED_PLUGIN_ID, false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('normalizes dynamic import fetch failures to a stable message', () => {

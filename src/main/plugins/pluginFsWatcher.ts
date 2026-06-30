@@ -18,6 +18,7 @@ export class PluginFsWatcher {
   readonly #allowlist: PluginFsAllowlist;
   readonly #records = new Map<string, WatchRecord>();
   #windowProvider: () => BrowserWindow | null = () => null;
+  #pluginWebviewNotifier: ((pluginId: string, normalizedPath: string) => void) | null = null;
 
   /**
    * @param allowlist - Plugin filesystem allowlist used to validate watch targets.
@@ -33,6 +34,15 @@ export class PluginFsWatcher {
    */
   setWindowProvider(provider: () => BrowserWindow | null): void {
     this.#windowProvider = provider;
+  }
+
+  /**
+   * Registers a callback used to notify plugin webviews about watched file changes.
+   *
+   * @param notifier - Receives the plugin id and normalized path that changed.
+   */
+  setPluginWebviewNotifier(notifier: (pluginId: string, normalizedPath: string) => void): void {
+    this.#pluginWebviewNotifier = notifier;
   }
 
   /**
@@ -133,6 +143,7 @@ export class PluginFsWatcher {
   #emitChanged(pluginId: string, normalizedPath: string): void {
     const window = this.#windowProvider();
     window?.webContents.send('plugins:fsChanged', { pluginId, path: normalizedPath });
+    this.#pluginWebviewNotifier?.(pluginId, normalizedPath);
   }
 
   /**
