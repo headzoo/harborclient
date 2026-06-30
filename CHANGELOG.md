@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.9.0 - 2026-06-30
+
 - feat(deps): upgrade @harborclient/sdk to version 1.0.0 and update plugin versions. (`2a1565d`)
 - feat(plugins): update plugin versions and enhance theme registration. (`c1fdd45`)
 - feat(plugins): enhance plugin filesystem operations and UI interactions. (`dccf6ce`)
