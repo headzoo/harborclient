@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useState, type JSX } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState, type JSX } from 'react';
 import type { ShortcutBinding, ShortcutId } from '#/shared/types';
 import {
   bindingsToOverrides,
@@ -6,6 +6,8 @@ import {
   validateShortcutOverrides
 } from '#/shared/shortcuts';
 import { Button } from '@harborclient/sdk/components';
+import { FormGroup } from '@harborclient/sdk/components';
+import { Input } from '@harborclient/sdk/components';
 import { Page } from '@harborclient/sdk/components';
 import { useConfirm } from '#/renderer/src/hooks/useConfirm';
 import { field } from '@harborclient/sdk/components';
@@ -36,6 +38,23 @@ export function ShortcutsSection({ onClose }: Props): JSX.Element {
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+
+  /**
+   * Filters shortcut rows by search query against label and displayed key combination.
+   */
+  const filteredBindings = useMemo(() => {
+    const trimmed = query.trim().toLowerCase();
+    if (trimmed.length === 0) {
+      return bindings;
+    }
+
+    return bindings.filter((binding) => {
+      const label = binding.label.toLowerCase();
+      const accelerator = formatAcceleratorDisplay(binding.accelerator).toLowerCase();
+      return label.includes(trimmed) || accelerator.includes(trimmed);
+    });
+  }, [bindings, query]);
 
   /**
    * Loads resolved shortcut bindings on mount.
@@ -197,6 +216,22 @@ export function ShortcutsSection({ onClose }: Props): JSX.Element {
         </p>
       ) : (
         <div className="max-w-3xl mx-auto">
+          <FormGroup
+            label="Search shortcuts"
+            htmlFor="shortcut-search"
+            srOnly
+            className="mb-3 w-full"
+          >
+            <Input
+              id="shortcut-search"
+              type="search"
+              placeholder="Search shortcuts"
+              value={query}
+              className="w-full"
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </FormGroup>
+
           <div className="overflow-x-auto rounded-md border border-separator">
             <table className="w-full border-collapse text-[14px]">
               <caption className="sr-only">Keyboard shortcuts</caption>
@@ -211,10 +246,11 @@ export function ShortcutsSection({ onClose }: Props): JSX.Element {
                 </tr>
               </thead>
               <tbody>
-                {bindings.map((binding) => {
+                {filteredBindings.map((binding) => {
                   const recording = recordingId === binding.id;
                   const errorId = `${binding.id}-error`;
                   const error = errors[binding.id];
+
                   return (
                     <tr key={binding.id} className="border-b border-separator last:border-b-0">
                       <td className="px-3 py-2 text-text">{binding.label}</td>
@@ -239,6 +275,12 @@ export function ShortcutsSection({ onClose }: Props): JSX.Element {
               </tbody>
             </table>
           </div>
+
+          {query.trim().length > 0 && filteredBindings.length === 0 ? (
+            <p className="mt-3 text-muted" role="status">
+              No shortcuts match your search.
+            </p>
+          ) : null}
 
           {globalError != null ? (
             <FieldError spacing="section" roleAlert>

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(shortcuts): add search functionality to shortcuts section. (`992a158`)
 - feat(menu): add new menu actions and shortcuts for improved navigation. (`c88df8a`)
 
 ## 1.9.2 - 2026-06-30
