@@ -32,6 +32,38 @@ const tabsSlice = createSlice({
       state.activeTabId = action.payload;
     },
     /**
+     * Activates the next open request tab, wrapping to the first tab at the end.
+     */
+    activateNextTab(state) {
+      if (state.tabs.length <= 1) {
+        return;
+      }
+
+      const activeIndex = state.tabs.findIndex((tab) => tab.tabId === state.activeTabId);
+      if (activeIndex === -1) {
+        return;
+      }
+
+      const nextIndex = (activeIndex + 1) % state.tabs.length;
+      state.activeTabId = state.tabs[nextIndex]?.tabId ?? state.activeTabId;
+    },
+    /**
+     * Activates the previous open request tab, wrapping to the last tab at the start.
+     */
+    activatePreviousTab(state) {
+      if (state.tabs.length <= 1) {
+        return;
+      }
+
+      const activeIndex = state.tabs.findIndex((tab) => tab.tabId === state.activeTabId);
+      if (activeIndex === -1) {
+        return;
+      }
+
+      const previousIndex = (activeIndex - 1 + state.tabs.length) % state.tabs.length;
+      state.activeTabId = state.tabs[previousIndex]?.tabId ?? state.activeTabId;
+    },
+    /**
      * Replaces the draft on the currently active tab.
      */
     setActiveDraft(state, action: PayloadAction<RequestDraft>) {
@@ -179,6 +211,8 @@ const tabsSlice = createSlice({
 
 export const {
   setActiveTab,
+  activateNextTab,
+  activatePreviousTab,
   setActiveDraft,
   newTab,
   closeTab,

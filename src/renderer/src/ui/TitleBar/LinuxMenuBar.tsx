@@ -4,7 +4,7 @@ import type { RootMenuLabel } from '#/shared/types';
 const ROOT_MENU_LABELS: RootMenuLabel[] = ['File', 'Edit', 'View', 'Help'];
 
 const menuButtonClass =
-  'cursor-pointer rounded-sm border-none bg-transparent px-2.5 py-1 text-sm text-text hover:bg-selection app-no-drag';
+  'cursor-pointer rounded-sm border-none bg-transparent px-2.5 py-1 text-[14px] text-text hover:bg-selection app-no-drag';
 
 /**
  * Opens a root application submenu below the clicked menu bar button.

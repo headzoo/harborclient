@@ -173,6 +173,11 @@
     min-height: 100vh;
   }
 
+  #main-content:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
   input:focus-visible,
   select:focus-visible,
   textarea:focus-visible,

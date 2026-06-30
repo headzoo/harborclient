@@ -58,6 +58,36 @@ describe('resolveShortcuts', () => {
       'CmdOrCtrl+Shift+I'
     );
   });
+
+  it('includes default bindings for Help menu shortcuts', () => {
+    const bindings = resolveShortcuts({});
+    expect(bindings.find((binding) => binding.id === 'documentation')?.accelerator).toBe(
+      'CmdOrCtrl+Shift+D'
+    );
+    expect(bindings.find((binding) => binding.id === 'report-issue')?.accelerator).toBe(
+      'CmdOrCtrl+Shift+R'
+    );
+    expect(bindings.find((binding) => binding.id === 'check-for-updates')?.accelerator).toBe(
+      'CmdOrCtrl+Shift+U'
+    );
+    expect(bindings.find((binding) => binding.id === 'about')?.accelerator).toBe(
+      'CmdOrCtrl+Shift+A'
+    );
+  });
+
+  it('includes default bindings for request shortcuts', () => {
+    const bindings = resolveShortcuts({});
+    expect(bindings.find((binding) => binding.id === 'send-request')?.accelerator).toBe('F5');
+    expect(bindings.find((binding) => binding.id === 'previous-request-tab')?.accelerator).toBe(
+      'CmdOrCtrl+Shift+Comma'
+    );
+    expect(bindings.find((binding) => binding.id === 'next-request-tab')?.accelerator).toBe(
+      'CmdOrCtrl+Shift+Period'
+    );
+    expect(bindings.find((binding) => binding.id === 'focus-sidebar-search')?.accelerator).toBe(
+      'CmdOrCtrl+F'
+    );
+  });
 });
 
 describe('bindingsToOverrides', () => {

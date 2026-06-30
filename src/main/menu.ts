@@ -94,6 +94,11 @@ export function buildMenu(
         },
         { type: 'separator' },
         {
+          label: 'Import',
+          accelerator: acceleratorFor(accelerators, 'import'),
+          click: () => sendMenuAction(window, 'import')
+        },
+        {
           label: 'Sharing Keys',
           accelerator: acceleratorFor(accelerators, 'sharing-keys'),
           click: () => sendMenuAction(window, 'sharing-keys')
@@ -101,11 +106,6 @@ export function buildMenu(
         {
           label: 'Join Shared Collection',
           click: () => sendMenuAction(window, 'join-shared-collection')
-        },
-        {
-          label: 'Import',
-          accelerator: acceleratorFor(accelerators, 'import'),
-          click: () => sendMenuAction(window, 'import')
         },
         { type: 'separator' },
         { role: 'quit' }
@@ -135,11 +135,31 @@ export function buildMenu(
           click: () => sendMenuAction(window, 'toggle-sidebar')
         },
         {
+          label: 'Focus Sidebar Search',
+          accelerator: acceleratorFor(accelerators, 'focus-sidebar-search'),
+          click: () => sendMenuAction(window, 'focus-sidebar-search')
+        },
+        {
           label: 'Agent Chat',
           type: 'checkbox',
           checked: aiSidebarVisible,
           accelerator: acceleratorFor(accelerators, 'toggle-ai-sidebar'),
           click: () => sendMenuAction(window, 'toggle-ai-sidebar')
+        },
+        {
+          label: 'Send Request',
+          accelerator: acceleratorFor(accelerators, 'send-request'),
+          click: () => sendMenuAction(window, 'send-request')
+        },
+        {
+          label: 'Previous Request Tab',
+          accelerator: acceleratorFor(accelerators, 'previous-request-tab'),
+          click: () => sendMenuAction(window, 'previous-request-tab')
+        },
+        {
+          label: 'Next Request Tab',
+          accelerator: acceleratorFor(accelerators, 'next-request-tab'),
+          click: () => sendMenuAction(window, 'next-request-tab')
         },
         { type: 'separator' },
         {
@@ -155,19 +175,23 @@ export function buildMenu(
       submenu: [
         {
           label: 'Documentation',
+          accelerator: acceleratorFor(accelerators, 'documentation'),
           click: () => void shell.openExternal('https://harborclient.com/')
         },
         {
-          label: 'Check for Updates...',
-          click: () => sendMenuAction(window, 'check-for-updates')
-        },
-        {
           label: 'Report Issue',
+          accelerator: acceleratorFor(accelerators, 'report-issue'),
           click: () =>
             void shell.openExternal('https://github.com/harborclient/harborclient/issues')
         },
         {
+          label: 'Check for Updates',
+          accelerator: acceleratorFor(accelerators, 'check-for-updates'),
+          click: () => sendMenuAction(window, 'check-for-updates')
+        },
+        {
           label: 'About',
+          accelerator: acceleratorFor(accelerators, 'about'),
           click: () => sendMenuAction(window, 'about')
         }
       ]

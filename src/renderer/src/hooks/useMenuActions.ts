@@ -19,8 +19,15 @@ import {
   dispatchNewRequest,
   importFromMenu,
   runSync,
-  saveFromMenu
+  saveFromMenu,
+  sendRequest
 } from '#/renderer/src/store/thunks';
+import { activateNextTab, activatePreviousTab } from '#/renderer/src/store/slices/tabsSlice';
+import {
+  restoreLastFocusWithoutRing,
+  useLastFocusedElement
+} from '#/renderer/src/hooks/useLastFocusedElement';
+import { focusSidebarSearch } from '#/renderer/src/ui/Sidebar/focusSidebarSearch';
 import { formatErrorMessage, showAlert } from '#/renderer/src/ui/modals/dialogHelpers';
 
 /**
@@ -30,6 +37,7 @@ export function useMenuActions(): void {
   const dispatch = useAppDispatch();
   const sidebarVisible = useAppSelector(selectSidebarVisible);
   const aiSidebarVisible = useAppSelector(selectAiSidebarVisible);
+  const lastFocusedRef = useLastFocusedElement();
 
   /**
    * Keeps the View menu Sidebar checkbox aligned with effective sidebar visibility.
@@ -91,8 +99,26 @@ export function useMenuActions(): void {
         case 'toggle-sidebar':
           dispatch(toggleSidebar());
           break;
+        case 'focus-sidebar-search':
+          focusSidebarSearch(dispatch);
+          break;
         case 'toggle-ai-sidebar':
           dispatch(toggleAiSidebar());
+          break;
+        case 'send-request':
+          void dispatch(sendRequest())
+            .catch((err: unknown) => {
+              showAlert(dispatch, formatErrorMessage(err, 'Failed to send request'));
+            })
+            .finally(() => {
+              restoreLastFocusWithoutRing(lastFocusedRef);
+            });
+          break;
+        case 'previous-request-tab':
+          dispatch(activatePreviousTab());
+          break;
+        case 'next-request-tab':
+          dispatch(activateNextTab());
           break;
         case 'about':
           dispatch(openAboutModal());
@@ -103,7 +129,7 @@ export function useMenuActions(): void {
       }
     });
     return unsubscribe;
-  }, [dispatch]);
+  }, [dispatch, lastFocusedRef]);
 
   /**
    * Routes plugin menu command clicks to registered plugin command handlers.

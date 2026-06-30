@@ -25,7 +25,7 @@ function LinuxWindowControls(): JSX.Element {
         aria-label="Minimize"
         onClick={() => void window.api.minimizeWindow()}
       >
-        <FaIcon icon={faMinus} className="h-3 w-3" />
+        <FaIcon icon={faMinus} className="h-4 w-4" />
       </button>
       <button
         type="button"
@@ -33,7 +33,7 @@ function LinuxWindowControls(): JSX.Element {
         aria-label="Maximize"
         onClick={() => void window.api.toggleMaximizeWindow()}
       >
-        <FaIcon icon={faWindowMaximize} className="h-3 w-3" />
+        <FaIcon icon={faWindowMaximize} className="h-4 w-4" />
       </button>
       <button
         type="button"
@@ -41,7 +41,7 @@ function LinuxWindowControls(): JSX.Element {
         aria-label="Close"
         onClick={() => void window.api.closeWindow()}
       >
-        <FaIcon icon={faXmark} className="h-3.5 w-3.5" />
+        <FaIcon icon={faXmark} className="h-4 w-4" />
       </button>
     </div>
   );
@@ -59,7 +59,7 @@ function LinuxTitleBar(): JSX.Element {
       <div className="flex flex-1 items-center">
         <LinuxMenuBar />
       </div>
-      <span className="pointer-events-none truncate px-3 text-sm text-text-secondary">
+      <span className="pointer-events-none truncate px-3 text-[14px] text-text-secondary">
         {APP_TITLE}
       </span>
       <div className="flex flex-1 justify-end">

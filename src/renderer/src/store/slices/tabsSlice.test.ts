@@ -3,6 +3,8 @@ import { defaultAuth } from '#/shared/auth';
 import type { SavedRequest, ScriptTestResult, SendResult } from '#/shared/types';
 import { draftFromSaved, isTabDirty } from '#/renderer/src/store/drafts';
 import tabsReducer, {
+  activateNextTab,
+  activatePreviousTab,
   closeTab,
   closeTabsForCollection,
   closeTabsForRequest,
@@ -229,5 +231,45 @@ describe('tabsSlice loadRequest', () => {
     const tab = state.tabs.find((t) => t.tabId === tabId);
     expect(tab?.response).toBeNull();
     expect(tab?.testResults).toEqual([]);
+  });
+});
+
+describe('tabsSlice tab cycling', () => {
+  it('does not change active tab when zero or one tab is open', () => {
+    let state = tabsReducer(undefined, { type: 'unknown' });
+    const singleTabId = state.activeTabId;
+
+    state = tabsReducer(state, activateNextTab());
+    expect(state.activeTabId).toBe(singleTabId);
+
+    state = tabsReducer(state, activatePreviousTab());
+    expect(state.activeTabId).toBe(singleTabId);
+
+    state = tabsReducer(state, closeTab(singleTabId));
+    expect(state.tabs).toHaveLength(0);
+
+    state = tabsReducer(state, activateNextTab());
+    expect(state.activeTabId).toBe('');
+  });
+
+  it('wraps forward and backward across multiple tabs', () => {
+    let state = tabsReducer(undefined, { type: 'unknown' });
+    const firstTabId = state.activeTabId;
+    state = tabsReducer(state, newTab());
+    const secondTabId = state.activeTabId;
+    state = tabsReducer(state, newTab());
+    const thirdTabId = state.activeTabId;
+
+    state = tabsReducer(state, activatePreviousTab());
+    expect(state.activeTabId).toBe(secondTabId);
+
+    state = tabsReducer(state, activatePreviousTab());
+    expect(state.activeTabId).toBe(firstTabId);
+
+    state = tabsReducer(state, activatePreviousTab());
+    expect(state.activeTabId).toBe(thirdTabId);
+
+    state = tabsReducer(state, activateNextTab());
+    expect(state.activeTabId).toBe(firstTabId);
   });
 });

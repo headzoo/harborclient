@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(menu): add new menu actions and shortcuts for improved navigation. (`c88df8a`)
+
 ## 1.9.2 - 2026-06-30
 
 - feat(shortcuts): add new menu actions and their default accelerators. (`809c61d`)

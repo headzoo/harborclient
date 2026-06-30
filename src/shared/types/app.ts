@@ -13,7 +13,13 @@ export type MenuActionId =
   | 'join-shared-collection'
   | 'sync'
   | 'toggle-sidebar'
+  | 'focus-sidebar-search'
   | 'toggle-ai-sidebar'
+  | 'send-request'
+  | 'previous-request-tab'
+  | 'next-request-tab'
+  | 'documentation'
+  | 'report-issue'
   | 'about'
   | 'check-for-updates';
 

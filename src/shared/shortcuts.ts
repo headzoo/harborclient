@@ -20,10 +20,18 @@ export type ShortcutId =
   | 'paste'
   | 'select-all'
   | 'toggle-sidebar'
+  | 'focus-sidebar-search'
   | 'toggle-ai-sidebar'
+  | 'send-request'
+  | 'previous-request-tab'
+  | 'next-request-tab'
   | 'toggle-fullscreen'
   | 'zoom-in'
-  | 'zoom-out';
+  | 'zoom-out'
+  | 'documentation'
+  | 'report-issue'
+  | 'check-for-updates'
+  | 'about';
 
 /**
  * Electron menu role names used by built-in shortcuts.
@@ -203,11 +211,39 @@ export const SHORTCUT_DEFS: ShortcutDef[] = [
     actionId: 'toggle-sidebar'
   },
   {
+    id: 'focus-sidebar-search',
+    label: 'Focus sidebar search',
+    defaultAccelerator: 'CmdOrCtrl+F',
+    kind: 'action',
+    actionId: 'focus-sidebar-search'
+  },
+  {
     id: 'toggle-ai-sidebar',
     label: 'Toggle agent chat',
     defaultAccelerator: 'CmdOrCtrl+Shift+B',
     kind: 'action',
     actionId: 'toggle-ai-sidebar'
+  },
+  {
+    id: 'send-request',
+    label: 'Send request',
+    defaultAccelerator: 'F5',
+    kind: 'action',
+    actionId: 'send-request'
+  },
+  {
+    id: 'previous-request-tab',
+    label: 'Previous request tab',
+    defaultAccelerator: 'CmdOrCtrl+Shift+Comma',
+    kind: 'action',
+    actionId: 'previous-request-tab'
+  },
+  {
+    id: 'next-request-tab',
+    label: 'Next request tab',
+    defaultAccelerator: 'CmdOrCtrl+Shift+Period',
+    kind: 'action',
+    actionId: 'next-request-tab'
   },
   {
     id: 'toggle-fullscreen',
@@ -229,6 +265,34 @@ export const SHORTCUT_DEFS: ShortcutDef[] = [
     defaultAccelerator: 'CmdOrCtrl+-',
     kind: 'role',
     role: 'zoomOut'
+  },
+  {
+    id: 'documentation',
+    label: 'Documentation',
+    defaultAccelerator: 'CmdOrCtrl+Shift+D',
+    kind: 'action',
+    actionId: 'documentation'
+  },
+  {
+    id: 'report-issue',
+    label: 'Report issue',
+    defaultAccelerator: 'CmdOrCtrl+Shift+R',
+    kind: 'action',
+    actionId: 'report-issue'
+  },
+  {
+    id: 'check-for-updates',
+    label: 'Check for updates',
+    defaultAccelerator: 'CmdOrCtrl+Shift+U',
+    kind: 'action',
+    actionId: 'check-for-updates'
+  },
+  {
+    id: 'about',
+    label: 'About',
+    defaultAccelerator: 'CmdOrCtrl+Shift+A',
+    kind: 'action',
+    actionId: 'about'
   }
 ];
 
