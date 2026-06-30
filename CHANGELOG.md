@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.9.2 - 2026-06-30
+
 - feat(shortcuts): add new menu actions and their default accelerators. (`809c61d`)
 
 ## 1.9.1 - 2026-06-30
