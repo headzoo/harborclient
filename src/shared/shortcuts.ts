@@ -6,8 +6,13 @@ import type { MenuActionId } from '#/shared/types/app';
 export type ShortcutId =
   | 'new-request'
   | 'new-collection'
+  | 'sync'
   | 'save'
   | 'settings'
+  | 'plugins'
+  | 'team-hubs'
+  | 'sharing-keys'
+  | 'import'
   | 'undo'
   | 'redo'
   | 'cut'
@@ -100,6 +105,13 @@ export const SHORTCUT_DEFS: ShortcutDef[] = [
     actionId: 'new-collection'
   },
   {
+    id: 'sync',
+    label: 'Sync storage',
+    defaultAccelerator: 'CmdOrCtrl+Shift+S',
+    kind: 'action',
+    actionId: 'sync'
+  },
+  {
     id: 'save',
     label: 'Save request',
     defaultAccelerator: 'CmdOrCtrl+S',
@@ -112,6 +124,34 @@ export const SHORTCUT_DEFS: ShortcutDef[] = [
     defaultAccelerator: 'CmdOrCtrl+,',
     kind: 'action',
     actionId: 'settings'
+  },
+  {
+    id: 'plugins',
+    label: 'Plugins',
+    defaultAccelerator: 'CmdOrCtrl+Shift+P',
+    kind: 'action',
+    actionId: 'plugins'
+  },
+  {
+    id: 'team-hubs',
+    label: 'Team Hub',
+    defaultAccelerator: 'CmdOrCtrl+Shift+H',
+    kind: 'action',
+    actionId: 'team-hubs'
+  },
+  {
+    id: 'sharing-keys',
+    label: 'Sharing Keys',
+    defaultAccelerator: 'CmdOrCtrl+Shift+K',
+    kind: 'action',
+    actionId: 'sharing-keys'
+  },
+  {
+    id: 'import',
+    label: 'Import',
+    defaultAccelerator: 'CmdOrCtrl+Shift+I',
+    kind: 'action',
+    actionId: 'import'
   },
   {
     id: 'undo',

@@ -68,6 +68,7 @@ export function buildMenu(
         },
         {
           label: 'Sync Storage',
+          accelerator: acceleratorFor(accelerators, 'sync'),
           click: () => sendMenuAction(window, 'sync')
         },
         {
@@ -83,15 +84,18 @@ export function buildMenu(
         },
         {
           label: 'Plugins',
+          accelerator: acceleratorFor(accelerators, 'plugins'),
           click: () => sendMenuAction(window, 'plugins')
         },
         {
           label: 'Team Hub',
+          accelerator: acceleratorFor(accelerators, 'team-hubs'),
           click: () => sendMenuAction(window, 'team-hubs')
         },
         { type: 'separator' },
         {
           label: 'Sharing Keys',
+          accelerator: acceleratorFor(accelerators, 'sharing-keys'),
           click: () => sendMenuAction(window, 'sharing-keys')
         },
         {
@@ -100,6 +104,7 @@ export function buildMenu(
         },
         {
           label: 'Import',
+          accelerator: acceleratorFor(accelerators, 'import'),
           click: () => sendMenuAction(window, 'import')
         },
         { type: 'separator' },

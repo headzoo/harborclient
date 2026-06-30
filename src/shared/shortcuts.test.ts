@@ -34,25 +34,48 @@ describe('resolveShortcuts', () => {
   });
 
   it('applies overrides on top of defaults', () => {
-    const save = resolveShortcuts({ save: 'CmdOrCtrl+Shift+S' }).find(
+    const save = resolveShortcuts({ save: 'CmdOrCtrl+Alt+S' }).find(
       (binding) => binding.id === 'save'
     );
-    expect(save?.accelerator).toBe('CmdOrCtrl+Shift+S');
+    expect(save?.accelerator).toBe('CmdOrCtrl+Alt+S');
+  });
+
+  it('includes default bindings for File menu shortcuts', () => {
+    const bindings = resolveShortcuts({});
+    expect(bindings.find((binding) => binding.id === 'sync')?.accelerator).toBe(
+      'CmdOrCtrl+Shift+S'
+    );
+    expect(bindings.find((binding) => binding.id === 'plugins')?.accelerator).toBe(
+      'CmdOrCtrl+Shift+P'
+    );
+    expect(bindings.find((binding) => binding.id === 'team-hubs')?.accelerator).toBe(
+      'CmdOrCtrl+Shift+H'
+    );
+    expect(bindings.find((binding) => binding.id === 'sharing-keys')?.accelerator).toBe(
+      'CmdOrCtrl+Shift+K'
+    );
+    expect(bindings.find((binding) => binding.id === 'import')?.accelerator).toBe(
+      'CmdOrCtrl+Shift+I'
+    );
   });
 });
 
 describe('bindingsToOverrides', () => {
   it('stores only values that differ from defaults', () => {
-    const bindings = resolveShortcuts({ save: 'CmdOrCtrl+Shift+S' });
+    const bindings = resolveShortcuts({ save: 'CmdOrCtrl+Alt+S' });
     expect(bindingsToOverrides(bindings)).toEqual({
-      save: 'CmdOrCtrl+Shift+S'
+      save: 'CmdOrCtrl+Alt+S'
     });
   });
 });
 
 describe('validateShortcutOverrides', () => {
   it('accepts valid overrides', () => {
-    expect(validateShortcutOverrides({ save: 'CmdOrCtrl+Shift+S' }).valid).toBe(true);
+    expect(validateShortcutOverrides({ save: 'CmdOrCtrl+Alt+S' }).valid).toBe(true);
+  });
+
+  it('accepts all default bindings without conflicts', () => {
+    expect(validateShortcutOverrides({}).valid).toBe(true);
   });
 
   it('rejects modifier-less letter keys', () => {
@@ -63,8 +86,8 @@ describe('validateShortcutOverrides', () => {
 
   it('rejects duplicate accelerators', () => {
     const result = validateShortcutOverrides({
-      save: 'CmdOrCtrl+Shift+S',
-      settings: 'CmdOrCtrl+Shift+S'
+      save: 'CmdOrCtrl+Alt+S',
+      settings: 'CmdOrCtrl+Alt+S'
     });
     expect(result.valid).toBe(false);
     expect(result.errors.save).toMatch(/already assigned/i);
