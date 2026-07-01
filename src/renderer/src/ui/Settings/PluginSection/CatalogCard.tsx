@@ -1,6 +1,7 @@
 import type { JSX, KeyboardEvent } from 'react';
 import type { PluginCatalogEntry } from '#/shared/plugin/catalog';
 import { PLUGIN_CATALOG_CATEGORY_LABELS } from '#/shared/plugin/catalogCategories';
+import { ScreenshotCarousel } from './ScreenshotCarousel';
 
 interface Props {
   /**
@@ -18,6 +19,8 @@ interface Props {
  * Compact marketplace preview card; opens the detail modal on activation.
  */
 export function CatalogCard({ entry, onOpen }: Props): JSX.Element {
+  const images = entry.screenshots ?? (entry.screenshot ? [entry.screenshot] : []);
+
   /**
    * Opens the detail modal when the card is activated from the keyboard.
    *
@@ -38,12 +41,8 @@ export function CatalogCard({ entry, onOpen }: Props): JSX.Element {
       onClick={onOpen}
       onKeyDown={handleKeyDown}
     >
-      {entry.screenshot ? (
-        <img
-          src={entry.screenshot}
-          alt=""
-          className="aspect-video w-full border-b border-separator object-cover object-top"
-        />
+      {images.length > 0 ? (
+        <ScreenshotCarousel variant="card" images={images} stopPropagation />
       ) : (
         <div
           className="flex aspect-video w-full items-center justify-center border-b border-separator bg-panel text-[14px] text-muted"

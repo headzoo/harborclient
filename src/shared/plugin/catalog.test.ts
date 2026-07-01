@@ -53,6 +53,28 @@ describe('parsePluginCatalog', () => {
     });
   });
 
+  it('accepts optional plural screenshot URLs', () => {
+    expect(
+      parsePluginCatalog({
+        ...validCatalog,
+        plugins: [
+          {
+            ...validCatalog.plugins[0],
+            screenshots: ['https://example.com/a.png', 'https://example.com/b.png']
+          }
+        ]
+      })
+    ).toEqual({
+      ...validCatalog,
+      plugins: [
+        {
+          ...validCatalog.plugins[0],
+          screenshots: ['https://example.com/a.png', 'https://example.com/b.png']
+        }
+      ]
+    });
+  });
+
   it('rejects non-GitHub repository URLs', () => {
     expect(() =>
       parsePluginCatalog({

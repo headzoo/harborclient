@@ -70,6 +70,28 @@ describe('manifestSchema', () => {
     expect(manifest.categories).toBeUndefined();
   });
 
+  it('parses an optional summary field', () => {
+    const manifest = parsePluginManifest({
+      ...validManifest,
+      summary: 'Adds a sidebar panel for API audit checks.'
+    });
+    expect(manifest.summary).toBe('Adds a sidebar panel for API audit checks.');
+  });
+
+  it('leaves summary undefined when omitted', () => {
+    const manifest = parsePluginManifest(validManifest);
+    expect(manifest.summary).toBeUndefined();
+  });
+
+  it('rejects an empty summary string', () => {
+    expect(() =>
+      parsePluginManifest({
+        ...validManifest,
+        summary: ''
+      })
+    ).toThrow();
+  });
+
   it('preserves modals contributions', () => {
     const manifest = parsePluginManifest({
       ...validManifest,

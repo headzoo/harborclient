@@ -51,6 +51,8 @@ export interface PluginManifest {
   version: string;
   author?: string;
   description?: string;
+  /** Short one-line marketplace summary shown in listings and the detail view. */
+  summary?: string;
   /** Marketplace category slugs for discovery metadata. */
   categories?: PluginCatalogCategory[];
   icon?: string;
@@ -158,7 +160,8 @@ export interface PluginAssetResult {
 export interface PluginGitPreview {
   manifest: PluginManifest;
   descriptionMarkdown?: string;
-  screenshotSrc?: string;
+  /** Resolved screenshot URLs or data URLs for marketplace preview. */
+  screenshotSrcs?: string[];
 }
 
 /**

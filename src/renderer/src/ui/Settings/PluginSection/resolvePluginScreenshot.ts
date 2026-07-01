@@ -14,6 +14,23 @@ function screenshotRelativePath(
 }
 
 /**
+ * Returns true when a manifest screenshot entry is an absolute HTTP(S) URL.
+ *
+ * @param screenshot - Manifest screenshot string or object.
+ */
+function isAbsoluteScreenshotUrl(
+  screenshot: NonNullable<PluginInfo['manifest']['screenshots']>[number]
+): boolean {
+  const value = typeof screenshot === 'string' ? screenshot : screenshot.path;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Builds a data URL from a plugin asset read over IPC.
  *
  * @param asset - Base64 asset payload from the main process.
@@ -24,59 +41,101 @@ export function pluginAssetToDataUrl(asset: { content: string; mimeType: string 
 }
 
 /**
- * Loads the best available screenshot for an installed plugin.
+ * Resolves catalog screenshot URLs from a marketplace listing.
+ *
+ * @param catalogScreenshots - Optional plural screenshots from the catalog entry.
+ * @param catalogScreenshot - Optional singular screenshot from the catalog entry.
+ * @returns Catalog screenshot URLs when available.
+ */
+function resolveCatalogScreenshotUrls(
+  catalogScreenshots?: string[],
+  catalogScreenshot?: string
+): string[] {
+  if (catalogScreenshots?.length) {
+    return catalogScreenshots;
+  }
+  if (catalogScreenshot) {
+    return [catalogScreenshot];
+  }
+  return [];
+}
+
+/**
+ * Loads the best available screenshots for an installed plugin.
  *
  * Manifest assets on disk take priority, then catalog URLs, then GitHub raw fallbacks.
  *
  * @param plugin - Installed plugin row.
- * @param catalogScreenshot - Optional marketplace screenshot URL for this plugin id.
- * @returns Resolved screenshot URL/data URL, or undefined when unavailable.
+ * @param catalogScreenshots - Optional marketplace screenshot URLs for this plugin id.
+ * @param catalogScreenshot - Optional singular marketplace screenshot URL.
+ * @returns Resolved screenshot URLs/data URLs in manifest order when available.
  */
-export async function loadInstalledPluginScreenshotSrc(
+export async function loadInstalledPluginScreenshotSrcs(
   plugin: PluginInfo,
+  catalogScreenshots?: string[],
   catalogScreenshot?: string
-): Promise<string | undefined> {
-  const manifestScreenshot = plugin.manifest.screenshots?.[0];
-  if (manifestScreenshot) {
-    const relativePath = screenshotRelativePath(manifestScreenshot);
-    try {
-      const asset = await window.api.readPluginAsset(plugin.id, relativePath);
-      return pluginAssetToDataUrl(asset);
-    } catch {
-      const repoUrl = plugin.repoUrl;
-      const ref = plugin.repoRef ?? 'main';
-      if (repoUrl) {
-        const rawUrl = buildGitHubRawContentUrl(repoUrl, ref, relativePath);
-        if (rawUrl) {
-          return rawUrl;
+): Promise<string[]> {
+  const manifestScreenshots = plugin.manifest.screenshots;
+  if (manifestScreenshots?.length) {
+    const resolved: string[] = [];
+
+    for (const manifestScreenshot of manifestScreenshots) {
+      if (isAbsoluteScreenshotUrl(manifestScreenshot)) {
+        resolved.push(screenshotRelativePath(manifestScreenshot));
+        continue;
+      }
+
+      const relativePath = screenshotRelativePath(manifestScreenshot);
+      try {
+        const asset = await window.api.readPluginAsset(plugin.id, relativePath);
+        resolved.push(pluginAssetToDataUrl(asset));
+        continue;
+      } catch {
+        const repoUrl = plugin.repoUrl;
+        const ref = plugin.repoRef ?? 'main';
+        if (repoUrl) {
+          const rawUrl = buildGitHubRawContentUrl(repoUrl, ref, relativePath);
+          if (rawUrl) {
+            resolved.push(rawUrl);
+          }
         }
       }
     }
+
+    if (resolved.length > 0) {
+      return resolved;
+    }
   }
 
-  if (catalogScreenshot) {
-    return catalogScreenshot;
+  const catalogUrls = resolveCatalogScreenshotUrls(catalogScreenshots, catalogScreenshot);
+  if (catalogUrls.length > 0) {
+    return catalogUrls;
   }
 
   const repoUrl = plugin.repoUrl;
   const ref = plugin.repoRef ?? 'main';
   if (repoUrl) {
-    return buildGitHubRawContentUrl(repoUrl, ref, 'screenshot.png') ?? undefined;
+    const fallback = buildGitHubRawContentUrl(repoUrl, ref, 'screenshot.png');
+    return fallback ? [fallback] : [];
   }
 
-  return undefined;
+  return [];
 }
 
 /**
- * Resolves the screenshot shown in a marketplace preview modal.
+ * Resolves the screenshots shown in a marketplace preview modal.
  *
  * @param entry - Marketplace listing.
  * @param preview - Remote preview payload when manifest fetch succeeded.
- * @returns Screenshot URL/data URL, or undefined when no preview image exists.
+ * @returns Screenshot URLs/data URLs in priority order.
  */
-export function resolveCatalogPluginScreenshotSrc(
+export function resolveCatalogPluginScreenshotSrcs(
   entry: PluginCatalogEntry,
   preview: PluginGitPreview | null
-): string | undefined {
-  return preview?.screenshotSrc ?? entry.screenshot;
+): string[] {
+  if (preview?.screenshotSrcs?.length) {
+    return preview.screenshotSrcs;
+  }
+
+  return resolveCatalogScreenshotUrls(entry.screenshots, entry.screenshot);
 }

@@ -39,8 +39,59 @@ describe('fetchPluginPreviewFromGit', () => {
     ).resolves.toEqual({
       manifest,
       descriptionMarkdown: readme,
-      screenshotSrc: expect.stringMatching(/^data:image\/png;base64,/)
+      screenshotSrcs: [expect.stringMatching(/^data:image\/png;base64,/)]
     });
+  });
+
+  it('resolves every manifest screenshot entry', async () => {
+    const manifestWithScreenshots = {
+      ...manifest,
+      screenshots: ['assets/one.png', 'assets/two.png']
+    };
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.endsWith('/manifest.json')) {
+        return new Response(JSON.stringify(manifestWithScreenshots), { status: 200 });
+      }
+      if (url.endsWith('/assets/one.png')) {
+        return new Response(new Uint8Array([1]), { status: 200 });
+      }
+      if (url.endsWith('/assets/two.png')) {
+        return new Response(new Uint8Array([2]), { status: 200 });
+      }
+      return new Response('not found', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { fetchPluginPreviewFromGit } = await import('#/main/plugins/gitPluginPreview');
+    const preview = await fetchPluginPreviewFromGit('https://github.com/example/demo-plugin');
+    expect(preview.screenshotSrcs).toHaveLength(2);
+    expect(preview.screenshotSrcs?.[0]).toMatch(/^data:image\/png;base64,/);
+    expect(preview.screenshotSrcs?.[1]).toMatch(/^data:image\/png;base64,/);
+  });
+
+  it('passes through absolute screenshot URLs from the manifest', async () => {
+    const absoluteUrl = 'https://example.com/screenshot-a.png';
+    const manifestWithAbsoluteUrl = {
+      ...manifest,
+      screenshots: [absoluteUrl, 'assets/local.png']
+    };
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.endsWith('/manifest.json')) {
+        return new Response(JSON.stringify(manifestWithAbsoluteUrl), { status: 200 });
+      }
+      if (url.endsWith('/assets/local.png')) {
+        return new Response(new Uint8Array([1]), { status: 200 });
+      }
+      return new Response('not found', { status: 404 });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { fetchPluginPreviewFromGit } = await import('#/main/plugins/gitPluginPreview');
+    const preview = await fetchPluginPreviewFromGit('https://github.com/example/demo-plugin');
+    expect(preview.screenshotSrcs).toEqual([
+      absoluteUrl,
+      expect.stringMatching(/^data:image\/png;base64,/)
+    ]);
   });
 
   it('throws for non-GitHub repository URLs', async () => {
@@ -82,7 +133,7 @@ describe('fetchPluginPreviewFromGit', () => {
     ).resolves.toEqual({
       manifest,
       descriptionMarkdown: undefined,
-      screenshotSrc: undefined
+      screenshotSrcs: undefined
     });
   });
 });

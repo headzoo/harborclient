@@ -7,6 +7,7 @@ import { faCircleCheck } from '#/renderer/src/fontawesome';
 import { PERMISSION_LABELS } from './constants';
 import { ErrorMessages } from './ErrorMessages';
 import { PluginReadmeMarkdown } from './PluginReadmeMarkdown';
+import { ScreenshotCarousel } from './ScreenshotCarousel';
 
 interface InstalledProps {
   /**
@@ -30,9 +31,9 @@ interface InstalledProps {
   descriptionLoadState: 'idle' | 'loading' | 'loaded' | 'error';
 
   /**
-   * Screenshot URL or data URL when available.
+   * Screenshot URLs or data URLs when available.
    */
-  screenshotSrc?: string;
+  screenshotSrcs?: string[];
 }
 
 interface CatalogProps {
@@ -62,9 +63,9 @@ interface CatalogProps {
   previewError: string | null;
 
   /**
-   * Screenshot URL or data URL when available.
+   * Screenshot URLs or data URLs when available.
    */
-  screenshotSrc?: string;
+  screenshotSrcs?: string[];
 
   /**
    * Installed plugin row when this catalog id is already present.
@@ -129,12 +130,13 @@ export function PluginDetailModal(props: Props): JSX.Element {
   const manifest = isInstalled ? props.plugin.manifest : props.preview?.manifest;
   const entry = props.mode === 'catalog' ? props.entry : undefined;
   const title = isInstalled ? props.plugin.name : (entry?.name ?? 'Plugin');
+  const summary = entry?.summary ?? manifest?.summary;
   const version = isInstalled
     ? props.plugin.version
     : (plugin?.version ?? entry?.version ?? props.preview?.manifest.version ?? '—');
   const repoUrl = isInstalled ? props.plugin.repoUrl : entry?.repoUrl;
   const repoRef = isInstalled ? props.plugin.repoRef : entry?.ref;
-  const screenshotSrc = props.screenshotSrc;
+  const screenshotSrcs = props.screenshotSrcs;
   const details = manifest
     ? manifestDetails(manifest, entry?.author)
     : entry
@@ -191,12 +193,8 @@ export function PluginDetailModal(props: Props): JSX.Element {
       closeDisabled={closeDisabled}
       disableEscape={closeDisabled}
     >
-      {screenshotSrc ? (
-        <img
-          src={screenshotSrc}
-          alt=""
-          className="mb-4 aspect-video w-full rounded-md border border-separator object-cover object-top"
-        />
+      {screenshotSrcs && screenshotSrcs.length > 0 ? (
+        <ScreenshotCarousel variant="modal" images={screenshotSrcs} />
       ) : null}
 
       {props.mode === 'catalog' && props.previewError ? (
@@ -204,6 +202,8 @@ export function PluginDetailModal(props: Props): JSX.Element {
           {props.previewError}
         </p>
       ) : null}
+
+      {summary ? <p className="m-0 mb-4 text-[14px] text-text">{summary}</p> : null}
 
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[14px]">
         <dt className="text-muted">Version</dt>

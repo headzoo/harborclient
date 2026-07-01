@@ -1,6 +1,7 @@
 import { config, library } from '@fortawesome/fontawesome-svg-core';
 import {
   faAngleLeft,
+  faAngleRight,
   faBars,
   faCaretRight,
   faChevronDown,
@@ -32,6 +33,7 @@ import {
 
 library.add(
   faAngleLeft,
+  faAngleRight,
   faXmark,
   faPlus,
   faBars,
@@ -64,6 +66,7 @@ config.autoAddCss = false;
 
 export {
   faAngleLeft,
+  faAngleRight,
   faBars,
   faCaretRight,
   faChevronDown,

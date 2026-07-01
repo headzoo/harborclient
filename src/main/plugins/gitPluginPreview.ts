@@ -17,6 +17,21 @@ function screenshotRelativePath(screenshot: PluginScreenshot): string {
 }
 
 /**
+ * Returns true when a manifest screenshot entry is an absolute HTTP(S) URL.
+ *
+ * @param screenshot - Manifest screenshot string or object.
+ */
+function isAbsoluteScreenshotUrl(screenshot: PluginScreenshot): boolean {
+  const value = typeof screenshot === 'string' ? screenshot : screenshot.path;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Returns a MIME type guess for plugin asset paths.
  *
  * @param filePath - Plugin-relative asset path.
@@ -99,13 +114,53 @@ async function fetchScreenshotFromPaths(
 }
 
 /**
+ * Resolves every manifest screenshot entry to a displayable URL or data URL.
+ *
+ * Absolute URLs pass through unchanged. Repository-relative paths are fetched
+ * from GitHub raw content. When the manifest declares no screenshots, falls
+ * back to `screenshot.png` at the repository root.
+ *
+ * @param repoUrl - Public GitHub repository URL.
+ * @param ref - Branch, tag, or commit ref.
+ * @param screenshots - Optional manifest screenshot entries.
+ * @returns Resolved screenshot sources in manifest order.
+ */
+async function resolveManifestScreenshotSrcs(
+  repoUrl: string,
+  ref: string,
+  screenshots: PluginScreenshot[] | undefined
+): Promise<string[]> {
+  if (!screenshots?.length) {
+    const fallback = await fetchScreenshotFromPaths(repoUrl, ref, [SCREENSHOT_FALLBACK]);
+    return fallback ? [fallback] : [];
+  }
+
+  const resolved: string[] = [];
+
+  for (const screenshot of screenshots) {
+    if (isAbsoluteScreenshotUrl(screenshot)) {
+      resolved.push(screenshotRelativePath(screenshot));
+      continue;
+    }
+
+    const relativePath = screenshotRelativePath(screenshot);
+    const dataUrl = await fetchScreenshotFromPaths(repoUrl, ref, [relativePath]);
+    if (dataUrl) {
+      resolved.push(dataUrl);
+    }
+  }
+
+  return resolved;
+}
+
+/**
  * Fetches manifest.json and related preview assets from a public GitHub repository.
  *
  * Engine compatibility is not enforced so marketplace browsing works before upgrade.
  *
  * @param url - Public https (or http) repository URL.
  * @param ref - Optional branch or tag; defaults to `main`.
- * @returns Parsed manifest plus optional description markdown and screenshot data URL.
+ * @returns Parsed manifest plus optional description markdown and screenshot data URLs.
  * @throws When the URL is invalid, not GitHub-hosted, or manifest.json cannot be loaded.
  */
 export async function fetchPluginPreviewFromGit(
@@ -151,14 +206,15 @@ export async function fetchPluginPreviewFromGit(
     }
   }
 
-  const screenshotPaths = manifest.screenshots?.[0]
-    ? [screenshotRelativePath(manifest.screenshots[0]), SCREENSHOT_FALLBACK]
-    : [SCREENSHOT_FALLBACK];
-  const screenshotSrc = await fetchScreenshotFromPaths(normalizedUrl, resolvedRef, screenshotPaths);
+  const screenshotSrcs = await resolveManifestScreenshotSrcs(
+    normalizedUrl,
+    resolvedRef,
+    manifest.screenshots
+  );
 
   return {
     manifest,
     descriptionMarkdown,
-    screenshotSrc
+    screenshotSrcs: screenshotSrcs.length > 0 ? screenshotSrcs : undefined
   };
 }

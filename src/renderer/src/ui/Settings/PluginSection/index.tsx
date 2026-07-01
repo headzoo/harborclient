@@ -57,8 +57,8 @@ import { GitInstallModal } from './GitInstallModal';
 import { InstallModal } from './InstallModal';
 import { PluginDetailModal } from './PluginDetailModal';
 import {
-  loadInstalledPluginScreenshotSrc,
-  resolveCatalogPluginScreenshotSrc
+  loadInstalledPluginScreenshotSrcs,
+  resolveCatalogPluginScreenshotSrcs
 } from './resolvePluginScreenshot';
 import { SourcesModal } from './SourcesModal';
 import { TableExternalLink } from './TableExternalLink';
@@ -114,7 +114,7 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
   const [descriptionLoadState, setDescriptionLoadState] = useState<
     'idle' | 'loading' | 'loaded' | 'error'
   >('idle');
-  const [detailScreenshotSrc, setDetailScreenshotSrc] = useState<string | undefined>(undefined);
+  const [detailScreenshotSrcs, setDetailScreenshotSrcs] = useState<string[]>([]);
   const [showInstallModal, setShowInstallModal] = useState(false);
   const [showGitInstallModal, setShowGitInstallModal] = useState(false);
   const [gitInstallUrl, setGitInstallUrl] = useState('');
@@ -358,12 +358,13 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
       };
     }
 
-    void loadInstalledPluginScreenshotSrc(
+    void loadInstalledPluginScreenshotSrcs(
       detailPlugin,
+      catalogById.get(detailPlugin.id)?.screenshots,
       catalogById.get(detailPlugin.id)?.screenshot
-    ).then((screenshotSrc) => {
+    ).then((screenshotSrcs) => {
       if (active) {
-        setDetailScreenshotSrc(screenshotSrc);
+        setDetailScreenshotSrcs(screenshotSrcs);
       }
     });
 
@@ -492,7 +493,7 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
   const openDetail = (plugin: PluginInfo): void => {
     setDescriptionMarkdown('');
     setDescriptionLoadState(plugin.manifest.description ? 'loading' : 'idle');
-    setDetailScreenshotSrc(undefined);
+    setDetailScreenshotSrcs([]);
     setDetailPlugin(plugin);
   };
 
@@ -599,7 +600,7 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
     setDetailPlugin(null);
     setDescriptionMarkdown('');
     setDescriptionLoadState('idle');
-    setDetailScreenshotSrc(undefined);
+    setDetailScreenshotSrcs([]);
   };
 
   /**
@@ -1184,7 +1185,7 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
           preview={catalogPreview}
           previewLoadState={catalogPreviewLoadState}
           previewError={catalogPreviewError}
-          screenshotSrc={resolveCatalogPluginScreenshotSrc(catalogDetailEntry, catalogPreview)}
+          screenshotSrcs={resolveCatalogPluginScreenshotSrcs(catalogDetailEntry, catalogPreview)}
           installed={findInstalledCatalogPlugin(plugins, catalogDetailEntry.id)}
           actionBusy={catalogActionBusyId === catalogDetailEntry.id}
           onClose={closeCatalogDetail}
@@ -1204,7 +1205,7 @@ export function PluginsSection({ onClose }: Props): JSX.Element {
           plugin={detailPlugin}
           descriptionMarkdown={descriptionMarkdown}
           descriptionLoadState={descriptionLoadState}
-          screenshotSrc={detailScreenshotSrc}
+          screenshotSrcs={detailScreenshotSrcs}
           onClose={closeDetail}
         />
       ) : null}

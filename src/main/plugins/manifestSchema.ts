@@ -44,6 +44,7 @@ export const pluginManifestSchema = z.object({
   version: z.string().min(1),
   author: z.string().optional(),
   description: z.string().optional(),
+  summary: z.string().min(1).optional(),
   categories: z.array(z.string().min(1)).transform(sanitizePluginCatalogCategories).optional(),
   icon: z.string().optional(),
   screenshots: z.array(screenshotEntry).optional(),
