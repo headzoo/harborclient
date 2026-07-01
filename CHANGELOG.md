@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- fix(catalog): update plugin version to v1.0.7 and enhance ScreenshotCarousel functionality. (`71ee623`)
 - feat(plugin-detail-modal): enhance screenshot handling in PluginDetailModal. (`a07c307`)
 
 ## 1.9.5 - 2026-07-01

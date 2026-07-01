@@ -3,6 +3,7 @@ import type { JSX, KeyboardEvent, MouseEvent } from 'react';
 import { useState } from 'react';
 
 import { faAngleLeft, faAngleRight } from '#/renderer/src/fontawesome';
+import { ScreenshotLightbox } from './ScreenshotLightbox';
 
 interface Props {
   /**
@@ -37,7 +38,7 @@ function imageFrameClassName(variant: Props['variant']): string {
   if (variant === 'card') {
     return `${base} border-b border-separator`;
   }
-  return `${base} rounded-md border border-separator mb-4`;
+  return `${base} rounded-md border border-separator`;
 }
 
 /**
@@ -50,6 +51,7 @@ export function ScreenshotCarousel({
   stopPropagation = false
 }: Props): JSX.Element | null {
   const [index, setIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const imageCount = images.length;
   const currentIndex = imageCount === 0 ? 0 : Math.min(index, imageCount - 1);
 
@@ -118,7 +120,33 @@ export function ScreenshotCarousel({
     }
   };
 
+  /**
+   * Opens the full-size screenshot lightbox without activating a parent card.
+   *
+   * @param event - Pointer event from the preview button.
+   */
+  const handleOpenLightbox = (event: MouseEvent<HTMLButtonElement>): void => {
+    if (stopPropagation) {
+      event.stopPropagation();
+    }
+    setLightboxOpen(true);
+  };
+
+  /**
+   * Prevents keyboard activation of the preview button from opening a parent card.
+   *
+   * @param event - Keyboard event from the preview button.
+   */
+  const handlePreviewKeyDown = (event: KeyboardEvent<HTMLButtonElement>): void => {
+    if (stopPropagation) {
+      event.stopPropagation();
+    }
+  };
+
   const frameClassName = imageFrameClassName(variant);
+  const previewLabel = hasMultiple
+    ? `View screenshot ${currentIndex + 1} of ${imageCount} in full size`
+    : 'View screenshot in full size';
 
   return (
     <div
@@ -129,7 +157,24 @@ export function ScreenshotCarousel({
       tabIndex={hasMultiple ? 0 : undefined}
       onKeyDown={handleKeyDown}
     >
-      <img src={currentImage} alt="" className={frameClassName} />
+      <button
+        type="button"
+        className={`block w-full cursor-zoom-in border-none bg-transparent p-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${variant === 'modal' ? 'mb-4' : ''}`}
+        aria-label={previewLabel}
+        onClick={handleOpenLightbox}
+        onKeyDown={handlePreviewKeyDown}
+      >
+        <img src={currentImage} alt="" aria-hidden className={frameClassName} />
+      </button>
+
+      {lightboxOpen ? (
+        <ScreenshotLightbox
+          images={images}
+          index={currentIndex}
+          onIndexChange={setIndex}
+          onClose={() => setLightboxOpen(false)}
+        />
+      ) : null}
 
       {hasMultiple ? (
         <>
