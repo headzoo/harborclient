@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- fix(catalog): update plugin version for plugin-catppuccin-latte to v1.0.4. (`39c4860`)
 - feat(catalog): add optional description field and update plugin version. (`615996f`)
 
 ## 1.9.4 - 2026-07-01
