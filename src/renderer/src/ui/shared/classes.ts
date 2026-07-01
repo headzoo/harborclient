@@ -31,6 +31,11 @@ export const separator = 'h-px bg-separator';
 
 export const sectionLabel = 'mb-1 px-2 text-[14px] font-medium uppercase tracking-wide text-muted';
 
+/**
+ * Toolbar button styling for destructive row and table actions on full pages.
+ */
+export const toolbarDangerButtonClass = 'text-danger hover:bg-danger/15';
+
 export const METHOD_CLASSES: Record<string, string> = {
   get: 'text-method-get',
   post: 'text-method-post',

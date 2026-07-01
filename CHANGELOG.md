@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(ui): enhance button styling and layout across various components. (`9b2b936`)
 - feat(theme): implement theme management in application menu. (`ba03f8a`)
 - fix(settings): update storage section label and enhance button styling. (`25aa8b8`)
 

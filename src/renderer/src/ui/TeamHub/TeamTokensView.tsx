@@ -22,6 +22,7 @@ import { faUsers } from '#/renderer/src/fontawesome';
 import { useTeamHubTokens } from '#/renderer/src/hooks/useTeamHubTokens';
 import { useTeamHubUsers } from '#/renderer/src/hooks/useTeamHubUsers';
 import { TeamSecretDialog } from '#/renderer/src/ui/TeamHub/TeamSecretDialog';
+import { toolbarDangerButtonClass } from '#/renderer/src/ui/shared/classes';
 
 interface Props {
   /**
@@ -224,7 +225,8 @@ export function TeamTokensView({ hub, onBack }: Props): JSX.Element {
               actions={
                 <Button
                   type="button"
-                  variant="primaryDanger"
+                  variant="toolbar"
+                  className={toolbarDangerButtonClass}
                   onClick={() => handleDeleteClick(token)}
                 >
                   Delete

@@ -20,6 +20,7 @@ import { refreshCollections } from '#/renderer/src/store/thunks/collections';
 import { createBlankConnection, providerLabel, settingsSectionMeta } from '../constants';
 import { sectionEntryBySection } from '../catalog/catalog';
 import { SettingLabel } from '../components/SettingLabel';
+import { toolbarDangerButtonClass } from '#/renderer/src/ui/shared/classes';
 import { DiscoverCollectionsModal } from './DiscoverCollectionsModal';
 import { ConnectionDeleteModal } from './ConnectionDeleteModal';
 import { ConnectionEditModal } from './ConnectionEditModal';
@@ -282,7 +283,7 @@ export function StorageLocationsSection(): JSX.Element {
                         {!isActive && (
                           <Button
                             type="button"
-                            variant="secondary"
+                            variant="toolbar"
                             onClick={() => void handleSetActive(connection.id)}
                           >
                             Set active
@@ -290,14 +291,15 @@ export function StorageLocationsSection(): JSX.Element {
                         )}
                         <Button
                           type="button"
-                          variant="secondary"
+                          variant="toolbar"
                           onClick={() => handleEdit(connection)}
                         >
                           Edit
                         </Button>
                         <Button
                           type="button"
-                          variant="primaryDanger"
+                          variant="toolbar"
+                          className={toolbarDangerButtonClass}
                           disabled={cannotDelete}
                           onClick={() => setDeletingConnection(connection)}
                         >

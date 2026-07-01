@@ -129,13 +129,13 @@ export function SettingField({
   );
 
   if (!usesCheckboxLayout || description.length === 0) {
-    return formGroup;
+    return <div className="hc-setting-field">{formGroup}</div>;
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="hc-setting-field flex flex-col gap-1">
       {formGroup}
-      <p id={descriptionId} className="m-0 text-[14px] text-muted">
+      <p id={descriptionId} className="hc-form-description m-0 text-[14px] text-muted">
         {description}
       </p>
     </div>

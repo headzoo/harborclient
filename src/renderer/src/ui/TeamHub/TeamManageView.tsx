@@ -28,6 +28,7 @@ import { useAppDispatch } from '#/renderer/src/store/hooks';
 import { refreshCollections } from '#/renderer/src/store/thunks/collections';
 import { TeamSecretDialog } from '#/renderer/src/ui/TeamHub/TeamSecretDialog';
 import { TeamUserForm } from '#/renderer/src/ui/TeamHub/TeamUserForm';
+import { toolbarDangerButtonClass } from '#/renderer/src/ui/shared/classes';
 
 const editFormId = 'team-user-edit-form';
 const createFormId = 'team-user-create-form';
@@ -263,12 +264,13 @@ export function TeamManageView({ hub, onBack }: Props): JSX.Element {
               secondary={user.id}
               actions={
                 <>
-                  <Button type="button" variant="secondary" onClick={() => handleEdit(user)}>
+                  <Button type="button" variant="toolbar" onClick={() => handleEdit(user)}>
                     Edit
                   </Button>
                   <Button
                     type="button"
-                    variant="primaryDanger"
+                    variant="toolbar"
+                    className={toolbarDangerButtonClass}
                     onClick={() => handleDeleteClick(user)}
                   >
                     Delete

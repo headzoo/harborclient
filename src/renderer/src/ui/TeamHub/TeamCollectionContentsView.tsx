@@ -21,7 +21,7 @@ import {
 } from '@harborclient/sdk/components';
 import { faUsers } from '#/renderer/src/fontawesome';
 import { useTeamHubAdminCollectionContents } from '#/renderer/src/hooks/useTeamHubAdminCollectionContents';
-import { METHOD_CLASSES } from '#/renderer/src/ui/shared/classes';
+import { METHOD_CLASSES, toolbarDangerButtonClass } from '#/renderer/src/ui/shared/classes';
 
 interface Props {
   /**
@@ -288,7 +288,8 @@ export function TeamCollectionContentsView({
                     actions={
                       <Button
                         type="button"
-                        variant="primaryDanger"
+                        variant="toolbar"
+                        className={toolbarDangerButtonClass}
                         onClick={() => handleDeleteClick(request)}
                       >
                         Delete

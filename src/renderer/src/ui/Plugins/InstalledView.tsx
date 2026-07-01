@@ -7,6 +7,7 @@ import { faCircleCheck, faPuzzlePiece } from '#/renderer/src/fontawesome';
 import { ErrorMessages } from './ErrorMessages';
 import { isManagedInstall, resolveInstalledPluginSummary, stopRowActivation } from './helpers';
 import { TableExternalLink } from './TableExternalLink';
+import { toolbarDangerButtonClass } from '#/renderer/src/ui/shared/classes';
 
 /**
  * Fixed width for installed-plugin table action buttons so labels align.
@@ -208,7 +209,7 @@ export function InstalledView({
                       <div className="flex flex-nowrap gap-2 justify-end">
                         <Button
                           type="button"
-                          variant="secondary"
+                          variant="toolbar"
                           className={PLUGIN_TABLE_ACTION_BUTTON_CLASS}
                           aria-label={
                             plugin.enabled ? `Disable ${plugin.name}` : `Enable ${plugin.name}`
@@ -220,7 +221,7 @@ export function InstalledView({
                         {plugin.source === 'unpacked' ? (
                           <Button
                             type="button"
-                            variant="secondary"
+                            variant="toolbar"
                             className={PLUGIN_TABLE_ACTION_BUTTON_CLASS}
                             aria-label={`Reload ${plugin.name}`}
                             onClick={() => onReload(plugin)}
@@ -231,7 +232,7 @@ export function InstalledView({
                         {plugin.source === 'git' ? (
                           <Button
                             type="button"
-                            variant="secondary"
+                            variant="toolbar"
                             className={PLUGIN_TABLE_ACTION_BUTTON_CLASS}
                             disabled={gitUpdateBusy}
                             aria-label={`Update ${plugin.name}`}
@@ -242,8 +243,8 @@ export function InstalledView({
                         ) : null}
                         <Button
                           type="button"
-                          variant="primaryDanger"
-                          className={PLUGIN_TABLE_ACTION_BUTTON_CLASS}
+                          variant="toolbar"
+                          className={`${PLUGIN_TABLE_ACTION_BUTTON_CLASS} ${toolbarDangerButtonClass}`}
                           aria-label={
                             isManagedInstall(plugin)
                               ? `Uninstall ${plugin.name}`

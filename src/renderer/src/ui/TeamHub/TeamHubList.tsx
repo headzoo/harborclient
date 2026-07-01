@@ -19,6 +19,7 @@ import { faUsers } from '#/renderer/src/fontawesome';
 import { useAppDispatch } from '#/renderer/src/store/hooks';
 import { refreshCollections } from '#/renderer/src/store/thunks/collections';
 import { formatIpcErrorMessage, showAlert } from '#/renderer/src/ui/modals/dialogHelpers';
+import { toolbarDangerButtonClass } from '#/renderer/src/ui/shared/classes';
 import { createBlankTeamHub, validateTeamHubForm } from './constants';
 import { TeamHubForm } from './TeamHubForm';
 import { TeamHubServiceBadges } from './TeamHubServiceBadges';
@@ -291,30 +292,22 @@ export function TeamHubList({
                   <>
                     {!scanning && adminHubIds.has(hub.id) && (
                       <>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => onManageUsers(hub)}
-                        >
+                        <Button type="button" variant="toolbar" onClick={() => onManageUsers(hub)}>
                           Manage users
                         </Button>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          onClick={() => onManageTokens(hub)}
-                        >
+                        <Button type="button" variant="toolbar" onClick={() => onManageTokens(hub)}>
                           Manage tokens
                         </Button>
                         <Button
                           type="button"
-                          variant="secondary"
+                          variant="toolbar"
                           onClick={() => onManageCollections(hub)}
                         >
                           Manage collections
                         </Button>
                         <Button
                           type="button"
-                          variant="secondary"
+                          variant="toolbar"
                           disabled={reloadingHubId === hub.id}
                           onClick={() => void handleReload(hub)}
                         >
@@ -322,12 +315,13 @@ export function TeamHubList({
                         </Button>
                       </>
                     )}
-                    <Button type="button" variant="secondary" onClick={() => handleEdit(hub)}>
+                    <Button type="button" variant="toolbar" onClick={() => handleEdit(hub)}>
                       Edit
                     </Button>
                     <Button
                       type="button"
-                      variant="primaryDanger"
+                      variant="toolbar"
+                      className={toolbarDangerButtonClass}
                       onClick={() => setDeletingHub(hub)}
                     >
                       Delete

@@ -17,6 +17,7 @@ import toast from 'react-hot-toast';
 import type { TrustedSharingKey } from '#/shared/types';
 
 import { useConfirm } from '#/renderer/src/hooks/useConfirm';
+import { toolbarDangerButtonClass } from '#/renderer/src/ui/shared/classes';
 
 /**
  * Trusted collaborator public keys for verifying share token signatures.
@@ -183,8 +184,8 @@ export function TrustedKeysSection(): JSX.Element {
               actions={
                 <Button
                   type="button"
-                  variant="primaryDanger"
-                  className="shrink-0"
+                  variant="toolbar"
+                  className={`shrink-0 ${toolbarDangerButtonClass}`}
                   onClick={() => handleDeleteClick(key)}
                 >
                   Delete

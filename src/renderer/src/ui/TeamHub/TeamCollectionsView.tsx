@@ -21,6 +21,7 @@ import { faUsers } from '#/renderer/src/fontawesome';
 import { useEscapeBackCapture } from '#/renderer/src/hooks/useEscapeBack';
 import { useTeamHubAdminCollections } from '#/renderer/src/hooks/useTeamHubAdminCollections';
 import { TeamCollectionContentsView } from '#/renderer/src/ui/TeamHub/TeamCollectionContentsView';
+import { toolbarDangerButtonClass } from '#/renderer/src/ui/shared/classes';
 
 interface Props {
   /**
@@ -146,14 +147,15 @@ export function TeamCollectionsView({ hub, onBack }: Props): JSX.Element {
                 <>
                   <Button
                     type="button"
-                    variant="secondary"
+                    variant="toolbar"
                     onClick={() => setSelectedCollection(collection)}
                   >
                     Edit
                   </Button>
                   <Button
                     type="button"
-                    variant="primaryDanger"
+                    variant="toolbar"
+                    className={toolbarDangerButtonClass}
                     onClick={() => handleDeleteClick(collection)}
                   >
                     Delete
