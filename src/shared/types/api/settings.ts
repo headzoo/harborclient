@@ -145,4 +145,17 @@ export interface ApiSettings {
    * @param cacheKey - Stable cache key such as request:1 or collection:2.
    */
   oauthClearToken: (cacheKey: string) => Promise<void>;
+  /**
+   * Returns persisted autocomplete values for a category.
+   *
+   * @param category - Autocomplete pool id (e.g. `header.key`, `url`).
+   */
+  getAutocompleteValues: (category: string) => Promise<string[]>;
+  /**
+   * Persists a new autocomplete value for a category.
+   *
+   * @param category - Autocomplete pool id.
+   * @param value - User-committed value to remember.
+   */
+  addAutocompleteValue: (category: string, value: string) => Promise<void>;
 }

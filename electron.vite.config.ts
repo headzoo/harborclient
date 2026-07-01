@@ -99,6 +99,7 @@ export default defineConfig({
       alias: {
         '@images': resolve(__dirname, 'images'),
         '@harborclient/sdk/react': resolve(__dirname, 'node_modules/react'),
+        '@harborclient/sdk/react-dom': resolve(__dirname, 'node_modules/react-dom'),
         '@harborclient/sdk/jsx-runtime': resolve(__dirname, 'node_modules/react/jsx-runtime')
       }
     },

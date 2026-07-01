@@ -10,6 +10,7 @@ import type { JSX } from 'react';
 import type { HttpMethod, Variable } from '#/shared/types';
 
 import { usePluginRequestToolbarActions } from '#/renderer/src/plugins/pluginHooks';
+import { urlSource } from '#/renderer/src/autocomplete/sources';
 
 interface Props {
   /**
@@ -78,6 +79,7 @@ export function UrlBar({
           value={url}
           onChange={onUrlChange}
           variables={variables}
+          source={urlSource}
           placeholder="Enter request URL"
           aria-label="Request URL"
           onEditVariable={onEditVariables}

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(autocomplete): implement autocomplete functionality for headers, params, and cookies. (`1f33c97`)
 - feat(shortcuts): add search functionality to shortcuts section. (`992a158`)
 - feat(menu): add new menu actions and shortcuts for improved navigation. (`c88df8a`)
 

@@ -12,6 +12,7 @@ import {
   isTabDirty,
   normalizeDraft,
   normalizeDraftForCompare,
+  normalizeKeyValueRows,
   type RequestDraft,
   type RequestTab
 } from '#/renderer/src/store/drafts';
@@ -28,6 +29,30 @@ const sampleDraft = (): RequestDraft => ({
   pre_request_script: '',
   post_request_script: '',
   comment: ''
+});
+
+describe('normalizeKeyValueRows', () => {
+  it('returns a blank row for null, undefined, and empty arrays', () => {
+    expect(normalizeKeyValueRows(null)).toEqual([emptyKeyValue()]);
+    expect(normalizeKeyValueRows(undefined)).toEqual([emptyKeyValue()]);
+    expect(normalizeKeyValueRows([])).toEqual([emptyKeyValue()]);
+  });
+
+  it('coerces missing key and value fields to strings', () => {
+    expect(
+      normalizeKeyValueRows([
+        { key: 'Authorization', value: 'Bearer token', enabled: true },
+        {
+          key: undefined as unknown as string,
+          value: undefined as unknown as string,
+          enabled: undefined as unknown as boolean
+        }
+      ])
+    ).toEqual([
+      { key: 'Authorization', value: 'Bearer token', enabled: true },
+      { key: '', value: '', enabled: true }
+    ]);
+  });
 });
 
 describe('normalizeDraft', () => {

@@ -15,6 +15,12 @@ import type { RequestDraft } from '#/renderer/src/store/drafts';
 import { AuthEditor } from './AuthEditor';
 import { BodyEditor } from './BodyEditor';
 import { CookiesEditor } from './CookiesEditor';
+import {
+  headerKeySource,
+  headerValueSource,
+  paramKeySource,
+  paramValueSource
+} from '#/renderer/src/autocomplete/sources';
 
 interface Props {
   /**
@@ -83,6 +89,8 @@ export function TabContent({
           placeholderValue="value"
           variables={variables}
           onEditVariable={onEditVariables}
+          keySource={paramKeySource}
+          valueSource={paramValueSource}
         />
       </SegmentedTabPanel>
       <SegmentedTabPanel value="headers">
@@ -93,6 +101,8 @@ export function TabContent({
           placeholderValue="value"
           variables={variables}
           onEditVariable={onEditVariables}
+          keySource={headerKeySource}
+          valueSource={headerValueSource}
         />
       </SegmentedTabPanel>
       <SegmentedTabPanel value="auth">

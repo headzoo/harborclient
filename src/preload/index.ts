@@ -1103,6 +1103,25 @@ function oauthClearToken(cacheKey: string): Promise<void> {
 }
 
 /**
+ * Returns persisted autocomplete values for a category.
+ *
+ * @param category - Autocomplete pool id (e.g. `header.key`, `url`).
+ */
+function getAutocompleteValues(category: string): Promise<string[]> {
+  return ipcRenderer.invoke('autocomplete:list', category);
+}
+
+/**
+ * Persists a new autocomplete value for a category.
+ *
+ * @param category - Autocomplete pool id.
+ * @param value - User-committed value to remember.
+ */
+function addAutocompleteValue(category: string, value: string): Promise<void> {
+  return ipcRenderer.invoke('autocomplete:add', category, value);
+}
+
+/**
  * Returns the active database connection id via IPC.
  */
 function getActiveStorageId(): Promise<string> {
@@ -2032,6 +2051,8 @@ const api: Api = {
   gitRevokeOAuth,
   oauthFetchToken,
   oauthClearToken,
+  getAutocompleteValues,
+  addAutocompleteValue,
   getActiveStorageId,
   setActiveStorageId,
   getRequestEditorTab,

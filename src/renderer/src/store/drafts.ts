@@ -43,6 +43,31 @@ export interface RequestTab {
 }
 
 /**
+ * Returns an empty key-value row with enabled set to true.
+ *
+ * @returns Blank KeyValue entry for editors.
+ */
+export const emptyKeyValue = (): KeyValue => ({ key: '', value: '', enabled: true });
+
+/**
+ * Ensures each key-value row has string fields and a boolean enabled flag.
+ *
+ * @param rows - Raw header or param rows from storage or imports.
+ * @returns Sanitized rows safe for KeyValueEditor rendering.
+ */
+export function normalizeKeyValueRows(rows: KeyValue[] | undefined | null): KeyValue[] {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return [emptyKeyValue()];
+  }
+
+  return rows.map((row) => ({
+    key: typeof row?.key === 'string' ? row.key : '',
+    value: typeof row?.value === 'string' ? row.value : '',
+    enabled: row?.enabled ?? true
+  }));
+}
+
+/**
  * Ensures a draft has all required fields, including script defaults for legacy persisted tabs.
  *
  * @param draft - Partial or full draft from storage or the database.
@@ -51,6 +76,8 @@ export interface RequestTab {
 export function normalizeDraft(draft: RequestDraft): RequestDraft {
   return {
     ...draft,
+    headers: normalizeKeyValueRows(draft.headers),
+    params: normalizeKeyValueRows(draft.params),
     pre_request_script: draft.pre_request_script ?? '',
     post_request_script: draft.post_request_script ?? '',
     comment: draft.comment ?? '',
@@ -134,13 +161,6 @@ export function getDirtyTabs(tabs: RequestTab[]): RequestTab[] {
 }
 
 /**
- * Returns an empty key-value row with enabled set to true.
- *
- * @returns Blank KeyValue entry for editors.
- */
-export const emptyKeyValue = (): KeyValue => ({ key: '', value: '', enabled: true });
-
-/**
  * Returns a new unsaved request draft with default values.
  *
  * @returns Default RequestDraft for a new request.
@@ -202,8 +222,8 @@ export function draftFromSaved(req: SavedRequest): RequestDraft {
     name: req.name,
     method: req.method,
     url: req.url,
-    headers: req.headers.length ? req.headers : [emptyKeyValue()],
-    params: req.params.length ? req.params : [emptyKeyValue()],
+    headers: normalizeKeyValueRows(req.headers.length ? req.headers : [emptyKeyValue()]),
+    params: normalizeKeyValueRows(req.params.length ? req.params : [emptyKeyValue()]),
     auth: normalizeAuth(req.auth),
     body: req.body,
     body_type: req.body_type,

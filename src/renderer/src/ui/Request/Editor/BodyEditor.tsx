@@ -12,6 +12,7 @@ import { parseUrlEncodedParts, serializeUrlEncodedParts } from '#/shared/urlenco
 
 import type { RequestDraft } from '#/renderer/src/store/drafts';
 import { emptyKeyValue } from '#/renderer/src/store/drafts';
+import { urlencodedKeySource, urlencodedValueSource } from '#/renderer/src/autocomplete/sources';
 
 const BODY_TYPE_OPTIONS: { value: BodyType; label: string }[] = [
   { value: 'none', label: 'None' },
@@ -83,6 +84,8 @@ export function BodyEditor({
           placeholderValue="value"
           variables={variables}
           onEditVariable={onEditVariables}
+          keySource={urlencodedKeySource}
+          valueSource={urlencodedValueSource}
         />
       )}
       {bodyType === 'multipart' && (

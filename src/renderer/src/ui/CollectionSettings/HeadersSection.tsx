@@ -1,6 +1,7 @@
 import { KeyValueEditor } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 import type { KeyValue, Variable } from '#/shared/types';
+import { headerKeySource, headerValueSource } from '#/renderer/src/autocomplete/sources';
 
 interface Props {
   headers: KeyValue[];
@@ -25,6 +26,8 @@ export function HeadersSection({ headers, variables, onChange }: Props): JSX.Ele
         placeholderKey="header"
         placeholderValue="value"
         variables={variables}
+        keySource={headerKeySource}
+        valueSource={headerValueSource}
       />
     </div>
   );

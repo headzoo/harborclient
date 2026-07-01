@@ -1,4 +1,4 @@
-import { BrowserWindow, Menu, shell, type MenuItemConstructorOptions } from 'electron';
+import { app, BrowserWindow, Menu, shell, type MenuItemConstructorOptions } from 'electron';
 import { getShortcutOverrides } from '#/main/settings/shortcutSettings';
 import { getPluginMenuContributions } from '#/main/plugins/pluginMenuContributions';
 import { mergePluginMenuItemsIntoTemplate } from '#/main/plugins/pluginMenuMerge';
@@ -135,31 +135,11 @@ export function buildMenu(
           click: () => sendMenuAction(window, 'toggle-sidebar')
         },
         {
-          label: 'Focus Sidebar Search',
-          accelerator: acceleratorFor(accelerators, 'focus-sidebar-search'),
-          click: () => sendMenuAction(window, 'focus-sidebar-search')
-        },
-        {
           label: 'Agent Chat',
           type: 'checkbox',
           checked: aiSidebarVisible,
           accelerator: acceleratorFor(accelerators, 'toggle-ai-sidebar'),
           click: () => sendMenuAction(window, 'toggle-ai-sidebar')
-        },
-        {
-          label: 'Send Request',
-          accelerator: acceleratorFor(accelerators, 'send-request'),
-          click: () => sendMenuAction(window, 'send-request')
-        },
-        {
-          label: 'Previous Request Tab',
-          accelerator: acceleratorFor(accelerators, 'previous-request-tab'),
-          click: () => sendMenuAction(window, 'previous-request-tab')
-        },
-        {
-          label: 'Next Request Tab',
-          accelerator: acceleratorFor(accelerators, 'next-request-tab'),
-          click: () => sendMenuAction(window, 'next-request-tab')
         },
         { type: 'separator' },
         {
@@ -167,7 +147,13 @@ export function buildMenu(
           accelerator: acceleratorFor(accelerators, 'toggle-fullscreen')
         },
         { role: 'zoomIn', accelerator: acceleratorFor(accelerators, 'zoom-in') },
-        { role: 'zoomOut', accelerator: acceleratorFor(accelerators, 'zoom-out') }
+        { role: 'zoomOut', accelerator: acceleratorFor(accelerators, 'zoom-out') },
+        ...(!app.isPackaged
+          ? [
+              { type: 'separator' as const },
+              { label: 'Developer Tools', role: 'toggleDevTools' as const }
+            ]
+          : [])
       ]
     },
     {

@@ -4,6 +4,7 @@ import type { KeyValue, Variable } from '#/shared/types';
 
 import { emptyKeyValue } from '#/renderer/src/store/drafts';
 import { buildRuntimeVars, substituteWithMap } from '#/renderer/src/scripting/scriptOrchestration';
+import { cookieKeySource, cookieValueSource } from '#/renderer/src/autocomplete/sources';
 import { hostFromUrl } from './cookieHost';
 
 interface Props {
@@ -95,6 +96,8 @@ export function CookiesEditor({ url, variables }: Props): JSX.Element {
           placeholderKey="name"
           placeholderValue="value"
           variables={variables}
+          keySource={cookieKeySource}
+          valueSource={cookieValueSource}
         />
       )}
     </div>

@@ -481,6 +481,8 @@ export const ipcArgSchemas = {
   sidebarExpansionSet: z.tuple([sidebarExpansion]),
   panelLayoutSet: z.tuple([panelLayout]),
   openTabsPayloadSet: z.tuple([z.string().min(1)]),
+  autocompleteList: z.tuple([z.string().min(1)]),
+  autocompleteAdd: z.tuple([z.string().min(1), z.string()]),
   aiChatSessionSet: z.tuple([aiChatSession]),
   collectionRunnerConfigSet: z.tuple([collectionRunnerConfig]),
   shortcutOverridesSet: z.tuple([shortcutOverrides]),

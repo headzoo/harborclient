@@ -39,6 +39,7 @@ import {
   getCollectionRunnerConfig,
   setCollectionRunnerConfig
 } from '#/main/settings/collectionRunnerSettings';
+import { addAutocompleteValue, getAutocompleteValues } from '#/main/settings/autocompleteSettings';
 import { getAiChatSession, setAiChatSession } from '#/main/settings/aiChatSessionSettings';
 import { getOpenTabsPayload, setOpenTabsPayload } from '#/main/settings/openTabsSettings';
 import { getPanelLayout, setPanelLayout } from '#/main/settings/panelLayoutSettings';
@@ -551,6 +552,16 @@ export function registerSettingsHandlers(db: IStorage): void {
   // Persists open request tabs as a JSON payload.
   handle('openTabs:setPayload', ipcArgSchemas.openTabsPayloadSet, (_event, payload) => {
     setOpenTabsPayload(payload);
+  });
+
+  // Returns persisted autocomplete values for a category.
+  handle('autocomplete:list', ipcArgSchemas.autocompleteList, (_event, category) =>
+    getAutocompleteValues(category)
+  );
+
+  // Persists a new autocomplete value for a category.
+  handle('autocomplete:add', ipcArgSchemas.autocompleteAdd, (_event, category, value) => {
+    addAutocompleteValue(category, value);
   });
 
   // Returns persisted collection runner configuration.
