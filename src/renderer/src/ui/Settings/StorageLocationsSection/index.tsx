@@ -2,6 +2,7 @@ import {
   AsyncListState,
   Badge,
   Button,
+  FaIcon,
   FieldError,
   Page,
   ResourceList,
@@ -11,6 +12,7 @@ import {
 import { useEffect, useState, type JSX } from 'react';
 import toast from 'react-hot-toast';
 import type { DiscoveredCollection, StorageConnection } from '#/shared/types';
+import { faPlus } from '#/renderer/src/fontawesome';
 import { useStorageConnections } from '#/renderer/src/hooks/useStorageConnections';
 import { useAppDispatch } from '#/renderer/src/store/hooks';
 import { refreshCollections } from '#/renderer/src/store/thunks/collections';
@@ -241,11 +243,12 @@ export function StorageLocationsSection(): JSX.Element {
           <>
             <Button
               type="button"
-              className="shrink-0 whitespace-nowrap"
+              className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
               disabled={loading}
               onClick={handleAdd}
             >
-              Add storage location
+              <FaIcon icon={faPlus} className="h-3.5 w-3.5" />
+              Add
             </Button>
           </>
         }

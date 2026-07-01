@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- fix(settings): update storage section label and enhance button styling. (`25aa8b8`)
+
 ## 1.9.11 - 2026-07-01
 
 - feat(sidebar): enhance sidebar row styling and functionality. (`a7454cd`)
