@@ -69,13 +69,21 @@ export function Settings({ initialSection }: Props): JSX.Element {
           onNavigate={handleNavigateFromSearch}
         />
       ) : pluginSection ? (
-        <Page embedded title={pluginSection.title} icon={faPuzzlePiece}>
-          <PluginSurface
-            pluginId={pluginSection.pluginId}
-            contributionId={pluginSection.contributionId}
-            kind="settingsSections"
-            minHeight={400}
-          />
+        <Page
+          embedded
+          title={pluginSection.title}
+          icon={faPuzzlePiece}
+          className="flex min-h-full flex-col"
+        >
+          <div className="flex min-h-0 flex-1 flex-col">
+            <PluginSurface
+              pluginId={pluginSection.pluginId}
+              contributionId={pluginSection.contributionId}
+              kind="settingsSections"
+              resizeMode="fill"
+              className="h-full"
+            />
+          </div>
         </Page>
       ) : (
         <SettingsRenderer section={section} />

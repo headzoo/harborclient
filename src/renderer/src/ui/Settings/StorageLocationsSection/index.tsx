@@ -250,7 +250,7 @@ export function StorageLocationsSection(): JSX.Element {
           </>
         }
       >
-        <div className="mb-4 flex flex-col gap-3 mx-auto max-w-5xl">
+        <div className="mb-4 flex flex-col gap-3">
           <div className="flex flex-col gap-1">
             <span className="text-[14px] font-medium text-text">
               <SettingLabel settingId="storage.connections">Storage locations</SettingLabel>

@@ -82,7 +82,7 @@ function GlobalsSectionForm({ savedVariables }: FormProps): JSX.Element {
       description="Use variables in request URLs with {{variable}} syntax."
       icon={icon}
     >
-      <div className="mb-6 flex mx-auto max-w-3xl flex-col gap-1">
+      <div className="mb-6 flex flex-col gap-1">
         <span className="text-[14px] font-medium text-text">
           <SettingLabel settingId="globals.variables">Variables</SettingLabel>
         </span>

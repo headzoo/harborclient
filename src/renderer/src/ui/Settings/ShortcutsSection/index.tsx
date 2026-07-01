@@ -210,7 +210,7 @@ export function ShortcutsSection(): JSX.Element {
             Loading shortcuts…
           </p>
         ) : (
-          <div className="mx-auto max-w-3xl">
+          <div>
             <div className="flex flex-col gap-1 mb-2">
               <span className="text-[14px] font-medium text-text">
                 <SettingLabel settingId="shortcuts.bindings">Keyboard shortcuts</SettingLabel>
@@ -241,7 +241,7 @@ export function ShortcutsSection(): JSX.Element {
                     <th scope="col" className="px-3 py-2 font-medium text-text">
                       Shortcut
                     </th>
-                    <th scope="col" className="px-3 py-2 font-medium text-text">
+                    <th scope="col" className="px-3 py-2 font-medium text-text text-right">
                       Key combination
                     </th>
                   </tr>
@@ -255,7 +255,7 @@ export function ShortcutsSection(): JSX.Element {
                     return (
                       <tr key={binding.id} className="border-b border-separator last:border-b-0">
                         <td className="px-3 py-2 text-text">{binding.label}</td>
-                        <td className="px-3 py-2">
+                        <td className="px-3 py-2 text-right">
                           <button
                             type="button"
                             className={`${field} min-w-[160px] cursor-pointer text-left ${recording ? 'ring-2 ring-accent' : ''}`}

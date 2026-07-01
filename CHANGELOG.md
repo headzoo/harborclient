@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- refactor(settings): improve layout and styling across settings sections. (`216140f`)
 - feat(request-editor): enhance NoOpenRequests component with icon and improved layout. (`c745bec`)
 
 ## 1.9.10 - 2026-07-01
