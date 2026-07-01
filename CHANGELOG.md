@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.9.10 - 2026-07-01
+
 - fix(tabs): refactor tab management and enhance page navigation. (`3249900`)
 
 ## 1.9.9 - 2026-07-01
