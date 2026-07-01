@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.9.4 - 2026-07-01
+
 - feat(plugins): update plugin catalog with new screenshot handling and optional summary field. (`9e7e4cf`)
 
 ## 1.9.3 - 2026-07-01
