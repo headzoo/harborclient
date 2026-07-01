@@ -1,5 +1,17 @@
 import type { PluginCatalog, PluginCatalogEntry } from '#/shared/plugin/catalog';
 import type { PluginInfo } from '#/shared/plugin/types';
+import { markPluginForThemePrompt } from '#/renderer/src/plugins/pluginLoader';
+
+/**
+ * Queues a theme switch prompt when the plugin manifest declares contributed themes.
+ *
+ * @param plugin - Plugin the user is about to enable.
+ */
+export function queueThemePromptIfNeeded(plugin: PluginInfo): void {
+  if ((plugin.manifest.contributes?.themes?.length ?? 0) > 0) {
+    markPluginForThemePrompt(plugin.id);
+  }
+}
 
 /**
  * Outcome of resolving a harborclient:// plugin install deep link.

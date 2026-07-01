@@ -1,0 +1,176 @@
+import { useCallback, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
+import type { PluginCatalog, PluginCatalogEntry } from '#/shared/plugin/catalog';
+import {
+  buildPluginCatalogSearchIndex,
+  filterPluginCatalogByCategory,
+  searchPluginCatalog
+} from '#/shared/plugin/catalogSearch';
+import type { PluginCatalogCategory } from '#/shared/plugin/catalogCategories';
+
+interface UsePluginCatalogResult {
+  /**
+   * Loaded marketplace catalog, if available.
+   */
+  catalog: PluginCatalog | null;
+
+  /**
+   * Replaces the loaded catalog (used by deep links and source saves).
+   */
+  setCatalog: Dispatch<SetStateAction<PluginCatalog | null>>;
+
+  /**
+   * Whether the catalog is loading.
+   */
+  catalogLoading: boolean;
+
+  /**
+   * Sets catalog loading state (used by deep links).
+   */
+  setCatalogLoading: Dispatch<SetStateAction<boolean>>;
+
+  /**
+   * Catalog load error message, if any.
+   */
+  catalogError: string | null;
+
+  /**
+   * Sets catalog error state (used by deep links and detail open).
+   */
+  setCatalogError: Dispatch<SetStateAction<string | null>>;
+
+  /**
+   * Marketplace catalog entries keyed by plugin id.
+   */
+  catalogById: Map<string, PluginCatalogEntry>;
+
+  /**
+   * Current search query for filtering catalog entries.
+   */
+  catalogSearchQuery: string;
+
+  /**
+   * Updates the catalog search query.
+   */
+  setCatalogSearchQuery: Dispatch<SetStateAction<string>>;
+
+  /**
+   * Current category filter, or empty for all categories.
+   */
+  catalogCategoryFilter: PluginCatalogCategory | '';
+
+  /**
+   * Updates the catalog category filter.
+   */
+  setCatalogCategoryFilter: Dispatch<SetStateAction<PluginCatalogCategory | ''>>;
+
+  /**
+   * Catalog entries after category and search filtering.
+   */
+  filteredCatalogPlugins: PluginCatalogEntry[];
+
+  /**
+   * Loads the marketplace catalog from configured sources.
+   */
+  loadCatalog: () => Promise<void>;
+
+  /**
+   * Clears marketplace search/filter state when leaving the Marketplace section.
+   */
+  resetCatalogFilters: () => void;
+}
+
+/**
+ * Manages marketplace catalog loading, search, and category filtering.
+ */
+export function usePluginCatalog(): UsePluginCatalogResult {
+  const [catalog, setCatalog] = useState<PluginCatalog | null>(null);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [catalogSearchQuery, setCatalogSearchQuery] = useState('');
+  const [catalogCategoryFilter, setCatalogCategoryFilter] = useState<PluginCatalogCategory | ''>(
+    ''
+  );
+
+  /**
+   * Loads the marketplace catalog from configured sources.
+   */
+  const loadCatalog = useCallback(async (): Promise<void> => {
+    setCatalogLoading(true);
+    setCatalogError(null);
+    try {
+      const next = await window.api.getPluginCatalog();
+      setCatalog(next);
+    } catch (err) {
+      setCatalogError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setCatalogLoading(false);
+    }
+  }, []);
+
+  /**
+   * Clears marketplace search/filter state when leaving the Marketplace section.
+   */
+  const resetCatalogFilters = useCallback((): void => {
+    setCatalogSearchQuery('');
+    setCatalogCategoryFilter('');
+  }, []);
+
+  /**
+   * Maps loaded marketplace catalog entries by plugin id for screenshot lookup.
+   */
+  const catalogById = useMemo(() => {
+    if (!catalog?.plugins.length) {
+      return new Map<string, PluginCatalogEntry>();
+    }
+    return new Map(catalog.plugins.map((entry) => [entry.id, entry]));
+  }, [catalog]);
+
+  /**
+   * Builds a searchable index over the loaded marketplace catalog.
+   */
+  const catalogSearchIndex = useMemo(() => {
+    if (!catalog?.plugins.length) {
+      return null;
+    }
+    return buildPluginCatalogSearchIndex(catalog.plugins);
+  }, [catalog]);
+
+  /**
+   * Filters marketplace catalog rows by category and search query.
+   */
+  const filteredCatalogPlugins = useMemo(() => {
+    if (!catalog?.plugins.length) {
+      return [];
+    }
+
+    const byCategory = filterPluginCatalogByCategory(catalog.plugins, catalogCategoryFilter);
+    if (!catalogSearchIndex) {
+      return byCategory;
+    }
+
+    const searched = searchPluginCatalog(catalog.plugins, catalogSearchIndex, catalogSearchQuery);
+    if (!catalogCategoryFilter) {
+      return searched;
+    }
+
+    const categoryIds = new Set(byCategory.map((entry) => entry.id));
+    return searched.filter((entry) => categoryIds.has(entry.id));
+  }, [catalog, catalogSearchIndex, catalogSearchQuery, catalogCategoryFilter]);
+
+  return {
+    catalog,
+    setCatalog,
+    catalogLoading,
+    setCatalogLoading,
+    catalogError,
+    setCatalogError,
+    catalogById,
+    catalogSearchQuery,
+    setCatalogSearchQuery,
+    catalogCategoryFilter,
+    setCatalogCategoryFilter,
+    filteredCatalogPlugins,
+    loadCatalog,
+    resetCatalogFilters
+  };
+}

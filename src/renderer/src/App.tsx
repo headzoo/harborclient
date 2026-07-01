@@ -59,7 +59,7 @@ import { AiSidebar } from '#/renderer/src/ui/AiSidebar';
 import { Configuration } from '#/renderer/src/ui/Configuration';
 import { Sidebar } from '#/renderer/src/ui/Sidebar';
 import { SidebarExpansionProvider } from '#/renderer/src/ui/Sidebar/SidebarExpansionProvider';
-import { Request } from '#/renderer/src/ui/Request';
+import { RequestEditor } from '#/renderer/src/ui/Main/RequestEditor';
 import { TitleBar } from '#/renderer/src/ui/TitleBar';
 import { selectIsBusy } from '#/renderer/src/store/slices/uiSlice';
 import {
@@ -270,7 +270,7 @@ export default function App(): JSX.Element {
                   onCloseEnvironmentSettings={() => dispatch(closeOverlay())}
                 />
               ) : (
-                <Request
+                <RequestEditor
                   onEditVariables={() => {
                     if (activeCollectionId == null) return;
                     dispatch(openCollectionSettings(activeCollectionId));

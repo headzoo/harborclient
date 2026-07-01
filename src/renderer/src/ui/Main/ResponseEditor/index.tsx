@@ -68,7 +68,7 @@ interface Props {
 /**
  * Displays HTTP response status, timing, body, headers, and script test results.
  */
-export function Response({
+export function ResponseEditor({
   response,
   responseTabContext,
   sending,

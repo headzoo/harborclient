@@ -6,6 +6,7 @@ import type { Variable } from '#/shared/types';
 import { useAppDispatch, useAppSelector } from '#/renderer/src/store/hooks';
 import { saveGlobalVariables } from '#/renderer/src/store/thunks/settings';
 import { settingsSectionMeta } from '../constants';
+import { SettingLabel } from '../components/SettingLabel';
 import { SettingsCloseButton } from '../SettingsCloseButton';
 
 interface Props {
@@ -84,19 +85,28 @@ function GlobalsSectionForm({ savedVariables, onClose }: FormProps): JSX.Element
   const { label, icon } = settingsSectionMeta('globals');
 
   return (
-    <Page embedded title={label} icon={icon} actions={<SettingsCloseButton onClose={onClose} />}>
-      <div className="mb-6 max-w-3xl">
+    <Page
+      embedded
+      title={label}
+      description="Use variables in request URLs with {{variable}} syntax."
+      icon={icon}
+      actions={<SettingsCloseButton onClose={onClose} />}
+    >
+      <div className="mb-6 flex mx-auto max-w-3xl flex-col gap-1">
+        <span className="text-[14px] font-medium text-text">
+          <SettingLabel settingId="globals.variables">Variables</SettingLabel>
+        </span>
         <VariableTable
           variables={variables}
           onChange={setVariables}
-          description="Use variables in request URLs with {{variable}} syntax. When value is empty, the default is used. Global variables have the lowest precedence; collection and environment variables override globals with the same key."
+          description="When value is empty, the default is used. Global variables have the lowest precedence; collection and environment variables override globals with the same key."
         />
-      </div>
 
-      <div className="flex gap-2">
-        <Button onClick={() => void handleSave()} disabled={!isDirty || saving}>
-          {saving ? 'Saving…' : 'Save'}
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => void handleSave()} disabled={!isDirty || saving}>
+            {saving ? 'Saving…' : 'Save'}
+          </Button>
+        </div>
       </div>
     </Page>
   );

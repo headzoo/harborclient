@@ -25,7 +25,7 @@ import {
   type QueryResponseBodyError,
   type QueryResponseBodyResult
 } from '#/shared/aiChatContext';
-import { hostFromUrl } from '#/renderer/src/ui/Request/Editor/cookieHost';
+import { hostFromUrl } from '#/renderer/src/ui/Main/RequestEditor/Editor/cookieHost';
 import { isTabDirty } from '#/renderer/src/store/drafts';
 import { setActiveEnvironmentId } from '#/renderer/src/store/slices/environmentsSlice';
 import { setActiveDraft } from '#/renderer/src/store/slices/tabsSlice';

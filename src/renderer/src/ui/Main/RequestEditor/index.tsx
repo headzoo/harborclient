@@ -38,7 +38,7 @@ import { Modal, ModalFooter } from '@harborclient/sdk/components';
 import { ResizeHandle, useResizable } from '@harborclient/sdk/components';
 import { Editor } from './Editor';
 import { NoOpenRequests } from './NoOpenRequests';
-import { Response } from './Response';
+import { ResponseEditor } from '../ResponseEditor';
 import { TabBar } from './TabBar';
 
 interface Props {
@@ -80,7 +80,7 @@ function mergeVariables(
 /**
  * Request workspace: tab bar, editor, and response viewer.
  */
-export function Request({ onEditVariables }: Props): JSX.Element {
+export function RequestEditor({ onEditVariables }: Props): JSX.Element {
   const dispatch = useAppDispatch();
   const { revealCollection, revealFolder } = useSidebarExpansion();
   const tabs = useAppSelector(selectTabs);
@@ -252,7 +252,7 @@ export function Request({ onEditVariables }: Props): JSX.Element {
             ariaLabel="Resize request editor"
           />
           <section aria-label="Response" className="flex min-h-0 flex-1 flex-col">
-            <Response
+            <ResponseEditor
               key={`response-${activeTabId}`}
               response={response}
               responseTabContext={responseTabContext}

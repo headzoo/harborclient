@@ -284,21 +284,21 @@ snapshots to host components.
 Each registration returns a `Disposable` that removes the entry. IDs are namespaced
 as `plugin:{pluginId}:{contributionId}`.
 
-| Registry bucket          | Host component                                                         | Hook                                  |
-| ------------------------ | ---------------------------------------------------------------------- | ------------------------------------- |
-| `settingsSections`       | [`Settings/index.tsx`](../ui/Settings/index.tsx)                       | `usePluginSettingsSections`           |
-| `sidebarPanels`          | [`Sidebar/index.tsx`](../ui/Sidebar/index.tsx)                         | `usePluginSidebarPanels`              |
-| `sidebarSections`        | [`Sidebar/index.tsx`](../ui/Sidebar/index.tsx)                         | `usePluginSidebarSections`            |
-| `mainViews`              | [`PluginMainView`](../ui/PluginMainView/index.tsx) via Redux           | `usePluginMainViews`                  |
-| `requestTabs`            | [`Request/Editor/TabContent.tsx`](../ui/Request/Editor/TabContent.tsx) | `usePluginRequestTabs`                |
-| `responseTabs`           | [`Request/Response/index.tsx`](../ui/Request/Response/index.tsx)       | `usePluginResponseTabs`               |
-| `collectionSettingsTabs` | [`CollectionSettings/index.tsx`](../ui/CollectionSettings/index.tsx)   | `usePluginCollectionSettingsTabs`     |
-| `footerPanels`           | [`PluginFooterPanel`](../ui/Footer/PluginFooterPanel/index.tsx)        | `usePluginFooterPanels`               |
-| `statusBarItems`         | [`Footer/index.tsx`](../ui/Footer/index.tsx)                           | `usePluginStatusBarItems`             |
-| `requestToolbarActions`  | [`UrlBar.tsx`](../ui/Request/Editor/UrlBar.tsx)                        | `usePluginRequestToolbarActions`      |
-| `menuItems`              | Native app menu (main process merge)                                   | `pluginMenuSync.ts`                   |
-| `contextMenuItems`       | Sidebar row context menus                                              | `pluginContextMenuHelpers.ts`         |
-| `themes`                 | General Settings appearance picker                                     | `usePluginThemes` + `themeRuntime.ts` |
+| Registry bucket          | Host component                                                                               | Hook                                  |
+| ------------------------ | -------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `settingsSections`       | [`Settings/index.tsx`](../ui/Settings/index.tsx)                                             | `usePluginSettingsSections`           |
+| `sidebarPanels`          | [`Sidebar/index.tsx`](../ui/Sidebar/index.tsx)                                               | `usePluginSidebarPanels`              |
+| `sidebarSections`        | [`Sidebar/index.tsx`](../ui/Sidebar/index.tsx)                                               | `usePluginSidebarSections`            |
+| `mainViews`              | [`PluginMainView`](../ui/PluginMainView/index.tsx) via Redux                                 | `usePluginMainViews`                  |
+| `requestTabs`            | [`Main/RequestEditor/Editor/TabContent.tsx`](../ui/Main/RequestEditor/Editor/TabContent.tsx) | `usePluginRequestTabs`                |
+| `responseTabs`           | [`Main/ResponseEditor/index.tsx`](../ui/Main/ResponseEditor/index.tsx)                       | `usePluginResponseTabs`               |
+| `collectionSettingsTabs` | [`CollectionSettings/index.tsx`](../ui/CollectionSettings/index.tsx)                         | `usePluginCollectionSettingsTabs`     |
+| `footerPanels`           | [`PluginFooterPanel`](../ui/Footer/PluginFooterPanel/index.tsx)                              | `usePluginFooterPanels`               |
+| `statusBarItems`         | [`Footer/index.tsx`](../ui/Footer/index.tsx)                                                 | `usePluginStatusBarItems`             |
+| `requestToolbarActions`  | [`UrlBar.tsx`](../ui/Main/RequestEditor/Editor/UrlBar.tsx)                                   | `usePluginRequestToolbarActions`      |
+| `menuItems`              | Native app menu (main process merge)                                                         | `pluginMenuSync.ts`                   |
+| `contextMenuItems`       | Sidebar row context menus                                                                    | `pluginContextMenuHelpers.ts`         |
+| `themes`                 | General Settings appearance picker                                                           | `usePluginThemes` + `themeRuntime.ts` |
 
 Toolbar actions and context menu items invoke commands only — they do not mount
 webviews. Visible plugin UI always goes through `PluginSurface`.

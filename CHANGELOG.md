@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- feat(request-editor): refactor and enhance RequestEditor component. (`7c11038`)
 - feat(plugins): add plugin management features and enhance developer tools. (`0fcd9ff`)
 
 ## 1.9.6 - 2026-07-01

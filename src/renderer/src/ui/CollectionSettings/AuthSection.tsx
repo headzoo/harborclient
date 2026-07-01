@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 import type { AuthConfig, Variable } from '#/shared/types';
-import { AuthEditor } from '#/renderer/src/ui/Request/Editor/AuthEditor';
+import { AuthEditor } from '#/renderer/src/ui/Main/RequestEditor/Editor/AuthEditor';
 
 interface Props {
   /**

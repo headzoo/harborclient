@@ -16,6 +16,8 @@ import { useAppDispatch } from '#/renderer/src/store/hooks';
 import { refreshCollections } from '#/renderer/src/store/thunks/collections';
 
 import { createBlankConnection, providerLabel, settingsSectionMeta } from '../constants';
+import { sectionEntryBySection } from '../catalog/catalog';
+import { SettingLabel } from '../components/SettingLabel';
 import { SettingsCloseButton } from '../SettingsCloseButton';
 import { DiscoverCollectionsModal } from './DiscoverCollectionsModal';
 import { ConnectionDeleteModal } from './ConnectionDeleteModal';
@@ -234,6 +236,7 @@ export function StorageLocationsSection({ onClose }: Props): JSX.Element {
 
   const sqliteCount = connections.filter((connection) => connection.type === 'sqlite').length;
   const { label, icon } = settingsSectionMeta('storage');
+  const storageCatalog = sectionEntryBySection('storage');
 
   return (
     <>
@@ -256,65 +259,73 @@ export function StorageLocationsSection({ onClose }: Props): JSX.Element {
           </>
         }
       >
-        <AsyncListState loading={loading} error={bootstrapError} onRetry={reloadConnections}>
-          <ResourceList>
-            {connections.map((connection) => {
-              const isActive = connection.id === activeId;
-              const isLastSqlite = connection.type === 'sqlite' && sqliteCount <= 1;
-              const cannotDelete = connections.length <= 1 || isLastSqlite;
+        <div className="mb-4 flex flex-col gap-3 mx-auto max-w-5xl">
+          <div className="flex flex-col gap-1">
+            <span className="text-[14px] font-medium text-text">
+              <SettingLabel settingId="storage.connections">Storage locations</SettingLabel>
+            </span>
+            <p className="m-0 text-[14px] text-muted">{storageCatalog.description}</p>
+          </div>
+          <AsyncListState loading={loading} error={bootstrapError} onRetry={reloadConnections}>
+            <ResourceList>
+              {connections.map((connection) => {
+                const isActive = connection.id === activeId;
+                const isLastSqlite = connection.type === 'sqlite' && sqliteCount <= 1;
+                const cannotDelete = connections.length <= 1 || isLastSqlite;
 
-              return (
-                <ResourceListRow
-                  key={connection.id}
-                  primary={
-                    <div className="flex items-center gap-2">
-                      <ResourceListPrimary>{connection.name || 'Untitled'}</ResourceListPrimary>
-                      {isActive ? <Badge variant="success">Active</Badge> : null}
-                    </div>
-                  }
-                  secondary={providerLabel(connection.type)}
-                  actions={
-                    <>
-                      {!isActive && (
+                return (
+                  <ResourceListRow
+                    key={connection.id}
+                    primary={
+                      <div className="flex items-center gap-2">
+                        <ResourceListPrimary>{connection.name || 'Untitled'}</ResourceListPrimary>
+                        {isActive ? <Badge variant="success">Active</Badge> : null}
+                      </div>
+                    }
+                    secondary={providerLabel(connection.type)}
+                    actions={
+                      <>
+                        {!isActive && (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => void handleSetActive(connection.id)}
+                          >
+                            Set active
+                          </Button>
+                        )}
                         <Button
                           type="button"
                           variant="secondary"
-                          onClick={() => void handleSetActive(connection.id)}
+                          onClick={() => handleEdit(connection)}
                         >
-                          Set active
+                          Edit
                         </Button>
-                      )}
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => handleEdit(connection)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="primaryDanger"
-                        disabled={cannotDelete}
-                        onClick={() => setDeletingConnection(connection)}
-                      >
-                        Delete
-                      </Button>
-                    </>
-                  }
-                />
-              );
-            })}
-          </ResourceList>
-        </AsyncListState>
+                        <Button
+                          type="button"
+                          variant="primaryDanger"
+                          disabled={cannotDelete}
+                          onClick={() => setDeletingConnection(connection)}
+                        >
+                          Delete
+                        </Button>
+                      </>
+                    }
+                  />
+                );
+              })}
+            </ResourceList>
+          </AsyncListState>
 
-        {error && !editingConnection && !deletingConnection && (
-          <FieldError spacing="section">{error}</FieldError>
-        )}
+          {error && !editingConnection && !deletingConnection && (
+            <FieldError spacing="section">{error}</FieldError>
+          )}
 
-        <p className="mb-0 mt-4 text-[14px] text-muted">
-          Connection changes take effect after restarting HarborClient. All configured storage
-          locations are opened at launch so shared collections are available immediately.
-        </p>
+          <p className="mb-0 mt-4 text-[14px] text-muted">
+            Connection changes take effect after restarting HarborClient. All configured storage
+            locations are opened at launch so shared collections are available immediately.
+          </p>
+        </div>
       </Page>
 
       {editingConnection && (

@@ -1,7 +1,7 @@
 import { Input } from '@harborclient/sdk/components';
 import { useEffect, useRef, useState, type JSX } from 'react';
 
-import { BreadcrumbPrefix } from '#/renderer/src/ui/Request/Editor/BreadcrumbPrefix';
+import { BreadcrumbPrefix } from '#/renderer/src/ui/Main/RequestEditor/Editor/BreadcrumbPrefix';
 
 interface Props {
   /**

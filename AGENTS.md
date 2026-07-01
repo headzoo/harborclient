@@ -134,7 +134,7 @@ many call sites.
 ## Documentation
 
 Always add clear, useful documentation when you write or change code. Match the
-JSDoc style already used in the codebase (see `src/renderer/src/ui/Request/Editor/`
+JSDoc style already used in the codebase (see `src/renderer/src/ui/Main/RequestEditor/Editor/`
 and [`VariableInput`](../harborclient-sdk/src/components/VariableInput/index.tsx) (`@harborclient/sdk/components`) for examples).
 
 **Every function** — exported or local, component or helper — must have a JSDoc

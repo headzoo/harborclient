@@ -4,6 +4,8 @@ import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
 
 import { showConfirm } from '#/renderer/src/ui/modals/dialogHelpers';
+import { sectionEntryBySection } from '../catalog/catalog';
+import { SettingLabel } from '../components/SettingLabel';
 import { settingsSectionMeta } from '../constants';
 import { applyLocalStorageSnapshot, collectLocalStorageSnapshot } from './helpers';
 import { SettingsCloseButton } from '../SettingsCloseButton';
@@ -72,6 +74,7 @@ export function BackupRestoreSection({ onClose }: Props): JSX.Element {
   };
 
   const { label, icon } = settingsSectionMeta('backup-restore');
+  const backupCatalog = sectionEntryBySection('backup-restore');
 
   return (
     <Page
@@ -81,57 +84,65 @@ export function BackupRestoreSection({ onClose }: Props): JSX.Element {
       description="Export everything HarborClient stores locally — collections, environments, settings, chats, credentials, and UI state — into a single backup file. Restore replaces your current local data from a backup."
       actions={<SettingsCloseButton onClose={onClose} />}
     >
-      <div
-        className="mb-6 rounded-md border border-separator bg-sidebar px-4 py-3 text-[14px] text-text"
-        role="note"
-      >
-        <p className="m-0 mb-2 font-medium text-danger">Sensitive data warning</p>
-        <p className="m-0 mb-2 text-muted">
-          Backup files contain API keys, database passwords, proxy credentials, git tokens, and
-          sharing private keys in readable form. Store backups securely and do not share them.
-        </p>
-        <p className="m-0 text-muted">
-          Secrets protected by your operating system keychain may not decrypt when a backup is
-          restored on a different machine or user account.
-        </p>
-      </div>
-
-      <div className="flex flex-wrap gap-3">
-        <Button
-          type="button"
-          variant="secondary"
-          disabled={busy}
-          aria-label="Export HarborClient backup"
-          onClick={() => {
-            void handleExportBackup();
-          }}
+      <div className="mb-6 flex flex-col gap-3 mx-auto max-w-5xl">
+        <div className="flex flex-col gap-1">
+          <span className="text-[14px] font-medium text-text">
+            <SettingLabel settingId="backup-restore.actions">Backup & restore</SettingLabel>
+          </span>
+          <p className="m-0 text-[14px] text-muted">{backupCatalog.description}</p>
+        </div>
+        <div
+          className="rounded-md border border-separator bg-sidebar px-4 py-3 text-[14px] text-text"
+          role="note"
         >
-          Export backup
-        </Button>
-        <Button
-          type="button"
-          variant="primaryDanger"
-          disabled={busy}
-          aria-label="Restore HarborClient backup"
-          onClick={() => {
-            void handleRestoreBackup();
-          }}
-        >
-          Restore from backup
-        </Button>
+          <p className="m-0 mb-2 font-medium text-danger">Sensitive data warning</p>
+          <p className="m-0 mb-2 text-muted">
+            Backup files contain API keys, database passwords, proxy credentials, git tokens, and
+            sharing private keys in readable form. Store backups securely and do not share them.
+          </p>
+          <p className="m-0 text-muted">
+            Secrets protected by your operating system keychain may not decrypt when a backup is
+            restored on a different machine or user account.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={busy}
+            aria-label="Export HarborClient backup"
+            onClick={() => {
+              void handleExportBackup();
+            }}
+          >
+            Export backup
+          </Button>
+          <Button
+            type="button"
+            variant="primaryDanger"
+            disabled={busy}
+            aria-label="Restore HarborClient backup"
+            onClick={() => {
+              void handleRestoreBackup();
+            }}
+          >
+            Restore from backup
+          </Button>
+        </div>
+
+        {busy ? (
+          <p role="status" aria-live="polite" className="mt-4 text-[14px] text-muted">
+            Working…
+          </p>
+        ) : null}
+
+        {error ? (
+          <p role="alert" className="mt-4 text-[14px] text-danger">
+            {error}
+          </p>
+        ) : null}
       </div>
-
-      {busy ? (
-        <p role="status" aria-live="polite" className="mt-4 text-[14px] text-muted">
-          Working…
-        </p>
-      ) : null}
-
-      {error ? (
-        <p role="alert" className="mt-4 text-[14px] text-danger">
-          {error}
-        </p>
-      ) : null}
     </Page>
   );
 }
