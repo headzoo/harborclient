@@ -121,6 +121,25 @@ function manifestDetails(
 }
 
 /**
+ * Resolves marketplace description Markdown, preferring the catalog payload
+ * over a live git preview fetch.
+ *
+ * @param entry - Marketplace listing when the modal is in catalog mode.
+ * @param preview - Remote preview payload when manifest fetch succeeded.
+ * @returns Description body suitable for {@link PluginReadmeMarkdown}.
+ */
+function resolveCatalogDescriptionMarkdown(
+  entry: PluginCatalogEntry | undefined,
+  preview: PluginGitPreview | null
+): string {
+  if (entry?.description) {
+    return entry.description;
+  }
+
+  return preview?.descriptionMarkdown ?? '';
+}
+
+/**
  * Read-only plugin detail modal shared by installed plugins and marketplace previews.
  */
 export function PluginDetailModal(props: Props): JSX.Element {
@@ -145,29 +164,32 @@ export function PluginDetailModal(props: Props): JSX.Element {
           homepage: entry.homepage,
           bugsUrl: undefined,
           permissions: [] as PluginManifest['permissions'],
-          hasDescription: false
+          hasDescription: Boolean(entry.description)
         }
       : null;
   const descriptionMarkdown = isInstalled
     ? props.descriptionMarkdown
-    : (props.preview?.descriptionMarkdown ?? '');
+    : resolveCatalogDescriptionMarkdown(entry, props.mode === 'catalog' ? props.preview : null);
   const descriptionLoadState = isInstalled
     ? props.descriptionLoadState
-    : props.previewLoadState === 'loading'
-      ? 'loading'
-      : props.previewLoadState === 'error'
-        ? 'error'
-        : props.previewLoadState === 'loaded' && descriptionMarkdown
-          ? 'loaded'
-          : props.previewLoadState === 'loaded' && details?.hasDescription
-            ? 'error'
-            : 'idle';
+    : entry?.description
+      ? 'loaded'
+      : props.previewLoadState === 'loading'
+        ? 'loading'
+        : props.previewLoadState === 'error'
+          ? 'error'
+          : props.previewLoadState === 'loaded' && descriptionMarkdown
+            ? 'loaded'
+            : props.previewLoadState === 'loaded' && details?.hasDescription
+              ? 'error'
+              : 'idle';
   const showDescriptionSection = isInstalled
     ? Boolean(props.plugin.manifest.description) ||
       descriptionMarkdown.length > 0 ||
       descriptionLoadState === 'loading' ||
       descriptionLoadState === 'error'
-    : props.previewLoadState === 'loading' ||
+    : Boolean(entry?.description) ||
+      props.previewLoadState === 'loading' ||
       Boolean(details?.hasDescription) ||
       descriptionMarkdown.length > 0 ||
       (descriptionLoadState === 'error' && Boolean(details?.hasDescription));

@@ -65,6 +65,8 @@ const pluginCatalogEntrySchema = z.object({
   icon: z.string().url().optional(),
   screenshot: z.string().url().optional(),
   screenshots: z.array(z.string().url()).optional(),
+  /** Inlined Markdown description fetched from the plugin repository at build time. */
+  description: z.string().min(1).optional(),
   minAppVersion: z.string().min(1).optional()
 });
 

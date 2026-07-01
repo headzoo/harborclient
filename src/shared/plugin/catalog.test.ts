@@ -75,6 +75,44 @@ describe('parsePluginCatalog', () => {
     });
   });
 
+  it('accepts optional description markdown with plural screenshots', () => {
+    expect(
+      parsePluginCatalog({
+        ...validCatalog,
+        plugins: [
+          {
+            ...validCatalog.plugins[0],
+            screenshots: ['https://example.com/a.png'],
+            description: '# Demo Plugin\n\nAdds a sidebar panel for API audit checks.'
+          }
+        ]
+      })
+    ).toEqual({
+      ...validCatalog,
+      plugins: [
+        {
+          ...validCatalog.plugins[0],
+          screenshots: ['https://example.com/a.png'],
+          description: '# Demo Plugin\n\nAdds a sidebar panel for API audit checks.'
+        }
+      ]
+    });
+  });
+
+  it('rejects an empty description string', () => {
+    expect(() =>
+      parsePluginCatalog({
+        ...validCatalog,
+        plugins: [
+          {
+            ...validCatalog.plugins[0],
+            description: ''
+          }
+        ]
+      })
+    ).toThrow();
+  });
+
   it('rejects non-GitHub repository URLs', () => {
     expect(() =>
       parsePluginCatalog({
