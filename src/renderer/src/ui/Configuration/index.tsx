@@ -7,6 +7,7 @@ import type {
   SettingsSection,
   Variable
 } from '#/shared/types';
+import { Plugins } from '#/renderer/src/ui/Plugins';
 import { SharingKeys } from '#/renderer/src/ui/SharingKeys';
 import { TeamHub } from '#/renderer/src/ui/TeamHub';
 import { CollectionSettings } from '../CollectionSettings';
@@ -49,6 +50,16 @@ interface Props {
    * Closes the team hub view.
    */
   onCloseTeamHub: () => void;
+
+  /**
+   * Whether the plugins view is shown.
+   */
+  showPlugins: boolean;
+
+  /**
+   * Closes the plugins view.
+   */
+  onClosePlugins: () => void;
 
   /**
    * Whether a plugin main view overlay is shown.
@@ -131,6 +142,8 @@ export function Configuration({
   onCloseSharingKeys,
   showTeamHub,
   onCloseTeamHub,
+  showPlugins,
+  onClosePlugins,
   showPluginView,
   pluginViewPluginId,
   pluginViewId,
@@ -160,6 +173,10 @@ export function Configuration({
 
   if (showTeamHub) {
     return <TeamHub onClose={onCloseTeamHub} />;
+  }
+
+  if (showPlugins) {
+    return <Plugins onClose={onClosePlugins} />;
   }
 
   if (showPluginView && pluginViewPluginId && pluginViewId) {

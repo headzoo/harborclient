@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(plugins): add plugin management features and enhance developer tools. (`0fcd9ff`)
+
 ## 1.9.6 - 2026-07-01
 
 - fix(catalog): update plugin version to v1.0.7 and enhance ScreenshotCarousel functionality. (`71ee623`)

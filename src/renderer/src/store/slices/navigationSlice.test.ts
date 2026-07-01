@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import navigationReducer, {
   closeOverlay,
+  openPlugins,
   openSharingKeys,
   openCollectionSettings,
   openEnvironmentSettings,
@@ -48,6 +49,14 @@ describe('navigationSlice', () => {
     let state = navigationReducer(undefined, setEnvironmentSettingsDirty(true));
     state = navigationReducer(state, openTeamHub());
     expect(state.mainView).toEqual({ type: 'team-hubs' });
+    expect(state.collectionSettingsDirty).toBe(false);
+    expect(state.environmentSettingsDirty).toBe(false);
+  });
+
+  it('opens plugins and resets dirty flags', () => {
+    let state = navigationReducer(undefined, setEnvironmentSettingsDirty(true));
+    state = navigationReducer(state, openPlugins());
+    expect(state.mainView).toEqual({ type: 'plugins' });
     expect(state.collectionSettingsDirty).toBe(false);
     expect(state.environmentSettingsDirty).toBe(false);
   });

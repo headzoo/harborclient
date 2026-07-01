@@ -4,7 +4,7 @@ import type { PluginInfo } from '#/shared/plugin/types';
 import {
   resolvePendingPluginInstallDeepLink,
   resolveInstalledPluginSummary
-} from '#/renderer/src/ui/Settings/PluginSection/helpers';
+} from '#/renderer/src/ui/Plugins/helpers';
 
 const sampleEntry: PluginCatalogEntry = {
   id: 'com.harborclient.plugins.curl',

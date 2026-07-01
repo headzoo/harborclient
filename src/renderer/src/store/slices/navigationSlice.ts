@@ -8,6 +8,7 @@ import type { RootState } from '#/renderer/src/store/redux';
 export type MainView =
   | { type: 'request' }
   | { type: 'settings' }
+  | { type: 'plugins' }
   | { type: 'team-hubs' }
   | { type: 'sharing-keys' }
   | { type: 'plugin-view'; pluginId: string; viewId: string }
@@ -61,6 +62,13 @@ const navigationSlice = createSlice({
       resetDirtyFlags(state);
       state.mainView = { type: 'settings' };
       state.settingsSection = action.payload ?? 'general';
+    },
+    /**
+     * Shows the plugins overlay and clears dirty flags.
+     */
+    openPlugins(state) {
+      resetDirtyFlags(state);
+      state.mainView = { type: 'plugins' };
     },
     /**
      * Shows the team hub overlay and clears dirty flags.
@@ -198,6 +206,7 @@ const navigationSlice = createSlice({
 
 export const {
   openSettings,
+  openPlugins,
   openTeamHub,
   openSharingKeys,
   openPluginView,
@@ -270,14 +279,15 @@ export const selectPendingPluginInstallId = (state: RootState): string | null =>
   state.navigation.pendingPluginInstallId;
 
 /**
- * Sidebar is hidden when app settings, team hubs, or sharing keys are open, even if the
- * user has not toggled it off manually.
+ * Sidebar is hidden when app settings, plugins, team hubs, or sharing keys are open, even if
+ * the user has not toggled it off manually.
  */
 export const selectSidebarVisible = (state: RootState): boolean => {
   const { mainView, showSidebar } = state.navigation;
   return (
     showSidebar &&
     mainView.type !== 'settings' &&
+    mainView.type !== 'plugins' &&
     mainView.type !== 'team-hubs' &&
     mainView.type !== 'sharing-keys' &&
     mainView.type !== 'plugin-view'
@@ -285,14 +295,15 @@ export const selectSidebarVisible = (state: RootState): boolean => {
 };
 
 /**
- * AI sidebar is hidden when app settings, team hubs, or sharing keys are open, even if the
- * user has not toggled it off manually.
+ * AI sidebar is hidden when app settings, plugins, team hubs, or sharing keys are open, even
+ * if the user has not toggled it off manually.
  */
 export const selectAiSidebarVisible = (state: RootState): boolean => {
   const { mainView, showAiSidebar } = state.navigation;
   return (
     showAiSidebar &&
     mainView.type !== 'settings' &&
+    mainView.type !== 'plugins' &&
     mainView.type !== 'team-hubs' &&
     mainView.type !== 'sharing-keys' &&
     mainView.type !== 'plugin-view'

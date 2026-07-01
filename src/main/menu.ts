@@ -1,4 +1,5 @@
-import { app, BrowserWindow, Menu, shell, type MenuItemConstructorOptions } from 'electron';
+import { BrowserWindow, Menu, shell, type MenuItemConstructorOptions } from 'electron';
+import { isDeveloperToolsEnabled } from '#/main/devMode';
 import { getShortcutOverrides } from '#/main/settings/shortcutSettings';
 import { getPluginMenuContributions } from '#/main/plugins/pluginMenuContributions';
 import { mergePluginMenuItemsIntoTemplate } from '#/main/plugins/pluginMenuMerge';
@@ -148,7 +149,7 @@ export function buildMenu(
         },
         { role: 'zoomIn', accelerator: acceleratorFor(accelerators, 'zoom-in') },
         { role: 'zoomOut', accelerator: acceleratorFor(accelerators, 'zoom-out') },
-        ...(!app.isPackaged
+        ...(isDeveloperToolsEnabled()
           ? [
               { type: 'separator' as const },
               { label: 'Developer Tools', role: 'toggleDevTools' as const }

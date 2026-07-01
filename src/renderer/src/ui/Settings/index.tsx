@@ -4,17 +4,9 @@ import { useMemo, useState, type JSX } from 'react';
 import { faPuzzlePiece } from '#/renderer/src/fontawesome';
 import { PluginSurface } from '#/renderer/src/plugins/PluginSurface';
 import { usePluginSettingsSections } from '#/renderer/src/plugins/pluginHooks';
-import { AiSection } from './AiSection';
-import { BackupRestoreSection } from './BackupRestoreSection';
-import { StorageLocationsSection } from './StorageLocationsSection';
-import { GeneralSection } from './GeneralSection';
-import { PluginsSection } from './PluginSection';
-import { GlobalsSection } from './GlobalsSection';
-import { ProxySection } from './ProxySection';
-import { ShortcutsSection } from './ShortcutsSection';
-import { SyntaxHighlightingSection } from './SyntaxHighlightingSection';
-import { SettingsCloseButton } from './SettingsCloseButton';
 import { SETTINGS_SECTIONS } from './constants';
+import { SettingsRenderer } from './catalog/SettingsRenderer';
+import { SettingsCloseButton } from './SettingsCloseButton';
 import type { SettingsSection } from './types';
 
 interface Props {
@@ -27,54 +19,6 @@ interface Props {
    * Settings section to show when the overlay opens.
    */
   initialSection: SettingsSection;
-}
-
-/**
- * Renders the panel for the active built-in or plugin settings section.
- *
- * @param section - Selected settings section id.
- * @param pluginSections - Registered plugin settings sections.
- * @param onClose - Closes the settings overlay.
- */
-function SettingsPanel({
-  section,
-  pluginSections,
-  onClose
-}: {
-  section: SettingsSection;
-  pluginSections: ReturnType<typeof usePluginSettingsSections>;
-  onClose: () => void;
-}): JSX.Element | null {
-  if (section === 'general') return <GeneralSection onClose={onClose} />;
-  if (section === 'syntax') return <SyntaxHighlightingSection onClose={onClose} />;
-  if (section === 'shortcuts') return <ShortcutsSection onClose={onClose} />;
-  if (section === 'proxy') return <ProxySection onClose={onClose} />;
-  if (section === 'globals') return <GlobalsSection onClose={onClose} />;
-  if (section === 'storage') return <StorageLocationsSection onClose={onClose} />;
-  if (section === 'ai') return <AiSection onClose={onClose} />;
-  if (section === 'backup-restore') return <BackupRestoreSection onClose={onClose} />;
-  if (section === 'plugins') return <PluginsSection onClose={onClose} />;
-
-  const pluginSection = pluginSections.find((entry) => entry.id === section);
-  if (pluginSection) {
-    return (
-      <Page
-        embedded
-        title={pluginSection.title}
-        icon={faPuzzlePiece}
-        actions={<SettingsCloseButton onClose={onClose} />}
-      >
-        <PluginSurface
-          pluginId={pluginSection.pluginId}
-          contributionId={pluginSection.contributionId}
-          kind="settingsSections"
-          minHeight={400}
-        />
-      </Page>
-    );
-  }
-
-  return null;
 }
 
 /**
@@ -96,6 +40,8 @@ export function Settings({ onClose, initialSection }: Props): JSX.Element {
     [pluginSections]
   );
 
+  const pluginSection = pluginSections.find((entry) => entry.id === section);
+
   return (
     <SidebarLayout
       sidebar={
@@ -107,7 +53,23 @@ export function Settings({ onClose, initialSection }: Props): JSX.Element {
         />
       }
     >
-      <SettingsPanel section={section} pluginSections={pluginSections} onClose={onClose} />
+      {pluginSection ? (
+        <Page
+          embedded
+          title={pluginSection.title}
+          icon={faPuzzlePiece}
+          actions={<SettingsCloseButton onClose={onClose} />}
+        >
+          <PluginSurface
+            pluginId={pluginSection.pluginId}
+            contributionId={pluginSection.contributionId}
+            kind="settingsSections"
+            minHeight={400}
+          />
+        </Page>
+      ) : (
+        <SettingsRenderer section={section} onClose={onClose} />
+      )}
     </SidebarLayout>
   );
 }

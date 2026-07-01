@@ -144,7 +144,6 @@ export type SettingsSection =
   | 'globals'
   | 'ai'
   | 'backup-restore'
-  | 'plugins'
   | `plugin:${string}:${string}`;
 
 /**

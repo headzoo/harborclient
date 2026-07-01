@@ -20,7 +20,6 @@ import {
   faGear,
   faGlobe,
   faKeyboard,
-  faPuzzlePiece,
   faRobot,
   faServer
 } from '#/renderer/src/fontawesome';
@@ -156,7 +155,6 @@ export const SETTINGS_SECTIONS: Array<{
   { value: 'general', label: 'General', icon: faGear },
   { value: 'globals', label: 'Globals', icon: faGlobe },
   { value: 'storage', label: 'Storage Locations', icon: faDatabase },
-  { value: 'plugins', label: 'Plugins', icon: faPuzzlePiece },
   { value: 'shortcuts', label: 'Shortcuts', icon: faKeyboard },
   { value: 'syntax', label: 'Syntax highlighting', icon: faCode },
   { value: 'ai', label: 'AI', icon: faRobot },

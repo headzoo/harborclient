@@ -37,6 +37,8 @@ import {
   attachRendererNavigationGuards,
   createRendererNavigationPolicy
 } from '#/main/window/navigationSecurity';
+import { attachDevContextMenu } from '#/main/window/devContextMenu';
+import { isDevModeFlagEnabled, isDeveloperToolsEnabled } from '#/main/devMode';
 import { disposeScriptRunner } from '#/main/scripting/scriptRunnerHost';
 import {
   PluginManager,
@@ -733,6 +735,10 @@ function createWindow(): BrowserWindow {
   setupFullscreenEscapeHandler(window);
   attachShortcutDispatch(window);
 
+  if (isDeveloperToolsEnabled()) {
+    attachDevContextMenu(window);
+  }
+
   if (isDev && process.env['ELECTRON_RENDERER_URL']) {
     const rendererUrl = process.env['ELECTRON_RENDERER_URL'];
     logVerbose('createWindow: loading renderer URL', rendererUrl);
@@ -806,6 +812,9 @@ app.whenReady().then(async () => {
     await applyPersistedTheme();
 
     logVerbose('startup: initializing plugin manager');
+    if (isDevModeFlagEnabled()) {
+      logVerbose('startup: --dev-mode active; developer tools enabled in packaged build');
+    }
     const disableAllPlugins = isDisablePluginsFlagEnabled();
     if (disableAllPlugins) {
       logVerbose('startup: --disable-plugins active; all plugins will stay inactive');

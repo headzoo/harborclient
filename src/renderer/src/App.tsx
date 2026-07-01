@@ -166,6 +166,7 @@ export default function App(): JSX.Element {
 
   const showConfiguration =
     mainView.type === 'settings' ||
+    mainView.type === 'plugins' ||
     mainView.type === 'team-hubs' ||
     mainView.type === 'sharing-keys' ||
     mainView.type === 'plugin-view' ||
@@ -214,6 +215,8 @@ export default function App(): JSX.Element {
                   onCloseSharingKeys={() => dispatch(closeOverlay())}
                   showTeamHub={mainView.type === 'team-hubs'}
                   onCloseTeamHub={() => dispatch(closeOverlay())}
+                  showPlugins={mainView.type === 'plugins'}
+                  onClosePlugins={() => dispatch(closeOverlay())}
                   showPluginView={mainView.type === 'plugin-view'}
                   pluginViewPluginId={
                     mainView.type === 'plugin-view' ? mainView.pluginId : undefined

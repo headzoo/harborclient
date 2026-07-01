@@ -9,6 +9,7 @@ import {
 import {
   openSharingKeys,
   openTeamHub,
+  openPlugins,
   openSettings,
   selectAiSidebarVisible,
   selectSidebarVisible,
@@ -79,7 +80,7 @@ export function useMenuActions(): void {
           dispatch(openSettings());
           break;
         case 'plugins':
-          dispatch(openSettings('plugins'));
+          dispatch(openPlugins());
           break;
         case 'team-hubs':
           dispatch(openTeamHub());

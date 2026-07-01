@@ -1,16 +1,26 @@
-import { Button, Modal } from '@harborclient/sdk/components';
+import { Button, Page, PanelCloseButton } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 import type { PluginSource, PluginSourcesSettings } from '#/shared/plugin/catalog';
 import type { TeamHubPluginSourcesView } from '#/shared/types';
-
+import { faGear } from '#/renderer/src/fontawesome';
 import { SourceListSection } from './SourceListSection';
 import type { SourceKind } from './types';
 
 interface Props {
   /**
-   * Draft plugin source settings edited in the modal.
+   * Closes the plugins view.
+   */
+  onClose: () => void;
+
+  /**
+   * Draft plugin source settings edited on this page.
    */
   settings: PluginSourcesSettings;
+
+  /**
+   * Read-only plugin source rows provided by connected Team Hubs.
+   */
+  hubSources: TeamHubPluginSourcesView;
 
   /**
    * Whether settings are being loaded or saved.
@@ -18,14 +28,9 @@ interface Props {
   busy: boolean;
 
   /**
-   * Load or save error message shown inside the modal.
+   * Load or save error message shown on this page.
    */
   error: string | null;
-
-  /**
-   * Closes the modal without saving.
-   */
-  onClose: () => void;
 
   /**
    * Persists the draft settings.
@@ -39,44 +44,29 @@ interface Props {
 
   /**
    * Updates one draft source row.
-   *
-   * @param kind - Catalog or trusted endpoint list being edited.
-   * @param index - Row index within the list.
-   * @param source - Updated source row.
    */
   onUpdateSource: (kind: SourceKind, index: number, source: PluginSource) => void;
 
   /**
    * Removes one draft source row.
-   *
-   * @param kind - Catalog or trusted endpoint list being edited.
-   * @param index - Row index to remove.
    */
   onRemoveSource: (kind: SourceKind, index: number) => void;
 
   /**
    * Adds a new draft source row.
-   *
-   * @param kind - Catalog or trusted endpoint list being edited.
-   * @param url - Endpoint URL to append.
    */
   onAddSource: (kind: SourceKind, url: string) => string | null;
-
-  /**
-   * Read-only plugin source rows provided by connected Team Hubs.
-   */
-  hubSources: TeamHubPluginSourcesView;
 }
 
 /**
- * Modal for configuring plugin marketplace catalog and trusted publisher endpoints.
+ * Plugin marketplace catalog and trusted publisher endpoint configuration.
  */
-export function SourcesModal({
+export function PluginSourcesView({
+  onClose,
   settings,
   hubSources,
   busy,
   error,
-  onClose,
   onSave,
   onResetDefaults,
   onUpdateSource,
@@ -84,14 +74,12 @@ export function SourcesModal({
   onAddSource
 }: Props): JSX.Element {
   return (
-    <Modal
-      onClose={onClose}
-      className="w-[min(42rem,calc(100vw-2rem))]"
-      labelledBy="plugin-sources-title"
-      title="Plugin sources"
+    <Page
+      embedded
+      title="Settings"
+      icon={faGear}
       description="Configure where HarborClient loads marketplace catalogs and trusted publisher keys. Enabled endpoints are fetched in list order; the first source wins when entries overlap. Team Hub endpoints are managed by your hub administrator and cannot be removed here."
-      closeDisabled={busy}
-      disableEscape={busy}
+      actions={<PanelCloseButton onClose={onClose} ariaLabel="Close plugins" />}
     >
       {error ? (
         <p className="mb-4 text-[14px] text-danger" role="alert">
@@ -99,7 +87,7 @@ export function SourcesModal({
         </p>
       ) : null}
 
-      <div className="max-h-[min(32rem,60vh)] space-y-6 overflow-y-auto pr-1">
+      <div className="max-w-2xl space-y-6">
         <SourceListSection
           sectionId="plugin-catalog-sources"
           title="Catalog endpoints"
@@ -124,16 +112,14 @@ export function SourcesModal({
         />
       </div>
 
-      <div className="mt-4 flex flex-wrap justify-between gap-2 border-t border-separator pt-4">
+      <div className="mt-6 flex max-w-2xl flex-wrap justify-between gap-2 border-t border-separator pt-4">
         <Button type="button" variant="secondary" disabled={busy} onClick={onResetDefaults}>
           Reset defaults
         </Button>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" disabled={busy} onClick={onSave}>
-            {busy ? 'Saving…' : 'Save'}
-          </Button>
-        </div>
+        <Button type="button" disabled={busy} onClick={onSave}>
+          {busy ? 'Saving…' : 'Save'}
+        </Button>
       </div>
-    </Modal>
+    </Page>
   );
 }
