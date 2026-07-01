@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- chore(dependencies): update @harborclient/sdk to version 1.0.3 in package.json and pnpm-lock.yaml. (`c361b7b`)
 - fix(catalog): update plugin version for plugin-catppuccin-latte to v1.0.4. (`39c4860`)
 - feat(catalog): add optional description field and update plugin version. (`615996f`)
 
