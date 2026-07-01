@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- feat(plugin-detail-modal): enhance screenshot handling in PluginDetailModal. (`a07c307`)
+
 ## 1.9.5 - 2026-07-01
 
 - chore(dependencies): update @harborclient/sdk to version 1.0.3 in package.json and pnpm-lock.yaml. (`c361b7b`)

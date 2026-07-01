@@ -1,7 +1,13 @@
 import { Button, FaIcon, Modal, Spinner } from '@harborclient/sdk/components';
-import type { JSX } from 'react';
+import { useMemo, type JSX } from 'react';
 import type { PluginCatalogEntry } from '#/shared/plugin/catalog';
-import type { PluginGitPreview, PluginInfo, PluginManifest } from '#/shared/plugin/types';
+import { stripPluginScreenshotImagesFromMarkdown } from '#/shared/plugin/stripPluginScreenshotImagesFromMarkdown';
+import type {
+  PluginGitPreview,
+  PluginInfo,
+  PluginManifest,
+  PluginScreenshot
+} from '#/shared/plugin/types';
 
 import { faCircleCheck } from '#/renderer/src/fontawesome';
 import { PERMISSION_LABELS } from './constants';
@@ -95,6 +101,49 @@ type Props = (InstalledProps | CatalogProps) & {
   onClose: () => void;
 };
 
+const SCREENSHOT_FALLBACK_PATH = 'screenshot.png';
+
+/**
+ * Returns the repository-relative path from a manifest screenshot entry.
+ *
+ * @param screenshot - Manifest screenshot string or object.
+ */
+function screenshotRelativePath(screenshot: PluginScreenshot): string {
+  return typeof screenshot === 'string' ? screenshot : screenshot.path;
+}
+
+/**
+ * Collects manifest and catalog screenshot paths used to dedupe README images.
+ *
+ * @param manifest - Parsed plugin manifest when available.
+ * @param entry - Marketplace listing when the modal is in catalog mode.
+ * @param screenshotSrcs - Resolved carousel URLs when a preview is shown.
+ */
+function collectPluginScreenshotImageRefs(
+  manifest: PluginManifest | undefined,
+  entry: PluginCatalogEntry | undefined,
+  screenshotSrcs: string[] | undefined
+): string[] {
+  const refs: string[] = [];
+
+  for (const screenshot of manifest?.screenshots ?? []) {
+    refs.push(screenshotRelativePath(screenshot));
+  }
+
+  if (entry?.screenshots?.length) {
+    refs.push(...entry.screenshots);
+  }
+  if (entry?.screenshot) {
+    refs.push(entry.screenshot);
+  }
+
+  if (refs.length === 0 && screenshotSrcs && screenshotSrcs.length > 0) {
+    refs.push(SCREENSHOT_FALLBACK_PATH);
+  }
+
+  return refs;
+}
+
 /**
  * Returns manifest fields used by both installed and catalog detail views.
  *
@@ -170,6 +219,15 @@ export function PluginDetailModal(props: Props): JSX.Element {
   const descriptionMarkdown = isInstalled
     ? props.descriptionMarkdown
     : resolveCatalogDescriptionMarkdown(entry, props.mode === 'catalog' ? props.preview : null);
+
+  /**
+   * Removes screenshot images from the description body when the carousel already shows them.
+   */
+  const displayDescriptionMarkdown = useMemo(() => {
+    const screenshotRefs = collectPluginScreenshotImageRefs(manifest, entry, screenshotSrcs);
+    return stripPluginScreenshotImagesFromMarkdown(descriptionMarkdown, screenshotRefs);
+  }, [descriptionMarkdown, entry, manifest, screenshotSrcs]);
+
   const descriptionLoadState = isInstalled
     ? props.descriptionLoadState
     : entry?.description
@@ -301,8 +359,8 @@ export function PluginDetailModal(props: Props): JSX.Element {
             <p className="m-0 text-[14px] text-danger" role="alert">
               Could not load the plugin description.
             </p>
-          ) : descriptionMarkdown ? (
-            <PluginReadmeMarkdown content={descriptionMarkdown} />
+          ) : displayDescriptionMarkdown ? (
+            <PluginReadmeMarkdown content={displayDescriptionMarkdown} />
           ) : null}
         </div>
       ) : null}
