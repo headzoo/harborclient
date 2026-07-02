@@ -108,6 +108,29 @@ const ipcRequestBody = z.string().max(MAX_IPC_REQUEST_BODY_CHARS);
 /** Pre/post script source bounded for IPC. */
 const ipcScriptSource = z.string().max(MAX_IPC_SCRIPT_CHARS);
 
+/** Ordered script reference entry for request/collection script lists. */
+export const scriptRef = z.discriminatedUnion('kind', [
+  z.object({
+    id: z.string().min(1),
+    enabled: z.boolean(),
+    kind: z.literal('inline'),
+    name: z.string().optional(),
+    code: ipcScriptSource.optional(),
+    expanded: z.boolean().optional()
+  }),
+  z.object({
+    id: z.string().min(1),
+    enabled: z.boolean(),
+    kind: z.literal('snippet'),
+    name: z.string().optional(),
+    snippetUuid: z.string().min(1),
+    expanded: z.boolean().optional()
+  })
+]);
+
+/** Ordered script reference arrays bounded for IPC. */
+const ipcScriptRefArray = z.array(scriptRef).max(64);
+
 /** URL string bounded for IPC. */
 const ipcUrl = z.string().max(MAX_IPC_URL_CHARS);
 
@@ -126,6 +149,8 @@ export const saveRequestInput = z.object({
   body_type: bodyType,
   pre_request_script: ipcScriptSource,
   post_request_script: ipcScriptSource,
+  pre_request_scripts: ipcScriptRefArray.optional().default([]),
+  post_request_scripts: ipcScriptRefArray.optional().default([]),
   comment: ipcComment,
   auth: authConfig,
   folder_id: nullableFolderId.optional()
@@ -500,8 +525,12 @@ export const ipcArgSchemas = {
     z.array(keyValue),
     z.string(),
     z.string(),
-    authConfig
+    authConfig,
+    ipcScriptRefArray,
+    ipcScriptRefArray
   ]),
+  snippetCreate: z.tuple([name, ipcScriptSource]),
+  snippetUpdate: z.tuple([dbId, name, ipcScriptSource]),
   environmentUpdate: z.tuple([dbId, name, z.array(variable)]),
   collectionMove: z.tuple([dbId, connectionId]),
   collectionReorder: z.tuple([z.array(dbId)]),

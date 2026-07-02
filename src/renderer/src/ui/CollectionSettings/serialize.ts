@@ -1,5 +1,6 @@
 import { cleanVariables } from '@harborclient/sdk/components';
-import type { AuthConfig, KeyValue, Variable } from '#/shared/types';
+import type { AuthConfig, KeyValue, ScriptRef, Variable } from '#/shared/types';
+import { mirrorLegacyScriptString, normalizeScriptRefs } from '#/shared/scriptRefs';
 
 /**
  * Drops header rows with no key or value content.
@@ -16,8 +17,8 @@ export const serializeCollectionForm = (
   name: string,
   variables: Variable[],
   headers: KeyValue[],
-  preRequestScript: string,
-  postRequestScript: string,
+  preRequestScripts: ScriptRef[],
+  postRequestScripts: ScriptRef[],
   auth: AuthConfig,
   connectionId: string
 ): string =>
@@ -25,8 +26,10 @@ export const serializeCollectionForm = (
     name: name.trim(),
     variables: cleanVariables(variables),
     headers: cleanHeaders(headers),
-    pre_request_script: preRequestScript,
-    post_request_script: postRequestScript,
+    pre_request_script: mirrorLegacyScriptString(preRequestScripts),
+    post_request_script: mirrorLegacyScriptString(postRequestScripts),
+    pre_request_scripts: normalizeScriptRefs(preRequestScripts),
+    post_request_scripts: normalizeScriptRefs(postRequestScripts),
     auth,
     connectionId
   });

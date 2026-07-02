@@ -1,5 +1,6 @@
 import { normalizeVariable } from '#/main/storage/collectionData';
 import { defaultAuth, normalizeAuth } from '#/shared/auth';
+import { readScriptRefsFromJson } from '#/shared/scriptRefs';
 import type {
   BodyType,
   Chat,
@@ -12,6 +13,7 @@ import type {
   HttpMethod,
   KeyValue,
   SavedRequest,
+  Snippet,
   Variable
 } from '#/shared/types';
 
@@ -168,6 +170,8 @@ function readAuth(value: unknown): ReturnType<typeof defaultAuth> {
  * @param row - Row or document fields including numeric `id`.
  */
 export function rowToCollection(row: Record<string, unknown>): Collection {
+  const preRequestScript = readString(row.pre_request_script);
+  const postRequestScript = readString(row.post_request_script);
   return {
     id: readNumber(row.id),
     uuid: readString(row.uuid),
@@ -175,8 +179,10 @@ export function rowToCollection(row: Record<string, unknown>): Collection {
     variables: readVariables(row.variables),
     headers: readJsonArray<KeyValue>(row.headers, []),
     auth: readAuth(row.auth),
-    pre_request_script: readString(row.pre_request_script),
-    post_request_script: readString(row.post_request_script),
+    pre_request_script: preRequestScript,
+    post_request_script: postRequestScript,
+    pre_request_scripts: readScriptRefsFromJson(row.pre_request_scripts, preRequestScript),
+    post_request_scripts: readScriptRefsFromJson(row.post_request_scripts, postRequestScript),
     created_at: readTimestamp(row.created_at)
   };
 }
@@ -193,6 +199,22 @@ export function rowToEnvironment(row: Record<string, unknown>): Environment {
     name: readString(row.name),
     variables: readVariables(row.variables),
     created_at: readTimestamp(row.created_at)
+  };
+}
+
+/**
+ * Maps a raw database row to a Snippet object.
+ *
+ * @param row - Row fields including numeric `id`.
+ */
+export function rowToSnippet(row: Record<string, unknown>): Snippet {
+  return {
+    id: readNumber(row.id),
+    uuid: readString(row.uuid),
+    name: readString(row.name),
+    code: readString(row.code),
+    created_at: readTimestamp(row.created_at),
+    updated_at: readTimestamp(row.updated_at)
   };
 }
 
@@ -267,6 +289,8 @@ export function rowToFolder(row: Record<string, unknown>): Folder {
  * @param row - Row or document fields including numeric `id`.
  */
 export function rowToRequest(row: Record<string, unknown>): SavedRequest {
+  const preRequestScript = readString(row.pre_request_script);
+  const postRequestScript = readString(row.post_request_script);
   return {
     id: readNumber(row.id),
     uuid: readString(row.uuid),
@@ -279,8 +303,10 @@ export function rowToRequest(row: Record<string, unknown>): SavedRequest {
     auth: readAuth(row.auth),
     body: readString(row.body),
     body_type: readString(row.body_type, 'none') as BodyType,
-    pre_request_script: readString(row.pre_request_script),
-    post_request_script: readString(row.post_request_script),
+    pre_request_script: preRequestScript,
+    post_request_script: postRequestScript,
+    pre_request_scripts: readScriptRefsFromJson(row.pre_request_scripts, preRequestScript),
+    post_request_scripts: readScriptRefsFromJson(row.post_request_scripts, postRequestScript),
     comment: readString(row.comment),
     folder_id: row.folder_id != null ? readNullableNumber(row.folder_id) : null,
     sort_order: readNumber(row.sort_order),

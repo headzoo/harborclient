@@ -1,39 +1,64 @@
-import { CodeEditor } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
-import type { Variable } from '#/shared/types';
-import { createHcCompletionSource } from '#/renderer/src/scripting/hcCompletions';
+import type { ScriptRef, Variable } from '#/shared/types';
+import { ScriptListEditor } from '#/renderer/src/ui/shared/ScriptListEditor';
+import { useAppSelector } from '#/renderer/src/store/hooks';
+import { selectSnippets } from '#/renderer/src/store/selectors';
 
 interface Props {
+  /**
+   * Script phase rendered by this section.
+   */
   phase: 'pre' | 'post';
+
+  /**
+   * Helper text shown above the script list.
+   */
   description: string;
+
+  /**
+   * Placeholder for new inline scripts.
+   */
   placeholder: string;
-  value: string;
-  onChange: (value: string) => void;
+
+  /**
+   * Ordered script references for this phase.
+   */
+  scripts: ScriptRef[];
+
+  /**
+   * Called when the script list changes.
+   */
+  onChange: (scripts: ScriptRef[]) => void;
+
+  /**
+   * Collection-scoped variables for editor highlighting.
+   */
   variables: Variable[];
 }
 
 /**
- * Collection pre/post script editor for the PreRequest and PostRequest tabs.
+ * Collection pre/post script list editor for the PreRequest and PostRequest tabs.
  */
 export function ScriptSection({
   phase,
   description,
   placeholder,
-  value,
+  scripts,
   onChange,
   variables
 }: Props): JSX.Element {
+  const snippets = useAppSelector(selectSnippets);
+
   return (
-    <div className="mb-6">
-      <p className="mb-3 text-[14px] text-muted">{description}</p>
-      <CodeEditor
-        value={value}
+    <div className="mb-6 flex flex-col">
+      <p className="mb-3 shrink-0 text-[14px] text-muted">{description}</p>
+      <ScriptListEditor
+        phase={phase}
+        scripts={scripts}
         onChange={onChange}
-        language="javascript"
-        completionSource={createHcCompletionSource(phase, variables)}
-        placeholder={placeholder}
         variables={variables}
-        minHeight="240px"
+        snippets={snippets}
+        placeholder={placeholder}
       />
     </div>
   );

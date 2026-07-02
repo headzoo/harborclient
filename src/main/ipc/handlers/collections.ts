@@ -11,6 +11,7 @@ import { convertPostmanCollection, isPostmanCollection } from '#/main/import/pos
 import { convertBrunoCollection, isBrunoCollectionManifest } from '#/main/import/bruno';
 import { convertHarToCollection, isHarArchive } from '#/main/import/har';
 import { defaultAuth } from '#/shared/auth';
+import { mirrorLegacyScriptString, resolveScriptRefs } from '#/shared/scriptRefs';
 import type { IStorage } from '#/main/storage/IStorage';
 import { RoutingStorage } from '#/main/storage/RoutingStorage';
 import { mintFreshCollectionExportUuids, mintFreshRequestExportUuid } from '#/main/storage/uuid';
@@ -60,6 +61,34 @@ export interface RequestImportResult {
    * Whether a new request was created or an existing one was updated.
    */
   action: ImportAction;
+}
+
+/**
+ * Resolves script list fields from a portable request export for persistence.
+ *
+ * @param exportData - Validated request export payload.
+ * @returns Legacy mirror strings and canonical script reference arrays.
+ */
+function requestScriptFieldsFromExport(exportData: RequestExport): {
+  pre_request_script: string;
+  post_request_script: string;
+  pre_request_scripts: ReturnType<typeof resolveScriptRefs>;
+  post_request_scripts: ReturnType<typeof resolveScriptRefs>;
+} {
+  const preRequestScripts = resolveScriptRefs(
+    exportData.pre_request_scripts,
+    exportData.pre_request_script
+  );
+  const postRequestScripts = resolveScriptRefs(
+    exportData.post_request_scripts,
+    exportData.post_request_script
+  );
+  return {
+    pre_request_script: mirrorLegacyScriptString(preRequestScripts),
+    post_request_script: mirrorLegacyScriptString(postRequestScripts),
+    pre_request_scripts: preRequestScripts,
+    post_request_scripts: postRequestScripts
+  };
 }
 
 /**
@@ -207,6 +236,7 @@ async function saveImportedRequest(
         return null;
       }
       if (choice === 'update') {
+        const scripts = requestScriptFieldsFromExport(exportData);
         const request = await db.saveRequest({
           id: existing.id,
           uuid: existing.uuid,
@@ -219,8 +249,7 @@ async function saveImportedRequest(
           params: exportData.params,
           body: exportData.body,
           body_type: exportData.body_type,
-          pre_request_script: exportData.pre_request_script,
-          post_request_script: exportData.post_request_script,
+          ...scripts,
           comment: exportData.comment,
           auth: exportData.auth ?? defaultAuth()
         });
@@ -230,6 +259,7 @@ async function saveImportedRequest(
     }
   }
 
+  const scripts = requestScriptFieldsFromExport(payload);
   const request = await db.saveRequest({
     uuid: payload.uuid,
     collection_id: collectionId,
@@ -241,8 +271,7 @@ async function saveImportedRequest(
     params: payload.params,
     body: payload.body,
     body_type: payload.body_type,
-    pre_request_script: payload.pre_request_script,
-    post_request_script: payload.post_request_script,
+    ...scripts,
     comment: payload.comment,
     auth: payload.auth ?? defaultAuth()
   });
@@ -279,7 +308,18 @@ export function registerCollectionHandlers(db: IStorage): void {
   handle(
     'collections:update',
     ipcArgSchemas.collectionUpdate,
-    (_event, id, collectionName, variables, headers, preRequestScript, postRequestScript, auth) =>
+    (
+      _event,
+      id,
+      collectionName,
+      variables,
+      headers,
+      preRequestScript,
+      postRequestScript,
+      auth,
+      preRequestScripts,
+      postRequestScripts
+    ) =>
       db.updateCollection(
         id,
         collectionName,
@@ -287,7 +327,9 @@ export function registerCollectionHandlers(db: IStorage): void {
         headers,
         preRequestScript,
         postRequestScript,
-        auth
+        auth,
+        preRequestScripts,
+        postRequestScripts
       )
   );
 

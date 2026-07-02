@@ -37,6 +37,8 @@ function sampleSaved(overrides: Partial<SavedRequest> = {}): SavedRequest {
     body_type: 'none',
     pre_request_script: '',
     post_request_script: '',
+    pre_request_scripts: [],
+    post_request_scripts: [],
     comment: '',
     sort_order: 0,
     created_at: '2026-01-01T00:00:00.000Z',
@@ -103,6 +105,8 @@ describe('tabsSlice closeTabsForRequest', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: ''
       })
     );
@@ -166,6 +170,8 @@ describe('tabsSlice closeTabsForCollection', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: ''
       })
     );
@@ -232,6 +238,8 @@ describe('tabsSlice loadRequest', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: ''
       })
     );
@@ -270,6 +278,8 @@ describe('tabsSlice loadRequest', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: ''
       })
     );

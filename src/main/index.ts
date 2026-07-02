@@ -468,16 +468,35 @@ function resolveAppIcon(): string {
 }
 
 /**
- * Resolves the splash page file path for dev and packaged builds.
- * Uses loadFile (not the Vite dev server) because splash is fully self-contained.
- * Always loads the Vite-built `out/renderer/splash.html` so assets stay under the
- * renderer output directory; loading source HTML with `../../images/` paths fails
- * on some Linux file:// setups with ERR_FAILED.
+ * Resolves the splash page file path for packaged builds and preview mode.
  *
- * @returns Absolute path to splash.html.
+ * @returns Absolute path to the Vite-built `out/renderer/splash.html`.
  */
 function resolveSplashPath(): string {
   return join(__dirname, '../renderer/splash.html');
+}
+
+/**
+ * Loads the startup splash page.
+ *
+ * During `electron-vite dev` the renderer dev server serves `splash.html` with
+ * resolved asset URLs. Loading a stale or missing `out/renderer/splash.html`
+ * via `file://` in that mode often fails on Linux with `ERR_FAILED`.
+ *
+ * @param window - Splash browser window to load.
+ */
+async function loadSplashPage(window: BrowserWindow): Promise<void> {
+  const devRendererUrl = process.env['ELECTRON_RENDERER_URL'];
+  if (isDev && devRendererUrl) {
+    const splashUrl = `${devRendererUrl}/splash.html`;
+    logVerbose('createSplashWindow: loading splash URL', splashUrl);
+    await window.loadURL(splashUrl);
+    return;
+  }
+
+  const splashPath = resolveSplashPath();
+  logVerbose('createSplashWindow: loading splash file', splashPath);
+  await window.loadFile(splashPath);
 }
 
 /**
@@ -554,7 +573,7 @@ async function createSplashWindow(): Promise<BrowserWindow> {
     }
   });
 
-  await window.loadFile(resolveSplashPath());
+  await loadSplashPage(window);
 
   window.show();
   window.focus();

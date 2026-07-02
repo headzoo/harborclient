@@ -67,6 +67,8 @@ function sampleCollection(id: number, name: string, connectionId?: string): Coll
     auth: defaultAuth(),
     pre_request_script: '',
     post_request_script: '',
+    pre_request_scripts: [],
+    post_request_scripts: [],
     created_at: '2026-01-01T00:00:00.000Z'
   };
 }
@@ -90,6 +92,8 @@ function draftForCollection(collectionId: number, name: string): RequestDraft {
     body_type: 'none',
     pre_request_script: '',
     post_request_script: '',
+    pre_request_scripts: [],
+    post_request_scripts: [],
     comment: '',
     auth: defaultAuth()
   };

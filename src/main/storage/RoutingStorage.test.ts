@@ -314,6 +314,8 @@ describeSqlite('RoutingStorage collections', () => {
       headers: [],
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       folders: [],
       requests: []
     };

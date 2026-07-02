@@ -77,6 +77,8 @@ describe('hostRequestCommands', () => {
       body_type: 'none',
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       comment: '',
       folder_id: null,
       sort_order: 0,

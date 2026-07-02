@@ -1,5 +1,9 @@
 import type { ScriptRequestContext, ScriptRunResult, Variable } from '#/shared/types';
 import { resolveDynamicVariable, VARIABLE_TOKEN_PATTERN } from '@harborclient/sdk/variables';
+import type { ScriptRef, Snippet } from '#/shared/types';
+import { buildScopedScriptSlots, type ScriptSlot } from '#/renderer/src/scripting/scriptResolution';
+
+export type { ScriptSlot };
 
 /**
  * Builds a runtime variable map from collection variables.
@@ -112,40 +116,69 @@ export function applyScriptRequestMutations(
 }
 
 /**
- * Ordered script slots to run for a send operation.
- */
-export interface ScriptSlot {
-  label: string;
-  phase: 'pre' | 'post';
-  source: string;
-}
-
-/**
- * Builds the ordered list of scripts to run for a send.
+ * Builds the ordered list of scripts to run for a send operation.
  *
- * @param collectionPre - Collection pre-request script.
- * @param collectionPost - Collection post-request script.
- * @param requestPre - Request pre-request script.
- * @param requestPost - Request post-request script.
+ * Collection scripts run before request scripts within each phase. Each scope
+ * expands its script reference array (with legacy string fallback) and resolves
+ * live snippet references at send time.
+ *
+ * @param collectionPreScripts - Collection pre-request script references.
+ * @param collectionPostScripts - Collection post-request script references.
+ * @param requestPreScripts - Request pre-request script references.
+ * @param requestPostScripts - Request post-request script references.
+ * @param collectionPreLegacy - Legacy collection pre-request script string.
+ * @param collectionPostLegacy - Legacy collection post-request script string.
+ * @param requestPreLegacy - Legacy request pre-request script string.
+ * @param requestPostLegacy - Legacy request post-request script string.
  * @param phase - Which phase to collect.
+ * @param snippetLookup - Live snippet library lookup by uuid.
  * @returns Ordered script slots for the phase.
  */
 export function buildScriptSlots(
-  collectionPre: string,
-  collectionPost: string,
-  requestPre: string,
-  requestPost: string,
-  phase: 'pre' | 'post'
+  collectionPreScripts: ScriptRef[] | undefined | null,
+  collectionPostScripts: ScriptRef[] | undefined | null,
+  requestPreScripts: ScriptRef[] | undefined | null,
+  requestPostScripts: ScriptRef[] | undefined | null,
+  collectionPreLegacy: string,
+  collectionPostLegacy: string,
+  requestPreLegacy: string,
+  requestPostLegacy: string,
+  phase: 'pre' | 'post',
+  snippetLookup: Map<string, Snippet>
 ): ScriptSlot[] {
   if (phase === 'pre') {
     return [
-      { label: 'Collection pre-request', phase: 'pre' as const, source: collectionPre },
-      { label: 'Request pre-request', phase: 'pre' as const, source: requestPre }
-    ].filter((slot) => slot.source.trim());
+      ...buildScopedScriptSlots(
+        collectionPreScripts,
+        collectionPreLegacy,
+        'pre',
+        'Collection pre-request',
+        snippetLookup
+      ),
+      ...buildScopedScriptSlots(
+        requestPreScripts,
+        requestPreLegacy,
+        'pre',
+        'Request pre-request',
+        snippetLookup
+      )
+    ];
   }
 
   return [
-    { label: 'Collection post-request', phase: 'post' as const, source: collectionPost },
-    { label: 'Request post-request', phase: 'post' as const, source: requestPost }
-  ].filter((slot) => slot.source.trim());
+    ...buildScopedScriptSlots(
+      collectionPostScripts,
+      collectionPostLegacy,
+      'post',
+      'Collection post-request',
+      snippetLookup
+    ),
+    ...buildScopedScriptSlots(
+      requestPostScripts,
+      requestPostLegacy,
+      'post',
+      'Request post-request',
+      snippetLookup
+    )
+  ];
 }

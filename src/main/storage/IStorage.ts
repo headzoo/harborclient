@@ -7,6 +7,7 @@ import type {
   KeyValue,
   SaveRequestInput,
   SavedRequest,
+  ScriptRef,
   SourceControlStatus,
   Variable
 } from '#/shared/types';
@@ -45,6 +46,8 @@ export interface IStorage {
    * @param preRequestScript - Script run before each request in the collection.
    * @param postRequestScript - Script run after each request in the collection.
    * @param auth - Default Authorization settings for requests in the collection.
+   * @param preRequestScripts - Ordered collection pre-request script references.
+   * @param postRequestScripts - Ordered collection post-request script references.
    * @returns The updated collection.
    */
   updateCollection(
@@ -54,7 +57,9 @@ export interface IStorage {
     headers: KeyValue[],
     preRequestScript: string,
     postRequestScript: string,
-    auth: AuthConfig
+    auth: AuthConfig,
+    preRequestScripts?: ScriptRef[],
+    postRequestScripts?: ScriptRef[]
   ): Promise<Collection>;
 
   /**

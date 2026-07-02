@@ -67,6 +67,7 @@ const SETTINGS_SECTIONS = new Set<string>([
   'shortcuts',
   'proxy',
   'globals',
+  'snippets',
   'ai',
   'backup-restore'
 ]);
@@ -163,6 +164,12 @@ function normalizePersistedDraft(value: unknown): RequestDraft | null {
   if (value.post_request_script !== undefined && typeof value.post_request_script !== 'string') {
     return null;
   }
+  if (value.pre_request_scripts !== undefined && !Array.isArray(value.pre_request_scripts)) {
+    return null;
+  }
+  if (value.post_request_scripts !== undefined && !Array.isArray(value.post_request_scripts)) {
+    return null;
+  }
   if (value.comment !== undefined && typeof value.comment !== 'string') {
     return null;
   }
@@ -183,6 +190,12 @@ function normalizePersistedDraft(value: unknown): RequestDraft | null {
       typeof value.pre_request_script === 'string' ? value.pre_request_script : '',
     post_request_script:
       typeof value.post_request_script === 'string' ? value.post_request_script : '',
+    pre_request_scripts: Array.isArray(value.pre_request_scripts)
+      ? (value.pre_request_scripts as RequestDraft['pre_request_scripts'])
+      : [],
+    post_request_scripts: Array.isArray(value.post_request_scripts)
+      ? (value.post_request_scripts as RequestDraft['post_request_scripts'])
+      : [],
     comment: typeof value.comment === 'string' ? value.comment : ''
   } as RequestDraft);
 }

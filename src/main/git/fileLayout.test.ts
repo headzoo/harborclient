@@ -50,6 +50,8 @@ describe('git file layout', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         sort_order: 0,
         folder_name: null

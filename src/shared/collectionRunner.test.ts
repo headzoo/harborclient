@@ -27,6 +27,8 @@ function sampleRequest(
     body_type: 'none',
     pre_request_script: '',
     post_request_script: '',
+    pre_request_scripts: [],
+    post_request_scripts: [],
     comment: '',
     auth: defaultAuth(),
     created_at: '2026-01-01T00:00:00.000Z',

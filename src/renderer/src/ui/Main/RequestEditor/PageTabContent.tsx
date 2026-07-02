@@ -1,6 +1,7 @@
 import { useEffect, type JSX } from 'react';
 import toast from 'react-hot-toast';
-import type { AuthConfig, KeyValue, Variable } from '#/shared/types';
+import type { AuthConfig, KeyValue, ScriptRef, Variable } from '#/shared/types';
+import { mirrorLegacyScriptString } from '#/shared/scriptRefs';
 import { pluginContributionId } from '#/shared/plugin/types';
 import { usePluginMainViews } from '#/renderer/src/plugins/pluginHooks';
 import type { PageRef } from '#/renderer/src/store/drafts';
@@ -115,8 +116,8 @@ export function PageTabContent({ page, tabId }: Props): JSX.Element | null {
           name: string,
           variables: Variable[],
           headers: KeyValue[],
-          preRequestScript: string,
-          postRequestScript: string,
+          preRequestScripts: ScriptRef[],
+          postRequestScripts: ScriptRef[],
           auth: AuthConfig,
           connectionId: string
         ) => {
@@ -127,8 +128,10 @@ export function PageTabContent({ page, tabId }: Props): JSX.Element | null {
                 name,
                 variables,
                 headers,
-                preRequestScript,
-                postRequestScript,
+                preRequestScript: mirrorLegacyScriptString(preRequestScripts),
+                postRequestScript: mirrorLegacyScriptString(postRequestScripts),
+                preRequestScripts,
+                postRequestScripts,
                 auth,
                 connectionId
               })

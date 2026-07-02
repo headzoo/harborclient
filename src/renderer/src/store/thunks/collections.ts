@@ -7,8 +7,10 @@ import type {
   Folder,
   ImportEntityResult,
   KeyValue,
+  ScriptRef,
   Variable
 } from '#/shared/types';
+import { mirrorLegacyScriptString } from '#/shared/scriptRefs';
 import {
   focusSidebarItem as focusSidebarItemAction,
   setCollections,
@@ -130,6 +132,8 @@ export const updateCollection = createAsyncThunk<
     headers: KeyValue[];
     preRequestScript: string;
     postRequestScript: string;
+    preRequestScripts?: ScriptRef[];
+    postRequestScripts?: ScriptRef[];
     auth: AuthConfig;
     connectionId?: string;
   },
@@ -137,9 +141,26 @@ export const updateCollection = createAsyncThunk<
 >(
   'collections/update',
   async (
-    { id, name, variables, headers, preRequestScript, postRequestScript, auth, connectionId },
+    {
+      id,
+      name,
+      variables,
+      headers,
+      preRequestScript,
+      postRequestScript,
+      preRequestScripts = [],
+      postRequestScripts = [],
+      auth,
+      connectionId
+    },
     { dispatch, getState }
   ) => {
+    const legacyPre =
+      preRequestScripts.length > 0 ? mirrorLegacyScriptString(preRequestScripts) : preRequestScript;
+    const legacyPost =
+      postRequestScripts.length > 0
+        ? mirrorLegacyScriptString(postRequestScripts)
+        : postRequestScript;
     const state = getState();
     const collection = state.collections.collections.find((item) => item.id === id);
     const primaryConnectionId = await window.api.getActiveStorageId();
@@ -156,9 +177,11 @@ export const updateCollection = createAsyncThunk<
           name,
           variables,
           headers,
-          preRequestScript,
-          postRequestScript,
-          auth
+          legacyPre,
+          legacyPost,
+          auth,
+          preRequestScripts,
+          postRequestScripts
         );
       } catch (err) {
         await dispatch(refreshCollections());
@@ -179,9 +202,11 @@ export const updateCollection = createAsyncThunk<
       name,
       variables,
       headers,
-      preRequestScript,
-      postRequestScript,
-      auth
+      legacyPre,
+      legacyPost,
+      auth,
+      preRequestScripts,
+      postRequestScripts
     );
 
     await dispatch(refreshCollections());

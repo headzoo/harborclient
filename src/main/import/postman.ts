@@ -10,6 +10,7 @@ import type {
   KeyValue,
   Variable
 } from '#/shared/types';
+import { scriptRefsFromLegacyString } from '#/shared/scriptRefs';
 
 /**
  * HTTP methods HarborClient accepts for saved requests.
@@ -434,6 +435,8 @@ function convertRequestItem(
     body_type,
     pre_request_script: preRequestScript,
     post_request_script: postRequestScript,
+    pre_request_scripts: scriptRefsFromLegacyString(preRequestScript),
+    post_request_scripts: scriptRefsFromLegacyString(postRequestScript),
     comment: typeof request.description === 'string' ? request.description : '',
     sort_order: sortOrder,
     folder_name: folderPath
@@ -520,6 +523,8 @@ export function convertPostmanCollection(data: unknown): CollectionExport {
     auth: convertAuth(collection.auth),
     pre_request_script: preRequestScript,
     post_request_script: postRequestScript,
+    pre_request_scripts: scriptRefsFromLegacyString(preRequestScript),
+    post_request_scripts: scriptRefsFromLegacyString(postRequestScript),
     folders,
     requests
   };

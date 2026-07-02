@@ -1,14 +1,12 @@
-import {
-  KeyValueEditor,
-  SegmentedTabPanel,
-  Textarea,
-  CodeEditor
-} from '@harborclient/sdk/components';
+import { KeyValueEditor, SegmentedTabPanel, Textarea } from '@harborclient/sdk/components';
 import type { JSX } from 'react';
 import type { KeyValue, Variable } from '#/shared/types';
+import { mirrorLegacyScriptString } from '#/shared/scriptRefs';
 import type { RegisteredRequestTab, RequestTabContext } from '#/shared/plugin/types';
 import { PluginSurface } from '#/renderer/src/plugins/PluginSurface';
-import { createHcCompletionSource } from '#/renderer/src/scripting/hcCompletions';
+import { ScriptListEditor } from '#/renderer/src/ui/shared/ScriptListEditor';
+import { useAppSelector } from '#/renderer/src/store/hooks';
+import { selectSnippets } from '#/renderer/src/store/selectors';
 
 import type { RequestDraft } from '#/renderer/src/store/drafts';
 
@@ -79,6 +77,8 @@ export function TabContent({
   pluginTabs,
   requestTabContext
 }: Props): JSX.Element {
+  const snippets = useAppSelector(selectSnippets);
+
   return (
     <div className="flex min-h-0 flex-1 flex-col pt-4">
       <SegmentedTabPanel value="params">
@@ -129,29 +129,37 @@ export function TabContent({
         </SegmentedTabPanel>
       )}
       <SegmentedTabPanel value="pre">
-        <CodeEditor
-          value={draft.pre_request_script}
-          onChange={(pre_request_script) => update({ pre_request_script })}
-          language="javascript"
-          completionSource={createHcCompletionSource('pre', variables)}
-          placeholder="// hc.request.url = 'https://example.com';\n// hc.variables.set('token', 'abc');"
+        <ScriptListEditor
+          phase="pre"
+          scripts={draft.pre_request_scripts}
+          onChange={(pre_request_scripts) =>
+            update({
+              pre_request_scripts,
+              pre_request_script: mirrorLegacyScriptString(pre_request_scripts)
+            })
+          }
           variables={variables}
-          onEditVariable={onEditVariables}
-          minHeight="200px"
+          onEditVariables={onEditVariables}
+          snippets={snippets}
+          placeholder="// hc.request.url = 'https://example.com';\n// hc.variables.set('token', 'abc');"
         />
       </SegmentedTabPanel>
       <SegmentedTabPanel value="post">
-        <CodeEditor
-          value={draft.post_request_script}
-          onChange={(post_request_script) => update({ post_request_script })}
-          language="javascript"
-          completionSource={createHcCompletionSource('post', variables)}
+        <ScriptListEditor
+          phase="post"
+          scripts={draft.post_request_scripts}
+          onChange={(post_request_scripts) =>
+            update({
+              post_request_scripts,
+              post_request_script: mirrorLegacyScriptString(post_request_scripts)
+            })
+          }
+          variables={variables}
+          onEditVariables={onEditVariables}
+          snippets={snippets}
           placeholder={
             '// hc.test("status is 200", () => {\n//   hc.expect(hc.response.code).to.equal(200);\n// });'
           }
-          variables={variables}
-          onEditVariable={onEditVariables}
-          minHeight="200px"
         />
       </SegmentedTabPanel>
       <SegmentedTabPanel value="comment">

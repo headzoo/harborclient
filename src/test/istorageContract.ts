@@ -28,6 +28,8 @@ export function baseRequestInput(
     body_type: 'none',
     pre_request_script: '',
     post_request_script: '',
+    pre_request_scripts: [],
+    post_request_scripts: [],
     comment: '',
     auth: defaultAuth(),
     ...overrides

@@ -40,6 +40,7 @@ import {
   docToFolder,
   docToRequest
 } from '#/main/storage/entityMappers';
+import { bundleScriptFieldsWithLegacy } from '#/main/storage/scriptFields';
 import { trimRequiredName } from '#/main/storage/trimRequiredName';
 import { defaultAuth } from '#/shared/auth';
 import type { IStorage } from '#/main/storage/IStorage';
@@ -53,6 +54,7 @@ import type {
   KeyValue,
   SaveRequestInput,
   SavedRequest,
+  ScriptRef,
   Variable
 } from '#/shared/types';
 import { generateDocumentUuid } from '#/main/storage/uuid';
@@ -284,6 +286,8 @@ export class FirestoreStorage implements IStorage {
       auth: defaultAuth(),
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: '[]',
+      post_request_scripts: '[]',
       created_at: createdAt
     };
 
@@ -322,9 +326,15 @@ export class FirestoreStorage implements IStorage {
     headers: KeyValue[],
     preRequestScript: string,
     postRequestScript: string,
-    auth: AuthConfig
+    auth: AuthConfig,
+    preRequestScripts: ScriptRef[] = [],
+    postRequestScripts: ScriptRef[] = []
   ): Promise<Collection> {
     const trimmedName = trimRequiredName(name, 'Collection name');
+    const preScripts = bundleScriptFieldsWithLegacy(preRequestScripts, preRequestScript);
+    const postScripts = bundleScriptFieldsWithLegacy(postRequestScripts, postRequestScript);
+    const legacyPreScript = preScripts.legacy;
+    const legacyPostScript = postScripts.legacy;
     const ref = doc(this.getFirestore(), 'collections', String(id));
     const snap = await getDoc(ref);
     if (!snap.exists()) throw new Error('Collection not found');
@@ -335,8 +345,10 @@ export class FirestoreStorage implements IStorage {
       variables,
       headers,
       auth,
-      pre_request_script: preRequestScript,
-      post_request_script: postRequestScript
+      pre_request_script: legacyPreScript,
+      post_request_script: legacyPostScript,
+      pre_request_scripts: preScripts.json,
+      post_request_scripts: postScripts.json
     });
 
     return docToCollection(id, {
@@ -345,8 +357,10 @@ export class FirestoreStorage implements IStorage {
       variables,
       headers,
       auth,
-      pre_request_script: preRequestScript,
-      post_request_script: postRequestScript
+      pre_request_script: legacyPreScript,
+      post_request_script: legacyPostScript,
+      pre_request_scripts: preScripts.json,
+      post_request_scripts: postScripts.json
     });
   }
 
@@ -477,8 +491,16 @@ export class FirestoreStorage implements IStorage {
    */
   async saveRequest(input: SaveRequestInput): Promise<SavedRequest> {
     const trimmedName = trimRequiredName(input.name, 'Request name');
-    const preRequestScript = input.pre_request_script ?? '';
-    const postRequestScript = input.post_request_script ?? '';
+    const preScripts = bundleScriptFieldsWithLegacy(
+      input.pre_request_scripts,
+      input.pre_request_script ?? ''
+    );
+    const postScripts = bundleScriptFieldsWithLegacy(
+      input.post_request_scripts,
+      input.post_request_script ?? ''
+    );
+    const preRequestScript = preScripts.legacy;
+    const postRequestScript = postScripts.legacy;
     const comment = input.comment ?? '';
     const now = new Date().toISOString();
     const firestore = this.getFirestore();
@@ -510,6 +532,8 @@ export class FirestoreStorage implements IStorage {
           body_type: input.body_type,
           pre_request_script: preRequestScript,
           post_request_script: postRequestScript,
+          pre_request_scripts: preScripts.json,
+          post_request_scripts: postScripts.json,
           comment,
           updated_at: now
         };
@@ -543,6 +567,8 @@ export class FirestoreStorage implements IStorage {
       body_type: input.body_type,
       pre_request_script: preRequestScript,
       post_request_script: postRequestScript,
+      pre_request_scripts: preScripts.json,
+      post_request_scripts: postScripts.json,
       comment,
       sort_order: maxOrder + 1,
       created_at: createdAt,

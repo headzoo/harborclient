@@ -20,6 +20,7 @@ import {
   rowToFolder,
   rowToRequest
 } from '#/main/storage/entityMappers';
+import { bundleScriptFieldsWithLegacy } from '#/main/storage/scriptFields';
 import { trimRequiredName } from '#/main/storage/trimRequiredName';
 import { DEFAULT_AUTH_JSON, defaultAuth, normalizeAuth } from '#/shared/auth';
 import type { IStorage } from '#/main/storage/IStorage';
@@ -33,13 +34,14 @@ import type {
   MySqlSettings,
   SaveRequestInput,
   SavedRequest,
+  ScriptRef,
   Variable
 } from '#/shared/types';
 import { parseJson } from '#/shared/parseJson';
 import { generateDocumentUuid } from '#/main/storage/uuid';
 
 const COLLECTION_COLUMNS =
-  'id, uuid, name, variables, headers, auth, pre_request_script, post_request_script, created_at';
+  'id, uuid, name, variables, headers, auth, pre_request_script, post_request_script, pre_request_scripts, post_request_scripts, created_at';
 const ENVIRONMENT_COLUMNS = 'id, uuid, name, variables, created_at';
 
 export class MySqlStorage implements IStorage {
@@ -163,6 +165,26 @@ export class MySqlStorage implements IStorage {
     await this.addColumnIfMissing('requests', 'uuid', "VARCHAR(36) NOT NULL DEFAULT ''");
     await this.addColumnIfMissing('environments', 'uuid', "VARCHAR(36) NOT NULL DEFAULT ''");
     await this.addColumnIfMissing('folders', 'uuid', "VARCHAR(36) NOT NULL DEFAULT ''");
+    await this.addColumnIfMissing(
+      'collections',
+      'pre_request_scripts',
+      "LONGTEXT NOT NULL DEFAULT ('[]')"
+    );
+    await this.addColumnIfMissing(
+      'collections',
+      'post_request_scripts',
+      "LONGTEXT NOT NULL DEFAULT ('[]')"
+    );
+    await this.addColumnIfMissing(
+      'requests',
+      'pre_request_scripts',
+      "LONGTEXT NOT NULL DEFAULT ('[]')"
+    );
+    await this.addColumnIfMissing(
+      'requests',
+      'post_request_scripts',
+      "LONGTEXT NOT NULL DEFAULT ('[]')"
+    );
     await this.backfillDocumentUuids('collections');
     await this.backfillDocumentUuids('requests');
     await this.backfillDocumentUuids('environments');
@@ -288,18 +310,24 @@ export class MySqlStorage implements IStorage {
     headers: KeyValue[],
     preRequestScript: string,
     postRequestScript: string,
-    auth: AuthConfig
+    auth: AuthConfig,
+    preRequestScripts: ScriptRef[] = [],
+    postRequestScripts: ScriptRef[] = []
   ): Promise<Collection> {
     const trimmedName = trimRequiredName(name, 'Collection name');
+    const preScripts = bundleScriptFieldsWithLegacy(preRequestScripts, preRequestScript);
+    const postScripts = bundleScriptFieldsWithLegacy(postRequestScripts, postRequestScript);
     const [result] = await this.getPool().execute<ResultSetHeader>(
-      'UPDATE collections SET name = ?, variables = ?, headers = ?, auth = ?, pre_request_script = ?, post_request_script = ? WHERE id = ?',
+      'UPDATE collections SET name = ?, variables = ?, headers = ?, auth = ?, pre_request_script = ?, post_request_script = ?, pre_request_scripts = ?, post_request_scripts = ? WHERE id = ?',
       [
         trimmedName,
         JSON.stringify(variables),
         JSON.stringify(headers),
         JSON.stringify(auth),
-        preRequestScript,
-        postRequestScript,
+        preScripts.legacy,
+        postScripts.legacy,
+        preScripts.json,
+        postScripts.json,
         id
       ]
     );
@@ -423,8 +451,16 @@ export class MySqlStorage implements IStorage {
     const headers = JSON.stringify(input.headers);
     const params = JSON.stringify(input.params);
     const auth = JSON.stringify(input.auth);
-    const preRequestScript = input.pre_request_script ?? '';
-    const postRequestScript = input.post_request_script ?? '';
+    const preScripts = bundleScriptFieldsWithLegacy(
+      input.pre_request_scripts,
+      input.pre_request_script ?? ''
+    );
+    const postScripts = bundleScriptFieldsWithLegacy(
+      input.post_request_scripts,
+      input.post_request_script ?? ''
+    );
+    const preRequestScript = preScripts.legacy;
+    const postRequestScript = postScripts.legacy;
     const comment = input.comment ?? '';
     const folderId = input.folder_id ?? null;
     const now = new Date().toISOString();
@@ -445,7 +481,7 @@ export class MySqlStorage implements IStorage {
         `UPDATE requests SET
           collection_id = ?, folder_id = ?, name = ?, method = ?, url = ?,
           headers = ?, params = ?, auth = ?, body = ?, body_type = ?,
-          pre_request_script = ?, post_request_script = ?, comment = ?,
+          pre_request_script = ?, post_request_script = ?, pre_request_scripts = ?, post_request_scripts = ?, comment = ?,
           updated_at = ?
         WHERE id = ?`,
         [
@@ -461,6 +497,8 @@ export class MySqlStorage implements IStorage {
           input.body_type,
           preRequestScript,
           postRequestScript,
+          preScripts.json,
+          postScripts.json,
           comment,
           now,
           input.id
@@ -488,8 +526,8 @@ export class MySqlStorage implements IStorage {
     const [result] = await this.getPool().execute<ResultSetHeader>(
       `INSERT INTO requests (
         collection_id, folder_id, name, method, url, headers, params, auth, body, body_type,
-        pre_request_script, post_request_script, comment, sort_order, uuid, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        pre_request_script, post_request_script, pre_request_scripts, post_request_scripts, comment, sort_order, uuid, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         input.collection_id,
         folderId,
@@ -503,6 +541,8 @@ export class MySqlStorage implements IStorage {
         input.body_type,
         preRequestScript,
         postRequestScript,
+        preScripts.json,
+        postScripts.json,
         comment,
         maxOrder + 1,
         requestUuid,

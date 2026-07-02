@@ -9,6 +9,7 @@ import type {
 import type { RequestExport } from '#/shared/types/request';
 import type { Environment } from '#/shared/types/environment';
 import type { KeyValue, Variable } from '#/shared/types/common';
+import type { ScriptRef } from '#/shared/types/script';
 import type { SavedRequest } from '#/shared/types/request';
 
 /**
@@ -48,7 +49,9 @@ export interface ApiCollections {
     headers: KeyValue[],
     preRequestScript: string,
     postRequestScript: string,
-    auth: AuthConfig
+    auth: AuthConfig,
+    preRequestScripts?: ScriptRef[],
+    postRequestScripts?: ScriptRef[]
   ) => Promise<Collection>;
   /**
    * Deletes a collection and all of its saved requests.

@@ -7,7 +7,22 @@ import {
   mergeVariableSets,
   substituteWithMap
 } from '#/renderer/src/scripting/scriptOrchestration';
-import type { ScriptRunResult } from '#/shared/types';
+import { createInlineScriptRef, createSnippetScriptRef } from '#/shared/scriptRefs';
+import type { ScriptRunResult, Snippet } from '#/shared/types';
+
+const snippetLookup = new Map<string, Snippet>([
+  [
+    'snippet-1',
+    {
+      id: 1,
+      uuid: 'snippet-1',
+      name: 'Auth helper',
+      code: "hc.variables.set('token', 'live');",
+      created_at: '2026-01-01T00:00:00.000Z',
+      updated_at: '2026-01-01T00:00:00.000Z'
+    }
+  ]
+]);
 
 describe('buildRuntimeVars', () => {
   it('resolves value and defaultValue', () => {
@@ -115,20 +130,74 @@ describe('applyScriptRequestMutations', () => {
 });
 
 describe('buildScriptSlots', () => {
-  it('returns collection then request pre scripts', () => {
+  it('returns collection then request pre scripts from legacy strings', () => {
     expect(
-      buildScriptSlots('collection pre', '', 'request pre', '', 'pre').map((slot) => slot.label)
-    ).toEqual(['Collection pre-request', 'Request pre-request']);
+      buildScriptSlots(
+        [],
+        [],
+        [],
+        [],
+        'collection pre',
+        '',
+        'request pre',
+        '',
+        'pre',
+        snippetLookup
+      ).map((slot) => slot.label)
+    ).toEqual(['Collection pre-request script 1', 'Request pre-request script 1']);
   });
 
-  it('returns collection then request post scripts', () => {
+  it('returns collection then request post scripts from legacy strings', () => {
     expect(
-      buildScriptSlots('', 'collection post', '', 'request post', 'post').map((slot) => slot.label)
-    ).toEqual(['Collection post-request', 'Request post-request']);
+      buildScriptSlots(
+        [],
+        [],
+        [],
+        [],
+        '',
+        'collection post',
+        '',
+        'request post',
+        'post',
+        snippetLookup
+      ).map((slot) => slot.label)
+    ).toEqual(['Collection post-request script 1', 'Request post-request script 1']);
+  });
+
+  it('expands inline and snippet references in order', () => {
+    const slots = buildScriptSlots(
+      [createInlineScriptRef('collection inline')],
+      [],
+      [createSnippetScriptRef('snippet-1', 'Auth helper')],
+      [],
+      '',
+      '',
+      '',
+      '',
+      'pre',
+      snippetLookup
+    );
+
+    expect(slots).toHaveLength(2);
+    expect(slots[0]?.source).toBe('collection inline');
+    expect(slots[1]?.source).toBe("hc.variables.set('token', 'live');");
   });
 
   it('filters empty scripts', () => {
-    expect(buildScriptSlots('', '', 'request pre', '', 'pre')).toHaveLength(1);
+    expect(
+      buildScriptSlots(
+        [],
+        [],
+        [createInlineScriptRef('request pre')],
+        [],
+        '',
+        '',
+        '',
+        '',
+        'pre',
+        snippetLookup
+      )
+    ).toHaveLength(1);
   });
 });
 

@@ -4,6 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SqliteSettings } from '#/shared/types';
+import { createInlineScriptRef } from '#/shared/scriptRefs';
 import { SqliteStorage } from '#/main/storage/SqliteStorage';
 import {
   baseRequestInput,
@@ -54,6 +55,57 @@ afterEach(async () => {
   if (existsSync(TEST_APP_DATA)) {
     rmSync(TEST_APP_DATA, { recursive: true, force: true });
   }
+});
+
+describeSqlite('SqliteStorage script arrays', () => {
+  it('round-trips multiple pre-request script references on save and list', async () => {
+    const { db } = await createTestDb();
+    const collection = await db.createCollection('Scripts');
+    const first = createInlineScriptRef('console.log("one");', 'First');
+    const second = createInlineScriptRef('', 'Unnamed script...');
+
+    const saved = await db.saveRequest({
+      ...baseRequestInput(collection.id, { name: 'Scripted' }),
+      pre_request_script: 'console.log("one");',
+      pre_request_scripts: [first, second]
+    });
+
+    expect(saved.pre_request_scripts).toHaveLength(2);
+    expect(saved.pre_request_scripts.map((script) => script.name)).toEqual([
+      'First',
+      'Unnamed script...'
+    ]);
+
+    const listed = await db.listRequests(collection.id);
+    expect(listed[0]?.pre_request_scripts).toHaveLength(2);
+    expect(listed[0]?.pre_request_scripts.map((script) => script.name)).toEqual([
+      'First',
+      'Unnamed script...'
+    ]);
+  });
+
+  it('round-trips expanded flags on script references', async () => {
+    const { db } = await createTestDb();
+    const collection = await db.createCollection('Scripts');
+    const expanded = { ...createInlineScriptRef('console.log("open");'), expanded: true };
+    const collapsed = { ...createInlineScriptRef('console.log("shut");'), expanded: false };
+
+    const saved = await db.saveRequest({
+      ...baseRequestInput(collection.id, { name: 'Expansion' }),
+      pre_request_scripts: [expanded, collapsed]
+    });
+
+    expect(saved.pre_request_scripts).toEqual([
+      expect.objectContaining({ expanded: true }),
+      expect.objectContaining({ expanded: false })
+    ]);
+
+    const listed = await db.listRequests(collection.id);
+    expect(listed[0]?.pre_request_scripts).toEqual([
+      expect.objectContaining({ expanded: true }),
+      expect.objectContaining({ expanded: false })
+    ]);
+  });
 });
 
 describe('SqliteStorage lifecycle', () => {

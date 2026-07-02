@@ -23,6 +23,10 @@ import {
   rowToFolder,
   rowToRequest
 } from '#/main/storage/entityMappers';
+import {
+  bundleScriptFieldsWithLegacy,
+  migrateSqliteScriptArrayColumns
+} from '#/main/storage/scriptFields';
 import { trimRequiredName } from '#/main/storage/trimRequiredName';
 import { DEFAULT_AUTH_JSON, defaultAuth, normalizeAuth } from '#/shared/auth';
 import type { IStorage } from '#/main/storage/IStorage';
@@ -35,6 +39,7 @@ import type {
   KeyValue,
   SaveRequestInput,
   SavedRequest,
+  ScriptRef,
   SqliteSettings,
   Variable
 } from '#/shared/types';
@@ -42,7 +47,7 @@ import { parseJson } from '#/shared/parseJson';
 import { generateDocumentUuid } from '#/main/storage/uuid';
 
 const COLLECTION_COLUMNS =
-  'id, uuid, name, variables, headers, auth, pre_request_script, post_request_script, created_at';
+  'id, uuid, name, variables, headers, auth, pre_request_script, post_request_script, pre_request_scripts, post_request_scripts, created_at';
 const ENVIRONMENT_COLUMNS = 'id, uuid, name, variables, created_at';
 
 /**
@@ -117,6 +122,8 @@ export class SqliteStorage implements IStorage {
       auth TEXT NOT NULL DEFAULT '${DEFAULT_AUTH_JSON.replace(/'/g, "''")}',
       pre_request_script TEXT NOT NULL DEFAULT '',
       post_request_script TEXT NOT NULL DEFAULT '',
+      pre_request_scripts TEXT NOT NULL DEFAULT '[]',
+      post_request_scripts TEXT NOT NULL DEFAULT '[]',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -133,6 +140,8 @@ export class SqliteStorage implements IStorage {
       body_type TEXT NOT NULL DEFAULT 'none',
       pre_request_script TEXT NOT NULL DEFAULT '',
       post_request_script TEXT NOT NULL DEFAULT '',
+      pre_request_scripts TEXT NOT NULL DEFAULT '[]',
+      post_request_scripts TEXT NOT NULL DEFAULT '[]',
       comment TEXT NOT NULL DEFAULT '',
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -226,6 +235,8 @@ export class SqliteStorage implements IStorage {
     this.backfillDocumentUuids('requests');
     this.backfillDocumentUuids('environments');
     this.backfillDocumentUuids('folders');
+    migrateSqliteScriptArrayColumns(this.getDb(), 'collections');
+    migrateSqliteScriptArrayColumns(this.getDb(), 'requests');
   }
 
   /**
@@ -334,20 +345,26 @@ export class SqliteStorage implements IStorage {
     headers: KeyValue[],
     preRequestScript: string,
     postRequestScript: string,
-    auth: AuthConfig
+    auth: AuthConfig,
+    preRequestScripts: ScriptRef[] = [],
+    postRequestScripts: ScriptRef[] = []
   ): Promise<Collection> {
     const trimmedName = trimRequiredName(name, 'Collection name');
+    const preScripts = bundleScriptFieldsWithLegacy(preRequestScripts, preRequestScript);
+    const postScripts = bundleScriptFieldsWithLegacy(postRequestScripts, postRequestScript);
     this.getDb()
       .prepare(
-        'UPDATE collections SET name = ?, variables = ?, headers = ?, auth = ?, pre_request_script = ?, post_request_script = ? WHERE id = ?'
+        'UPDATE collections SET name = ?, variables = ?, headers = ?, auth = ?, pre_request_script = ?, post_request_script = ?, pre_request_scripts = ?, post_request_scripts = ? WHERE id = ?'
       )
       .run(
         trimmedName,
         JSON.stringify(variables),
         JSON.stringify(headers),
         JSON.stringify(auth),
-        preRequestScript,
-        postRequestScript,
+        preScripts.legacy,
+        postScripts.legacy,
+        preScripts.json,
+        postScripts.json,
         id
       );
 
@@ -457,8 +474,16 @@ export class SqliteStorage implements IStorage {
     const headers = JSON.stringify(input.headers);
     const params = JSON.stringify(input.params);
     const auth = JSON.stringify(input.auth);
-    const preRequestScript = input.pre_request_script ?? '';
-    const postRequestScript = input.post_request_script ?? '';
+    const preScripts = bundleScriptFieldsWithLegacy(
+      input.pre_request_scripts,
+      input.pre_request_script ?? ''
+    );
+    const postScripts = bundleScriptFieldsWithLegacy(
+      input.post_request_scripts,
+      input.post_request_script ?? ''
+    );
+    const preRequestScript = preScripts.legacy;
+    const postRequestScript = postScripts.legacy;
     const comment = input.comment ?? '';
     const folderId = input.folder_id ?? null;
     const now = new Date().toISOString();
@@ -478,7 +503,7 @@ export class SqliteStorage implements IStorage {
           `UPDATE requests SET
           collection_id = ?, folder_id = ?, name = ?, method = ?, url = ?,
           headers = ?, params = ?, auth = ?, body = ?, body_type = ?,
-          pre_request_script = ?, post_request_script = ?, comment = ?,
+          pre_request_script = ?, post_request_script = ?, pre_request_scripts = ?, post_request_scripts = ?, comment = ?,
           updated_at = ?
         WHERE id = ?`
         )
@@ -495,6 +520,8 @@ export class SqliteStorage implements IStorage {
           input.body_type,
           preRequestScript,
           postRequestScript,
+          preScripts.json,
+          postScripts.json,
           comment,
           now,
           input.id
@@ -518,8 +545,8 @@ export class SqliteStorage implements IStorage {
       .prepare(
         `INSERT INTO requests (
         collection_id, folder_id, name, method, url, headers, params, auth, body, body_type,
-        pre_request_script, post_request_script, comment, sort_order, uuid, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        pre_request_script, post_request_script, pre_request_scripts, post_request_scripts, comment, sort_order, uuid, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         input.collection_id,
@@ -534,6 +561,8 @@ export class SqliteStorage implements IStorage {
         input.body_type,
         preRequestScript,
         postRequestScript,
+        preScripts.json,
+        postScripts.json,
         comment,
         maxOrder.max_order + 1,
         requestUuid,

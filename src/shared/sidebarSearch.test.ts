@@ -12,6 +12,8 @@ const collectionA: Collection = {
   auth: defaultAuth(),
   pre_request_script: '',
   post_request_script: '',
+  pre_request_scripts: [],
+  post_request_scripts: [],
   created_at: '2024-01-01T00:00:00.000Z'
 };
 
@@ -24,6 +26,8 @@ const collectionB: Collection = {
   auth: defaultAuth(),
   pre_request_script: '',
   post_request_script: '',
+  pre_request_scripts: [],
+  post_request_scripts: [],
   created_at: '2024-01-01T00:00:00.000Z'
 };
 
@@ -50,6 +54,8 @@ const requestListUsers: SavedRequest = {
   body_type: 'none',
   pre_request_script: '',
   post_request_script: '',
+  pre_request_scripts: [],
+  post_request_scripts: [],
   comment: '',
   folder_id: 10,
   sort_order: 0,
@@ -71,6 +77,8 @@ const requestCreateUser: SavedRequest = {
   body_type: 'json',
   pre_request_script: '',
   post_request_script: '',
+  pre_request_scripts: [],
+  post_request_scripts: [],
   comment: '',
   folder_id: 10,
   sort_order: 1,
@@ -92,6 +100,8 @@ const requestHealth: SavedRequest = {
   body_type: 'none',
   pre_request_script: '',
   post_request_script: '',
+  pre_request_scripts: [],
+  post_request_scripts: [],
   comment: '',
   folder_id: null,
   sort_order: 0,

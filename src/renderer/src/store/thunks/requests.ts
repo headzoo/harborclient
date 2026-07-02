@@ -27,6 +27,8 @@ import {
   mergeVariableSets,
   substituteWithMap
 } from '#/renderer/src/scripting/scriptOrchestration';
+import { buildSnippetLookup } from '#/renderer/src/scripting/scriptResolution';
+import { mirrorLegacyScriptString, normalizeScriptRefs } from '#/shared/scriptRefs';
 import { saveGlobalVariables } from '#/renderer/src/store/thunks/settings';
 import {
   cloneDraft,
@@ -160,6 +162,9 @@ export const saveRequest = createAsyncThunk<SavedRequest, number | undefined, Th
     // saving back into the draft's own collection. Saving into a different collection
     // creates a copy at the root; carrying the source folder_id would reference a
     // folder that does not exist in the target and fail with "Folder not found".
+    const preRequestScripts = normalizeScriptRefs(currentDraft.pre_request_scripts);
+    const postRequestScripts = normalizeScriptRefs(currentDraft.post_request_scripts);
+
     const saved = await window.api.saveRequest({
       id: shouldUpdate ? currentDraft.id : undefined,
       collection_id: targetId,
@@ -171,8 +176,10 @@ export const saveRequest = createAsyncThunk<SavedRequest, number | undefined, Th
       params: currentDraft.params.filter((p) => p.key.trim() || p.value.trim()),
       body: currentDraft.body,
       body_type: currentDraft.body_type,
-      pre_request_script: currentDraft.pre_request_script ?? '',
-      post_request_script: currentDraft.post_request_script ?? '',
+      pre_request_script: mirrorLegacyScriptString(preRequestScripts),
+      post_request_script: mirrorLegacyScriptString(postRequestScripts),
+      pre_request_scripts: preRequestScripts,
+      post_request_scripts: postRequestScripts,
       comment: currentDraft.comment ?? '',
       auth: currentDraft.auth
     });
@@ -223,6 +230,8 @@ export const newRequestInFolder = createAsyncThunk<
     body_type: 'none',
     pre_request_script: '',
     post_request_script: '',
+    pre_request_scripts: [],
+    post_request_scripts: [],
     comment: '',
     auth: defaultAuth()
   });
@@ -257,6 +266,8 @@ export const duplicateRequest = createAsyncThunk<SavedRequest, SavedRequest, Thu
       body_type: req.body_type,
       pre_request_script: req.pre_request_script ?? '',
       post_request_script: req.post_request_script ?? '',
+      pre_request_scripts: req.pre_request_scripts ?? [],
+      post_request_scripts: req.post_request_scripts ?? [],
       comment: req.comment ?? '',
       auth: req.auth
     });
@@ -297,6 +308,8 @@ export const newRequestInCollection = createAsyncThunk<SavedRequest, number, Thu
       body_type: 'none',
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       comment: '',
       auth: defaultAuth()
     });
@@ -358,12 +371,18 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
      * Runs pre- or post-request scripts for one phase slot.
      */
     const runScriptPhase = async (phase: 'pre' | 'post', response?: SendResult): Promise<void> => {
+      const snippetLookup = buildSnippetLookup(state.snippets.snippets);
       const slots = buildScriptSlots(
+        collection?.pre_request_scripts,
+        collection?.post_request_scripts,
+        currentDraft.pre_request_scripts,
+        currentDraft.post_request_scripts,
         collection?.pre_request_script ?? '',
         collection?.post_request_script ?? '',
         currentDraft.pre_request_script,
         currentDraft.post_request_script,
-        phase
+        phase,
+        snippetLookup
       );
 
       for (const slot of slots) {
@@ -509,6 +528,8 @@ export const sendRequest = createAsyncThunk<void, void, ThunkApiConfig>(
                 headers: collectionHeaderRows,
                 preRequestScript: collection.pre_request_script,
                 postRequestScript: collection.post_request_script,
+                preRequestScripts: collection.pre_request_scripts,
+                postRequestScripts: collection.post_request_scripts,
                 auth: collection.auth,
                 connectionId: collection.connectionId
               })

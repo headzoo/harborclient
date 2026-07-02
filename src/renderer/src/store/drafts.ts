@@ -3,12 +3,18 @@ import type {
   HttpMethod,
   KeyValue,
   SavedRequest,
+  ScriptRef,
   ScriptTestResult,
   SendResult,
   SettingsSection
 } from '#/shared/types';
 import { defaultAuth, normalizeAuth, type AuthConfig } from '#/shared/auth';
 import { applyParamsToUrl } from '#/shared/queryParams';
+import {
+  mirrorLegacyScriptString,
+  normalizeScriptRefs,
+  resolveScriptRefs
+} from '#/shared/scriptRefs';
 
 /**
  * Editable request state in the UI before or during save.
@@ -27,6 +33,8 @@ export interface RequestDraft {
   body_type: BodyType;
   pre_request_script: string;
   post_request_script: string;
+  pre_request_scripts: ScriptRef[];
+  post_request_scripts: ScriptRef[];
   comment: string;
 }
 
@@ -185,12 +193,22 @@ export function normalizeKeyValueRows(rows: KeyValue[] | undefined | null): KeyV
  * @returns Draft with script fields guaranteed to be strings.
  */
 export function normalizeDraft(draft: RequestDraft): RequestDraft {
+  const preRequestScripts = resolveScriptRefs(
+    draft.pre_request_scripts,
+    draft.pre_request_script ?? ''
+  );
+  const postRequestScripts = resolveScriptRefs(
+    draft.post_request_scripts,
+    draft.post_request_script ?? ''
+  );
   return {
     ...draft,
     headers: normalizeKeyValueRows(draft.headers),
     params: normalizeKeyValueRows(draft.params),
-    pre_request_script: draft.pre_request_script ?? '',
-    post_request_script: draft.post_request_script ?? '',
+    pre_request_script: mirrorLegacyScriptString(preRequestScripts),
+    post_request_script: mirrorLegacyScriptString(postRequestScripts),
+    pre_request_scripts: preRequestScripts,
+    post_request_scripts: postRequestScripts,
     comment: draft.comment ?? '',
     auth: normalizeAuth(draft.auth)
   };
@@ -208,6 +226,8 @@ export function cloneDraft(draft: RequestDraft): RequestDraft {
     ...normalized,
     headers: normalized.headers.map((h) => ({ ...h })),
     params: normalized.params.map((p) => ({ ...p })),
+    pre_request_scripts: normalized.pre_request_scripts.map((script) => ({ ...script })),
+    post_request_scripts: normalized.post_request_scripts.map((script) => ({ ...script })),
     auth: {
       ...normalized.auth,
       basic: { ...normalized.auth.basic },
@@ -232,6 +252,8 @@ export function normalizeDraftForCompare(draft: RequestDraft): string {
     body_type: draft.body_type,
     pre_request_script: draft.pre_request_script ?? '',
     post_request_script: draft.post_request_script ?? '',
+    pre_request_scripts: normalizeScriptRefs(draft.pre_request_scripts),
+    post_request_scripts: normalizeScriptRefs(draft.post_request_scripts),
     comment: draft.comment ?? '',
     auth: draft.auth,
     headers: draft.headers.filter((h) => h.key.trim() || h.value.trim()),
@@ -290,6 +312,8 @@ export const defaultDraft = (): RequestDraft => ({
   body_type: 'none',
   pre_request_script: '',
   post_request_script: '',
+  pre_request_scripts: [],
+  post_request_scripts: [],
   comment: ''
 });
 
@@ -329,6 +353,14 @@ export function syncDraftUrlWithParams(draft: RequestDraft): RequestDraft {
  * @returns RequestDraft populated from the saved request.
  */
 export function draftFromSaved(req: SavedRequest): RequestDraft {
+  const preRequestScripts = resolveScriptRefs(
+    req.pre_request_scripts,
+    req.pre_request_script ?? ''
+  );
+  const postRequestScripts = resolveScriptRefs(
+    req.post_request_scripts,
+    req.post_request_script ?? ''
+  );
   return syncDraftUrlWithParams({
     id: req.id,
     collection_id: req.collection_id,
@@ -341,8 +373,10 @@ export function draftFromSaved(req: SavedRequest): RequestDraft {
     auth: normalizeAuth(req.auth),
     body: req.body,
     body_type: req.body_type,
-    pre_request_script: req.pre_request_script ?? '',
-    post_request_script: req.post_request_script ?? '',
+    pre_request_script: mirrorLegacyScriptString(preRequestScripts),
+    post_request_script: mirrorLegacyScriptString(postRequestScripts),
+    pre_request_scripts: preRequestScripts,
+    post_request_scripts: postRequestScripts,
     comment: req.comment ?? ''
   });
 }

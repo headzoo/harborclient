@@ -19,6 +19,11 @@ interface Options {
    * Whether the Body tab is available for the current method.
    */
   showBody: boolean;
+
+  /**
+   * Called when a persisted tab is loaded from storage.
+   */
+  onTabResolved?: (tab: string) => void;
 }
 
 interface Result {
@@ -36,9 +41,17 @@ interface Result {
 /**
  * Loads and persists the request editor tab per request via electron-store.
  */
-export function usePersistedEditorTab({ draft, tabId, showBody }: Options): Result {
+export function usePersistedEditorTab({ draft, tabId, showBody, onTabResolved }: Options): Result {
   const [tab, setTabState] = useState<string>('params');
   const tabRef = useRef(tab);
+  const onTabResolvedRef = useRef(onTabResolved);
+
+  /**
+   * Keeps the tab-resolved callback ref current for async persistence loads.
+   */
+  useEffect(() => {
+    onTabResolvedRef.current = onTabResolved;
+  }, [onTabResolved]);
 
   /**
    * Keeps a ref in sync with tab state for persistence after first save.
@@ -63,6 +76,7 @@ export function usePersistedEditorTab({ draft, tabId, showBody }: Options): Resu
         if (cancelled) return;
         const resolved = resolveEditorTab(stored, showBody);
         setTabState(resolved);
+        onTabResolvedRef.current?.(resolved);
       })
       .catch(() => {
         // Keep the default tab when IPC fails so the editor remains usable.

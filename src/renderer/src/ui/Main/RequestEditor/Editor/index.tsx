@@ -1,7 +1,8 @@
 import { SegmentedTabs, SegmentedTabsGroup } from '@harborclient/sdk/components';
-import { useMemo, type JSX } from 'react';
+import { useCallback, useMemo, type JSX } from 'react';
 import type { KeyValue, Variable } from '#/shared/types';
 import { applyParamsToUrl, mergeParamsFromUrl } from '#/shared/queryParams';
+import { ensureDefaultScriptRef, hasScriptContent } from '#/shared/scriptRefs';
 
 import type { RequestTabContext } from '#/shared/plugin/types';
 import type { RequestDraft } from '#/renderer/src/store/drafts';
@@ -105,7 +106,42 @@ export function Editor({
 }: Props): JSX.Element {
   const pluginTabs = usePluginRequestTabs();
   const showBody = draft.method !== 'GET' && draft.method !== 'HEAD';
-  const { tab, setTab } = usePersistedEditorTab({ draft, tabId, showBody });
+
+  /**
+   * Merges a partial update into the current draft.
+   *
+   * @param patch - Fields to update on the draft.
+   */
+  const update = useCallback(
+    (patch: Partial<RequestDraft>): void => {
+      onChange({ ...draft, ...patch });
+    },
+    [draft, onChange]
+  );
+
+  /**
+   * Seeds a blank inline script when entering a script tab with no entries yet.
+   *
+   * @param nextTab - Editor tab the user selected or restored.
+   */
+  const seedScriptTab = useCallback(
+    (nextTab: string): void => {
+      if (nextTab === 'pre' && draft.pre_request_scripts.length === 0) {
+        update({ pre_request_scripts: ensureDefaultScriptRef(draft.pre_request_scripts) });
+      }
+      if (nextTab === 'post' && draft.post_request_scripts.length === 0) {
+        update({ post_request_scripts: ensureDefaultScriptRef(draft.post_request_scripts) });
+      }
+    },
+    [draft.post_request_scripts, draft.pre_request_scripts, update]
+  );
+
+  const { tab, setTab } = usePersistedEditorTab({
+    draft,
+    tabId,
+    showBody,
+    onTabResolved: seedScriptTab
+  });
   const hasCookies = useHasCookies(draft.url, variables);
 
   /**
@@ -118,8 +154,8 @@ export function Editor({
       auth: draft.auth.type !== 'none',
       cookies: hasCookies,
       body: showBody && draft.body.trim().length > 0,
-      pre: draft.pre_request_script.trim().length > 0,
-      post: draft.post_request_script.trim().length > 0,
+      pre: hasScriptContent(draft.pre_request_scripts),
+      post: hasScriptContent(draft.post_request_scripts),
       comment: draft.comment.trim().length > 0
     }),
     [
@@ -127,8 +163,8 @@ export function Editor({
       draft.headers,
       draft.auth,
       draft.body,
-      draft.pre_request_script,
-      draft.post_request_script,
+      draft.pre_request_scripts,
+      draft.post_request_scripts,
       draft.comment,
       hasCookies,
       showBody
@@ -154,12 +190,13 @@ export function Editor({
   );
 
   /**
-   * Merges a partial update into the current draft.
+   * Seeds a blank inline script when entering a script tab with no entries yet.
    *
-   * @param patch - Fields to update on the draft.
+   * @param nextTab - Editor tab the user selected.
    */
-  const update = (patch: Partial<RequestDraft>): void => {
-    onChange({ ...draft, ...patch });
+  const handleTabChange = (nextTab: string): void => {
+    seedScriptTab(nextTab);
+    setTab(nextTab);
   };
 
   /**
@@ -205,7 +242,11 @@ export function Editor({
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col">
-        <SegmentedTabsGroup value={tab} onChange={setTab} ariaLabel="Request editor sections">
+        <SegmentedTabsGroup
+          value={tab}
+          onChange={handleTabChange}
+          ariaLabel="Request editor sections"
+        >
           <div className="shrink-0">
             <SegmentedTabs tabs={tabs} />
           </div>

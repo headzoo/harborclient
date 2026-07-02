@@ -5,6 +5,7 @@ import { AiInfoExtra } from '../extras/AiInfoExtra';
 import { SyntaxPreviewExtra } from '../extras/SyntaxPreviewExtra';
 import { BackupRestoreSection } from '../BackupRestoreSection';
 import { GlobalsSection } from '../GlobalsSection';
+import { SnippetsSection } from '../SnippetsSection';
 import { ShortcutsSection } from '../ShortcutsSection';
 import { StorageLocationsSection } from '../StorageLocationsSection';
 import { AiClaudeApiKeyField } from '../fields/AiClaudeApiKeyField';
@@ -59,10 +60,11 @@ export const SETTINGS_FIELD_REGISTRY: Record<FieldSettingId, ComponentType> = {
  * Maps management section ids to their existing panel components.
  */
 export const SETTINGS_SECTION_REGISTRY: Record<
-  'globals' | 'storage' | 'shortcuts' | 'backup-restore',
+  'globals' | 'snippets' | 'storage' | 'shortcuts' | 'backup-restore',
   ComponentType<SettingsSectionComponentProps>
 > = {
   globals: GlobalsSection,
+  snippets: SnippetsSection,
   storage: StorageLocationsSection,
   shortcuts: ShortcutsSection,
   'backup-restore': BackupRestoreSection
@@ -106,9 +108,10 @@ export function renderSettingFields(ids: FieldSettingId[]): JSX.Element {
  */
 export function isManagementSettingsSection(
   section: SettingsSection
-): section is 'globals' | 'storage' | 'shortcuts' | 'backup-restore' {
+): section is 'globals' | 'snippets' | 'storage' | 'shortcuts' | 'backup-restore' {
   return (
     section === 'globals' ||
+    section === 'snippets' ||
     section === 'storage' ||
     section === 'shortcuts' ||
     section === 'backup-restore'

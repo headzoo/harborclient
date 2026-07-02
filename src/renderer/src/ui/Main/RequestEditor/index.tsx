@@ -35,7 +35,6 @@ import {
   setActiveTab,
   closeTab
 } from '#/renderer/src/store/slices/tabsSlice';
-import { setActiveEnvironmentId } from '#/renderer/src/store/slices/environmentsSlice';
 import {
   sendRequest,
   cancelRequest,
@@ -235,12 +234,9 @@ export function RequestEditor({ onEditVariables }: Props): JSX.Element {
       <TabBar
         tabs={tabs}
         activeTabId={activeTabId}
-        environments={environments}
-        activeEnvironmentId={activeEnvironmentId}
         onSelect={(tabId) => dispatch(setActiveTab(tabId))}
         onClose={handleCloseTab}
         onNew={() => dispatch(newTab())}
-        onEnvironmentChange={(id) => dispatch(setActiveEnvironmentId(id))}
       />
       {hasOpenTabs ? (
         <div

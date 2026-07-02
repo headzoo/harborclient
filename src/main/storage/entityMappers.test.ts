@@ -79,10 +79,14 @@ describe('entityMappers', () => {
         headers: JSON.stringify([{ key: 'Accept', value: 'application/json', enabled: true }]),
         pre_request_script: 'console.log("pre")',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         created_at: '2024-01-01T00:00:00.000Z'
       };
 
-      expect(rowToCollection(row)).toEqual({
+      const result = rowToCollection(row);
+
+      expect(result).toMatchObject({
         id: 1,
         uuid: '',
         name: 'My Collection',
@@ -91,7 +95,14 @@ describe('entityMappers', () => {
         auth: defaultAuth(),
         pre_request_script: 'console.log("pre")',
         post_request_script: '',
+        post_request_scripts: [],
         created_at: '2024-01-01T00:00:00.000Z'
+      });
+      expect(result.pre_request_scripts).toHaveLength(1);
+      expect(result.pre_request_scripts[0]).toMatchObject({
+        enabled: true,
+        kind: 'inline',
+        code: 'console.log("pre")'
       });
     });
 
@@ -138,6 +149,8 @@ describe('entityMappers', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: 'List users',
         folder_id: null,
         sort_order: 1,
@@ -161,6 +174,8 @@ describe('entityMappers', () => {
         headers: '[]',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         created_at: '2024-01-01T00:00:00.000Z'
       };
 
@@ -177,6 +192,8 @@ describe('entityMappers', () => {
         headers: [{ key: 'X-Test', value: '1', enabled: true }],
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         created_at: '2024-02-01T00:00:00.000Z'
       };
 
@@ -189,6 +206,8 @@ describe('entityMappers', () => {
         auth: defaultAuth(),
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         created_at: '2024-02-01T00:00:00.000Z'
       });
     });

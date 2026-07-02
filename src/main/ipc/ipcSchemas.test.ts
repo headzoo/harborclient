@@ -33,6 +33,8 @@ const validSaveRequest = {
   body_type: 'none' as const,
   pre_request_script: '',
   post_request_script: '',
+  pre_request_scripts: [],
+  post_request_scripts: [],
   comment: '',
   auth: {
     type: 'none' as const,
@@ -94,6 +96,26 @@ describe('enum schemas', () => {
 describe('saveRequestInput', () => {
   it('parses saveRequestInput with required collection_id, method, and KeyValue headers', () => {
     expect(saveRequestInput.safeParse(validSaveRequest).success).toBe(true);
+  });
+
+  it('preserves expanded on script reference arrays', () => {
+    const parsed = saveRequestInput.safeParse({
+      ...validSaveRequest,
+      pre_request_scripts: [
+        {
+          id: 'script-1',
+          enabled: true,
+          kind: 'inline',
+          code: '',
+          expanded: false
+        }
+      ]
+    });
+
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.pre_request_scripts[0]?.expanded).toBe(false);
+    }
   });
 
   it('accepts optional folder_id as null or number', () => {

@@ -17,6 +17,8 @@ const sampleCollectionExport: CollectionExport = {
   headers: [],
   pre_request_script: '',
   post_request_script: '',
+  pre_request_scripts: [],
+  post_request_scripts: [],
   folders: [
     {
       uuid: '55555555-5555-4555-8555-555555555555',
@@ -36,6 +38,8 @@ const sampleCollectionExport: CollectionExport = {
       body_type: 'none',
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       comment: '',
       sort_order: 0,
       folder_uuid: '55555555-5555-4555-8555-555555555555',
@@ -98,6 +102,8 @@ describe('mintFreshRequestExportUuid', () => {
       body_type: 'none',
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       comment: ''
     };
 

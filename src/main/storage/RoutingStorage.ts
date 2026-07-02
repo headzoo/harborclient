@@ -34,6 +34,7 @@ import type {
   KeyValue,
   SaveRequestInput,
   SavedRequest,
+  ScriptRef,
   SourceControlStatus,
   TeamHub,
   Variable
@@ -298,7 +299,9 @@ export class RoutingStorage implements IStorage {
     headers: KeyValue[],
     preRequestScript: string,
     postRequestScript: string,
-    auth: AuthConfig
+    auth: AuthConfig,
+    preRequestScripts: ScriptRef[] = [],
+    postRequestScripts: ScriptRef[] = []
   ): Promise<Collection> {
     const entry = this.requireEntry(id);
     const backend = this.requireBackendByConnectionId(entry.connectionId);
@@ -309,7 +312,9 @@ export class RoutingStorage implements IStorage {
       headers,
       preRequestScript,
       postRequestScript,
-      auth
+      auth,
+      preRequestScripts,
+      postRequestScripts
     );
     const updatedEntry = this.database.updateRegistryEntry(id, { name });
     return this.buildCollection(updatedEntry, record);
@@ -457,7 +462,9 @@ export class RoutingStorage implements IStorage {
       collection_id: entry.providerCollectionId,
       folder_id: localFolderId ?? null
     });
-    return this.toGlobalRequest(saved, backend, input.collection_id);
+    const globalSaved = this.toGlobalRequest(saved, backend, input.collection_id);
+
+    return globalSaved;
   }
 
   /**
@@ -1368,6 +1375,8 @@ export class RoutingStorage implements IStorage {
       auth: record?.auth ?? defaultAuth(),
       pre_request_script: record?.pre_request_script ?? '',
       post_request_script: record?.post_request_script ?? '',
+      pre_request_scripts: record?.pre_request_scripts ?? [],
+      post_request_scripts: record?.post_request_scripts ?? [],
       created_at: record?.created_at ?? entry.created_at,
       deletion_locked: record?.deletion_locked,
       connectionId: entry.connectionId

@@ -1,6 +1,7 @@
 import type { AuthConfig } from '#/shared/auth';
 import type { Environment } from '#/shared/types/environment';
 import type { SavedRequest } from '#/shared/types/request';
+import type { ScriptRef } from '#/shared/types/script';
 import type { BodyType, HttpMethod, KeyValue, Variable } from '#/shared/types/common';
 
 /**
@@ -46,6 +47,16 @@ export interface Collection {
    * JavaScript run after every request in this collection (after request-level post script).
    */
   post_request_script: string;
+
+  /**
+   * Ordered collection pre-request scripts; canonical source when non-empty.
+   */
+  pre_request_scripts: ScriptRef[];
+
+  /**
+   * Ordered collection post-request scripts; canonical source when non-empty.
+   */
+  post_request_scripts: ScriptRef[];
 
   /**
    * ISO 8601 timestamp when the collection was created.
@@ -175,6 +186,16 @@ export interface ExportedRequest {
   post_request_script: string;
 
   /**
+   * Ordered pre-request scripts when exported from a newer HarborClient build.
+   */
+  pre_request_scripts?: ScriptRef[];
+
+  /**
+   * Ordered post-request scripts when exported from a newer HarborClient build.
+   */
+  post_request_scripts?: ScriptRef[];
+
+  /**
    * Free-form notes for this request.
    */
   comment: string;
@@ -263,6 +284,16 @@ export interface CollectionExport {
    * JavaScript run after every request in this collection.
    */
   post_request_script: string;
+
+  /**
+   * Ordered collection pre-request scripts when exported from a newer HarborClient build.
+   */
+  pre_request_scripts?: ScriptRef[];
+
+  /**
+   * Ordered collection post-request scripts when exported from a newer HarborClient build.
+   */
+  post_request_scripts?: ScriptRef[];
 
   /**
    * Folders for organizing requests within the collection.

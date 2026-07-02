@@ -105,6 +105,8 @@ describeFirestore('FirestoreStorage import and ID allocation', () => {
       body_type: 'none',
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       comment: '',
       sort_order: index,
       folder_name: null
@@ -122,6 +124,8 @@ describeFirestore('FirestoreStorage import and ID allocation', () => {
       headers: [],
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       folders: [
         { name: 'Alpha', sort_order: 0 },
         { name: 'Beta', sort_order: 1 }
@@ -147,6 +151,8 @@ describeFirestore('FirestoreStorage import and ID allocation', () => {
       headers: [],
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       folders: [
         { name: 'Alpha', sort_order: 0 },
         { name: 'Beta', sort_order: 1 }
@@ -174,6 +180,8 @@ describeFirestore('FirestoreStorage import and ID allocation', () => {
       headers: [],
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       folders: [{ name: folderName, sort_order: 0 }],
       requests: Array.from({ length: requestCount }, (_, index) => ({
         ...buildExportedRequest(index),
@@ -216,6 +224,8 @@ describeFirestore('FirestoreStorage import and ID allocation', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         auth: defaultAuth()
       });

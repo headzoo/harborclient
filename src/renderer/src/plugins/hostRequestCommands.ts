@@ -347,6 +347,8 @@ export function pluginRequestToSaveInput(
     auth: defaultAuth(),
     pre_request_script: '',
     post_request_script: '',
+    pre_request_scripts: [],
+    post_request_scripts: [],
     comment: typeof request.comment === 'string' ? request.comment : ''
   };
 }

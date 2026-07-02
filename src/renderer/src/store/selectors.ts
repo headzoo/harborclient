@@ -6,7 +6,13 @@ import {
   type PageRef,
   type RequestDraft
 } from '#/renderer/src/store/drafts';
-import type { Collection, Environment, ScriptTestResult, SendResult } from '#/shared/types';
+import type {
+  Collection,
+  Environment,
+  ScriptTestResult,
+  SendResult,
+  Snippet
+} from '#/shared/types';
 
 /**
  * Returns all collections in sidebar order.
@@ -53,6 +59,11 @@ export const selectEnvironments = (state: RootState): Environment[] =>
 export const selectActiveEnvironmentId = (
   state: RootState
 ): RootState['environments']['activeEnvironmentId'] => state.environments.activeEnvironmentId;
+
+/**
+ * Returns all reusable JavaScript snippets.
+ */
+export const selectSnippets = (state: RootState): Snippet[] => state.snippets.snippets;
 
 /**
  * Returns all open request tabs.

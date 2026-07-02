@@ -129,3 +129,40 @@ describeSqlite('LocalDatabase chats', () => {
     expect(database.getChat(chat.id)?.model).toBe('gpt-4o');
   });
 });
+
+describeSqlite('LocalDatabase snippets', () => {
+  it('creates, lists, updates, and deletes snippets', async () => {
+    const { database } = await createRegistry();
+
+    expect(database.listSnippets()).toEqual([]);
+
+    const created = database.createSnippet('Auth helper', 'console.log("auth");');
+    expect(created.name).toBe('Auth helper');
+    expect(created.code).toBe('console.log("auth");');
+    expect(created.uuid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+    expect(created.created_at).toBeTruthy();
+    expect(created.updated_at).toBeTruthy();
+
+    database.createSnippet('Second snippet', 'return true;');
+    expect(database.listSnippets().map((snippet) => snippet.name)).toEqual([
+      'Auth helper',
+      'Second snippet'
+    ]);
+
+    const updated = database.updateSnippet(created.id, 'Auth helper v2', 'console.log("v2");');
+    expect(updated.id).toBe(created.id);
+    expect(updated.uuid).toBe(created.uuid);
+    expect(updated.name).toBe('Auth helper v2');
+    expect(updated.code).toBe('console.log("v2");');
+    expect(updated.updated_at >= created.updated_at).toBe(true);
+
+    database.deleteSnippet(created.id);
+    expect(database.listSnippets().map((snippet) => snippet.name)).toEqual(['Second snippet']);
+  });
+
+  it('throws when updating a missing snippet', async () => {
+    const { database } = await createRegistry();
+
+    expect(() => database.updateSnippet(999, 'Missing', 'code')).toThrow('Snippet not found');
+  });
+});

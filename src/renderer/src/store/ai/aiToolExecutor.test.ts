@@ -82,6 +82,8 @@ describe('executeAiTool', () => {
       auth: defaultAuth(),
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       created_at: '2026-01-01T00:00:00.000Z'
     };
     store.dispatch(setCollections([collection]));
@@ -171,6 +173,8 @@ describe('executeAiTool', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         auth: defaultAuth()
       })
@@ -209,6 +213,8 @@ describe('executeAiTool', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         sort_order: 0,
         created_at: '2026-01-01T00:00:00.000Z',
@@ -255,6 +261,8 @@ describe('executeAiTool', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         auth: defaultAuth()
       })
@@ -308,6 +316,8 @@ describe('executeAiTool', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         auth: defaultAuth()
       })
@@ -370,6 +380,8 @@ describe('executeAiTool', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         auth: defaultAuth()
       })
@@ -405,6 +417,8 @@ describe('executeAiTool', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         auth: defaultAuth()
       })
@@ -459,6 +473,8 @@ describe('executeAiTool', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         auth: defaultAuth()
       })
@@ -513,6 +529,8 @@ describe('executeAiTool', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         auth: defaultAuth()
       })
@@ -548,6 +566,8 @@ describe('executeAiTool', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         auth: defaultAuth()
       })
@@ -581,6 +601,8 @@ describe('executeAiTool', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         auth: defaultAuth()
       })
@@ -619,6 +641,8 @@ describe('executeAiTool', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         auth: defaultAuth()
       })
@@ -651,6 +675,8 @@ describe('executeAiTool', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         auth: defaultAuth()
       })
@@ -684,6 +710,8 @@ describe('executeAiTool', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         auth: defaultAuth()
       })
@@ -718,6 +746,8 @@ describe('executeAiTool', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         auth: defaultAuth()
       })

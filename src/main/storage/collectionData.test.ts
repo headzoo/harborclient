@@ -20,6 +20,8 @@ const validRequest = {
   body_type: 'none' as const,
   pre_request_script: '',
   post_request_script: '',
+  pre_request_scripts: [],
+  post_request_scripts: [],
   comment: '',
   sort_order: 0
 };
@@ -32,6 +34,8 @@ const validV1Export = {
   headers: [validKeyValue],
   pre_request_script: '',
   post_request_script: '',
+  pre_request_scripts: [],
+  post_request_scripts: [],
   requests: [validRequest]
 };
 
@@ -47,6 +51,8 @@ const validRequestExport = {
   body_type: 'none' as const,
   pre_request_script: '',
   post_request_script: '',
+  pre_request_scripts: [],
+  post_request_scripts: [],
   comment: ''
 };
 

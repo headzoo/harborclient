@@ -1,5 +1,4 @@
 import { FaIcon, resolveTabListKeyAction } from '@harborclient/sdk/components';
-import type { Environment } from '#/shared/types';
 import type { JSX, KeyboardEvent } from 'react';
 import { useMemo } from 'react';
 import { isPageTab, type Tab } from '#/renderer/src/store/drafts';
@@ -8,7 +7,6 @@ import { selectCollections, selectEnvironments } from '#/renderer/src/store/sele
 import { getRegisteredMainViews } from '#/renderer/src/plugins/registry';
 
 import { faPlus } from '#/renderer/src/fontawesome';
-import { EnvironmentSelect } from './EnvironmentSelect';
 import { pageTabMeta } from './pageTabMeta';
 import { TabItem } from './TabItem';
 
@@ -22,16 +20,6 @@ interface Props {
    * ID of the currently active tab.
    */
   activeTabId: string;
-
-  /**
-   * All saved environments.
-   */
-  environments: Environment[];
-
-  /**
-   * ID of the active environment, or null when none is selected.
-   */
-  activeEnvironmentId: number | null;
 
   /**
    * Called when the user selects a tab.
@@ -51,28 +39,12 @@ interface Props {
    * Opens a new blank request tab.
    */
   onNew: () => void;
-
-  /**
-   * Called when the user selects an environment.
-   *
-   * @param id - Environment ID, or null for no environment.
-   */
-  onEnvironmentChange: (id: number | null) => void;
 }
 
 /**
  * Horizontal tab bar for switching between open request editors and page tabs.
  */
-export function TabBar({
-  tabs,
-  activeTabId,
-  environments,
-  activeEnvironmentId,
-  onSelect,
-  onClose,
-  onNew,
-  onEnvironmentChange
-}: Props): JSX.Element {
+export function TabBar({ tabs, activeTabId, onSelect, onClose, onNew }: Props): JSX.Element {
   const collections = useAppSelector(selectCollections);
   const allEnvironments = useAppSelector(selectEnvironments);
 
@@ -161,11 +133,6 @@ export function TabBar({
           <FaIcon icon={faPlus} className="h-3.5 w-3.5" />
         </button>
       </div>
-      <EnvironmentSelect
-        environments={environments}
-        activeEnvironmentId={activeEnvironmentId}
-        onEnvironmentChange={onEnvironmentChange}
-      />
     </div>
   );
 }

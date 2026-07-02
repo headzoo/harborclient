@@ -52,6 +52,8 @@ function sampleCollection(id: number, name: string): Collection {
     auth: defaultAuth(),
     pre_request_script: '',
     post_request_script: '',
+    pre_request_scripts: [],
+    post_request_scripts: [],
     created_at: '2026-01-01T00:00:00.000Z'
   };
 }

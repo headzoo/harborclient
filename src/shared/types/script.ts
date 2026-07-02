@@ -3,6 +3,46 @@ import type { BodyType, HttpMethod, KeyValue } from '#/shared/types/common';
 import type { SendResult } from '#/shared/types/request';
 
 /**
+ * A single script entry in an ordered pre/post request script list.
+ */
+export interface ScriptRef {
+  /**
+   * Stable list key used for reordering and React keys.
+   */
+  id: string;
+
+  /**
+   * When false, the script is skipped at send time.
+   */
+  enabled: boolean;
+
+  /**
+   * Inline JavaScript source or a live reference to a saved snippet.
+   */
+  kind: 'inline' | 'snippet';
+
+  /**
+   * Optional display label for inline scripts.
+   */
+  name?: string;
+
+  /**
+   * JavaScript source when {@link kind} is `inline`.
+   */
+  code?: string;
+
+  /**
+   * Snippet {@link Snippet.uuid} when {@link kind} is `snippet`.
+   */
+  snippetUuid?: string;
+
+  /**
+   * When true, the script editor body is expanded in the list UI.
+   */
+  expanded?: boolean;
+}
+
+/**
  * Request context passed into a pre/post script sandbox.
  */
 export interface ScriptRequestContext {

@@ -1,5 +1,6 @@
 import type { ApiCollections } from '#/shared/types/api/collections';
 import type { ApiEnvironments } from '#/shared/types/api/environments';
+import type { ApiSnippets } from '#/shared/types/api/snippets';
 import type { ApiRequests } from '#/shared/types/api/requests';
 import type { ApiHttp } from '#/shared/types/api/http';
 import type { ApiWindow } from '#/shared/types/api/window';
@@ -19,6 +20,7 @@ export interface Api
   extends
     ApiCollections,
     ApiEnvironments,
+    ApiSnippets,
     ApiRequests,
     ApiHttp,
     ApiWindow,

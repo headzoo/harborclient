@@ -1,5 +1,6 @@
 import type { AuthConfig } from '#/shared/auth';
 import type { BodyType, HttpMethod, KeyValue } from '#/shared/types/common';
+import type { ScriptRef } from '#/shared/types/script';
 
 export type { RedirectHop, SendRequestInput, SendResult, SentRequest } from '@harborclient/http';
 
@@ -71,6 +72,16 @@ export interface SavedRequest {
    * JavaScript run after the response is received.
    */
   post_request_script: string;
+
+  /**
+   * Ordered pre-request scripts; canonical source when non-empty.
+   */
+  pre_request_scripts: ScriptRef[];
+
+  /**
+   * Ordered post-request scripts; canonical source when non-empty.
+   */
+  post_request_scripts: ScriptRef[];
 
   /**
    * Free-form notes for this request.
@@ -167,6 +178,16 @@ export interface RequestExport {
   post_request_script: string;
 
   /**
+   * Ordered pre-request scripts; canonical source when non-empty.
+   */
+  pre_request_scripts?: ScriptRef[];
+
+  /**
+   * Ordered post-request scripts; canonical source when non-empty.
+   */
+  post_request_scripts?: ScriptRef[];
+
+  /**
    * Free-form notes for this request.
    */
   comment: string;
@@ -240,6 +261,16 @@ export interface SaveRequestInput {
    * JavaScript run after the response is received.
    */
   post_request_script: string;
+
+  /**
+   * Ordered pre-request scripts; canonical source when non-empty.
+   */
+  pre_request_scripts?: ScriptRef[];
+
+  /**
+   * Ordered post-request scripts; canonical source when non-empty.
+   */
+  post_request_scripts?: ScriptRef[];
 
   /**
    * Free-form notes for this request.

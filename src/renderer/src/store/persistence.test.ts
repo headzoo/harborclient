@@ -26,6 +26,8 @@ const sampleDraft = (overrides: Partial<RequestDraft> = {}): RequestDraft => ({
   body_type: 'none',
   pre_request_script: '',
   post_request_script: '',
+  pre_request_scripts: [],
+  post_request_scripts: [],
   comment: '',
   auth: defaultAuth(),
   ...overrides
@@ -226,6 +228,8 @@ describe('loadTabsFromStorage', () => {
       url: 'https://legacy.example?q=search',
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       comment: ''
     });
     expect(isTabDirty(result.tabs[0])).toBe(false);

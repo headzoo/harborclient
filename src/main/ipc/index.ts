@@ -8,6 +8,7 @@ import { registerEnvironmentHandlers } from '#/main/ipc/handlers/environments';
 import { registerFileHandlers } from '#/main/ipc/handlers/files';
 import { registerGitHandlers } from '#/main/ipc/handlers/git';
 import { registerSharingHandlers } from '#/main/ipc/handlers/sharing';
+import { registerSnippetHandlers } from '#/main/ipc/handlers/snippets';
 import { registerLlmHandlers } from '#/main/ipc/handlers/llm';
 import { registerMenuHandlers } from '#/main/ipc/handlers/menu';
 import { registerNetworkHandlers } from '#/main/ipc/handlers/network';
@@ -32,6 +33,7 @@ export function registerIpcHandlers(db: IStorage, pluginManager: PluginManager):
   registerChatHandlers();
   registerLlmHandlers();
   registerEnvironmentHandlers(db);
+  registerSnippetHandlers();
   registerRequestHandlers(db);
   registerNetworkHandlers(cookieJar);
   registerOAuthHandlers();

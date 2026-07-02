@@ -21,6 +21,7 @@ export type SettingId =
   | 'ai.claudeApiKey'
   | 'ai.geminiApiKey'
   | 'globals'
+  | 'snippets'
   | 'storage'
   | 'shortcuts'
   | 'backup-restore';
@@ -30,7 +31,7 @@ export type SettingId =
  */
 export type FieldSettingId = Exclude<
   SettingId,
-  'globals' | 'storage' | 'shortcuts' | 'backup-restore'
+  'globals' | 'snippets' | 'storage' | 'shortcuts' | 'backup-restore'
 >;
 
 /**
@@ -249,6 +250,14 @@ export const SETTINGS_CATALOG: SettingEntry[] = [
     label: 'Globals',
     description: 'App-wide variables substituted into request URLs and bodies.',
     keywords: ['variables']
+  },
+  {
+    id: 'snippets',
+    section: 'snippets',
+    kind: 'section',
+    label: 'Snippets',
+    description: 'Manage reusable JavaScript snippets for pre-request and post-request scripts.',
+    keywords: ['scripts', 'library', 'javascript']
   },
   {
     id: 'storage',

@@ -5,7 +5,8 @@ import {
   rowToChat,
   rowToChatMessage,
   rowToChatSummary,
-  rowToEnvironment
+  rowToEnvironment,
+  rowToSnippet
 } from '#/main/storage/entityMappers';
 import { trimRequiredName } from '#/main/storage/trimRequiredName';
 import { generateDocumentUuid } from '#/main/storage/uuid';
@@ -15,6 +16,7 @@ import type {
   ChatRole,
   ChatSummary,
   Environment,
+  Snippet,
   Variable
 } from '#/shared/types';
 
@@ -180,6 +182,16 @@ export class LocalDatabase {
         path TEXT NOT NULL,
         PRIMARY KEY (plugin_id, path)
       );
+
+      CREATE TABLE IF NOT EXISTS snippets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        uuid TEXT NOT NULL DEFAULT '',
+        name TEXT NOT NULL,
+        code TEXT NOT NULL DEFAULT '',
+        sort_order INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
     `);
     }
 
@@ -188,6 +200,7 @@ export class LocalDatabase {
     this.migrateRegistryCollectionUuid();
     this.migrateEnvironmentUuid();
     this.migrateEnvironmentSortOrder();
+    this.migrateSnippetUuid();
   }
 
   /**
@@ -223,6 +236,55 @@ export class LocalDatabase {
     this.getDb().exec(
       "ALTER TABLE collection_registry ADD COLUMN collection_uuid TEXT NOT NULL DEFAULT ''"
     );
+  }
+
+  /**
+   * Adds uuid to legacy snippet rows when missing.
+   */
+  private migrateSnippetUuid(): void {
+    const columns = this.getDb().prepare('PRAGMA table_info(snippets)').all() as Array<{
+      name: string;
+    }>;
+    if (columns.length === 0) {
+      return;
+    }
+    if (columns.some((col) => col.name === 'uuid')) {
+      this.backfillSnippetUuids();
+      return;
+    }
+    this.getDb().exec("ALTER TABLE snippets ADD COLUMN uuid TEXT NOT NULL DEFAULT ''");
+    this.backfillSnippetUuids();
+  }
+
+  /**
+   * Assigns uuids to snippets created before uuid support existed.
+   */
+  private backfillSnippetUuids(): void {
+    const database = this.getDb();
+    const rows = database
+      .prepare("SELECT id FROM snippets WHERE uuid IS NULL OR uuid = ''")
+      .all() as Array<{ id: number }>;
+    if (rows.length === 0) {
+      return;
+    }
+
+    const update = database.prepare('UPDATE snippets SET uuid = ? WHERE id = ?');
+    const backfill = database.transaction((items: Array<{ id: number }>) => {
+      for (const row of items) {
+        update.run(generateDocumentUuid(), row.id);
+      }
+    });
+    backfill(rows);
+  }
+
+  /**
+   * Returns the next sort order value for a new snippet.
+   */
+  private nextSnippetSortOrder(): number {
+    const row = this.getDb()
+      .prepare('SELECT COALESCE(MAX(sort_order), -1) AS max_order FROM snippets')
+      .get() as { max_order: number };
+    return row.max_order + 1;
   }
 
   /**
@@ -637,6 +699,80 @@ export class LocalDatabase {
    */
   deleteEnvironment(id: number): void {
     this.getDb().prepare('DELETE FROM environments WHERE id = ?').run(id);
+  }
+
+  /**
+   * Lists all snippets ordered for settings display.
+   *
+   * @returns All snippets in the database.
+   */
+  listSnippets(): Snippet[] {
+    const rows = this.getDb()
+      .prepare(
+        'SELECT id, uuid, name, code, created_at, updated_at FROM snippets ORDER BY sort_order ASC, name ASC'
+      )
+      .all() as Record<string, unknown>[];
+
+    return rows.map(rowToSnippet);
+  }
+
+  /**
+   * Creates a new snippet with the given name and code.
+   *
+   * @param name - Display name for the snippet.
+   * @param code - JavaScript source.
+   * @returns The newly created snippet.
+   */
+  createSnippet(name: string, code: string): Snippet {
+    const trimmedName = trimRequiredName(name, 'Snippet name');
+    const snippetUuid = generateDocumentUuid();
+    const sortOrder = this.nextSnippetSortOrder();
+    const now = new Date().toISOString();
+    const result = this.getDb()
+      .prepare(
+        'INSERT INTO snippets (name, uuid, code, sort_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
+      )
+      .run(trimmedName, snippetUuid, code ?? '', sortOrder, now, now);
+
+    const row = this.getDb()
+      .prepare('SELECT id, uuid, name, code, created_at, updated_at FROM snippets WHERE id = ?')
+      .get(result.lastInsertRowid) as Record<string, unknown>;
+
+    return rowToSnippet(row);
+  }
+
+  /**
+   * Updates a snippet's name and code.
+   *
+   * @param id - Snippet ID to update.
+   * @param name - New display name.
+   * @param code - Updated JavaScript source.
+   * @returns The updated snippet.
+   */
+  updateSnippet(id: number, name: string, code: string): Snippet {
+    const trimmedName = trimRequiredName(name, 'Snippet name');
+    const now = new Date().toISOString();
+    this.getDb()
+      .prepare('UPDATE snippets SET name = ?, code = ?, updated_at = ? WHERE id = ?')
+      .run(trimmedName, code ?? '', now, id);
+
+    const row = this.getDb()
+      .prepare('SELECT id, uuid, name, code, created_at, updated_at FROM snippets WHERE id = ?')
+      .get(id) as Record<string, unknown> | undefined;
+
+    if (!row) {
+      throw new Error('Snippet not found');
+    }
+    return rowToSnippet(row);
+  }
+
+  /**
+   * Deletes a snippet.
+   *
+   * @param id - Snippet ID to delete.
+   */
+  deleteSnippet(id: number): void {
+    this.getDb().prepare('DELETE FROM snippets WHERE id = ?').run(id);
   }
 
   /**

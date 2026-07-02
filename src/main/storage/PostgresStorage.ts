@@ -20,6 +20,10 @@ import {
   rowToFolder,
   rowToRequest
 } from '#/main/storage/entityMappers';
+import {
+  bundleScriptFieldsWithLegacy,
+  migratePostgresScriptArrayColumns
+} from '#/main/storage/scriptFields';
 import { trimRequiredName } from '#/main/storage/trimRequiredName';
 import { DEFAULT_AUTH_JSON, defaultAuth, normalizeAuth } from '#/shared/auth';
 import type { IStorage } from '#/main/storage/IStorage';
@@ -33,13 +37,14 @@ import type {
   PostgresSettings,
   SaveRequestInput,
   SavedRequest,
+  ScriptRef,
   Variable
 } from '#/shared/types';
 import { parseJson } from '#/shared/parseJson';
 import { generateDocumentUuid } from '#/main/storage/uuid';
 
 const COLLECTION_COLUMNS =
-  'id, uuid, name, variables, headers, auth, pre_request_script, post_request_script, created_at';
+  'id, uuid, name, variables, headers, auth, pre_request_script, post_request_script, pre_request_scripts, post_request_scripts, created_at';
 const ENVIRONMENT_COLUMNS = 'id, uuid, name, variables, created_at';
 
 export class PostgresStorage implements IStorage {
@@ -180,6 +185,8 @@ export class PostgresStorage implements IStorage {
     await this.backfillDocumentUuids('requests');
     await this.backfillDocumentUuids('environments');
     await this.backfillDocumentUuids('folders');
+    await migratePostgresScriptArrayColumns(this.getPool(), 'collections');
+    await migratePostgresScriptArrayColumns(this.getPool(), 'requests');
   }
 
   /**
@@ -270,18 +277,24 @@ export class PostgresStorage implements IStorage {
     headers: KeyValue[],
     preRequestScript: string,
     postRequestScript: string,
-    auth: AuthConfig
+    auth: AuthConfig,
+    preRequestScripts: ScriptRef[] = [],
+    postRequestScripts: ScriptRef[] = []
   ): Promise<Collection> {
     const trimmedName = trimRequiredName(name, 'Collection name');
+    const preScripts = bundleScriptFieldsWithLegacy(preRequestScripts, preRequestScript);
+    const postScripts = bundleScriptFieldsWithLegacy(postRequestScripts, postRequestScript);
     const result = await this.getPool().query(
-      'UPDATE collections SET name = $1, variables = $2, headers = $3, auth = $4, pre_request_script = $5, post_request_script = $6 WHERE id = $7',
+      'UPDATE collections SET name = $1, variables = $2, headers = $3, auth = $4, pre_request_script = $5, post_request_script = $6, pre_request_scripts = $7, post_request_scripts = $8 WHERE id = $9',
       [
         trimmedName,
         JSON.stringify(variables),
         JSON.stringify(headers),
         JSON.stringify(auth),
-        preRequestScript,
-        postRequestScript,
+        preScripts.legacy,
+        postScripts.legacy,
+        preScripts.json,
+        postScripts.json,
         id
       ]
     );
@@ -401,8 +414,16 @@ export class PostgresStorage implements IStorage {
     const headers = JSON.stringify(input.headers);
     const params = JSON.stringify(input.params);
     const auth = JSON.stringify(input.auth);
-    const preRequestScript = input.pre_request_script ?? '';
-    const postRequestScript = input.post_request_script ?? '';
+    const preScripts = bundleScriptFieldsWithLegacy(
+      input.pre_request_scripts,
+      input.pre_request_script ?? ''
+    );
+    const postScripts = bundleScriptFieldsWithLegacy(
+      input.post_request_scripts,
+      input.post_request_script ?? ''
+    );
+    const preRequestScript = preScripts.legacy;
+    const postRequestScript = postScripts.legacy;
     const comment = input.comment ?? '';
     const folderId = input.folder_id ?? null;
     const now = new Date().toISOString();
@@ -423,9 +444,9 @@ export class PostgresStorage implements IStorage {
         `UPDATE requests SET
           collection_id = $1, folder_id = $2, name = $3, method = $4, url = $5,
           headers = $6, params = $7, auth = $8, body = $9, body_type = $10,
-          pre_request_script = $11, post_request_script = $12, comment = $13,
-          updated_at = $14
-        WHERE id = $15`,
+          pre_request_script = $11, post_request_script = $12, pre_request_scripts = $13, post_request_scripts = $14, comment = $15,
+          updated_at = $16
+        WHERE id = $17`,
         [
           input.collection_id,
           folderId,
@@ -439,6 +460,8 @@ export class PostgresStorage implements IStorage {
           input.body_type,
           preRequestScript,
           postRequestScript,
+          preScripts.json,
+          postScripts.json,
           comment,
           now,
           input.id
@@ -465,8 +488,8 @@ export class PostgresStorage implements IStorage {
     const result = await this.getPool().query(
       `INSERT INTO requests (
         collection_id, folder_id, name, method, url, headers, params, auth, body, body_type,
-        pre_request_script, post_request_script, comment, sort_order, uuid, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        pre_request_script, post_request_script, pre_request_scripts, post_request_scripts, comment, sort_order, uuid, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
       RETURNING *`,
       [
         input.collection_id,
@@ -481,6 +504,8 @@ export class PostgresStorage implements IStorage {
         input.body_type,
         preRequestScript,
         postRequestScript,
+        preScripts.json,
+        postScripts.json,
         comment,
         maxOrder + 1,
         requestUuid,

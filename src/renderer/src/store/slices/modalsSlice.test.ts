@@ -118,6 +118,8 @@ describe('modalsSlice', () => {
       body_type: 'none' as const,
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       comment: '',
       auth: defaultAuth(),
       sort_order: 0,

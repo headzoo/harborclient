@@ -28,6 +28,8 @@ const sampleDraft = (): RequestDraft => ({
   body_type: 'json',
   pre_request_script: '',
   post_request_script: '',
+  pre_request_scripts: [],
+  post_request_scripts: [],
   comment: ''
 });
 
@@ -71,6 +73,8 @@ describe('normalizeDraft', () => {
       ...legacy,
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       comment: '',
       auth: defaultAuth()
     });
@@ -178,6 +182,8 @@ describe('defaultDraft and emptyKeyValue', () => {
       body_type: 'none',
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       comment: ''
     });
   });
@@ -219,6 +225,8 @@ describe('draftFromSaved', () => {
       body_type: 'text',
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       comment: '',
       folder_id: null,
       sort_order: 0,
@@ -240,6 +248,8 @@ describe('draftFromSaved', () => {
       body_type: 'text',
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       comment: ''
     });
   });
@@ -262,6 +272,8 @@ describe('draftFromSaved', () => {
       body_type: 'none',
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       comment: '',
       folder_id: null,
       sort_order: 0,
@@ -287,6 +299,8 @@ describe('draftFromSaved', () => {
       body_type: 'none',
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       comment: '',
       folder_id: null,
       sort_order: 0,
@@ -312,6 +326,8 @@ describe('draftFromSaved', () => {
       body_type: 'none',
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       comment: '',
       folder_id: null,
       sort_order: 0,
@@ -337,6 +353,8 @@ describe('draftFromSaved', () => {
       body_type: 'none',
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       comment: '',
       folder_id: null,
       sort_order: 0,

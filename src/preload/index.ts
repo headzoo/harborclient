@@ -46,8 +46,10 @@ import type {
   RequestExport,
   SaveRequestInput,
   SavedRequest,
+  ScriptRef,
   ScriptRunInput,
   ScriptRunResult,
+  Snippet,
   SendRequestInput,
   SendResult,
   SaveTextFileResult,
@@ -113,7 +115,9 @@ function updateCollection(
   headers: KeyValue[],
   preRequestScript: string,
   postRequestScript: string,
-  auth: AuthConfig
+  auth: AuthConfig,
+  preRequestScripts: ScriptRef[] = [],
+  postRequestScripts: ScriptRef[] = []
 ): Promise<Collection> {
   return ipcRenderer.invoke(
     'collections:update',
@@ -123,7 +127,9 @@ function updateCollection(
     headers,
     preRequestScript,
     postRequestScript,
-    auth
+    auth,
+    preRequestScripts,
+    postRequestScripts
   );
 }
 
@@ -255,6 +261,43 @@ function updateEnvironment(id: number, name: string, variables: Variable[]): Pro
  */
 function deleteEnvironment(id: number): Promise<void> {
   return ipcRenderer.invoke('environments:delete', id);
+}
+
+/**
+ * Lists all reusable JavaScript snippets via IPC.
+ */
+function listSnippets(): Promise<Snippet[]> {
+  return ipcRenderer.invoke('snippets:list');
+}
+
+/**
+ * Creates a new snippet via IPC.
+ *
+ * @param name - Display name for the snippet.
+ * @param code - JavaScript source.
+ */
+function createSnippet(name: string, code: string): Promise<Snippet> {
+  return ipcRenderer.invoke('snippets:create', name, code);
+}
+
+/**
+ * Updates a snippet via IPC.
+ *
+ * @param id - Snippet ID to update.
+ * @param name - New display name.
+ * @param code - Updated JavaScript source.
+ */
+function updateSnippet(id: number, name: string, code: string): Promise<Snippet> {
+  return ipcRenderer.invoke('snippets:update', id, name, code);
+}
+
+/**
+ * Deletes a snippet via IPC.
+ *
+ * @param id - Snippet ID to delete.
+ */
+function deleteSnippet(id: number): Promise<void> {
+  return ipcRenderer.invoke('snippets:delete', id);
 }
 
 /**
@@ -1996,6 +2039,10 @@ const api: Api = {
   duplicateEnvironment,
   exportEnvironment,
   importEnvironment,
+  listSnippets,
+  createSnippet,
+  updateSnippet,
+  deleteSnippet,
   importEntity,
   listRequests,
   saveRequest,

@@ -8,8 +8,9 @@ import {
   SegmentedTabsGroup
 } from '@harborclient/sdk/components';
 import { useEffect, useMemo, useState, type JSX } from 'react';
-import type { AuthConfig, Collection, KeyValue, Variable } from '#/shared/types';
+import type { AuthConfig, Collection, KeyValue, ScriptRef, Variable } from '#/shared/types';
 import { normalizeAuth } from '#/shared/auth';
+import { ensureDefaultScriptRef, hasScriptContent, resolveScriptRefs } from '#/shared/scriptRefs';
 
 import { useProviders } from '#/renderer/src/hooks/useProviders';
 import { PluginSurface } from '#/renderer/src/plugins/PluginSurface';
@@ -36,8 +37,8 @@ interface Props {
    * @param name - New display name.
    * @param variables - Collection-scoped variables.
    * @param headers - Headers sent with every request in the collection.
-   * @param preRequestScript - Collection pre-request script.
-   * @param postRequestScript - Collection post-request script.
+   * @param preRequestScripts - Collection pre-request script references.
+   * @param postRequestScripts - Collection post-request script references.
    * @param auth - Default Authorization settings for requests in the collection.
    * @param connectionId - Target database connection id.
    */
@@ -46,8 +47,8 @@ interface Props {
     name: string,
     variables: Variable[],
     headers: KeyValue[],
-    preRequestScript: string,
-    postRequestScript: string,
+    preRequestScripts: ScriptRef[],
+    postRequestScripts: ScriptRef[],
     auth: AuthConfig,
     connectionId: string
   ) => Promise<Collection | void>;
@@ -93,8 +94,12 @@ function CollectionSettingsForm({
     collection.headers.length ? collection.headers : [emptyKeyValue()]
   );
   const [auth, setAuth] = useState<AuthConfig>(normalizeAuth(collection.auth));
-  const [preRequestScript, setPreRequestScript] = useState(collection.pre_request_script ?? '');
-  const [postRequestScript, setPostRequestScript] = useState(collection.post_request_script ?? '');
+  const [preRequestScripts, setPreRequestScripts] = useState<ScriptRef[]>(
+    resolveScriptRefs(collection.pre_request_scripts, collection.pre_request_script ?? '')
+  );
+  const [postRequestScripts, setPostRequestScripts] = useState<ScriptRef[]>(
+    resolveScriptRefs(collection.post_request_scripts, collection.post_request_script ?? '')
+  );
   const [connectionId, setConnectionId] = useState(collection.connectionId ?? '');
   const [saving, setSaving] = useState(false);
 
@@ -122,8 +127,8 @@ function CollectionSettingsForm({
         name,
         variables,
         headers,
-        preRequestScript,
-        postRequestScript,
+        preRequestScripts,
+        postRequestScripts,
         auth,
         resolvedConnectionId
       ) !==
@@ -131,8 +136,8 @@ function CollectionSettingsForm({
         collection.name,
         collection.variables,
         collection.headers,
-        collection.pre_request_script ?? '',
-        collection.post_request_script ?? '',
+        resolveScriptRefs(collection.pre_request_scripts, collection.pre_request_script ?? ''),
+        resolveScriptRefs(collection.post_request_scripts, collection.post_request_script ?? ''),
         normalizeAuth(collection.auth),
         collection.connectionId || primaryProviderId
       ),
@@ -140,8 +145,8 @@ function CollectionSettingsForm({
       name,
       variables,
       headers,
-      preRequestScript,
-      postRequestScript,
+      preRequestScripts,
+      postRequestScripts,
       auth,
       resolvedConnectionId,
       collection,
@@ -167,10 +172,10 @@ function CollectionSettingsForm({
       variables: cleanVariables(variables).length > 0,
       headers: cleanHeaders(headers).length > 0,
       auth: auth.type !== 'none',
-      pre: preRequestScript.trim().length > 0,
-      post: postRequestScript.trim().length > 0
+      pre: hasScriptContent(preRequestScripts),
+      post: hasScriptContent(postRequestScripts)
     }),
-    [variables, headers, auth, preRequestScript, postRequestScript]
+    [variables, headers, auth, preRequestScripts, postRequestScripts]
   );
 
   /**
@@ -201,6 +206,21 @@ function CollectionSettingsForm({
   );
 
   /**
+   * Seeds a blank inline script when entering a script tab with no entries yet.
+   *
+   * @param nextTab - Collection settings tab the user selected.
+   */
+  const handleTabChange = (nextTab: string): void => {
+    if (nextTab === 'pre' && preRequestScripts.length === 0) {
+      setPreRequestScripts(ensureDefaultScriptRef(preRequestScripts));
+    }
+    if (nextTab === 'post' && postRequestScripts.length === 0) {
+      setPostRequestScripts(ensureDefaultScriptRef(postRequestScripts));
+    }
+    setTab(nextTab);
+  };
+
+  /**
    * Validates name and connection, persists the form, then closes on success.
    * No-ops when the trimmed name is empty or no connection is selected.
    */
@@ -217,8 +237,8 @@ function CollectionSettingsForm({
         trimmedName,
         cleanedVariables,
         cleanedHeaders,
-        preRequestScript,
-        postRequestScript,
+        preRequestScripts,
+        postRequestScripts,
         auth,
         resolvedConnectionId
       );
@@ -245,7 +265,11 @@ function CollectionSettingsForm({
         </ModalFooter>
       }
     >
-      <SegmentedTabsGroup value={tab} onChange={setTab} ariaLabel="Collection settings sections">
+      <SegmentedTabsGroup
+        value={tab}
+        onChange={handleTabChange}
+        ariaLabel="Collection settings sections"
+      >
         <div className="-mx-6 -mt-3 mb-6 shrink-0">
           <SegmentedTabs fullWidth tabs={tabs} />
         </div>
@@ -284,8 +308,8 @@ function CollectionSettingsForm({
               phase="pre"
               description="Runs before every request in this collection, before the request-level pre-request script. Supports {{variable}} syntax."
               placeholder="// hc.variables.set('token', 'abc');"
-              value={preRequestScript}
-              onChange={setPreRequestScript}
+              scripts={preRequestScripts}
+              onChange={setPreRequestScripts}
               variables={variables}
             />
           </SegmentedTabPanel>
@@ -296,8 +320,8 @@ function CollectionSettingsForm({
               placeholder={
                 '// hc.test("status is 200", () => {\n//   hc.expect(hc.response.code).to.equal(200);\n// });'
               }
-              value={postRequestScript}
-              onChange={setPostRequestScript}
+              scripts={postRequestScripts}
+              onChange={setPostRequestScripts}
               variables={variables}
             />
           </SegmentedTabPanel>

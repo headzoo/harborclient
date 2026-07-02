@@ -2,6 +2,7 @@ export type { CodeEditorSetup, CodeEditorTheme, ScriptPhase } from '@harborclien
 
 export * from '#/shared/types/common';
 export * from '#/shared/types/environment';
+export * from '#/shared/types/snippet';
 export * from '#/shared/types/collection';
 export * from '#/shared/types/request';
 export * from '#/shared/types/script';

@@ -24,6 +24,8 @@ function sampleDraft(): AiRequestDraft {
     body_type: 'none',
     pre_request_script: 'console.log("before");',
     post_request_script: '',
+    pre_request_scripts: [],
+    post_request_scripts: [],
     comment: 'notes'
   };
 }

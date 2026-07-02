@@ -12,6 +12,11 @@ import {
   normalizeVariable,
   validateCollectionExport
 } from '#/main/storage/collectionData';
+import {
+  bundleScriptFieldsWithLegacy,
+  teamHubScriptColumn,
+  teamHubScriptRefsFromColumn
+} from '#/main/storage/scriptFields';
 import type { TeamHubIdMap } from '#/main/storage/TeamHubIdMap';
 import { trimRequiredName } from '#/main/storage/trimRequiredName';
 import { resolveImportUuid } from '#/main/storage/uuid';
@@ -26,6 +31,7 @@ import {
   type TeamHubClient
 } from '@harborclient/team-hub-api';
 import { defaultAuth, normalizeAuth } from '#/shared/auth';
+import { readScriptRefsFromJson, resolveScriptRefs } from '#/shared/scriptRefs';
 import type {
   AuthConfig,
   Collection,
@@ -35,8 +41,27 @@ import type {
   KeyValue,
   SaveRequestInput,
   SavedRequest,
+  ScriptRef,
   Variable
 } from '#/shared/types';
+
+/**
+ * Resolves script references from a Team Hub record, preferring the legacy string column.
+ *
+ * @param scriptColumn - `preRequestScript` or `postRequestScript` from the server.
+ * @param extendedJson - Optional JSON array column when the server supports it.
+ * @returns Canonical script reference list.
+ */
+function resolveTeamHubScriptRefs(
+  scriptColumn: string | undefined | null,
+  extendedJson: string | undefined | null
+): ScriptRef[] {
+  const fromColumn = teamHubScriptRefsFromColumn(scriptColumn);
+  if (fromColumn.length > 0) {
+    return fromColumn;
+  }
+  return readScriptRefsFromJson(extendedJson, scriptColumn ?? '');
+}
 
 /**
  * Maps a server collection record to the local {@link Collection} shape.
@@ -45,6 +70,14 @@ import type {
  * @param localId - Numeric id assigned by {@link TeamHubIdMap}.
  */
 function serverToCollection(record: CollectionRecord, localId: number): Collection {
+  const extended = record as CollectionRecord & {
+    preRequestScripts?: string;
+    postRequestScripts?: string;
+    pre_request_scripts?: string;
+    post_request_scripts?: string;
+  };
+  const preRequestScript = record.preRequestScript;
+  const postRequestScript = record.postRequestScript;
   return {
     id: localId,
     uuid: record.id,
@@ -52,8 +85,16 @@ function serverToCollection(record: CollectionRecord, localId: number): Collecti
     variables: record.variables.map(normalizeVariable),
     headers: record.headers,
     auth: normalizeAuth(record.auth),
-    pre_request_script: record.preRequestScript,
-    post_request_script: record.postRequestScript,
+    pre_request_script: preRequestScript,
+    post_request_script: postRequestScript,
+    pre_request_scripts: resolveTeamHubScriptRefs(
+      preRequestScript,
+      extended.pre_request_scripts ?? extended.preRequestScripts
+    ),
+    post_request_scripts: resolveTeamHubScriptRefs(
+      postRequestScript,
+      extended.post_request_scripts ?? extended.postRequestScripts
+    ),
     created_at: record.createdAt,
     deletion_locked: record.deletionLocked
   };
@@ -108,6 +149,22 @@ function serverToRequest(
   localCollectionId: number,
   localFolderId: number | null
 ): SavedRequest {
+  const extended = record as SavedRequestRecord & {
+    preRequestScripts?: string;
+    postRequestScripts?: string;
+    pre_request_scripts?: string;
+    post_request_scripts?: string;
+  };
+  const preRequestScript = record.preRequestScript;
+  const postRequestScript = record.postRequestScript;
+  const pre_request_scripts = resolveTeamHubScriptRefs(
+    preRequestScript,
+    extended.pre_request_scripts ?? extended.preRequestScripts
+  );
+  const post_request_scripts = resolveTeamHubScriptRefs(
+    postRequestScript,
+    extended.post_request_scripts ?? extended.postRequestScripts
+  );
   return {
     id: localId,
     uuid: record.id,
@@ -120,8 +177,10 @@ function serverToRequest(
     auth: normalizeAuth(record.auth),
     body: record.body,
     body_type: record.bodyType,
-    pre_request_script: record.preRequestScript,
-    post_request_script: record.postRequestScript,
+    pre_request_script: preRequestScript,
+    post_request_script: postRequestScript,
+    pre_request_scripts,
+    post_request_scripts,
     comment: record.comment,
     folder_id: localFolderId,
     sort_order: record.sortOrder,
@@ -150,9 +209,20 @@ function toServerRequestBody(
   bodyType: SaveRequestInput['body_type'];
   preRequestScript: string;
   postRequestScript: string;
+  pre_request_scripts: string;
+  post_request_scripts: string;
   comment: string;
   folderId: string | null;
 } {
+  const preResolved = resolveScriptRefs(input.pre_request_scripts, input.pre_request_script ?? '');
+  const postResolved = resolveScriptRefs(
+    input.post_request_scripts,
+    input.post_request_script ?? ''
+  );
+  const preRequestScript = teamHubScriptColumn(preResolved);
+  const postRequestScript = teamHubScriptColumn(postResolved);
+  const preScripts = bundleScriptFieldsWithLegacy(preResolved, preRequestScript);
+  const postScripts = bundleScriptFieldsWithLegacy(postResolved, postRequestScript);
   return {
     name: trimRequiredName(input.name, 'Request name'),
     method: input.method,
@@ -162,8 +232,10 @@ function toServerRequestBody(
     auth: toTeamHubAuth(input.auth),
     body: input.body,
     bodyType: input.body_type,
-    preRequestScript: input.pre_request_script ?? '',
-    postRequestScript: input.post_request_script ?? '',
+    preRequestScript,
+    postRequestScript,
+    pre_request_scripts: preScripts.json,
+    post_request_scripts: postScripts.json,
     comment: input.comment ?? '',
     folderId: folderServerId
   };
@@ -251,17 +323,27 @@ export class TeamHubStorage implements IStorage {
     headers: KeyValue[],
     preRequestScript: string,
     postRequestScript: string,
-    auth: AuthConfig
+    auth: AuthConfig,
+    preRequestScripts: ScriptRef[] = [],
+    postRequestScripts: ScriptRef[] = []
   ): Promise<Collection> {
     const serverId = this.requireServerId('collection', id);
+    const preResolved = resolveScriptRefs(preRequestScripts, preRequestScript);
+    const postResolved = resolveScriptRefs(postRequestScripts, postRequestScript);
+    const preColumn = teamHubScriptColumn(preResolved);
+    const postColumn = teamHubScriptColumn(postResolved);
+    const preScripts = bundleScriptFieldsWithLegacy(preResolved, preColumn);
+    const postScripts = bundleScriptFieldsWithLegacy(postResolved, postColumn);
     const record = await this.client.updateCollection(serverId, {
       name: trimRequiredName(name, 'Collection name'),
       variables,
       headers,
-      preRequestScript,
-      postRequestScript,
-      auth: toTeamHubAuth(auth)
-    });
+      preRequestScript: preColumn,
+      postRequestScript: postColumn,
+      auth: toTeamHubAuth(auth),
+      pre_request_scripts: preScripts.json,
+      post_request_scripts: postScripts.json
+    } as Parameters<TeamHubClient['updateCollection']>[1]);
     return serverToCollection(record, id);
   }
 
@@ -340,11 +422,14 @@ export class TeamHubStorage implements IStorage {
       const record = await this.client.updateRequest(requestServerId, {
         ...body,
         collectionId: collectionServerId
-      });
+      } as Parameters<TeamHubClient['updateRequest']>[1]);
       return this.mapRequestRecord(record, input.collection_id);
     }
 
-    const record = await this.client.createRequest(collectionServerId, body);
+    const record = await this.client.createRequest(
+      collectionServerId,
+      body as Parameters<TeamHubClient['createRequest']>[1]
+    );
     return this.mapRequestRecord(record, input.collection_id);
   }
 
@@ -584,6 +669,8 @@ export class TeamHubStorage implements IStorage {
         body_type: request.body_type,
         pre_request_script: request.pre_request_script,
         post_request_script: request.post_request_script,
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: request.comment
       });
     }
@@ -701,6 +788,8 @@ export class TeamHubStorage implements IStorage {
         body_type: fields.body_type,
         pre_request_script: fields.pre_request_script,
         post_request_script: fields.post_request_script,
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: fields.comment
       });
     }

@@ -197,6 +197,18 @@
 
 @layer components {
   /**
+   * Request editor URL bar — larger method and URL text than default SDK 14px.
+   */
+  .request-url-bar .hc-method-select {
+    font-size: 16px !important;
+  }
+
+  .request-url-bar .hc-variable-input input,
+  .request-url-bar .hc-variable-input > div[aria-hidden='true'] {
+    font-size: 16px !important;
+  }
+
+  /**
    * Tighter sidebar source rows (collections, folders, requests, environments).
    * RowActionsMenu icon buttons default to 30px; shrink to align with row height.
    * Hide the trigger until the row is hovered or receives keyboard focus.

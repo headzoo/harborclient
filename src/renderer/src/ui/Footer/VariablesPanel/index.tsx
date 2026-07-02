@@ -54,7 +54,7 @@ export function VariablesPanel({
       storageKey="hc.variablesHeight"
       title={
         <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="text-[14px] font-medium text-text">Variables</span>
+          <span className="text-[14px] font-medium text-text">Variables in this request</span>
           <span className="truncate text-[14px] text-muted">{contextLine}</span>
         </div>
       }

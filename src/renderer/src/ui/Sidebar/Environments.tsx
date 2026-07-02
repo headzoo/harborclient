@@ -35,9 +35,11 @@ interface Props {
   activeEnvironmentId: number | null;
 
   /**
-   * Called when the user selects an environment.
+   * Called when the user selects or deselects an environment.
+   *
+   * @param id - Environment ID, or null to clear the active environment.
    */
-  onSelectEnvironment: (id: number) => void;
+  onSelectEnvironment: (id: number | null) => void;
 
   /**
    * Opens the environment settings view.
@@ -211,7 +213,7 @@ export function Environments({
                   type="button"
                   className="min-w-0 flex-1 cursor-pointer truncate border-none bg-transparent py-0 text-left text-[14px] text-inherit app-no-drag"
                   aria-current={selected ? 'true' : undefined}
-                  onClick={() => onSelectEnvironment(environment.id)}
+                  onClick={() => onSelectEnvironment(selected ? null : environment.id)}
                   onDoubleClick={() => onConfigureEnvironment(environment.id)}
                 >
                   {environment.name}

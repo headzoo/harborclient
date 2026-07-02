@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defaultAuth } from '#/shared/auth';
+import { createInlineScriptRef } from '#/shared/scriptRefs';
 import { asRequestTab, isRequestTab } from '#/renderer/src/store/drafts';
 import type { SaveRequestInput, SavedRequest } from '#/shared/types';
 
@@ -53,6 +54,8 @@ function savedFrom(input: SaveRequestInput): SavedRequest {
     body_type: input.body_type,
     pre_request_script: input.pre_request_script ?? '',
     post_request_script: input.post_request_script ?? '',
+    pre_request_scripts: input.pre_request_scripts ?? [],
+    post_request_scripts: input.post_request_scripts ?? [],
     comment: input.comment ?? '',
     sort_order: 0,
     created_at: '2026-01-01T00:00:00.000Z',
@@ -101,6 +104,8 @@ describe('saveRequest folder handling', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         auth: defaultAuth()
       })
@@ -134,6 +139,8 @@ describe('saveRequest folder handling', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         auth: defaultAuth()
       })
@@ -146,6 +153,47 @@ describe('saveRequest folder handling', () => {
     expect(input.id).toBeUndefined();
     expect(input.collection_id).toBe(2);
     expect(input.folder_id).toBeNull();
+  });
+});
+
+describe('saveRequest script lists', () => {
+  it('persists every pre-request script reference in the save payload', async () => {
+    const { store } = await import('#/renderer/src/store/redux');
+    const { openTabWithDraft } = await import('#/renderer/src/store/slices/tabsSlice');
+    const { saveRequest } = await import('#/renderer/src/store/thunks/requests');
+
+    const first = createInlineScriptRef('console.log("one");', 'First');
+    const second = createInlineScriptRef('', 'Unnamed script...');
+
+    store.dispatch(
+      openTabWithDraft({
+        id: 9,
+        collection_id: 1,
+        name: 'Scripted',
+        method: 'GET',
+        url: 'https://example.com',
+        headers: [],
+        params: [],
+        body: '',
+        body_type: 'none',
+        pre_request_script: 'console.log("one");',
+        post_request_script: '',
+        pre_request_scripts: [first, second],
+        post_request_scripts: [],
+        comment: '',
+        auth: defaultAuth()
+      })
+    );
+
+    await store.dispatch(saveRequest(1));
+
+    const input = saveRequestMock.mock.calls[0]?.[0];
+    expect(input?.pre_request_scripts).toHaveLength(2);
+    expect(input?.pre_request_scripts?.map((script) => script.name)).toEqual([
+      'First',
+      'Unnamed script...'
+    ]);
+    expect(input?.pre_request_script).toBe('console.log("one");');
   });
 });
 
@@ -171,6 +219,8 @@ function sampleSaved(overrides: Partial<SavedRequest> = {}): SavedRequest {
     body_type: 'none',
     pre_request_script: '',
     post_request_script: '',
+    pre_request_scripts: [],
+    post_request_scripts: [],
     comment: '',
     sort_order: 0,
     created_at: '2026-01-01T00:00:00.000Z',
@@ -232,6 +282,8 @@ describe('requestLoadRequest', () => {
       body_type: 'none',
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       comment: ''
     });
 
@@ -268,6 +320,8 @@ describe('requestLoadRequest', () => {
       body_type: 'none',
       pre_request_script: '',
       post_request_script: '',
+      pre_request_scripts: [],
+      post_request_scripts: [],
       comment: ''
     });
 
@@ -321,6 +375,8 @@ describe('cancelRequest', () => {
         body_type: 'none',
         pre_request_script: '',
         post_request_script: '',
+        pre_request_scripts: [],
+        post_request_scripts: [],
         comment: '',
         auth: defaultAuth()
       })

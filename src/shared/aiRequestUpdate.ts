@@ -1,6 +1,8 @@
 import { normalizeAuth, type AuthConfig } from '#/shared/auth';
 import { applyParamsToUrl, mergeParamsFromUrl } from '#/shared/queryParams';
+import { scriptRefsFromLegacyString } from '#/shared/scriptRefs';
 import type { BodyType, HttpMethod, KeyValue } from '#/shared/types/common';
+import type { ScriptRef } from '#/shared/types/script';
 
 /**
  * Merge mode for key-value lists such as headers, params, and cookies.
@@ -65,6 +67,16 @@ export interface AiRequestDraft {
    * JavaScript run after the response is received.
    */
   post_request_script: string;
+
+  /**
+   * Ordered pre-request scripts for the editor.
+   */
+  pre_request_scripts: ScriptRef[];
+
+  /**
+   * Ordered post-request scripts for the editor.
+   */
+  post_request_scripts: ScriptRef[];
 
   /**
    * Free-form notes for the request.
@@ -423,6 +435,7 @@ export function applyRequestDraftUpdate(
       args.pre_request_script,
       args.pre_request_script_mode ?? 'replace'
     );
+    next.pre_request_scripts = scriptRefsFromLegacyString(next.pre_request_script);
     changedFields.push('pre_request_script');
   }
 
@@ -432,6 +445,7 @@ export function applyRequestDraftUpdate(
       args.post_request_script,
       args.post_request_script_mode ?? 'replace'
     );
+    next.post_request_scripts = scriptRefsFromLegacyString(next.post_request_script);
     changedFields.push('post_request_script');
   }
 
